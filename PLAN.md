@@ -18,6 +18,7 @@ Open-source, AI-enhanced, voice-first surveys. Go + templ + plain HTML/CSS/JS. T
 | 0005 | Email via EU ESP (Brevo) behind a two-method interface |
 | 0006 | No third-party scripts on respondent pages; ALTCHA in-app |
 | 0007 | Cloud Run over GKE for the SaaS MVP; K8s later is a redeploy, not a rewrite |
+| 0008 | Daily Cloud SQL exports to a retention-locked immutable bucket; rolling 30-day window via lifecycle rules, not cron delete permissions |
 
 ## MVP scope
 
@@ -141,8 +142,9 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 - **M9-T1 Pro environment.** Goal: envs/pro opentofu (separate project), app.tryearful.com, deploy-on-tag, Cloud SQL with automated backups + PITR (7 days) + deletion protection. AC: restore drill from backup succeeds on a scratch instance. Deps: M1, M8
 - **M9-T2 Full alert set.** Goal: budgets (both projects, 50/80/100% of €200 combined), uptime, error-rate, p95 latency, Cloud SQL disk/CPU, ai_usage anomaly, breaker-trip alert. AC: alert test-fire checklist complete. Deps: M9-T1
 - **M9-T3 Security pass.** Goal: dependency scanning (govulncheck in CI + Renovate), secrets scan, authz test suite re-run, rate-limit soak, backup-restore drill logged. AC: findings triaged to zero criticals. Deps: M9-T1
-- **M9-T4 Runbook.** Goal: docs/runbook.md — deploy, rollback, restore, erasure request, breaker trip, ESP suppression check, incident basics (72h breach duty). AC: a second person can execute each procedure. Deps: M9-T2
+- **M9-T4 Runbook.** Goal: docs/runbook.md — deploy, rollback, restore (PITR + immutable export), erasure request, breaker trip, ESP suppression check, incident basics (72h breach duty). AC: a second person can execute each procedure. Deps: M9-T2
 - **M9-T5 Launch checklist.** Goal: DNS cutover, homepage copy fix live, trust page live, seed feedback survey (dogfood), announce. AC: real survey completes end-to-end on pro via voice on a phone. Deps: all
+- **M9-T6 Immutable rolling DB exports (ransomware guard, ADR-0008).** Goal: daily Cloud Scheduler job triggers a Cloud SQL Admin API export of pro (OIDC-authed, no DB credentials) into a dedicated GCS bucket in a separate backups project. Bucket: 30-day retention policy **locked** + lifecycle rule deleting objects >30 days — the rolling window manages itself and no credential in the system can delete a young backup; the export service account is create-only (no read/delete/overwrite). Unlike PITR (M9-T1), these survive an attacker with app-project admin. stg skipped (cost). AC: delete attempt on a fresh export is refused even by a project owner; restore drill from an export into a scratch instance succeeds and is documented in the runbook; lifecycle + retention config asserted in opentofu tests. Deps: M9-T1
 
 ## Appendix A — Data model (key columns)
 
@@ -195,7 +197,7 @@ GitHub hosts code only — no service data.
 2. **Privacy policy + sub-processor page** with change-notification mechanism (email on new sub-processor).
 3. **Respondent-facing transparency** — M8-T5 covers the product side; policy text still needed (who is controller, retention, rights contact).
 4. **Erasure workflow** — M8-T3 fast-path; document that anonymous responses are unerasable *because they contain no personal data* (feature, not bug — state it).
-5. **Backup retention vs erasure** — purged data survives in PITR/backups up to 7 more days; document the window in policy (standard practice).
+5. **Backup retention vs erasure** — purged data survives in PITR (7 days) and in the immutable daily exports (30 days, undeletable by design — ADR-0008); document in policy that erasure is fully effective after ≤30 days (standard, defensible practice).
 6. **Records of Processing (RoPA)** — internal doc, one page per processing activity.
 7. **Vertex AI terms verification** — written confirmation of no-training + EU processing + abuse-logging retention for the exact APIs used; revisit zero-retention config; CMEK later.
 8. **CLOUD Act honesty** — EU region ≠ immunity from US parent jurisdiction. Mitigations: CMEK w/ external keys (later), sovereign-cloud options (expensive). Until then: state residual risk plainly on /trust; it is more credible than pretending.
@@ -219,13 +221,14 @@ GitHub hosts code only — no service data.
 | Vertex Gemini (transcription + generation) | 20–40 typical | ai_usage caps + daily € breaker |
 | Brevo | 0–25 | free tier → first paid tier |
 | Egress, GCS, Logging, Scheduler, Secret Mgr | 5–15 | logging exclusion filters |
+| Immutable export bucket (30 daily dumps, ADR-0008) | 1–3 | lifecycle auto-delete + size alert |
 | **Typical total** | **≈ €75–170** | budgets at €100/€160/€200 |
 
 Hard guards: GCP Budgets on both projects (50/80/100% of combined €200), Vertex quota limits, the in-app daily breaker (M6-T2), Cloud Run max-instances, log exclusion filters. Prices are estimates — verify at M1/M9 and tune alerts to reality.
 
 ## Appendix D — Self-hosting story
 
-docker compose is the contract: app + Postgres; optional ollama/llamafile profile for AI parity (`ai.Provider` via env). Email = any SMTP. Auth = magic link (SMTP) + optional Google OIDC credentials. No Google dependency required to run core surveys; AI features degrade gracefully when no provider is configured. Workspace export (M7-T3) is the migration vehicle; the documented export format is the import contract; import tool is the first post-MVP ticket. AGPL-3.0 keeps SaaS forks honest. Helm chart: post-MVP, community-driven.
+docker compose is the contract: app + Postgres; optional ollama/llamafile profile for AI parity (`ai.Provider` via env). Email = any SMTP. Auth = magic link (SMTP) + optional Google OIDC credentials. No Google dependency required to run core surveys; AI features degrade gracefully when no provider is configured. Workspace export (M7-T3) is the migration vehicle; the documented export format is the import contract; import tool is the first post-MVP ticket. Backup parity: compose docs include a pg_dump cron example so self-hosters get the same rolling-dump discipline. AGPL-3.0 keeps SaaS forks honest. Helm chart: post-MVP, community-driven.
 
 ## Appendix E — Local development
 
