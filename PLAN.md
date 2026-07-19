@@ -1,6 +1,6 @@
 # Earful — MVP Plan
 
-Open-source, AI-enhanced, voice-first surveys. Go + templ + plain HTML/CSS/JS. Trust, privacy and self-hostability are the differentiators. This plan is the processable output of the grilling session of 2026-07-12; the vocabulary lives in `CONTEXT.md`, the load-bearing decisions in `docs/adr/0001–0007`.
+Open-source, AI-enhanced, voice-first surveys. Go + templ + plain HTML/CSS/JS. Trust, privacy and self-hostability are the differentiators. This plan is the processable output of the grilling session of 2026-07-12, updated 2026-07-19 from the collaborator requirements doc ("Voice questionnaires app details 002"); the vocabulary lives in `CONTEXT.md`, the load-bearing decisions in `docs/adr/0001–0009`.
 
 - Repo: https://github.com/TryEarful/earful (AGPL-3.0, already in place)
 - SaaS: app.tryearful.com (pro), stg.tryearful.com (stg) — Cloud Run, separate GCP projects, europe-west4
@@ -19,12 +19,13 @@ Open-source, AI-enhanced, voice-first surveys. Go + templ + plain HTML/CSS/JS. T
 | 0006 | No third-party scripts on respondent pages; ALTCHA in-app |
 | 0007 | Cloud Run over GKE for the SaaS MVP; K8s later is a redeploy, not a rewrite |
 | 0008 | Daily Cloud SQL exports to a retention-locked immutable bucket; rolling 30-day window via lifecycle rules, not cron delete permissions |
+| 0009 | Audience stats exist only as unlinked survey-level aggregates (browser family, device class, country via in-process GeoIP); n<5 suppression; amends 0003 |
 
 ## MVP scope
 
-**In:** create → share → answer → results loop; Draft/publish versioning with audit log; anonymous and invited surveys; lean five question types (long text with voice, short text, single choice, multiple choice, rating scale); one-question-at-a-time respondent UX; close dates; voice answering (transcript-only); AI question generation (streamed); workspace export (JSON + CSV); Google OIDC + magic-link auth; ALTCHA + rate limits; soft-delete + 30-day purge cron; docker compose self-hosting.
+**In:** create → share → answer → results loop; Draft/publish versioning with audit log; explicit Survey Status (Draft/Open/Closed) with close + reopen; anonymous and invited surveys; eight question types (long text with voice, short text, single choice, multiple choice, rating scale, NPS, yes/no, dropdown); one-question-at-a-time respondent UX, responsive on phone/tablet/desktop; preview-as-respondent; close dates; voice answering (transcript-only); AI question generation (streamed); cross-respondent insights (M10); question localization + answer translation (M11); survey stats & unlinked audience aggregates (ADR-0009); workspace export (JSON + CSV); Google OIDC + magic-link auth; ALTCHA + rate limits; soft-delete + 30-day purge cron; founder metrics (first-party); post-deploy smoke test; docker compose self-hosting.
 
-**Out (post-MVP backlog, ordered):** answer translation; cross-response themes & per-reply summaries; survey improvement suggestions; AI images (Nano Banana 2) for header/section/question; workspace member invites UI; response editing (answer revisions); sections; workspace import tool; Helm chart; billing.
+**Out (post-MVP backlog, ordered):** branching logic + drag-and-drop flow editor; ranking and rating-matrix question types; results sharing outside the workspace; brand preferences / creator profile; embed-in-website (requires a CSP/anti-bot redesign — framing is currently blocked by design); per-survey opt-in audio retention (consciously deferred 2026-07-19 — would need its own ADR + DPA language and conditions ADR-0004's trust copy); survey improvement suggestions; AI images (Nano Banana 2) for header/section/question + sections; CRM integrations (email stays swappable behind the Sender interface); workspace member invites UI; response editing (answer revisions); workspace import tool; Helm chart; billing. EU AI Act additions (companion doc) are a separate upcoming pass.
 
 ## Architecture overview
 
@@ -80,9 +81,9 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 - **M1-T1 opentofu baseline.** Goal: modules + envs/stg: project, Cloud Run service, Cloud SQL (smallest), Artifact Registry, Secret Manager, GCS state bucket. AC: `tofu apply` in envs/stg from zero produces a serving URL. Deps: M0-T3
 - **M1-T2 Domain & TLS.** Goal: stg.tryearful.com mapped to Cloud Run. AC: HTTPS with managed cert. Deps: M1-T1
-- **M1-T3 Deploy pipeline.** Goal: main → deploy stg automatically; tags → pro (pro project arrives in M9). AC: merge to main visible on stg in <10 min; migrations run safely before traffic. Deps: M1-T1
+- **M1-T3 Deploy pipeline.** Goal: main → deploy stg automatically; tags → pro (pro project arrives in M9). AC: merge to main visible on stg in <10 min; migrations run safely before traffic; once M4 lands, an automated smoke test (create → share → answer → results) runs against stg after every deploy and gates promotion. Deps: M1-T1
 - **M1-T4 Health & uptime.** Goal: /healthz (DB ping) + Cloud Monitoring uptime check + alert channel (email). AC: killing DB fires an alert. Deps: M1-T1
-- **M1-T5 Budget guardrails.** Goal: GCP budget on stg project: 50/80/100% of its share of €200. AC: alerts configured and test-fired. Deps: M1-T1
+- **M1-T5 Budget guardrails.** Goal: GCP budget per the budget rule — €100/mo combined operating target (alerts at €50/€80/€100) with €200 as the hard cap. AC: alerts configured and test-fired. Deps: M1-T1
 
 ### M2 — Auth & workspaces
 
@@ -94,15 +95,16 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 ### M3 — Survey building
 
-- **M3-T1 Survey + Draft CRUD.** Goal: create survey (name, anonymity flag immutable at creation, optional close date), edit draft with lean-five question types, positions. AC: draft accepts no responses; anonymity unchangeable via any path. Deps: M2-T4
+- **M3-T1 Survey + Draft CRUD.** Goal: create survey (name, anonymity flag immutable at creation, optional close date), edit draft with the eight question types (long text, short text, single choice, multiple choice, rating scale, NPS, yes/no, dropdown), positions. AC: draft accepts no responses; anonymity unchangeable via any path. Deps: M2-T4
 - **M3-T2 Draft revisions (autosave).** Goal: every save appends a Draft Revision. AC: revision list shows who/what/when; storage append-only. Deps: M3-T1
 - **M3-T3 Publish → immutable Version.** Goal: publish freezes draft into survey_versions + questions with stable Question Identity (reword keeps identity; new question = new identity; delete ends it). AC: published rows immune to UPDATE (guarded by triggers or store-layer invariant + tests); share link serves latest version. Deps: M3-T1
 - **M3-T4 Audit log view.** Goal: derived who-changed-what from revisions + publishes. AC: editors see the trail. Deps: M3-T2, M3-T3
-- **M3-T5 Survey list & lifecycle.** Goal: workspace dashboard; manual close/reopen; close-date enforcement. AC: closed surveys refuse new responses with a friendly page. Deps: M3-T3
+- **M3-T5 Survey list & lifecycle.** Goal: workspace dashboard with explicit Survey Status (Draft/Open/Closed); manual close and reopen; close-date enforcement. AC: status chips correct in all transitions; closed surveys refuse new responses with a friendly page; reopening works for both manual and date-based closes. Deps: M3-T3
+- **M3-T6 Preview as respondent.** Goal: render the current Draft (and any published version) through the real respondent renderer in a clearly-bannered preview mode that accepts no responses. AC: preview uses the same templates as the live renderer; no response rows can originate from preview. Deps: M3-T1, M4-T1
 
 ### M4 — Answering (anonymous + invited)
 
-- **M4-T1 Respondent renderer.** Goal: one-question-at-a-time flow, progress bar, keyboard navigation, WCAG 2.1 AA basics, no-JS fallback renders the whole form. AC: axe-core clean on respondent pages; works with JS disabled. Deps: M3-T3
+- **M4-T1 Respondent renderer.** Goal: one-question-at-a-time flow, progress bar, keyboard navigation, WCAG 2.1 AA basics, no-JS fallback renders the whole form. AC: axe-core clean on respondent pages; works with JS disabled; responsive layouts verified at phone/tablet/desktop widths. Deps: M3-T3
 - **M4-T2 Anonymous submission path.** Goal: public link → ALTCHA-gated submit; response pinned to served version; zero identifying data stored (ADR-0003). AC: schema + code review confirm no IP/UA columns on the response path; double-submit soft-deduped by cookie but allowed. Deps: M4-T1, M4-T5
 - **M4-T3 Participants & unique links.** Goal: CSV/paste import of emails; per-participant long random token; one submission per token; "already submitted" page. AC: token guessing infeasible (≥128-bit); duplicate email import deduped. Deps: M3-T3
 - **M4-T4 Invite sending.** Goal: drip-send invites (e.g. 200/hour/workspace cap) via email interface; suppression list honored; bounce/complaint webhooks ingested. AC: bounced address never re-mailed; caps enforced. Deps: M4-T3, M4-T6
@@ -119,15 +121,16 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 ### M6 — AI question generation
 
-- **M6-T1 ai.Provider interface.** Goal: `Generate(stream)`, `Transcribe(stream)` behind one interface; Vertex impl (europe-west4, no-training config verified) + openai-compatible local impl (ollama/llamafile). AC: swap via env var; integration test against ollama in CI. Deps: M0-T4
+- **M6-T1 ai.Provider interface.** Goal: `Generate`, `Transcribe`, `Translate`, `Analyze` (all streaming) behind one interface; Vertex impl (europe-west4, no-training config verified) + openai-compatible local impl (ollama/llamafile). AC: swap via env var; integration test against ollama in CI. Deps: M0-T4
 - **M6-T2 Quotas + budget breaker.** Goal: ai_usage accounting; per-workspace daily caps; global daily € breaker that hard-disables AI endpoints and alerts. AC: breaker trips in test; alert fires. Deps: M6-T1
-- **M6-T3 Generate-survey flow.** Goal: creator prompt → WS-streamed draft questions (lean five types only) → editable draft; requires auth; counts against quota. AC: p95 first-token < 2s on stg; output validates against question schema. Deps: M6-T1, M6-T2, M3-T1
+- **M6-T3 Generate-survey flow.** Goal: creator prompt → WS-streamed draft questions (supported question types only) → editable draft; requires auth; counts against quota. AC: p95 first-token < 2s on stg; output validates against question schema. Deps: M6-T1, M6-T2, M3-T1
 
 ### M7 — Results & export
 
 - **M7-T1 Results view.** Goal: per-survey results aggregated across versions by Question Identity, wording labelled per version (ADR-0001); counts/distributions for choice+rating; transcript list for text. AC: cross-version scenario from the ADR renders correctly (50 v1 + 30 v2). Deps: M4-T2
 - **M7-T2 CSV export per survey.** Goal: responses as CSV (one row per response, columns per question identity, version column). AC: opens clean in Excel/Sheets; injection-safe (`=+-@` prefixed). Deps: M7-T1
 - **M7-T3 Workspace export.** Goal: one button → async job → downloadable archive: documented JSON (surveys, versions, questions, responses, participants) + CSVs. Format versioned and documented in repo (`docs/export-format.md`) as the future import contract. AC: export of a seeded workspace round-trips against the format doc; download link expires. Deps: M7-T2
+- **M7-T4 Survey stats & audience aggregates (ADR-0009).** Goal: starts, completions, completion rate, average duration, drop-off per question position; unlinked audience counters (browser family, device class, country via embedded GeoIP DB resolved in-process, IP discarded in-request); per-response duration. Aggregates live in counter tables with no join path to responses; any bucket with n < 5 is suppressed in the UI. AC: automated unlinkability test proves no app query associates an aggregate with a response; suppression verified; stats correct across versions. Deps: M4-T2
 
 ### M8 — Data lifecycle & trust
 
@@ -140,11 +143,23 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 ### M9 — Production launch
 
 - **M9-T1 Pro environment.** Goal: envs/pro opentofu (separate project), app.tryearful.com, deploy-on-tag, Cloud SQL with automated backups + PITR (7 days) + deletion protection. AC: restore drill from backup succeeds on a scratch instance. Deps: M1, M8
-- **M9-T2 Full alert set.** Goal: budgets (both projects, 50/80/100% of €200 combined), uptime, error-rate, p95 latency, Cloud SQL disk/CPU, ai_usage anomaly, breaker-trip alert. AC: alert test-fire checklist complete. Deps: M9-T1
+- **M9-T2 Full alert set.** Goal: budgets (both projects — €100 combined operating target with alerts at €50/€80/€100, €200 hard cap), uptime, error-rate, p95 latency, Cloud SQL disk/CPU, ai_usage anomaly, breaker-trip alert. AC: alert test-fire checklist complete. Deps: M9-T1
 - **M9-T3 Security pass.** Goal: dependency scanning (govulncheck in CI + Renovate), secrets scan, authz test suite re-run, rate-limit soak, backup-restore drill logged. AC: findings triaged to zero criticals. Deps: M9-T1
 - **M9-T4 Runbook.** Goal: docs/runbook.md — deploy, rollback, restore (PITR + immutable export), erasure request, breaker trip, ESP suppression check, incident basics (72h breach duty). AC: a second person can execute each procedure. Deps: M9-T2
-- **M9-T5 Launch checklist.** Goal: DNS cutover, homepage copy fix live, trust page live, seed feedback survey (dogfood), announce. AC: real survey completes end-to-end on pro via voice on a phone. Deps: all
+- **M9-T5 Launch checklist.** Goal: DNS cutover, homepage copy fix live, trust page live, seed feedback survey (dogfood), announce. AC: real survey completes end-to-end on pro via voice on a phone, including localized questions and an insight run. Deps: all, incl. M10–M11
+- **M9-T7 Founder metrics (first-party).** Goal: internal product metrics from our own DB + Cloud Monitoring counters — signups, workspaces, surveys created/published, responses/day, completion rates, AI usage & cost — via a private admin page or scheduled email digest. No third-party analytics; nothing added to respondent pages (ADR-0006). AC: KPI definitions documented; metrics visible without touching respondent privacy. Deps: M7-T4
 - **M9-T6 Immutable rolling DB exports (ransomware guard, ADR-0008).** Goal: daily Cloud Scheduler job triggers a Cloud SQL Admin API export of pro (OIDC-authed, no DB credentials) into a dedicated GCS bucket in a separate backups project. Bucket: 30-day retention policy **locked** + lifecycle rule deleting objects >30 days — the rolling window manages itself and no credential in the system can delete a young backup; the export service account is create-only (no read/delete/overwrite). Unlike PITR (M9-T1), these survive an attacker with app-project admin. stg skipped (cost). AC: delete attempt on a fresh export is refused even by a project owner; restore drill from an export into a scratch instance succeeds and is documented in the runbook; lifecycle + retention config asserted in opentofu tests. Deps: M9-T1
+
+### M10 — Cross-respondent insights (executed before launch)
+
+- **M10-T1 Analysis engine.** Goal: on-demand "Analyze" per survey — themes, patterns, representative quotes across all responses, aggregated by Question Identity across versions — via `ai.Provider.Analyze` (Gemini Pro tier); cached against a response watermark; counts against workspace quota + global breaker; output stored append-only and labelled AI-generated (model + timestamp). Prompts never include participant identity. AC: re-run without new responses serves cache; quota exhaustion degrades gracefully; works for both survey kinds. Deps: M7-T1, M6-T2
+- **M10-T2 Insights in results + export.** Goal: Insight Summary panel on the results page (WS-streamed) and included in CSV/workspace export, clearly marked AI-generated. AC: the ADR-0001 scenario (50 v1 + 30 v2) yields one insight run spanning both versions; export contains the labelled summary. Deps: M10-T1
+
+### M11 — Localization & translation (executed before launch)
+
+- **M11-T1 Question localization.** Goal: creator selects target languages; `ai.Provider.Translate` drafts a Localization of the question set; creator reviews/edits; publish freezes localizations into the immutable version. Respondent picks language (browser-language suggested; choice stored nowhere). AC: unreviewed machine translations cannot be published silently; localizations immutable post-publish; renderer serves every frozen language; adding a language later = new version. Deps: M3-T3, M6-T1
+- **M11-T2 Answer translation.** Goal: creator-side on-demand translation of text answers/transcripts into the workspace language; original always preserved and viewable; translations cached, marked machine-translated, counted against quota. AC: original never overwritten; original/translation toggle works in results and exports carry both. Deps: M7-T1, M6-T1
+- **M11-T3 Voice language hint.** Goal: the respondent's chosen language drives the voice path — local recognition locale and Vertex transcription hint. AC: fake-provider test verifies hint passthrough; typing path unaffected. Deps: M11-T1, M5-T2
 
 ## Appendix A — Data model (key columns)
 
@@ -153,6 +168,7 @@ users(id, email uniq, google_sub nullable, created_at, deleted_at)
 workspaces(id, name, created_at, deleted_at)
 workspace_members(workspace_id, user_id, role='owner', created_at)
 surveys(id, workspace_id, title, is_anonymous bool IMMUTABLE, close_at nullable,
+        closed_at nullable /*manual close; status Draft|Open|Closed is derived*/,
         created_by, created_at, deleted_at)
 survey_drafts(id, survey_id uniq, structure jsonb, updated_by, updated_at)
 draft_revisions(id, draft_id, structure jsonb, saved_by, saved_at)  -- append-only
@@ -163,8 +179,12 @@ question_identities(id, survey_id, created_at)
 participants(id, survey_id, email, token_hash uniq, invited_at, bounced_at,
              submitted_at, deleted_at)
 responses(id, survey_id, version_id, participant_id nullable /*NULL=anonymous*/,
-          submitted_at, deleted_at)   -- no IP, no UA, ever (ADR-0003)
+          duration_secs nullable, submitted_at, deleted_at)  -- no IP, no UA, ever (ADR-0003/0009)
 answers(id, response_id, question_id, question_identity_id, value jsonb)
+question_localizations(version_id, question_id, lang, text, options jsonb)  -- frozen at publish
+answer_translations(answer_id, lang, text, model, created_at)  -- original stays in answers
+insight_runs(id, survey_id, response_watermark, model, output, created_at)  -- append-only, AI-labelled
+survey_stats(survey_id, metric, bucket, count)  -- unlinked aggregates only (ADR-0009)
 sessions(id, user_id, expires_at, created_at)
 magic_link_tokens(token_hash, email, expires_at, used_at)
 suppressions(email, reason, created_at)
@@ -189,7 +209,7 @@ Roles: for **respondent data**, the customer (workspace) is controller and Earfu
 | 4 | Google Identity (OIDC) | Login | Email, Google subject ID | — | Only when user chooses Google login |
 | — | Browser speech vendors (Google/Apple) | *Avoided by design* | — | — | Non-local browser recognition is never invoked (ADR-0004); keep note in policy in case this changes |
 
-GitHub hosts code only — no service data.
+GitHub hosts code only — no service data. Audience aggregates (ADR-0009) use an embedded GeoIP database resolved in-process — no lookup service, no new processor; licensing/attribution tracked as gap #17.
 
 ### Gap list (not yet compliant / needs work — tackle in this order)
 
@@ -209,6 +229,10 @@ GitHub hosts code only — no service data.
 14. **Minors** — ToS: surveys must not target under-16s in MVP; revisit later.
 15. **EU AI Act posture** — current features are minimal-risk; when AI images ship, label AI-generated imagery; note transparency duties for AI-assisted analysis when insights ship.
 16. **DPO / EU representative** — likely not required at MVP scale; document the reasoning for not appointing one yet.
+17. **GeoIP database licensing** — attribution/license obligations (e.g. GeoLite2 EULA or db-ip CC-BY) and an update cadence for the embedded DB.
+18. **Aggregate stats disclosure** — privacy notice must describe the ADR-0009 aggregates (browser family, device class, country) and the in-process geo derivation with immediate IP discard.
+19. **External counsel** (collaborator Q17) — legal review of the customer DPA, privacy policy, ToS, and an AGPL obligations page for self-hosters.
+20. **EU AI Act additions** — companion document to be processed in a dedicated pass; expect transparency items (AI-labelled outputs already required by M10/M11) and prohibited-practice guardrails (e.g. no emotion inference from voice).
 
 ## Appendix C — Budget (target ≤ €200/mo, both envs)
 
@@ -218,13 +242,13 @@ GitHub hosts code only — no service data.
 | Cloud Run pro (1 warm min-instance) | 10–20 | max-instances cap |
 | Cloud SQL stg (db-f1-micro tier) | 8–12 | — |
 | Cloud SQL pro (small + PITR + backups) | 30–55 | disk alert |
-| Vertex Gemini (transcription + generation) | 20–40 typical | ai_usage caps + daily € breaker |
+| Vertex Gemini (transcription, generation, insights, localization, translation) | 30–60 typical | ai_usage caps + daily € breaker |
 | Brevo | 0–25 | free tier → first paid tier |
 | Egress, GCS, Logging, Scheduler, Secret Mgr | 5–15 | logging exclusion filters |
 | Immutable export bucket (30 daily dumps, ADR-0008) | 1–3 | lifecycle auto-delete + size alert |
-| **Typical total** | **≈ €75–170** | budgets at €100/€160/€200 |
+| **Typical total** | **≈ €85–190** | target €100 (alerts €50/€80/€100); hard cap €200 |
 
-Hard guards: GCP Budgets on both projects (50/80/100% of combined €200), Vertex quota limits, the in-app daily breaker (M6-T2), Cloud Run max-instances, log exclusion filters. Prices are estimates — verify at M1/M9 and tune alerts to reality.
+Budget rule (2026-07-19, collaborator Q3): **€100/month is the pre-revenue operating target**, alert-laddered at €50/€80/€100; **€200 stays the hard cap** where the AI breaker and max-instances clamp down. With insights/localization/translation now in MVP, hitting the €100 target means AI quotas start tight and loosen with revenue. Hard guards: GCP Budgets on both projects, Vertex quota limits, the in-app daily breaker (M6-T2), Cloud Run max-instances, log exclusion filters. Prices are estimates — verify at M1/M9 and tune alerts to reality.
 
 ## Appendix D — Self-hosting story
 
@@ -251,4 +275,4 @@ docker compose is the contract: app + Postgres; optional ollama/llamafile profil
 
 ---
 
-*Process note: tickets are sized for one-agent/one-sitting execution where possible; M0→M4 is the critical path; M5/M6 parallelize after M4; every milestone leaves stg demonstrable.*
+*Process note: tickets are sized for one-agent/one-sitting execution where possible; M0→M4 is the critical path; M5/M6 parallelize after M4; M10/M11 follow M7 and precede launch. Execution order: M0–M8 → M10 → M11 → M9 (launch last). Milestone numbers are stable IDs, not a strict sequence. Every milestone leaves stg demonstrable.*

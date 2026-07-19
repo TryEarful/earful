@@ -60,3 +60,17 @@ Optional date after which a survey stops accepting responses. A survey-level set
 **Transcript**:
 The text produced from a respondent's spoken answer. The only artifact of voice input — audio itself is never stored. Editable by the respondent before submission.
 _Avoid_: recording (recordings do not exist in Earful)
+
+**Creator**:
+A workspace member who builds and manages surveys.
+_Avoid_: researcher, author
+
+**Survey Status**:
+Where a survey stands: Draft (never published), Open (published and accepting responses), or Closed (not accepting; reopenable). Distinct from Survey Versions, which only count publishes.
+
+**Localization**:
+The set of creator-reviewed, AI-drafted translations of a version's questions. Frozen into the Survey Version at publish — immutable like the rest of the version.
+_Avoid_: translation (reserved for answer translation)
+
+**Insight Summary**:
+AI-generated themes, patterns and representative quotes across a survey's responses, aggregated by Question Identity across versions. Always labelled as AI output; never a substitute for the responses themselves.
