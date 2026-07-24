@@ -25,9 +25,9 @@ type EventSender interface {
 }
 
 // Brevo sends through the Brevo transactional API (ADR-0005) and ingests
-// its webhook events. Live verification against the real API and webhook
-// happens at the cloud milestone; the request/response shapes here follow
-// Brevo's v3 documentation and are unit-tested against a fake endpoint.
+// its webhook events. The request/response shapes are unit-tested against
+// a fake endpoint and were verified against the live v3 API and webhook
+// documentation when production flipped to Brevo (M4-T6).
 type Brevo struct {
 	APIKey  string
 	From    string
@@ -88,15 +88,21 @@ type brevoEvent struct {
 	Email string `json:"email"`
 }
 
-// suppressingEvents maps Brevo event names to suppression reasons. Soft
-// bounces are excluded on purpose — a full mailbox is not a dead address.
+// suppressingEvents maps Brevo webhook payload event slugs to
+// suppression reasons. The live transactional payloads use hard_bounce,
+// spam, invalid_email, blocked and unsubscribed; the extra keys are
+// doc-era aliases kept because the handler is deliberately lenient and
+// an unused key costs nothing. Soft bounces are excluded on purpose — a
+// full mailbox is not a dead address.
 var suppressingEvents = map[string]string{
-	"hard_bounce": "hard_bounce",
-	"spam":        "complaint",
-	"complaint":   "complaint",
-	"invalid":     "invalid_address",
-	"blocked":     "blocked",
-	"unsubscribe": "unsubscribed",
+	"hard_bounce":   "hard_bounce",
+	"spam":          "complaint",
+	"complaint":     "complaint",
+	"invalid":       "invalid_address",
+	"invalid_email": "invalid_address",
+	"blocked":       "blocked",
+	"unsubscribe":   "unsubscribed",
+	"unsubscribed":  "unsubscribed",
 }
 
 func (b *Brevo) HandleWebhook(w http.ResponseWriter, r *http.Request) {
