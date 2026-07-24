@@ -7,16 +7,17 @@ import { defineConfig, devices } from "@playwright/test";
 // projects — phone, tablet, desktop, per M4-T1's acceptance criteria —
 // reuse it, so the suite stays inside the app's own magic-link rate
 // limits.
-// Staging sits behind HTTP Basic Auth; E2E_BASIC_AUTH ("user:pass",
-// split at the first colon) is unset for local runs. No origin
-// restriction on purpose: the suite hits both the run.app URL
-// (E2E_BASE_URL) and the custom domain that magic links point at.
+// Staging sits behind HTTP Basic Auth; E2E_BASIC_AUTH ("user:pass") is
+// unset for local runs. Sent as a static Authorization header rather
+// than httpCredentials: Playwright's auth interception stalls every
+// navigation against Cloud Run's HTTP/2 front end — even ungated ones —
+// while a plain header sails through. Applying it to every host is
+// deliberate: the suite hits both the run.app URL (E2E_BASE_URL) and
+// the custom domain that magic links point at.
 const basicAuth = process.env.E2E_BASIC_AUTH ?? "";
-const sep = basicAuth.indexOf(":");
-const httpCredentials =
-  sep > 0
-    ? { username: basicAuth.slice(0, sep), password: basicAuth.slice(sep + 1) }
-    : undefined;
+const extraHTTPHeaders = basicAuth.includes(":")
+  ? { Authorization: "Basic " + Buffer.from(basicAuth).toString("base64") }
+  : undefined;
 
 export default defineConfig({
   testDir: "./tests",
@@ -26,7 +27,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
     trace: "retain-on-failure",
-    httpCredentials,
+    extraHTTPHeaders,
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
