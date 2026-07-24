@@ -131,6 +131,28 @@ stays up, only AI features pause.
 3. Organic growth → raise `AI_DAILY_BUDGET_EUR` (env var, re-apply) and
    re-check the €100/mo budget math.
 
+## Brevo (production email)
+
+Live since 2026-07-24: pro sends via Brevo from `hello@mail.tryearful.com`
+(domain authenticated — brevo-code TXT, two DKIM CNAMEs, DMARC TXT, all
+committed as `bootstrap/variables.tf`'s `mail_dns_records` default).
+Staging never sends real email (boot invariant).
+
+- **Rotate the API key**: mint a new key in Brevo's dashboard, then
+  `pbpaste | gcloud secrets versions add BREVO_API_KEY --project earful-pro-<sfx> --data-file=-`
+  (clipboard in, never echoed). Cloud Run resolves `latest` at instance
+  start, so roll the revision to pick it up:
+  `gcloud run services update earful --project earful-pro-<sfx> --region europe-west4`
+  (or re-apply envs/pro). Destroy the old version afterwards.
+- **Webhook**: Brevo's transactional webhook posts bounce/spam events to
+  `https://app.tryearful.com/webhooks/email/<EMAIL_WEBHOOK_SECRET>`
+  (secret: `gcloud secrets versions access latest --secret EMAIL_WEBHOOK_SECRET --project earful-pro-<sfx>`).
+  Manage it via Brevo dashboard → Transactional → Settings → Webhooks,
+  or `GET/PUT /v3/webhooks`. Suppression flow below.
+- **Deliverability complaint**: check the message in Brevo's
+  Transactional → Logs, and verify DMARC still passes (send to a Gmail
+  mailbox, Show original → SPF/DKIM/DMARC all `pass`).
+
 ## ESP suppression check
 
 A recipient says invites never arrive:

@@ -109,16 +109,26 @@ BASE_URL and the uptime checks). Managed certs take 15 min–24 h.
 Rollback at any point = revert nameservers at Gandi (the old LiveDNS
 zone stays intact there).
 
-**9. Brevo** (production email):
+**9. Brevo** (production email — done 2026-07-24; sequence kept for
+re-runs against a NEW Brevo account):
 
 ```
 printf '%s' "$BREVO_API_KEY" | gcloud secrets versions add BREVO_API_KEY \
   --project earful-pro-<sfx> --data-file=-
 ```
 
-Add Brevo's DKIM/SPF/DMARC values for mail.tryearful.com to bootstrap's
-`mail_dns_records` var → apply bootstrap → re-apply pro with
-`-var email_sender=brevo` → configure Brevo's webhook to the
+The current account's domain records are **committed** as
+`mail_dns_records`' default in `bootstrap/variables.tf` (public DNS
+data; a tfvars-only copy would be deleted by a recreated tfvars). For a
+new account: `POST /v3/senders/domains {"name":"mail.tryearful.com"}`
+returns the replacement records (a brevo-code TXT, two DKIM CNAMEs
+under the subdomain, a DMARC TXT) — update the default, apply
+bootstrap, then `PUT /v3/senders/domains/mail.tryearful.com/authenticate`
+until verified and `POST /v3/senders` for hello@mail.tryearful.com.
+Re-apply pro (tfvars carry `email_sender = "brevo"`) → register the
+transactional webhook (`POST /v3/webhooks`, events
+hardBounce/spam/invalid/blocked/unsubscribed — subscription names are
+camelCase; the delivered payloads use snake_case slugs) at the
 `email_webhook_path` output → send a real message and check DMARC.
 
 **10. Drills** — see `docs/runbook.md`: DB-kill uptime alert, budget
@@ -152,6 +162,7 @@ custom_domain = "stg.tryearful.com"
 state_bucket   = "earful-tofu-state-<sfx>"
 lock_retention = true   # only ever set after the first restore drill (step 10)
 custom_domain  = "app.tryearful.com"
+email_sender   = "brevo" # since step 9; omitting it reverts pro to console
 ```
 
 ## Notes

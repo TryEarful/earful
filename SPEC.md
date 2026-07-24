@@ -2,7 +2,7 @@
 status: ready-for-agent
 source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0009
 pending: EU AI Act additions (companion doc) — separate pass
-implementation: "M0, M1 (staging + pipeline), M2, M3, M4 (T6 cloud half pending), M12 (private beta) complete; v0.1.0 live on production 2026-07-24, staging Basic-Auth-gated; see PLAN.md's Status section for per-ticket progress"
+implementation: "M0, M1 (staging + pipeline), M2, M3, M4 (incl. live Brevo), M12 (private beta) complete; v0.1.0 live on production 2026-07-24, staging Basic-Auth-gated; see PLAN.md's Status section for per-ticket progress"
 ---
 
 # Earful MVP — Specification
@@ -37,12 +37,13 @@ lands. As of 2026-07-24:
   double-submit dedupe (stories 42, 43, 68). Invited surveys work end to
   end (stories 44–49): import, drip-capped invites, personal one-shot
   links, suppressions via ESP webhook, with mailpit as the local inbox
-  (T3/T4 and T6's local half — DNS and live-Brevo verification belong to
-  the cloud milestone). The `e2e/` Playwright + axe suite closes T1: the
+  (T3/T4; T6 closed 2026-07-24 — mail.tryearful.com authenticated with
+  Brevo, production on the live sender, DMARC and the suppression
+  webhook verified against the real ESP). The `e2e/` Playwright + axe suite closes T1: the
   core loop in a real browser at three viewport widths, a
   JavaScript-disabled run, and axe-core accessibility gates that already
-  forced two real fixes (contrast, control labeling). **M4 is complete
-  locally**; only T6's DNS/live-ESP half waits for the cloud milestone.
+  forced two real fixes (contrast, control labeling). **M4 is complete**,
+  T6's live-ESP half included (2026-07-24).
 - **M6-T1/T2 (AI provider + quotas)** — the streaming `ai.Provider` seam
   is live with OpenAI-compatible (ollama/llamafile), whisper-cli,
   composite and scripted-fake implementations, verified against the dev
@@ -63,15 +64,17 @@ lands. As of 2026-07-24:
   deploy pipeline makes the **entire e2e suite the staging promotion
   gate** (story 72's deployed form), reading magic links back from Cloud
   Logging; production only ever receives the exact image digest staging
-  smoke-tested. Code is complete and validated; the operator applies,
-  DNS cutover, Brevo flip and drills (per deploy/opentofu/README.md and
-  docs/runbook.md) are what remains before the M1/M9 ACs flip to done.
+  smoke-tested. The operator sequence has since run to the end — applies,
+  drills, DNS cutover and the Brevo flip (2026-07-24) — leaving only
+  M9's open tickets (T3/T5/T7) on the launch path.
 
 - **Private beta decision (2026-07-24)** — the SaaS is invite-only until
-  launch and runs WITHOUT email infrastructure for now (Brevo postponed):
-  stories 77–78 (below) specify invite codes as both the signup gate and
-  the sign-in credential, with zero emails sent. PLAN.md M12 is the
-  ticket; it's next in the execution order and retires at launch.
+  launch: stories 77–78 (below) specify invite codes as both the signup
+  gate and the sign-in credential, with zero emails sent in the account
+  loop. Designed while Brevo was still postponed; live email (M4-T6)
+  arrived later the same day, which unblocks invited-survey sending but
+  changes nothing here — the code-gated account loop stays email-free
+  until launch. PLAN.md M12 is the ticket; it retires at launch.
 
 Everything else below is not yet implemented. Execution order in
 practice: M0 → M2 → M3 → M4 → M6-T1/T2 → **M1+M9 (cloud, in progress)**
@@ -201,10 +204,11 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### Private beta (temporary mode, decided 2026-07-24)
 
-The SaaS runs invite-only until launch, and — deliberately — without any
-email infrastructure: live Brevo setup is postponed, so the entire
-account loop must work with zero emails sent. Codes are the gate AND the
-credential. This whole section retires at public launch (M9-T5).
+The SaaS runs invite-only until launch, and the account loop —
+deliberately — works with zero emails sent: it was designed before any
+email infrastructure existed, and stays email-free even now that live
+Brevo (M4-T6, closed later the same day) can send. Codes are the gate
+AND the credential. This whole section retires at public launch (M9-T5).
 
 77. As the founder, I want account creation gated by one-shot secret invite codes from a list I control — minted by CLI or from an admin page only super admins can even see, labeled, revocable, and marked used the moment they create an account — so that only people I've invited can enter the private beta. [tested](internal/http/beta_test.go)
 78. As a private-beta user, I want to create my account with an invite code and a password, sign in with email+password from then on, and change my email later (re-proving my password), with no email ever sent, so that I can use Earful before the email infrastructure exists. [tested](internal/http/beta_test.go)
