@@ -126,6 +126,34 @@ test-fire, PITR clone restore, first export + restore from it, then and
 only then `-var lock_retention=true` (IRREVERSIBLE) and the
 owner-cannot-delete test.
 
+## Recreating the gitignored `*.tfvars`
+
+The three tfvars files exist only on the machine that runs tofu; losing
+them costs nothing but a lookup, since every value is recoverable from
+the cloud itself:
+
+```
+gcloud billing accounts list            # billing_account (ID column)
+gcloud organizations list               # org_id
+gcloud projects list --filter earful    # suffix = what follows earful-stg-/pro-
+```
+
+```
+# bootstrap/bootstrap.auto.tfvars
+billing_account = "<from billing accounts list>"
+suffix          = "<sfx>"
+org_id          = "<from organizations list>"
+
+# envs/stg/stg.auto.tfvars
+state_bucket  = "earful-tofu-state-<sfx>"
+custom_domain = "stg.tryearful.com"
+
+# envs/pro/pro.auto.tfvars
+state_bucket   = "earful-tofu-state-<sfx>"
+lock_retention = true   # only ever set after the first restore drill (step 10)
+custom_domain  = "app.tryearful.com"
+```
+
 ## Notes
 
 - `*.tfvars` are gitignored on purpose (billing account, suffix);
