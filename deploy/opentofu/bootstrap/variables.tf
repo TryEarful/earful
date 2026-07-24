@@ -59,9 +59,12 @@ variable "mail_dns_records" {
   }))
   default = [
     {
+      # Brevo's auth flow no longer prescribes SPF (aligned DKIM alone
+      # carries DMARC), but its envelope-from is this domain, so the
+      # include upgrades SPF none→pass as a second aligned path.
       name    = "mail"
       type    = "TXT"
-      rrdatas = ["\"brevo-code:aaf0cf4968fce229262c911f75f66d5f\""]
+      rrdatas = ["\"brevo-code:aaf0cf4968fce229262c911f75f66d5f\"", "\"v=spf1 include:spf.brevo.com ~all\""]
     },
     {
       # Brevo signs DKIM with d=mail.tryearful.com, so verifiers resolve
