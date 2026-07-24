@@ -1,0 +1,166 @@
+# Runbook (M9-T4)
+
+Operational procedures for Earful on Google Cloud. Written so a second
+person can execute each one. Infrastructure layout and the from-zero
+sequence live in `deploy/opentofu/README.md`; this file is for running
+the thing.
+
+Conventions: `<sfx>` is the project suffix; staging = `earful-stg-<sfx>`,
+production = `earful-pro-<sfx>`, region `europe-west4`. Alerts land at
+support@tryearful.com.
+
+## Deploy
+
+Normal path: merge to `main`. GitHub Actions builds the image, runs the
+migration job to completion, updates the staging service, then runs the
+full e2e suite against staging. Watch it: `gh run watch`.
+
+Promote to production: tag the commit that already passed on staging —
+
+```
+git tag v0.X.Y && git push origin v0.X.Y
+```
+
+The tag pipeline re-deploys staging, re-runs the smoke suite, then ships
+the **same image digest** to production (production never builds). If
+the smoke fails, production is untouched.
+
+Migrations are backward-compatible by policy: the schema lands before
+the new code, and the previous revision keeps serving during the swap —
+never ship a migration the currently-deployed code can't run on.
+
+## Rollback
+
+Cloud Run rollback is a redeploy of the previous digest:
+
+```
+gcloud artifacts docker images list europe-west4-docker.pkg.dev/earful-ops-<sfx>/earful/earful \
+  --include-tags --sort-by=~UPDATE_TIME | head   # find the previous digest
+gcloud run services update earful --image europe-west4-docker.pkg.dev/earful-ops-<sfx>/earful/earful@sha256:<PREVIOUS> \
+  --project earful-pro-<sfx> --region europe-west4
+```
+
+Migrations are roll-forward only (goose down is not wired); if a
+migration itself is the problem, write a corrective migration and ship
+it through staging.
+
+## Service down (uptime alert fired)
+
+1. `curl -sS https://app.tryearful.com/health` — 503 "db unreachable"
+   means Cloud SQL, anything else look at the service.
+2. Cloud SQL state: `gcloud sql instances describe earful --project earful-pro-<sfx> --format='value(state)'`
+   — if not RUNNABLE, check the Cloud SQL console for maintenance/incident;
+   `gcloud sql instances patch earful --activation-policy ALWAYS` restarts
+   a stopped instance.
+3. Service logs: `gcloud logging read 'resource.type="cloud_run_revision" severity>=ERROR' --project earful-pro-<sfx> --limit 50 --freshness 1h`
+4. If a deploy correlates: rollback (above).
+
+## Restore — PITR (fat-finger recovery, production)
+
+Point-in-time clone to a scratch instance (7-day WAL window):
+
+```
+gcloud sql instances clone earful earful-drill \
+  --point-in-time '2026-07-24T10:00:00Z' --project earful-pro-<sfx>
+```
+
+Verify via the auth proxy (`cloud-sql-proxy earful-pro-<sfx>:europe-west4:earful-drill`),
+`psql "host=127.0.0.1 user=earful dbname=earful"` (password: `DATABASE_URL`
+secret), sanity-query `users`/`surveys`/`responses` counts. To adopt the
+clone, repoint `DATABASE_URL` (new secret version with the clone's
+connection name + re-apply, or swap instance names). Delete the scratch
+when done: `gcloud sql instances delete earful-drill`.
+
+## Restore — immutable export (ransomware / project-loss recovery)
+
+Daily exports land in `gs://earful-backups-<sfx>-sql-exports/` (30-day
+locked window; ADR-0008). They survive an attacker with app-project
+admin, so they are the floor the product can always be rebuilt from:
+
+```
+gcloud sql instances create earful-restore --database-version=POSTGRES_16 \
+  --tier=db-g1-small --region=europe-west4 --project <any-project>
+# the target instance's service agent needs objectViewer on the bucket for the import:
+gcloud storage buckets add-iam-policy-binding gs://earful-backups-<sfx>-sql-exports \
+  --member serviceAccount:<restore instance service agent> --role roles/storage.objectViewer
+gcloud sql import sql earful-restore \
+  gs://earful-backups-<sfx>-sql-exports/earful-pro-<DATE>.sql.gz --database=earful
+```
+
+Note the asymmetry is intentional: the *export* path can only create
+objects; granting read for a restore is a deliberate, logged, human act.
+
+## Erasure request (GDPR)
+
+Until M8 ships the fast-path admin action: the requester's account
+delete (soft-delete) already revokes sessions and hides everything;
+hard deletion is the purge job's 30-day window. For a
+must-erase-now request, run the purge manually once M8 lands
+(`earful purge`); before M8, escalate — do not hand-delete rows.
+72-hour breach duty: if data exposure is suspected, email affected
+users + the supervisory authority within 72h of awareness; document
+timeline in an incident note in the repo.
+
+## AI breaker trip (alert: "AI budget breaker TRIPPED")
+
+The global daily € budget is spent; all AI endpoints refuse until the
+UTC day rolls. This is designed behavior under abuse — the product
+stays up, only AI features pause.
+
+1. Who spent it: `SELECT workspace_id, sum(tokens), sum(est_cost_eur) FROM ai_usage WHERE day = current_date GROUP BY 1 ORDER BY 3 DESC;`
+2. One hot workspace → likely abuse: consider suspending it.
+3. Organic growth → raise `AI_DAILY_BUDGET_EUR` (env var, re-apply) and
+   re-check the €100/mo budget math.
+
+## ESP suppression check
+
+A recipient says invites never arrive:
+
+1. `SELECT * FROM suppressions WHERE email = '<addr>';` — if present,
+   an earlier bounce/complaint suppressed them globally.
+2. Cross-check Brevo's dashboard (Transactional → Suppressions).
+3. Only unsuppress with the recipient's explicit say-so, both in Brevo
+   and locally (`DELETE FROM suppressions WHERE email = ...`).
+
+## Budget kill (€200 hard-cap alert fired)
+
+**The €200 "hard cap" is an ALERT, not an enforced ceiling.** GCP budgets
+only notify — they cannot stop spend. There is deliberately no automated
+kill wired up, so the cap is a human reacting to email and running the
+steps below. It will not stop a fast attack in real time; the real-time
+ceiling is elsewhere (`max_instances = 1` bounds compute, and the AI meter
+— once every AI call is gated through it — bounds AI spend per the
+`AIProviderCallsAreMetered` guardrail). If a true automatic stop is ever
+wanted, wire a budget → Pub/Sub → Cloud Function that scales the service
+to zero or unlinks billing; until then this is a manual procedure:
+
+1. Identify the burner: Billing → Reports, group by project/SKU.
+2. Stop compute fast: scale Cloud Run to zero
+   (`gcloud run services update earful --max-instances 0` in the hot
+   project) and/or stop Cloud SQL
+   (`gcloud sql instances patch earful --activation-policy NEVER`).
+3. Nuclear: unlink billing from the runaway project —
+   `gcloud billing projects unlink <project>` (breaks the environment;
+   backups project's locked bucket is unaffected).
+
+## Alert test-fire checklist (M9-T2 AC)
+
+| Alert | How to fire it | Fired ✓ |
+|---|---|---|
+| Uptime /healthz | `gcloud sql instances patch earful --activation-policy NEVER` (stg), wait ~5–10 min, then `ALWAYS` | ✓ 2026-07-24, both envs (stg drill + pro's real transient) |
+| 5xx rate | deploy a broken image to stg (`gcloud run services update earful --image <bad>`), curl it, roll back | pending (same channel proven by uptime drill) |
+| p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | pending |
+| SQL disk/CPU | temporarily lower thresholds, restore | pending |
+| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0` + any recorded usage row; the Error line fires the log metric | deferred — no AI endpoint exists to trip it until M5/M6-T3 |
+| AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | deferred with the breaker |
+| Budget €50/80/100/200 | Billing → Budgets → send test notification (thresholds themselves verified by `gcloud billing budgets describe`) | config verified 2026-07-24 (€100 @ 50/80/100% + €200 cap); email path proven live by the uptime alerts |
+
+## Backup-drill log
+
+Record each drill here (M9-T1/T6 ACs):
+
+| Date | Drill | Result |
+|---|---|---|
+| 2026-07-24 | PITR clone restore (pro → `earful-drill`, point-in-time −3 min) | PASS — clone RUNNABLE, schema intact (8 goose records, 18 tables, verified by psql), scratch deleted (needed `--no-deletion-protection` first: clones inherit it) |
+| 2026-07-24 | Export → restore → lock → owner-delete refusal | PASS — workflow wrote `earful-pro-2026-07-24.sql.gz` (dated name from Workflows); import into a scratch `restorecheck` DB restored all 18 tables; `lock_retention=true` applied; owner's `gcloud storage rm` refused with 403 `retentionPolicy` until 2026-08-23 |
+| 2026-07-24 | Kill-DB uptime alert (stg, `--activation-policy NEVER`, ~20 min) | PASS — /health 503, check_passed dropped to 0.0, alert email delivered to support@; bonus: pro's check independently alerted on transient DB latency during the PITR clone (channel proven twice) |

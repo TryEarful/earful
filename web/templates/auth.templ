@@ -1,0 +1,146 @@
+package templates
+
+// Login is the combined sign-in page. In beta mode (M12) it is an
+// email+password form with a pointer to invite-code signup — no email is
+// ever sent; otherwise it is the magic-link email form. Google appears
+// in both when OIDC is configured (self-hosters may run without it,
+// Appendix D). errMsg re-renders the form after a rejected submission;
+// notice carries post-redirect messages ("signed out").
+templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
+	@Layout("Sign in — Earful") {
+		<main>
+			<h1>Sign in</h1>
+			if notice != "" {
+				<p class="notice">{ notice }</p>
+			}
+			if betaMode {
+				<div class="card">
+					<form method="post" action="/login">
+						<label class="field">
+							<span>Email address</span>
+							<input type="email" name="email" required autocomplete="email" autofocus/>
+						</label>
+						<label class="field">
+							<span>Password</span>
+							<input type="password" name="password" required autocomplete="current-password"/>
+						</label>
+						if errMsg != "" {
+							<p class="error-text">{ errMsg }</p>
+						}
+						<button type="submit">Sign in</button>
+					</form>
+					<p class="muted">Earful is in private beta. Have an invite code? <a href="/signup">Create your account</a>.</p>
+				</div>
+			} else {
+				<div class="card">
+					<form method="post" action="/auth/magic/request">
+						<label class="field">
+							<span>Email address</span>
+							<input type="email" name="email" required autocomplete="email" autofocus/>
+						</label>
+						if errMsg != "" {
+							<p class="error-text">{ errMsg }</p>
+						}
+						<button type="submit">Email me a sign-in link</button>
+					</form>
+					<p class="muted">No password, no account setup — the link signs you in and creates your workspace on first use.</p>
+				</div>
+			}
+			if googleEnabled {
+				<div class="divider">or</div>
+				<a class="button secondary" href="/auth/google/start" rel="nofollow">Continue with Google</a>
+			}
+		</main>
+	}
+}
+
+// Signup is the invite-code account creation form (M12). The code is a
+// one-shot key: it creates exactly one account, gets marked used, and
+// the new user is signed in immediately — no confirmation email exists
+// to send.
+templ Signup(errMsg string) {
+	@Layout("Create account — Earful") {
+		<main>
+			<h1>Create your account</h1>
+			<div class="card">
+				<form method="post" action="/signup">
+					<label class="field">
+						<span>Invite code</span>
+						<input type="text" name="code" required autocomplete="off" placeholder="earful-xxxx-xxxx-xxxx" autofocus/>
+					</label>
+					<label class="field">
+						<span>Email address</span>
+						<input type="email" name="email" required autocomplete="email"/>
+					</label>
+					<label class="field">
+						<span>Password</span>
+						<input type="password" name="password" required autocomplete="new-password" minlength="8"/>
+					</label>
+					if errMsg != "" {
+						<p class="error-text">{ errMsg }</p>
+					}
+					<button type="submit">Create account</button>
+				</form>
+				<p class="muted">Earful is in private beta — an invite code creates exactly one account, and you're signed in immediately. Already have an account? <a href="/login">Sign in</a>.</p>
+			</div>
+		</main>
+	}
+}
+
+templ MagicSent(email string) {
+	@Layout("Check your email — Earful") {
+		<main>
+			<h1>Check your email</h1>
+			<p>If <strong>{ email }</strong> is a valid address, a sign-in link is on its way. It works once and expires in 15 minutes.</p>
+			<p class="muted">Nothing arriving? Check spam, or <a href="/login">request another link</a>.</p>
+		</main>
+	}
+}
+
+// MagicConfirm is the page behind the emailed link. Signing in requires
+// pressing the button (a POST): link-prefetching email scanners only ever
+// GET, so they cannot consume the single-use token.
+templ MagicConfirm(email string, token string) {
+	@Layout("Confirm sign-in — Earful") {
+		<main>
+			<h1>Confirm sign-in</h1>
+			<p>Sign in to Earful as <strong>{ email }</strong>?</p>
+			<form method="post" action="/auth/magic/verify">
+				<input type="hidden" name="token" value={ token }/>
+				<button type="submit">Sign in</button>
+			</form>
+			<p class="muted">Wasn't you? Just close this page — the link expires on its own.</p>
+		</main>
+	}
+}
+
+templ MagicInvalid(reason string) {
+	@Layout("Sign-in link problem — Earful") {
+		<main>
+			<h1>Sign-in link problem</h1>
+			<p>{ reason }</p>
+			<p><a class="button" href="/login">Back to sign-in</a></p>
+		</main>
+	}
+}
+
+templ ErrorPage(title string, msg string) {
+	@Layout(title + " — Earful") {
+		<main>
+			<h1>{ title }</h1>
+			<p>{ msg }</p>
+			<p><a href="/">Home</a></p>
+		</main>
+	}
+}
+
+templ Goodbye() {
+	@Layout("Account deleted — Earful") {
+		<main>
+			<h1>Your account is deleted</h1>
+			<p>Your account and workspace are now deactivated and scheduled for permanent deletion after 30 days. If this was a mistake, contact support within those 30 days to restore it.</p>
+			<p class="muted">You can create a fresh account with the same email at any time.</p>
+			<p><a href="/">Home</a></p>
+		</main>
+	}
+}

@@ -1,0 +1,350 @@
+package templates
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/web/static"
+)
+
+// RespondData is everything the respondent renderer needs. The same
+// template serves live surveys and creator previews (M3-T6): Preview
+// swaps the destination and banner, so what a creator reviews is
+// literally what a respondent gets.
+type RespondData struct {
+	SurveyID      string
+	Title         string
+	WorkspaceName string
+	IsAnonymous   bool
+	VersionID     string
+	Questions     []domain.Question
+	// Answers holds submitted values when re-rendering after a validation
+	// problem, so nobody retypes a long answer.
+	Answers map[string]domain.AnswerValue
+	// Errors is keyed by Question Identity.
+	Errors map[string]string
+	// ErrorList drives the summary at the top, which is what screen
+	// reader and keyboard users reach first.
+	ErrorList []domain.AnswerError
+	// Notice is an informational banner ("that was quick — review and
+	// resubmit"), distinct from validation errors.
+	Notice  string
+	Preview bool
+	// FormToken is the HMAC-signed render timestamp (antibot.FormTokens);
+	// Nonce identifies this render for double-click dedupe.
+	FormToken string
+	Nonce     string
+	// AlreadyAnswered shows the soft-dedupe note (story 43) when this
+	// browser has answered before.
+	AlreadyAnswered bool
+	// ParticipantToken/ParticipantEmail switch the form onto the personal
+	// invite link (M4-T3): the action posts back to /p/{token} and the
+	// disclosure names the invitee.
+	ParticipantToken string
+	ParticipantEmail string
+}
+
+// RespondLayout is a self-contained page shell for respondent pages. It
+// deliberately does not reuse the creator chrome: a respondent has no
+// account, no navigation, and nothing to sign out of. `noindex` keeps
+// surveys out of search results and LLM scrapes (M4-T5).
+templ RespondLayout(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="robots" content="noindex, nofollow, noarchive"/>
+			<title>{ title }</title>
+			<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
+		</head>
+		<body class="respond">
+			{ children... }
+		</body>
+	</html>
+}
+
+templ Respond(data RespondData) {
+	@RespondLayout(data.Title) {
+		<main>
+			if data.Preview {
+				<div class="preview-banner" role="status">
+					<strong>Preview</strong> — this is exactly what respondents see. Nothing you enter here is recorded.
+				</div>
+			}
+			<h1>{ data.Title }</h1>
+			@respondentDisclosure(data)
+			if data.AlreadyAnswered && !data.Preview {
+				<p class="notice">It looks like you've answered this survey before. You can answer again — each submission is recorded separately.</p>
+			}
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			if len(data.ErrorList) > 0 {
+				<div class="error-summary" role="alert" tabindex="-1" id="error-summary">
+					<h2>Please check { pluralAnswers(len(data.ErrorList)) }</h2>
+					<ul>
+						for _, e := range data.ErrorList {
+							<li><a href={ templ.SafeURL("#q-" + e.IdentityID) }>Question { strconv.Itoa(e.Position) }: { e.Message }</a></li>
+						}
+					</ul>
+				</div>
+			}
+			<form
+				method="post"
+				action={ templ.SafeURL(respondAction(data)) }
+				class="respond-form"
+				data-question-count={ strconv.Itoa(len(data.Questions)) }
+				if !data.Preview && data.ParticipantToken == "" {
+					data-challenge-url={ "/s/" + data.SurveyID + "/challenge" }
+				}
+				novalidate
+			>
+				<input type="hidden" name="version_id" value={ data.VersionID }/>
+				<input type="hidden" name="started_at" value="" data-started-at/>
+				<input type="hidden" name="form_ts" value={ data.FormToken }/>
+				<input type="hidden" name="form_nonce" value={ data.Nonce }/>
+				<input type="hidden" name="altcha" value="" data-altcha/>
+				// Honeypot: a real respondent never sees this, so anything
+				// filling it in is automated (M4-T5).
+				<div class="hp" aria-hidden="true">
+					<label>
+						Leave this field empty
+						<input type="text" name="website" tabindex="-1" autocomplete="off"/>
+					</label>
+				</div>
+				<ol class="respond-questions">
+					for i, q := range data.Questions {
+						@respondQuestion(q, i, len(data.Questions), data)
+					}
+				</ol>
+				<div class="respond-actions">
+					<button type="submit" class="respond-submit">Submit answers</button>
+				</div>
+			</form>
+		</main>
+		<script src={ static.AssetURL("js/respond.js") } defer></script>
+	}
+}
+
+func respondAction(data RespondData) string {
+	switch {
+	case data.Preview:
+		return "/surveys/" + data.SurveyID + "/preview"
+	case data.ParticipantToken != "":
+		return "/p/" + data.ParticipantToken
+	default:
+		return "/s/" + data.SurveyID
+	}
+}
+
+func pluralAnswers(n int) string {
+	if n == 1 {
+		return "one answer"
+	}
+	return fmt.Sprintf("%d answers", n)
+}
+
+// respondentDisclosure states who is running the survey and what happens
+// to the answers, before anyone answers anything (SPEC.md story 63; the
+// fuller M8-T5 treatment builds on this).
+templ respondentDisclosure(data RespondData) {
+	<div class="disclosure">
+		<p>
+			This survey is run by <strong>{ data.WorkspaceName }</strong>.
+			if data.IsAnonymous {
+				It's anonymous: your answers are stored with no email address, no IP address and no device details — nothing that identifies you.
+			} else if data.ParticipantEmail != "" {
+				You're answering as <strong>{ data.ParticipantEmail }</strong>, and { data.WorkspaceName } will see that these answers are yours. Your personal link works for one submission.
+			} else {
+				Your answers are linked to your invitation, so { data.WorkspaceName } can see who answered what.
+			}
+		</p>
+	</div>
+}
+
+// RespondAlreadySubmitted is the one-per-participant page (M4-T3).
+templ RespondAlreadySubmitted(title string) {
+	@RespondLayout("Already answered") {
+		<main>
+			<h1>You've already answered</h1>
+			if title != "" {
+				<p class="muted">{ title }</p>
+			}
+			<p>Your personal link works for one submission, and yours has been recorded. There's nothing more to do — thank you!</p>
+		</main>
+	}
+}
+
+templ respondQuestion(q domain.Question, index int, total int, data RespondData) {
+	<li
+		class="respond-question"
+		id={ "q-" + q.IdentityID }
+		data-index={ strconv.Itoa(index) }
+	>
+		<fieldset>
+			<legend>
+				<span class="q-position">Question { strconv.Itoa(index + 1) } of { strconv.Itoa(total) }</span>
+				<span class="q-text" id={ "qt-" + q.IdentityID }>{ q.Text }</span>
+				if q.Required {
+					<span class="q-required">(required)</span>
+				} else {
+					<span class="q-optional">(optional)</span>
+				}
+			</legend>
+			if data.Errors[q.IdentityID] != "" {
+				<p class="error-text" id={ "err-" + q.IdentityID }>{ data.Errors[q.IdentityID] }</p>
+			}
+			@answerControl(q, data)
+		</fieldset>
+	</li>
+}
+
+templ answerControl(q domain.Question, data RespondData) {
+	switch q.Type {
+		case domain.LongText:
+			<textarea
+				name={ "q_" + q.IdentityID }
+				rows="5"
+				aria-labelledby={ "qt-" + q.IdentityID }
+				if data.Errors[q.IdentityID] != "" {
+					aria-describedby={ "err-" + q.IdentityID }
+				}
+			>{ data.Answers[q.IdentityID].Text }</textarea>
+		case domain.ShortText:
+			<input
+				type="text"
+				name={ "q_" + q.IdentityID }
+				value={ data.Answers[q.IdentityID].Text }
+				aria-labelledby={ "qt-" + q.IdentityID }
+				if data.Errors[q.IdentityID] != "" {
+					aria-describedby={ "err-" + q.IdentityID }
+				}
+			/>
+		case domain.SingleChoice:
+			<div class="options">
+				for _, opt := range q.Options {
+					<label class="option">
+						if data.Answers[q.IdentityID].Choice == opt {
+							<input type="radio" name={ "q_" + q.IdentityID } value={ opt } checked/>
+						} else {
+							<input type="radio" name={ "q_" + q.IdentityID } value={ opt }/>
+						}
+						<span>{ opt }</span>
+					</label>
+				}
+			</div>
+		case domain.MultipleChoice:
+			<div class="options">
+				for _, opt := range q.Options {
+					<label class="option">
+						if hasChoice(data.Answers[q.IdentityID].Choices, opt) {
+							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt } checked/>
+						} else {
+							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt }/>
+						}
+						<span>{ opt }</span>
+					</label>
+				}
+			</div>
+		case domain.Dropdown:
+			<select name={ "q_" + q.IdentityID } aria-labelledby={ "qt-" + q.IdentityID }>
+				<option value="">Choose an option</option>
+				for _, opt := range q.Options {
+					if data.Answers[q.IdentityID].Choice == opt {
+						<option value={ opt } selected>{ opt }</option>
+					} else {
+						<option value={ opt }>{ opt }</option>
+					}
+				}
+			</select>
+		case domain.RatingScale, domain.NPS:
+			<div class="scale">
+				for _, point := range q.ScalePoints() {
+					<label class="scale-point">
+						if numberEquals(data.Answers[q.IdentityID].Number, point) {
+							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) } checked/>
+						} else {
+							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) }/>
+						}
+						<span>{ strconv.Itoa(point) }</span>
+					</label>
+				}
+			</div>
+			if q.Type == domain.NPS {
+				<p class="scale-hint"><span>0 — not at all likely</span><span>10 — extremely likely</span></p>
+			}
+		case domain.YesNo:
+			<div class="options">
+				<label class="option">
+					if boolEquals(data.Answers[q.IdentityID].Bool, true) {
+						<input type="radio" name={ "q_" + q.IdentityID } value="yes" checked/>
+					} else {
+						<input type="radio" name={ "q_" + q.IdentityID } value="yes"/>
+					}
+					<span>Yes</span>
+				</label>
+				<label class="option">
+					if boolEquals(data.Answers[q.IdentityID].Bool, false) {
+						<input type="radio" name={ "q_" + q.IdentityID } value="no" checked/>
+					} else {
+						<input type="radio" name={ "q_" + q.IdentityID } value="no"/>
+					}
+					<span>No</span>
+				</label>
+			</div>
+	}
+}
+
+func hasChoice(choices []string, want string) bool {
+	for _, c := range choices {
+		if c == want {
+			return true
+		}
+	}
+	return false
+}
+
+func numberEquals(got *int, want int) bool { return got != nil && *got == want }
+
+func boolEquals(got *bool, want bool) bool { return got != nil && *got == want }
+
+// RespondThanks closes the loop for the respondent.
+templ RespondThanks(title string, anonymous bool) {
+	@RespondLayout("Thank you — " + title) {
+		<main>
+			<h1>Thank you</h1>
+			<p>Your answers have been recorded.</p>
+			if anonymous {
+				<p class="muted">This was an anonymous survey: your answers were stored without anything that identifies you.</p>
+			}
+		</main>
+	}
+}
+
+// RespondPreviewSubmitted is what a creator sees if they submit the
+// preview form. Nothing is written; the page says so plainly.
+templ RespondPreviewSubmitted(surveyID string, title string) {
+	@RespondLayout("Preview — " + title) {
+		<main>
+			<h1>Nothing was submitted</h1>
+			<p>This was a preview, so no response was recorded.</p>
+			<p><a class="button" href={ templ.SafeURL("/surveys/" + surveyID) }>Back to the survey</a></p>
+		</main>
+	}
+}
+
+// RespondUnavailable covers every reason a survey cannot be answered
+// right now, in the respondent's language rather than ours.
+templ RespondUnavailable(title string, heading string, message string) {
+	@RespondLayout(heading) {
+		<main>
+			<h1>{ heading }</h1>
+			if title != "" {
+				<p class="muted">{ title }</p>
+			}
+			<p>{ message }</p>
+		</main>
+	}
+}

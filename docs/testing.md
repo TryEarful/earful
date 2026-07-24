@@ -1,0 +1,313 @@
+# Testing
+
+This documents the test harness convention established in M0 and reused,
+unchanged, by every later milestone. See SPEC.md's "Testing Decisions" for
+the rationale; this file is the how-to.
+
+## One seam: the application edge
+
+Tests boot the real server in-process (real routing, real middleware, real
+templ rendering) against a real Postgres, and drive it exactly as a browser
+would: plain HTTP requests, assertions on status codes and rendered HTML.
+No test reaches into internal packages.
+
+`internal/http.NewHandler(cfg, logger, deps)` builds that real handler.
+`internal/apptest` wraps it for tests:
+
+```go
+app := apptest.New(t, apptest.Options{})   // real handler, real Postgres,
+                                           // fake clock + captured outbox
+client := app.Login(t, apptest.UniqueEmail("alice"))  // full magic-link flow
+resp, _ := client.Get(app.Server.URL + "/dashboard")
+```
+
+`apptest.App` exposes the three things a test needs to steer the world:
+
+| Field / method | Use |
+|---|---|
+| `app.Server` | the running `httptest.Server` |
+| `app.Emails` | captured outbox (`All`, `To`, `Last`) — read links like an inbox |
+| `app.Clock` | injectable clock: `Advance` past token expiry, close dates, purge windows |
+| `app.Login(t, addr)` | drives the real sign-in flow, returns a cookie-jar client |
+| `app.CSRFToken(t, client)` | reads the session's CSRF token off a rendered form |
+| `apptest.Options{Env: "staging"}` | production-shaped instance (asserts `Secure` cookies) |
+| `apptest.Options{GoogleIssuer: ...}` | enables Google login against `internal/oidctest` |
+
+**Fakes stop at the world's edge.** `internal/oidctest` is a real OIDC
+issuer (discovery, JWKS, RS256-signed ID tokens) so everything on our side
+of the boundary — go-oidc discovery, code exchange, full token
+verification — runs for real; only Google itself is replaced.
+
+**Assert on what a reader sees.** templ escapes HTML entities, so
+`sam's workspace` renders as `sam&#39;s workspace`. Test assertions go
+through the `bodyContains` helper, which unescapes first.
+
+## Why docker-compose Postgres, not testcontainers-go
+
+Tests get their database from `TEST_DATABASE_URL` (falling back to
+`DATABASE_URL`), pointed at the same Postgres service `deploy/compose.yaml`
+already defines for local dev. We deliberately did not add
+testcontainers-go or any other Go test-dependency for this:
+
+1. Minimal-dependency Go (PLAN.md Appendix F) — zero extra Go modules, no
+   Docker SDK client, no ryuk sidecar.
+2. `docker compose` is already the self-hosting contract (PLAN.md
+   Appendix D) — reusing the same Postgres service for dev and tests means
+   there's exactly one way to run Postgres locally, not two.
+3. CI needs nothing extra: `make check`/`make test` run the identical
+   `docker compose -f deploy/compose.yaml up -d --wait postgres` a
+   developer runs locally — no separate provisioning path to keep in sync.
+
+`internal/apptest.NewDB` **skips** (not fails) the calling test when no
+database is reachable, so plain `go test ./...` stays usable without
+Docker for fast unit-test iteration. `make test`, `make check`, and CI
+always provision Postgres first, so the integration tests genuinely run
+there.
+
+## Test isolation: unique data per test (decided at M2-T1)
+
+Tests share one database and **each test creates its own users and
+workspaces** with unique email addresses (`apptest.UniqueEmail`). Nothing
+is truncated between tests and no test runs inside a rolled-back
+transaction.
+
+Why this rather than transaction-per-test or truncate-between-tests:
+
+1. **The seam forbids it.** Tests drive the app over HTTP, so the handler
+   owns its own connections from the pool — a test cannot hand it a
+   transaction to run inside without reaching past the application edge.
+2. **Workspace scoping is already the isolation boundary.** Every
+   product query is workspace-scoped (ADR-0002). Tests using distinct
+   workspaces are isolated by the same mechanism that isolates real
+   customers — and a test that fails because another test's data leaked
+   into it is reporting a real authorization bug, which is exactly the
+   signal we want.
+3. **Tests stay parallel.** `t.Parallel()` everywhere; truncation would
+   force serialization.
+
+Consequence to respect when writing tests: **never assert on global
+counts** ("there are 3 users"), only on data the test itself created.
+Aggregate-shaped assertions (M7 stats, M10 insights) must be scoped to a
+survey or workspace the test owns.
+
+The one exception is `earful purge` (M8-T2), which is global by nature:
+its tests seed a dedicated workspace, time-travel the fake clock, and
+assert on that workspace's rows only.
+
+### Private-beta helpers (M12)
+
+`apptest.Options{BetaMode: true}` boots an instance with the invite-code
+gate on. Three helpers cover the flows: `MintBetaCode` (DB-direct, the
+CLI's path), `SignupWithCode`, and `LoginWithPassword` — the last two
+assert they land on /dashboard, mirroring `Login`. The magic-link
+helpers are untouched: every pre-M12 test runs with the gate off, which
+is itself the regression proof that `BETA_MODE=false` changes nothing.
+The beta suite lives in [beta_test.go](../internal/http/beta_test.go);
+its one non-obvious member is the concurrent same-code race, which
+pins the used_at-IS-NULL consume as a database fact rather than a
+code-path hope.
+
+## Running tests
+
+```sh
+make test    # brings up compose Postgres, runs go test ./...
+make check   # tools + generate + vet + staticcheck + govulncheck + templ/sqlc drift + test
+```
+
+> **Use `make test`, not bare `go test ./...`.** When no database is
+> reachable, `apptest.NewDB` **skips** rather than fails — deliberate, so
+> unit-test iteration works without Docker, but it means a bare `go test`
+> can print `ok` for every package while every database-backed test
+> quietly skipped. `make test` starts Postgres first, so `ok` means what
+> you think it means. If you do run `go test` directly, check the skip
+> count: `go test ./... -v | grep -c -- '--- SKIP'` should be 0.
+
+## The e2e suite (`make e2e-smoke`)
+
+`e2e/` holds a Playwright + axe-core suite that drives the real compose
+stack in a real browser — the paged respondent flow, the invisible ALTCHA
+solve, magic links read from mailpit's API. Every test runs at phone,
+tablet and desktop widths; one test runs with JavaScript disabled; axe
+scans gate the respondent, login and dashboard pages. It runs in CI (the
+`e2e` job) and — since the cloud milestone — doubles as the **staging
+promotion gate**: `.github/workflows/deploy.yml` runs the whole suite
+against every staging deploy with `E2E_BASE_URL` pointed at the service.
+Staging has no mailpit (Cloud Run can't receive SMTP), so there the suite
+sets `E2E_LINK_SOURCE=logging` and fetches magic links from Cloud Logging
+instead — staging deliberately runs the console email sender, whose
+stdout lines land as log entries (`E2E_LOG_PROJECT` +
+`E2E_GCP_ACCESS_TOKEN` configure the fetch; the deploy workflow supplies
+both). Locally nothing changes: mailpit stays the default source.
+
+```sh
+make e2e-smoke   # compose up + npm install + playwright test
+```
+
+Two things worth knowing:
+
+- The suite signs in **once** (a setup project saves storage state).
+  Signing in per test would trip the app's own per-IP magic-link rate
+  limit — that's the product working, not a test bug. The make target
+  restarts the app first so repeated local runs start with fresh
+  in-memory limiters.
+- The axe gate is strict (`violations == []`). It has already caught real
+  defects: muted-text contrast at 4.34:1 and answer controls that relied
+  on the fieldset legend instead of a programmatic label.
+
+## Front-end verification (Playwright MCP)
+
+Respondent- and creator-facing pages are also verified interactively via
+the Playwright MCP tools (`mcp__playwright__*`) during implementation, and
+the steps are documented here so anyone can re-run them by hand:
+
+**M0 placeholder page** (re-run after any change to `web/templates/home.templ`
+or `internal/http/routes.go`):
+
+1. `docker compose up --build -d`
+2. `mcp__playwright__browser_navigate` to `http://localhost:8080/`
+3. `mcp__playwright__browser_snapshot` — confirm the accessibility tree
+   shows an `h1` "Earful" and the tagline paragraph
+4. `mcp__playwright__browser_console_messages` (level: error) — confirm no
+   unexpected errors (a `favicon.ico` 404 is expected and harmless; no
+   favicon is in scope for M0)
+5. `docker compose down`
+
+**M2 sign-in and account flow** (re-run after any change to
+`web/templates/auth.templ`, `web/templates/app.templ`, or the auth
+handlers):
+
+1. `docker compose up --build -d`, then wait for `docker compose ps` to
+   report the app **healthy** (the container probes its own `/healthz`)
+2. Navigate to `http://localhost:8080/login` — snapshot should show the
+   email form, and **no** "Continue with Google" unless
+   `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set
+3. Fill the email field, submit → "Check your email" page
+4. Read the link from the app's stdout (the console sender is the local
+   inbox):
+   ```sh
+   docker compose logs app | grep -o 'http://localhost:8080/auth/magic/verify?token=[A-Za-z0-9_-]*' | tail -1
+   ```
+5. Navigate to that link → **"Confirm sign-in"** page. The GET must not
+   sign you in; only the button does (email-scanner protection)
+6. Click **Sign in** → `/dashboard`, heading shows `<local-part>'s workspace`
+7. Click **Account** → identity and 30-day deletion copy; click **Delete my
+   account** → `/goodbye`
+8. Navigate to `/dashboard` → redirected to `/login` (session revoked)
+9. Confirm the log never leaked the credential:
+   ```sh
+   docker compose logs app | grep 'magic/verify'   # token must read %5BREDACTED%5D
+   ```
+10. `docker compose down`
+
+**M3 survey building** (re-run after changes to `web/templates/surveys.templ`
+or the survey handlers):
+
+1. `docker compose up --build -d`; sign in via the M2 steps above
+2. **Create**: `/surveys/new` → title, leave "Anonymous survey" selected →
+   *Create survey*. Lands on the editor with a **Draft** chip
+3. **Add questions**: add a *Long text* question, then a *Single choice*
+   one with three options (one per line). Both appear in the list
+4. **Publish**: *Publish version 1* → notice reads "Published version 1",
+   the chip flips to **Open**, and the version list shows version 1 with
+   your address and the time
+5. **Reword keeps identity** (the ADR-0001 contract, visible in the DOM):
+   note the identity in a question form's action URL, expand the first
+   question, change its wording, *Save question*. The identity in the
+   action URL is unchanged, the page still says "live version 1", and the
+   publish button now offers version 2
+6. **Audit log**: *View audit log* → each draft save and the publish, newest
+   first, each attributed
+7. **Lifecycle**: *Close survey* → chip reads **Closed**; *Reopen survey* →
+   back to **Open**
+8. **Phone width**: resize to 390×844 and confirm no horizontal scroll:
+   ```js
+   document.documentElement.scrollWidth <= window.innerWidth
+   ```
+   (this check caught a header overflow that affected every signed-in page)
+9. Console errors: none expected beyond the `favicon.ico` 404
+10. `docker compose down`
+
+## Fakes at the true external boundaries
+
+Live as of M2:
+
+- **email `Sender`** — `internal/email.Capture` records messages; tests
+  read sign-in links out of it exactly as a user reads their inbox.
+  `email.Console` is the dev-time equivalent (prints to stdout).
+- **clock** — `internal/clock.Fake`; `Advance` drives magic-link expiry
+  today, close dates / purge windows / insight watermarks later.
+- **OIDC provider** — `internal/oidctest`, a real issuer with fake
+  identities (see above).
+
+- **AI `Provider`** — `internal/ai.Fake`, scripted streaming outputs per
+  operation, recording every request (including the transcription
+  language hint M11-T3 asserts on).
+
+The AI integration test (`TestOpenAICompat_Integration`) is opt-in: point
+it at a real OpenAI-compatible backend with
+
+```sh
+# ollama
+AI_TEST_BASE_URL=http://localhost:11434/v1 AI_TEST_MODEL=<model> go test ./internal/ai/ -run Integration -v
+# llamafile (start it with --server --port 8081)
+AI_TEST_BASE_URL=http://localhost:8081/v1 AI_TEST_MODEL=<gguf name> go test ./internal/ai/ -run Integration -v
+```
+
+Global-sum caution (learned twice now): tests that assert on sums spanning
+the shared database (ai_usage costs today; founder metrics later) must use
+per-**run**-unique data — a fixed magic date accumulates rows across
+repeated runs — and assert deltas from a baseline, not absolutes.
+
+## Test coverage log
+
+SPEC.md's numbered user stories carry an inline `[tested](...)` link once
+implemented and covered, e.g.:
+
+```
+1. As a survey creator, I want to log in with my Google account... [tested](internal/http/auth_google_test.go)
+```
+
+M0 shipped no numbered story (it is pure infrastructure); M2 covers
+stories 1–5, M3 covers 6–16 (17 and 18 wait for M4's renderer).
+
+Infrastructure and behaviour covered so far:
+
+- Application-edge harness — `internal/apptest/apptest.go`, exercised by
+  `internal/http/home_test.go`
+- Config loading — `internal/config/config_test.go`
+- Log scrubbing — `internal/logging/scrub_test.go`
+- Magic-link login: happy path, scanner-prefetch safety, replay, expiry,
+  per-email and per-IP rate limits, enumeration safety —
+  `internal/http/auth_magic_test.go`
+- Google OIDC login: happy path, state mismatch, subject backfill,
+  unverified email, hidden-when-unconfigured —
+  `internal/http/auth_google_test.go`
+- Sessions and CSRF: fixation, server-side logout, cookie attributes per
+  environment, CSRF matrix, cross-site rejection —
+  `internal/http/session_test.go`
+- Workspaces: auto-creation, stability across logins, per-user isolation,
+  auth-required routes — `internal/http/workspace_test.go`
+- Account deletion and health: soft-delete + session revocation,
+  re-registration, `/healthz` — `internal/http/account_test.go`
+- Token entropy/hashing — `internal/auth/tokens_test.go`; rate limiter —
+  `internal/antibot/ratelimit_test.go`; clock — `internal/clock/clock_test.go`;
+  email senders — `internal/email/email_test.go`
+- Survey building end to end: creation, all eight question types,
+  validation messages, publish, republish refusal, identity preservation
+  across rewording, reorder/delete, close/reopen, Close Date via the fake
+  clock, audit log, soft delete, and cross-workspace denial on every
+  survey route — `internal/http/surveys_test.go`
+- Database-enforced invariants (see the seam exception below) —
+  `internal/store/immutability_test.go`
+- Survey/question domain rules — `internal/domain/survey_test.go`
+
+### The one exception to the HTTP-only seam
+
+`internal/store/immutability_test.go` issues SQL directly. That is
+deliberate and narrow: ADR-0001's immutability and ADR-0003's fixed
+anonymity are enforced by database triggers precisely so they hold against
+paths the application does not offer — a future admin script, a migration,
+a psql session. A test restricted to our own routes could only show that
+no handler performs the mutation, not that the mutation is impossible,
+which is the actual guarantee. Every other test stays at the application
+edge.

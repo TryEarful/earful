@@ -1,0 +1,98 @@
+name: earful # pinned so `docker compose up` (root include shim) and
+             # `docker compose -f deploy/compose.yaml ...` (Makefile
+             # targets) always resolve to the same project/stack --
+             # otherwise Compose derives the project name from the
+             # invoking directory and the two paths silently create two
+             # competing stacks that fight over the same host ports.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: earful
+      POSTGRES_PASSWORD: earful
+      POSTGRES_DB: earful
+    ports:
+      - "5433:5432" # host 5433 avoids colliding with a locally-installed Postgres on 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U earful -d earful"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["migrate"]
+    environment:
+      DATABASE_URL: postgres://earful:earful@postgres:5432/earful?sslmode=disable
+      APP_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["serve"]
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      APP_ENV: development
+      DATABASE_URL: postgres://earful:earful@postgres:5432/earful?sslmode=disable
+      LOG_LEVEL: info
+      # Absolute origin used to build sign-in links in emails. Must match
+      # how you reach the app from your browser, or the emailed link
+      # points somewhere unreachable.
+      BASE_URL: http://localhost:8080
+      # Emails go to mailpit: open http://localhost:8025 to read them —
+      # magic links, invites, everything. Switch to "console" to print
+      # them to the app's stdout instead.
+      EMAIL_SENDER: smtp
+      SMTP_ADDR: mailpit:1025
+      EMAIL_FROM: earful@localhost
+      # Google login is optional; set both to enable it (see README).
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+    healthcheck:
+      # The runtime image is distroless (no shell, no curl), so the binary
+      # probes its own /healthz -- which also pings the database.
+      test: ["CMD", "/earful", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+
+  # Local mail catcher: SMTP on 1025, web inbox on http://localhost:8025.
+  # This is the "local email catcher" of the self-hosting story (Appendix
+  # E), and the e2e suite reads magic links from its HTTP API.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+volumes:
+  pgdata:
+  ollama-data:

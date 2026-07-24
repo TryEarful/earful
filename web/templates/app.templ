@@ -1,0 +1,112 @@
+package templates
+
+import "fmt"
+
+// AuthedHeader is the shared chrome for signed-in pages: brand, nav, and
+// the sign-out button (a real POST form carrying the CSRF token — no
+// state-changing GETs anywhere).
+templ AuthedHeader(email string, csrf string) {
+	<header class="site-header">
+		<a class="brand" href="/dashboard">Earful</a>
+		<nav>
+			<a href="/dashboard">Dashboard</a>
+			<a href="/account">Account</a>
+			<span class="muted">{ email }</span>
+			<form method="post" action="/logout">
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				<button type="submit" class="button-link">Sign out</button>
+			</form>
+		</nav>
+	</header>
+}
+
+templ Dashboard(email string, workspaceName string, csrf string, data SurveyListData) {
+	@Layout("Dashboard — Earful") {
+		@AuthedHeader(email, csrf)
+		<main>
+			<div class="title-row">
+				<h1>{ workspaceName }</h1>
+				<a class="button" href="/surveys/new">New survey</a>
+			</div>
+			if len(data.Surveys) == 0 {
+				<div class="card">
+					<h2>No surveys yet</h2>
+					<p>Create your first survey, add questions, and publish it when it's ready.</p>
+					<p><a class="button" href="/surveys/new">New survey</a></p>
+				</div>
+			} else {
+				<ul class="survey-list">
+					for _, s := range data.Surveys {
+						<li class="card">
+							<div class="title-row">
+								<a class="survey-title" href={ templ.SafeURL("/surveys/" + s.ID) }>{ s.Title }</a>
+								@StatusChip(s.Status)
+							</div>
+							<p class="muted">
+								if s.IsAnonymous {
+									Anonymous
+								} else {
+									Invited
+								}
+								if s.Published() {
+									· version { fmt.Sprint(s.LatestVersion) } · { fmt.Sprint(s.QuestionCount) } questions
+								} else {
+									· not published yet
+								}
+								if s.CloseAtLabel != "" {
+									· closes { s.CloseAtLabel }
+								}
+							</p>
+						</li>
+					}
+				</ul>
+			}
+		</main>
+	}
+}
+
+templ Account(email string, workspaceName string, csrf string, isAdmin bool, emailNotice string, emailErr string) {
+	@Layout("Account — Earful") {
+		@AuthedHeader(email, csrf)
+		<main>
+			<h1>Account</h1>
+			<div class="card">
+				<p>Signed in as <strong>{ email }</strong></p>
+				<p>Workspace: <strong>{ workspaceName }</strong></p>
+				if isAdmin {
+					<p><a href="/admin/beta-codes">Private beta admin</a></p>
+				}
+			</div>
+			<div class="card">
+				<h2>Change email</h2>
+				if emailNotice != "" {
+					<p class="notice">{ emailNotice }</p>
+				}
+				<form method="post" action="/account/email">
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<label class="field">
+						<span>New email address</span>
+						<input type="email" name="email" required autocomplete="email"/>
+					</label>
+					<label class="field">
+						<span>Current password</span>
+						<input type="password" name="password" required autocomplete="current-password"/>
+					</label>
+					if emailErr != "" {
+						<p class="error-text">{ emailErr }</p>
+					}
+					<button type="submit">Change email</button>
+				</form>
+				<p class="muted">The change applies immediately — you'll sign in with the new address from now on.</p>
+			</div>
+			<div class="card">
+				<h2>Delete account</h2>
+				<p>Deleting your account deactivates it immediately and permanently erases your data after 30 days. Within those 30 days, support can restore it.</p>
+				<form method="post" action="/account/delete">
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<button type="submit" class="danger">Delete my account</button>
+				</form>
+			</div>
+		</main>
+	}
+}

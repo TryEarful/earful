@@ -1,0 +1,174 @@
+# M1-T3 / M9-T1: main → staging automatically; tags (v*) → the SAME
+# image digest on to production, but only after a fresh staging deploy
+# passes the full e2e smoke suite. Auth is keyless (Workload Identity
+# Federation, pool restricted to this repository; production's service
+# account is additionally assumable only from tag builds).
+#
+# Repository variables this expects (set once — see
+# deploy/opentofu/README.md step 7):
+#   GCP_REGION          europe-west4
+#   GCP_AR              europe-west4-docker.pkg.dev/earful-ops-<sfx>/earful
+#   GCP_WIF_PROVIDER    projects/<ops#>/locations/global/workloadIdentityPools/github/providers/github-oidc
+#   GCP_STG_PROJECT     earful-stg-<sfx>
+#   GCP_STG_DEPLOY_SA   github-deploy@earful-stg-<sfx>.iam.gserviceaccount.com
+#   GCP_PRO_PROJECT     earful-pro-<sfx>
+#   GCP_PRO_DEPLOY_SA   github-deploy@earful-pro-<sfx>.iam.gserviceaccount.com
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.digest.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_STG_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      # A tag usually points at a commit main already built — reuse that
+      # image so pro promotes bytes that actually ran on staging.
+      - id: existing
+        run: |
+          if gcloud artifacts docker images describe "${{ vars.GCP_AR }}/earful:${{ github.sha }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.existing.outputs.exists == 'false'
+        run: |
+          docker build -t "${{ vars.GCP_AR }}/earful:${{ github.sha }}" .
+          docker push "${{ vars.GCP_AR }}/earful:${{ github.sha }}"
+
+      - id: digest
+        run: |
+          digest=$(gcloud artifacts docker images describe \
+            "${{ vars.GCP_AR }}/earful:${{ github.sha }}" \
+            --format='value(image_summary.digest)')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  deploy-stg:
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_STG_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Migrations run — and must succeed — before any traffic sees the
+      # new code. Concurrent executions are safe (pg advisory lock in
+      # store.Migrate), but order still matters: schema first, code second.
+      - run: |
+          gcloud run jobs update earful-migrate \
+            --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
+            --project "${{ vars.GCP_STG_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+          gcloud run jobs execute earful-migrate --wait \
+            --project "${{ vars.GCP_STG_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+
+      - run: |
+          gcloud run services update earful \
+            --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
+            --project "${{ vars.GCP_STG_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+
+      - id: url
+        run: |
+          url=$(gcloud run services describe earful \
+            --project "${{ vars.GCP_STG_PROJECT }}" --region "${{ vars.GCP_REGION }}" \
+            --format='value(status.url)')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+  # The full e2e suite (create → share → answer → results, three
+  # viewports, axe) against the staging deployment IS the promotion gate.
+  # Staging emails go out via the console sender, so the suite reads
+  # magic links back from Cloud Logging with this job's own WIF token.
+  smoke-stg:
+    runs-on: ubuntu-latest
+    needs: deploy-stg
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_STG_DEPLOY_SA }}
+          token_format: access_token
+
+      - run: npm ci
+        working-directory: e2e
+
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+
+      - run: npx playwright test
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: ${{ needs.deploy-stg.outputs.url }}
+          E2E_LINK_SOURCE: logging
+          E2E_LOG_PROJECT: ${{ vars.GCP_STG_PROJECT }}
+          E2E_GCP_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+
+  deploy-pro:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs: [build, smoke-stg]
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_PRO_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: |
+          gcloud run jobs update earful-migrate \
+            --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
+            --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+          gcloud run jobs execute earful-migrate --wait \
+            --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+
+      - run: |
+          gcloud run services update earful \
+            --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
+            --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+
+      # Shallow on purpose: the full e2e suite would write junk surveys
+      # into the production database; the digest it exercised on staging
+      # is byte-identical to what just shipped.
+      - run: |
+          url=$(gcloud run services describe earful \
+            --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}" \
+            --format='value(status.url)')
+          curl -fsS "$url/health"   # /healthz is GFE-reserved on run.app URLs
+          code=$(curl -fsS -o /dev/null -w '%{http_code}' "$url/login")
+          test "$code" = "200"

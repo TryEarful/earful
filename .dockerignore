@@ -1,0 +1,8 @@
+.git
+.claude
+docs
+deploy
+bin
+*.md
+.env
+.env.example

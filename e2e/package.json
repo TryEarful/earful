@@ -1,0 +1,12 @@
+{
+  "name": "earful-e2e",
+  "private": true,
+  "description": "End-to-end smoke and accessibility suite (M4-T1). Runs against the compose stack; see docs/testing.md.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.49.0"
+  }
+}

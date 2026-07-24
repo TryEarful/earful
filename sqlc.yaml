@@ -1,0 +1,52 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "db/queries"
+    schema: "db/migrations"
+    gen:
+      go:
+        package: "db"
+        out: "internal/store/db"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+        overrides:
+          # google/uuid instead of pgtype.UUID: pgx v5 encodes/scans any
+          # type whose underlying type is [16]byte natively.
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              import: "github.com/google/uuid"
+              type: "NullUUID"
+          # time.Time / *time.Time instead of pgtype.Timestamptz.
+          - db_type: "timestamptz"
+            go_type: "time.Time"
+          - db_type: "timestamptz"
+            nullable: true
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+          # *string instead of pgtype.Text for nullable text columns.
+          - db_type: "text"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true
+          # *int32 instead of pgtype.Int4 for nullable integers. Note the
+          # pg_catalog prefix: unlike text/uuid/timestamptz, the bare
+          # "int4" spelling is not matched here.
+          - db_type: "pg_catalog.int4"
+            nullable: true
+            go_type:
+              type: "int32"
+              pointer: true
+          # float64 instead of pgtype.Numeric: ai_usage.est_cost is an
+          # estimate, not money that must survive exact arithmetic.
+          - db_type: "pg_catalog.numeric"
+            go_type: "float64"
+          # time.Time instead of pgtype.Date for accounting days.
+          - db_type: "date"
+            go_type: "time.Time"
