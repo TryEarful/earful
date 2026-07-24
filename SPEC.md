@@ -2,7 +2,7 @@
 status: ready-for-agent
 source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0009
 pending: EU AI Act additions (companion doc) — separate pass
-implementation: "M0 (Foundations), M2 (Auth & workspaces), M3-T1…T5 (Survey building) complete, 2026-07-20; see PLAN.md's Status section for per-ticket progress"
+implementation: "M0, M1 (staging + pipeline), M2, M3, M4 (T6 cloud half pending), M12 (private beta) complete; v0.1.0 live on production 2026-07-24, staging Basic-Auth-gated; see PLAN.md's Status section for per-ticket progress"
 ---
 
 # Earful MVP — Specification
