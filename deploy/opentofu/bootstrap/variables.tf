@@ -50,12 +50,35 @@ variable "create_budgets" {
 }
 
 variable "mail_dns_records" {
-  description = "Brevo sending-domain records for mail.tryearful.com (SPF/DKIM/DMARC), pasted from Brevo's domain-authentication screen. Empty until the Brevo step."
+  description = "Brevo sending-domain records for mail.tryearful.com (verification code, DKIM, DMARC), from Brevo's domain-authentication API. Committed as the default — they are public DNS data, and a tfvars-only copy would be silently dropped (records deleted) if the gitignored tfvars were ever recreated from the README procedure."
   type = list(object({
     name    = string # relative, e.g. "mail" or "brevo._domainkey.mail"
     type    = string # TXT, CNAME, ...
     ttl     = optional(number, 300)
     rrdatas = list(string)
   }))
-  default = []
+  default = [
+    {
+      name    = "mail"
+      type    = "TXT"
+      rrdatas = ["\"brevo-code:aaf0cf4968fce229262c911f75f66d5f\""]
+    },
+    {
+      # Brevo signs DKIM with d=mail.tryearful.com, so verifiers resolve
+      # <selector>._domainkey under the subdomain — not the apex.
+      name    = "brevo1._domainkey.mail"
+      type    = "CNAME"
+      rrdatas = ["b1.mail-tryearful-com.dkim.brevo.com."]
+    },
+    {
+      name    = "brevo2._domainkey.mail"
+      type    = "CNAME"
+      rrdatas = ["b2.mail-tryearful-com.dkim.brevo.com."]
+    },
+    {
+      name    = "_dmarc.mail"
+      type    = "TXT"
+      rrdatas = ["\"v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com\""]
+    },
+  ]
 }
