@@ -28,6 +28,7 @@ func TestLoad_Defaults(t *testing.T) {
 
 func TestLoad_Overrides(t *testing.T) {
 	t.Setenv("APP_ENV", "staging")
+	t.Setenv("STAGING_BASIC_AUTH", "user:pass") // staging refuses to boot without it
 	t.Setenv("PORT", "9090")
 	t.Setenv("DATABASE_URL", "postgres://localhost/earful")
 	t.Setenv("LOG_LEVEL", "debug")
@@ -142,6 +143,45 @@ func TestSecureCookies_OnlyDevelopmentIsExempt(t *testing.T) {
 	}
 }
 
+// TestLoad_StagingRequiresBasicAuth: staging is a test bench walled off
+// behind HTTP Basic Auth — a boot-time invariant like the console-only
+// email sender, so a missing credential can never silently publish it.
+func TestLoad_StagingRequiresBasicAuth(t *testing.T) {
+	t.Run("missing on staging", func(t *testing.T) {
+		t.Setenv("APP_ENV", "staging")
+		if _, err := config.Load(); err == nil {
+			t.Fatal("Load() accepted APP_ENV=staging without STAGING_BASIC_AUTH")
+		}
+	})
+
+	for _, malformed := range []string{"nocolon", ":pass", "user:"} {
+		t.Run("malformed "+malformed, func(t *testing.T) {
+			t.Setenv("APP_ENV", "staging")
+			t.Setenv("STAGING_BASIC_AUTH", malformed)
+			if _, err := config.Load(); err == nil {
+				t.Fatalf("Load() accepted STAGING_BASIC_AUTH=%q", malformed)
+			}
+		})
+	}
+
+	t.Run("optional outside staging", func(t *testing.T) {
+		t.Setenv("APP_ENV", "development")
+		if _, err := config.Load(); err != nil {
+			t.Fatalf("Load() rejected development without STAGING_BASIC_AUTH: %v", err)
+		}
+	})
+}
+
+func TestBasicAuthCredentials_SplitsAtFirstColon(t *testing.T) {
+	user, pass, ok := (config.Config{StagingBasicAuth: "earful:pa:ss"}).BasicAuthCredentials()
+	if !ok || user != "earful" || pass != "pa:ss" {
+		t.Errorf("BasicAuthCredentials() = %q, %q, %v; want earful, pa:ss, true", user, pass, ok)
+	}
+	if _, _, ok := (config.Config{}).BasicAuthCredentials(); ok {
+		t.Error("BasicAuthCredentials() ok = true for empty value")
+	}
+}
+
 func TestRequireDatabaseURL(t *testing.T) {
 	empty := config.Config{}
 	if err := empty.RequireDatabaseURL(); err == nil {
@@ -171,6 +211,7 @@ func TestLoad_StagingNeverSendsEmail(t *testing.T) {
 
 	t.Run("console allowed", func(t *testing.T) {
 		t.Setenv("APP_ENV", "staging")
+		t.Setenv("STAGING_BASIC_AUTH", "user:pass")
 		t.Setenv("EMAIL_SENDER", "console")
 		if _, err := config.Load(); err != nil {
 			t.Fatalf("Load() rejected staging+console: %v", err)

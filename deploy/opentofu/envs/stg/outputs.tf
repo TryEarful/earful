@@ -11,6 +11,12 @@ output "base_url" {
   value       = local.base_url
 }
 
+output "staging_basic_auth" {
+  description = "user:pass for the staging-wide Basic Auth wall; also the value of the STG_BASIC_AUTH GitHub secret."
+  value       = "earful:${random_password.basic_auth.result}"
+  sensitive   = true
+}
+
 output "migrate_command" {
   value = "gcloud run jobs execute ${module.app.migrate_job_name} --project ${local.project} --region ${local.region} --wait"
 }

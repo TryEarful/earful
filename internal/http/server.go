@@ -140,10 +140,13 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	// browser mutations before any handler runs (stdlib Sec-Fetch-Site /
 	// Origin check) — the baseline CSRF wall; authenticated mutations
 	// additionally require the per-session synchronizer token
-	// (requireCSRF).
+	// (requireCSRF). BasicAuthGate (staging only) sits inside
+	// SecurityHeaders so its 401 challenges are logged and carry the
+	// security headers, and outside the mux so nothing serves ungated.
 	var cop http.CrossOriginProtection
 	var h http.Handler = cop.Handler(mux)
 	h = limitBody(h)
+	h = BasicAuthGate(cfg)(h)
 	h = SecurityHeaders(cfg)(h)
 	h = RequestLogger(logger)(h)
 	h = Recover(logger)(h)

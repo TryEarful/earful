@@ -13,6 +13,10 @@
 #   GCP_STG_DEPLOY_SA   github-deploy@earful-stg-<sfx>.iam.gserviceaccount.com
 #   GCP_PRO_PROJECT     earful-pro-<sfx>
 #   GCP_PRO_DEPLOY_SA   github-deploy@earful-pro-<sfx>.iam.gserviceaccount.com
+#
+# Repository secret:
+#   STG_BASIC_AUTH      user:pass of staging's Basic Auth wall
+#                       (= `tofu output -raw staging_basic_auth` in envs/stg)
 
 name: Deploy
 
@@ -134,6 +138,7 @@ jobs:
         working-directory: e2e
         env:
           E2E_BASE_URL: ${{ needs.deploy-stg.outputs.url }}
+          E2E_BASIC_AUTH: ${{ secrets.STG_BASIC_AUTH }} # staging's Basic Auth wall
           E2E_LINK_SOURCE: logging
           E2E_LOG_PROJECT: ${{ vars.GCP_STG_PROJECT }}
           E2E_GCP_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}

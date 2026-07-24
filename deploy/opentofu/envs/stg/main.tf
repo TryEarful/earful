@@ -103,6 +103,17 @@ module "cloudsql" {
   # Disposable data: no PITR, no deletion protection (that's pro).
 }
 
+# Staging is a test bench, not a public site: the app walls every route
+# (probes excepted) behind HTTP Basic Auth and refuses to boot without
+# the credential. Generated so one apply provisions it — a shell secret
+# with no version would brick revision startup. Read it back with
+# `tofu output -raw staging_basic_auth`; the same value feeds the
+# STG_BASIC_AUTH GitHub secret so the smoke suite can get through.
+resource "random_password" "basic_auth" {
+  length  = 24
+  special = false
+}
+
 module "secrets" {
   source = "../../modules/secrets"
 
@@ -110,7 +121,8 @@ module "secrets" {
   accessor_sa_email = google_service_account.runtime.email
 
   generated = {
-    DATABASE_URL = module.cloudsql.database_url
+    DATABASE_URL       = module.cloudsql.database_url
+    STAGING_BASIC_AUTH = "earful:${random_password.basic_auth.result}"
   }
 }
 
@@ -154,7 +166,8 @@ module "app" {
   }
 
   secret_env = {
-    DATABASE_URL = module.secrets.secret_ids["DATABASE_URL"]
+    DATABASE_URL       = module.secrets.secret_ids["DATABASE_URL"]
+    STAGING_BASIC_AUTH = module.secrets.secret_ids["STAGING_BASIC_AUTH"]
   }
 
   depends_on = [

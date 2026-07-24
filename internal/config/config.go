@@ -81,6 +81,11 @@ type Config struct {
 	// invite code, login is email+password, and no account-creating path
 	// works without a code — all with zero emails sent. Retires at launch.
 	BetaMode bool
+	// StagingBasicAuth ("user:pass") walls the whole deployment behind an
+	// HTTP Basic Auth challenge — staging is a test bench, not a public
+	// site. Required on staging and only active there; /healthz and
+	// /health stay open for probes (see BasicAuthGate).
+	StagingBasicAuth string
 }
 
 // GoogleLoginEnabled reports whether Google OIDC is configured.
@@ -92,6 +97,17 @@ func (c Config) GoogleLoginEnabled() bool {
 // Only local development over plain http is exempt.
 func (c Config) SecureCookies() bool {
 	return c.Env != EnvDevelopment
+}
+
+// BasicAuthCredentials splits StagingBasicAuth at its first colon, so
+// passwords containing colons survive. ok is false when unset or when
+// either part is empty.
+func (c Config) BasicAuthCredentials() (user, pass string, ok bool) {
+	user, pass, ok = strings.Cut(c.StagingBasicAuth, ":")
+	if !ok || user == "" || pass == "" {
+		return "", "", false
+	}
+	return user, pass, true
 }
 
 const (
@@ -124,6 +140,7 @@ func Load() (Config, error) {
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleIssuer:       getEnv("GOOGLE_OIDC_ISSUER", "https://accounts.google.com"),
 		BetaMode:           getEnv("BETA_MODE", "false") == "true",
+		StagingBasicAuth:   getEnv("STAGING_BASIC_AUTH", ""),
 	}
 
 	port, err := strconv.Atoi(getEnv("PORT", "8080"))
@@ -185,6 +202,15 @@ func (c Config) validate() error {
 	// convention.
 	if c.Env == EnvStaging && c.EmailSender != "console" {
 		return fmt.Errorf("config: APP_ENV=staging must use EMAIL_SENDER=console (staging never sends real email; got %q)", c.EmailSender)
+	}
+	// Staging is a test bench, not a public site: every route except the
+	// probes sits behind HTTP Basic Auth (BasicAuthGate). Enforced at
+	// boot so a missing credential can never silently publish staging.
+	if c.Env == EnvStaging && c.StagingBasicAuth == "" {
+		return fmt.Errorf("config: APP_ENV=staging requires STAGING_BASIC_AUTH (user:pass)")
+	}
+	if _, _, ok := c.BasicAuthCredentials(); c.StagingBasicAuth != "" && !ok {
+		return fmt.Errorf("config: STAGING_BASIC_AUTH must be user:pass with both parts non-empty")
 	}
 	switch c.AIProvider {
 	case "none":
