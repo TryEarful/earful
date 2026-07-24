@@ -100,11 +100,17 @@ jobs:
             --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
             --project "${{ vars.GCP_STG_PROJECT }}" --region "${{ vars.GCP_REGION }}"
 
+      # The smoke suite must drive the host the app itself links to
+      # (BASE_URL): magic links land there, and session cookies are
+      # per-host, so navigating any other origin (like the run.app URL
+      # once a custom domain exists) logs in on one host and browses
+      # another. Read it from the deployed service so the two can never
+      # diverge.
       - id: url
         run: |
           url=$(gcloud run services describe earful \
             --project "${{ vars.GCP_STG_PROJECT }}" --region "${{ vars.GCP_REGION }}" \
-            --format='value(status.url)')
+            --format=json | jq -r '.spec.template.spec.containers[0].env[] | select(.name == "BASE_URL").value')
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
   # The full e2e suite (create → share → answer → results, three
