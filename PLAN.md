@@ -18,13 +18,13 @@ M0 → M2 → M3 (T1–T5) → M4 (+M3-T6) → M6-T1/T2 → M1 (done) + M9 (in p
 |---|---|---|
 | M0 — Foundations | [x] done | 5/5 |
 | M1 — Walking skeleton on staging | [x] done | 5/5 · T3 proven live 2026-07-24: main→stg→smoke green, v0.1.0 promoted to pro by digest |
-| M2 — Auth & workspaces | [x] done | 4/5 · T5 `[~]` by design (its purge half is M8-T2) |
+| M2 — Auth & workspaces | [x] done | 5/5 · T5 completed by M8-T2's purge |
 | M3 — Survey building | [x] done | 6/6 |
 | M4 — Answering (anonymous + invited) | [x] done | 7/7 · T6 closed 2026-07-24: live Brevo on pro, domain authenticated, both ACs verified |
 | M5 — Voice (transcript-only) | [x] done | 4/4 |
 | M6 — AI question generation | [x] done | 3/3 · T1 completed by the Vertex implementation (live check pending credentials) |
 | M7 — Results & export | [x] done | 4/4 |
-| M8 — Data lifecycle & trust | [ ] not started | 0/5 |
+| M8 — Data lifecycle & trust | [x] done | 5/5 |
 | M9 — Production launch | [~] in progress | T1/T6 `[x]` (T1 closed by v0.1.0's deploy-on-tag); T2/T4 drilled in part; T3/T5/T7 open |
 | M10 — Cross-respondent insights | [ ] not started | 0/2 |
 | M11 — Localization & translation | [ ] not started | 0/3 |
@@ -148,7 +148,8 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
   _Note (2026-07-20): the emailed GET only renders a confirmation page; the POST consumes the token, so link-prefetching email scanners cannot burn it. Replay is refused by the database (`UPDATE ... WHERE used_at IS NULL`), not by a code path. Limits: 5/hour/email (database-backed, restart-proof) and 10/hour/IP (in-memory). Console sender until M4-T6._
 - [x] **M2-T4 Personal workspace auto-creation.** Goal: first login creates workspace + sole membership; all queries workspace-scoped. AC: authorization tests prove cross-workspace access impossible. Deps: M2-T2
   _Note (2026-07-20): user + workspace + membership are created in one transaction on first login. The AC's authorization suite is only half-satisfiable here — with no surveys yet, the tests assert that each user's dashboard shows their own workspace and never another's. Resource-level denial lands with M3-T1, where surveys give cross-workspace access something to attempt._
-- [~] **M2-T5 Account deletion (user-level).** Goal: user can delete account → soft-delete + purge pipeline. AC: deletion marks rows; purge removes after window. Deps: M2-T4, M8-T2
+- [x] **M2-T5 Account deletion (user-level).** Goal: user can delete account → soft-delete + purge pipeline. AC: deletion marks rows; purge removes after window. Deps: M2-T4, M8-T2
+  _Note (2026-07-25): closed by M8-T2 — the purge job now hard-deletes an account, its workspaces and its surveys 30 days after deletion, which the purge tests prove by time-travelling the clock._
   _Note (2026-07-20): the soft-delete half is done — deletion stamps `deleted_at` on user and workspaces, revokes every session, and shows a goodbye page; the same address can register afresh immediately (partial unique indexes cover live rows only). The AC's second half (purge removes after the window) necessarily waits for M8-T2, as the ticket's own dependency states. Closes with M8._
 
 ### M3 — Survey building
@@ -218,11 +219,16 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 ### M8 — Data lifecycle & trust
 
-- [ ] **M8-T1 Soft delete.** Goal: surveys/responses/workspaces delete → `deleted_at`; excluded everywhere; restorable by support until purge. AC: soft-deleted invisible in app + exports. Deps: M3-T5
-- [ ] **M8-T2 Purge cron.** Goal: `earful purge` hard-deletes soft-deleted >30 days, expires magic links, trims abuse_log + draft-revision retention; idempotent; dry-run flag. Deployed as Cloud Scheduler → Cloud Run job (same binary). AC: manual local run + scheduled stg run both verified; purge logged (counts only). Deps: M8-T1
-- [ ] **M8-T3 Erasure fast-path.** Goal: admin/support action "purge now" for GDPR erasure requests (skip the 30-day wait); participant lookup by email. AC: erasure completes < 24h from request; documented in runbook. Deps: M8-T2
-- [ ] **M8-T4 Trust page content.** Goal: /trust on homepage: processor list, no-recordings promise, EU hosting, export/leave-anytime, AGPL. AC: copy reviewed against Appendix B; homepage "keep every recording" line replaced with "your voice is never stored". Deps: Appendix B
-- [ ] **M8-T5 Respondent-facing disclosure.** Goal: survey landing shows controller (workspace name), anonymity status, voice processing note, link to privacy notice. AC: shown for both survey kinds; consent moment before first mic use. Deps: M4-T1
+- [x] **M8-T1 Soft delete.** Goal: surveys/responses/workspaces delete → `deleted_at`; excluded everywhere; restorable by support until purge. AC: soft-deleted invisible in app + exports. Deps: M3-T5
+  _Note (2026-07-25): responses were the missing half and they arrive with a home — the results page's "All responses" table (story 58's tabular view), where deleting is per response because a response is what a person submitted. Every read path already filtered `deleted_at IS NULL`, so results, stats, CSV and the workspace export all stop counting it at once. `answers` deliberately has no `deleted_at`: an answer lives and dies with its response._
+- [x] **M8-T2 Purge cron.** Goal: `earful purge` hard-deletes soft-deleted >30 days, expires magic links, trims abuse_log + draft-revision retention; idempotent; dry-run flag. Deployed as Cloud Scheduler → Cloud Run job (same binary). AC: manual local run + scheduled stg run both verified; purge logged (counts only). Deps: M8-T1
+  _Note (2026-07-25): one transaction, children before parents, using the `earful.purging` GUC the 00003 triggers have been waiting for since M3 — the immutability triggers accept DELETE only while it is set, and it is transaction-local. `--dry-run` runs the identical statements and rolls back, so its numbers are the real ones rather than a second implementation of "what would be deleted". Logs carry counts only; a purge log naming the people it erased would be its own retention problem. Each draft always keeps its newest revision, however old. Deployment deviates on one point: the scheduled job is **production only** (staging's data is disposable and one fewer scheduled job is one fewer thing to watch), at 04:07 UTC, after the 03:17 export so a backup exists of what is about to go. Testing needed its own answer too: purge is global, so it cannot share a database with tests that are still using theirs — `apptest.NewIsolatedDB` gives the purge suite its own, and those tests run serially. The scheduled run is code; the first real execution needs an apply._
+- [x] **M8-T3 Erasure fast-path.** Goal: admin/support action "purge now" for GDPR erasure requests (skip the 30-day wait); participant lookup by email. AC: erasure completes < 24h from request; documented in runbook. Deps: M8-T2
+  _Note (2026-07-25): `/admin/erasure`, 404 to everyone but a super admin, in two steps: look up an address and see exactly what would go, then confirm. It handles both kinds of subject — an account holder, and someone merely invited to another workspace's survey, whose answers are also personal data. Erasing a participant leaves the creator's survey intact (tested). The page states plainly that anonymous responses cannot be found or erased *because they contain nothing personal*, which is the honest answer to give a requester rather than a gap to apologise for. Runbook procedure rewritten around the 24-hour deadline._
+- [x] **M8-T4 Trust page content.** Goal: /trust on homepage: processor list, no-recordings promise, EU hosting, export/leave-anytime, AGPL. AC: copy reviewed against Appendix B; homepage "keep every recording" line replaced with "your voice is never stored". Deps: Appendix B
+  _Note (2026-07-25): built as `/trust` **in the application** rather than only on the marketing site, for two reasons: a self-hoster gets it with the software, and a respondent following the link from a survey should land on the trust page of the instance that actually holds their answer. The processor table is generated from the running configuration, so an instance that sends no email through Brevo does not list Brevo and a local instance lists nobody — claiming a processor you do not use is as misleading as omitting one you do. The caveats are on the page, not buried: the CLOUD Act residual risk, and erasure being fully effective within 30 days rather than instantly because backups are immutable by design. The homepage copy fix is still the other repo's, and still outstanding._
+- [x] **M8-T5 Respondent-facing disclosure.** Goal: survey landing shows controller (workspace name), anonymity status, voice processing note, link to privacy notice. AC: shown for both survey kinds; consent moment before first mic use. Deps: M4-T1
+  _Note (2026-07-25): the disclosure now names the workspace as the party who decides what happens to the answers, states the anonymity position for both survey kinds, adds the voice sentence **only where voice is actually on offer**, and links to /trust. The consent moment shipped with M5-T3 and is axe-scanned in the browser suite._
 
 ### M9 — Production launch
 

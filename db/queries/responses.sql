@@ -34,3 +34,9 @@ WHERE p.token_hash = $1 AND p.deleted_at IS NULL;
 
 -- name: MarkParticipantSubmitted :exec
 UPDATE participants SET submitted_at = $2 WHERE id = $1;
+
+-- name: SoftDeleteResponse :execrows
+-- M8-T1: a creator can remove a response; support can restore it until
+-- the purge job hard-deletes it 30 days later.
+UPDATE responses SET deleted_at = $3
+WHERE id = $1 AND survey_id = $2 AND deleted_at IS NULL;

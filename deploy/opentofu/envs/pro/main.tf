@@ -138,6 +138,14 @@ resource "google_org_policy_policy" "allow_public_iam" {
   }
 }
 
+# The identity Cloud Scheduler uses to start the nightly purge. It can
+# start that one job and do nothing else.
+resource "google_service_account" "purge_scheduler" {
+  project      = local.project
+  account_id   = "earful-purge-scheduler"
+  display_name = "Starts the nightly retention purge (M8-T2)"
+}
+
 module "app" {
   source = "../../modules/run-service"
 
@@ -146,6 +154,12 @@ module "app" {
   image                 = local.seed_image
   service_account_email = google_service_account.runtime.email
   sql_connection_name   = module.cloudsql.connection_name
+
+  # M8-T2: retention runs nightly on production, as the same binary the
+  # service runs. Staging leaves it off — its data is disposable, and one
+  # fewer scheduled job is one fewer thing to watch.
+  enable_purge                    = true
+  scheduler_service_account_email = google_service_account.purge_scheduler.email
 
   env = merge(
     {

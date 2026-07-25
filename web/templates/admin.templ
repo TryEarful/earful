@@ -1,5 +1,7 @@
 package templates
 
+import "fmt"
+
 // M12: the super-admin surface — invite-code minting/revocation and
 // out-of-band password resets. Reachable only through requireSuperAdmin
 // (non-admins get a 404, and the link only renders on admins' account
@@ -98,6 +100,82 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 					</div>
 				}
 			</div>
+		</main>
+	}
+}
+
+// AdminErasure is the GDPR fast-path (M8-T3): look up a subject, see
+// exactly what would go, then confirm. Support-only, like everything
+// else under /admin — a non-admin gets a 404 from the route, so this
+// page does not exist as far as they can tell.
+templ AdminErasure(email string, csrf string, data ErasureData) {
+	@Layout("Erasure — Earful") {
+		@AuthedHeader(email, csrf)
+		<main>
+			<h1>Erase a person's data</h1>
+			<p class="muted">
+				For a GDPR erasure request. This skips the 30-day window: what it removes is gone
+				immediately and cannot be restored.
+			</p>
+
+			if data.Done {
+				<div class="card">
+					<p class="notice">Erasure complete — { fmt.Sprint(data.ErasedRow) } rows removed.</p>
+					<p class="muted">
+						Record the request and this completion in your own log; Earful deliberately keeps
+						no record naming the person erased.
+					</p>
+				</div>
+			}
+
+			<div class="card">
+				<h2>Find the subject</h2>
+				<form method="get" action="/admin/erasure">
+					<label class="field">
+						<span>Email address</span>
+						<input type="email" name="email" required autocomplete="off" value={ data.Subject.Email }/>
+					</label>
+					<button type="submit" class="secondary">Look up</button>
+				</form>
+			</div>
+
+			if data.Searched {
+				<div class="card">
+					<h2>What would be erased</h2>
+					if !data.Subject.Found {
+						<p>Nothing found for <strong>{ data.Subject.Email }</strong>.</p>
+					} else {
+						<ul>
+							if data.Subject.HasAccount {
+								<li>Their account, and every session and sign-in token it has</li>
+							}
+							if data.Subject.Workspaces > 0 {
+								<li>{ fmt.Sprint(data.Subject.Workspaces) } workspace(s), with { fmt.Sprint(data.Subject.Surveys) } survey(s) and every response to them</li>
+							}
+							if data.Subject.ParticipantIn > 0 {
+								<li>
+									Their invitations to { fmt.Sprint(data.Subject.ParticipantIn) } survey(s) run by others,
+									and the { fmt.Sprint(data.Subject.Responses) } response(s) they submitted there
+								</li>
+							}
+							if data.Subject.Suppressed {
+								<li>Their entry on the email suppression list</li>
+							}
+						</ul>
+						<form method="post" action="/admin/erasure">
+							<input type="hidden" name="_csrf" value={ csrf }/>
+							<input type="hidden" name="email" value={ data.Subject.Email }/>
+							<button type="submit" class="danger">Erase this data now</button>
+						</form>
+					}
+					<p class="muted">
+						Anonymous responses are not listed and cannot be: they carry no email, no IP and no
+						device details, so there is no way to tell which are theirs — and nothing personal in
+						them to erase. That is the anonymity promise working as intended, and it is worth
+						saying so in your reply to the request.
+					</p>
+				</div>
+			}
 		</main>
 	}
 }

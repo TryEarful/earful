@@ -229,3 +229,19 @@ func isUniqueViolation(err error) bool {
 	}
 	return false
 }
+
+// SoftDeleteResponse hides a response from results, stats and every
+// export, and starts its 30-day clock (M8-T1). Nothing is erased here:
+// support can restore it until `earful purge` reaches it.
+func (s *Surveys) SoftDeleteResponse(ctx context.Context, surveyID, responseID uuid.UUID, now time.Time) error {
+	rows, err := s.q.SoftDeleteResponse(ctx, db.SoftDeleteResponseParams{
+		ID: responseID, SurveyID: surveyID, DeletedAt: &now,
+	})
+	if err != nil {
+		return fmt.Errorf("store: soft delete response: %w", err)
+	}
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

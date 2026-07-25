@@ -1,11 +1,14 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/TryEarful/earful/internal/audience"
 	"github.com/TryEarful/earful/internal/domain"
@@ -34,12 +37,19 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "load survey stats", err)
 		return
 	}
+	notice := ""
+	if r.URL.Query().Get("notice") == "response_deleted" {
+		notice = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
+	}
 	render(w, r, http.StatusOK, templates.SurveyResults(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyResultsData{
 			Survey:        viewSurvey(survey, s.clock.Now()),
 			ResponseCount: len(results.Responses),
 			Questions:     viewQuestionResults(results),
 			Stats:         viewSurveyStats(stats, results),
+			Notice:        notice,
+			TableHeaders:  tableHeaders(results),
+			Table:         viewResponseTable(results),
 		}))
 }
 
@@ -224,6 +234,59 @@ func toCountViews(labels []string, counts map[string]int, total int) []templates
 		})
 	}
 	return out
+}
+
+// tableHeaders and viewResponseTable are story 58's tabular view: the
+// same shape as the CSV, so what a creator reads on screen and what they
+// download agree.
+func tableHeaders(results store.Results) []string {
+	headers := []string{"Submitted", "Version"}
+	for _, question := range results.Questions {
+		headers = append(headers, question.Text)
+	}
+	return headers
+}
+
+func viewResponseTable(results store.Results) []templates.ResponseRowView {
+	out := make([]templates.ResponseRowView, 0, len(results.Responses))
+	for _, response := range results.Responses {
+		row := templates.ResponseRowView{
+			ID:           response.ID.String(),
+			SubmittedAt:  response.SubmittedAt.Format(dateTimeLayout),
+			VersionLabel: "v" + strconv.Itoa(response.VersionNumber),
+			Participant:  participantLabel(response.ParticipantEmail),
+		}
+		for _, question := range results.Questions {
+			row.Cells = append(row.Cells, truncateLabel(response.Answers[question.IdentityID].Display()))
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+// responseDelete removes one response from the results (M8-T1). It is a
+// soft delete: results, stats and exports stop counting it immediately,
+// and support can restore it until the purge job reaches it 30 days
+// later. The creator is told both halves of that.
+func (s *server) responseDelete(w http.ResponseWriter, r *http.Request) {
+	survey, ok := s.loadSurvey(w, r)
+	if !ok {
+		return
+	}
+	responseID, err := uuid.Parse(r.PathValue("responseID"))
+	if err != nil {
+		s.surveyNotFound(w, r)
+		return
+	}
+	switch err := s.surveys.SoftDeleteResponse(r.Context(), survey.ID, responseID, s.clock.Now()); {
+	case errors.Is(err, store.ErrNotFound):
+		s.surveyNotFound(w, r)
+		return
+	case err != nil:
+		s.internalError(w, r, "delete response", err)
+		return
+	}
+	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"/results?notice=response_deleted", http.StatusSeeOther)
 }
 
 // csvSafe defuses spreadsheet formula injection: a cell a spreadsheet

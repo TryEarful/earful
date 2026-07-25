@@ -254,6 +254,25 @@ func (a *App) MintBetaCode(t *testing.T, label string) string {
 	return codes[0]
 }
 
+// LoginAsSuperAdmin signs a user in and grants them the admin flag
+// through the same service call `earful admin grant` uses — the support
+// surfaces (invite codes, erasure) are otherwise unreachable in tests.
+func (a *App) LoginAsSuperAdmin(t *testing.T, addr string) *http.Client {
+	t.Helper()
+	client := a.Login(t, addr)
+
+	pool, err := pgxpool.New(context.Background(), a.DSN)
+	if err != nil {
+		t.Fatalf("apptest: admin pool: %v", err)
+	}
+	defer pool.Close()
+	svc := auth.NewService(pool, a.Clock, a.Emails, a.Server.URL)
+	if err := svc.SetSuperAdmin(context.Background(), addr, true); err != nil {
+		t.Fatalf("apptest: grant super admin: %v", err)
+	}
+	return client
+}
+
 // SignupWithCode drives the invite-code signup form and returns a client
 // holding the fresh session (M12). Asserts it lands on the dashboard.
 func (a *App) SignupWithCode(t *testing.T, addr, password, code string) *http.Client {
@@ -447,6 +466,51 @@ func NewDB(t *testing.T) string {
 
 	if err := store.Migrate(dsn); err != nil {
 		t.Fatalf("apptest: migrate: %v", err)
+	}
+	return dsn
+}
+
+// NewIsolatedDB provisions a separate, migrated database for tests that
+// operate on the whole database rather than on their own workspace.
+//
+// Exactly one thing needs it: `earful purge` (M8-T2). Every other test
+// is isolated by workspace scoping — the same mechanism that isolates
+// real customers — but a purge is global by definition, and a global
+// delete running against data other tests are still using would be
+// testing the wrong thing in both directions.
+func NewIsolatedDB(t *testing.T, name string) string {
+	t.Helper()
+	base := NewDB(t)
+
+	parsed, err := url.Parse(base)
+	if err != nil {
+		t.Fatalf("apptest: parse dsn: %v", err)
+	}
+	isolated := strings.TrimPrefix(parsed.Path, "/") + "_" + name
+
+	admin, err := sql.Open("pgx", base)
+	if err != nil {
+		t.Fatalf("apptest: open admin connection: %v", err)
+	}
+	defer admin.Close()
+
+	var exists int
+	err = admin.QueryRow(`SELECT 1 FROM pg_database WHERE datname = $1`, isolated).Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		t.Fatalf("apptest: look up %s: %v", isolated, err)
+	}
+	if err == sql.ErrNoRows {
+		// Not parameterisable: an identifier, not a value. The name is
+		// built from a test-supplied constant, never from input.
+		if _, err := admin.Exec(`CREATE DATABASE "` + isolated + `"`); err != nil {
+			t.Skipf("apptest: cannot create %s (%v); see docs/testing.md", isolated, err)
+		}
+	}
+
+	parsed.Path = "/" + isolated
+	dsn := parsed.String()
+	if err := store.Migrate(dsn); err != nil {
+		t.Fatalf("apptest: migrate %s: %v", isolated, err)
 	}
 	return dsn
 }

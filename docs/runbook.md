@@ -111,14 +111,56 @@ objects; granting read for a restore is a deliberate, logged, human act.
 
 ## Erasure request (GDPR)
 
-Until M8 ships the fast-path admin action: the requester's account
-delete (soft-delete) already revokes sessions and hides everything;
-hard deletion is the purge job's 30-day window. For a
-must-erase-now request, run the purge manually once M8 lands
-(`earful purge`); before M8, escalate — do not hand-delete rows.
-72-hour breach duty: if data exposure is suspected, email affected
-users + the supervisory authority within 72h of awareness; document
+**Deadline: 24 hours.** The ordinary route (delete → 30-day purge) is
+too slow for a request, so use the fast-path.
+
+1. Sign in as a super admin and open `/admin/erasure`. The page is a 404
+   for everyone else, including ordinary creators.
+2. Enter the address and **look up**. The page lists exactly what would
+   go: the account, its workspaces and surveys, invitations and answers
+   to other people's invited surveys, and any suppression-list entry.
+   Nothing is erased by looking.
+3. Read the page's note about anonymous responses back to the requester
+   if it applies: an anonymous response carries no email, no IP and no
+   device details, so there is no way to identify theirs — and nothing
+   personal in it to erase. That is the anonymity promise working, and it
+   is a complete answer to the request.
+4. **Erase**, and record the request and the completion in your own
+   incident log. Earful deliberately keeps no record naming the person
+   erased; the application log carries counts only.
+5. Tell the requester that live systems are clear immediately, and that
+   backups (PITR 7 days, immutable exports 30 days) age out within 30
+   days — which is when erasure is fully effective. Say the number; do
+   not imply instant.
+
+If the admin surface is unavailable, the same operation is
+`purge.EraseSubject` in a one-off run against the database. Do not
+hand-delete rows: the order matters and a half-erased subject is worse
+than an unerased one.
+
+**72-hour breach duty**: if data exposure is suspected, email affected
+users + the supervisory authority within 72h of awareness; document the
 timeline in an incident note in the repo.
+
+## Retention purge (M8-T2)
+
+`earful purge` hard-deletes what has been soft-deleted for 30 days,
+expires tokens, trims the abuse log (30 days) and draft revisions (90
+days, always keeping each draft's newest), and clears expired export
+archives. It runs nightly on production at 04:07 UTC as the
+`earful-purge` Cloud Run job — after the 03:17 database export, so a
+backup of the data exists before it goes. Staging has no purge job.
+
+- **Look before leaping**: `earful purge --dry-run` does the whole thing
+  in a transaction and rolls back, so the counts it prints are the counts
+  a real run would produce.
+- **Locally**: `make purge` (dry run).
+- **Check the last run**: filter Cloud Logging for `"purge complete"`;
+  the line carries row counts and the duration, never subjects.
+- **If it fails**: the whole run is one transaction, so a failure leaves
+  nothing half-done. Re-run it; the operation is idempotent. Repeated
+  failures usually mean a foreign key added without a matching purge
+  step — the fix is a step in `internal/purge`, never a manual DELETE.
 
 ## AI breaker trip (alert: "AI budget breaker TRIPPED")
 

@@ -25,6 +25,9 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 					{ " across " + versionSpan(data.Survey.LatestVersion) }
 				}
 			</p>
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
 			<div class="results-actions">
 				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results.csv") }>
 					Download CSV
@@ -45,6 +48,7 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 				for _, q := range data.Questions {
 					@questionResults(q)
 				}
+				@responseTable(csrf, data)
 			}
 		</main>
 	}
@@ -123,6 +127,56 @@ templ statBuckets(title string, rows []CountView) {
 			}
 		</ul>
 	}
+}
+
+// responseTable is the raw view (story 58) and the only place a
+// response can be deleted: deleting is per response, not per answer,
+// because a response is what a person submitted.
+templ responseTable(csrf string, data SurveyResultsData) {
+	<section class="card">
+		<details>
+			<summary><h2>All responses</h2></summary>
+			<div class="table-scroll">
+				<table class="responses">
+					<thead>
+						<tr>
+							for _, header := range data.TableHeaders {
+								<th scope="col">{ header }</th>
+							}
+							if !data.Survey.IsAnonymous {
+								<th scope="col">Participant</th>
+							}
+							<th scope="col"><span class="visually-hidden">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range data.Table {
+							<tr>
+								<td>{ row.SubmittedAt }</td>
+								<td><span class="chip chip-small">{ row.VersionLabel }</span></td>
+								for _, cell := range row.Cells {
+									<td>{ cell }</td>
+								}
+								if !data.Survey.IsAnonymous {
+									<td>{ row.Participant }</td>
+								}
+								<td>
+									<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/responses/" + row.ID + "/delete") }>
+										<input type="hidden" name="_csrf" value={ csrf }/>
+										<button type="submit" class="button-link danger">Delete</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<p class="muted">
+				Deleting a response removes it from results, stats and exports straight away.
+				Support can restore it for 30 days; after that it is erased.
+			</p>
+		</details>
+	</section>
 }
 
 templ questionResults(q QuestionResultsView) {

@@ -178,11 +178,11 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### Data lifecycle and trust
 
-60. As a survey creator, I want deleting a survey or response to be a soft-delete restorable by support for 30 days, so that mistakes aren't catastrophic. [partially tested](internal/http/surveys_test.go) — survey soft-delete works and hides from the workspace; responses arrive with M4, hard purge with M8-T2
-61. As an operator, I want a purge job that hard-deletes soft-deleted data older than 30 days, expires stale tokens, and trims the abuse log — runnable by hand locally and on a schedule in production, so that retention promises are kept mechanically.
-62. As a data subject, I want an erasure fast-path that support can trigger immediately (skipping the 30-day wait), so that GDPR requests complete within 24 hours.
-63. As a respondent, I want the survey landing page to disclose who the controller is, whether the survey is anonymous, and how voice is processed, so that I understand before answering.
-64. As a privacy-conscious visitor, I want a public trust page listing processors, the no-recordings promise, EU hosting, and the leave-anytime export, so that I can verify the claims.
+60. As a survey creator, I want deleting a survey or response to be a soft-delete restorable by support for 30 days, so that mistakes aren't catastrophic. [tested](internal/purge/purge_test.go) — surveys and responses both; a survey deleted 29 days ago is still restorable, and on day 31 it is gone with everything under it
+61. As an operator, I want a purge job that hard-deletes soft-deleted data older than 30 days, expires stale tokens, and trims the abuse log — runnable by hand locally and on a schedule in production, so that retention promises are kept mechanically. [tested](internal/purge/purge_test.go) — including idempotency and a dry run that changes nothing while reporting the real numbers
+62. As a data subject, I want an erasure fast-path that support can trigger immediately (skipping the 30-day wait), so that GDPR requests complete within 24 hours. [tested](internal/http/adminerasure_test.go) — two steps (look up, then confirm), support-only, and honest that anonymous responses are unerasable because they hold nothing personal
+63. As a respondent, I want the survey landing page to disclose who the controller is, whether the survey is anonymous, and how voice is processed, so that I understand before answering. [tested](internal/http/trust_test.go) — the voice sentence appears only where voice is actually on offer
+64. As a privacy-conscious visitor, I want a public trust page listing processors, the no-recordings promise, EU hosting, and the leave-anytime export, so that I can verify the claims. [tested](internal/http/trust_test.go) — including the caveats (CLOUD Act, 30-day backup window) and a processor list that names only the companies the instance actually uses
 
 ### Operations (Earful as a service)
 

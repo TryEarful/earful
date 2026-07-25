@@ -177,3 +177,105 @@ resource "google_cloud_run_v2_job" "migrate" {
     ]
   }
 }
+
+# M8-T2: retention, on a schedule.
+#
+# The same image and the same binary as the service — `earful purge` —
+# so what runs nightly in production is exactly what a developer runs
+# with `make purge`. Retention promises that depend on someone
+# remembering to run something are not promises.
+resource "google_cloud_run_v2_job" "purge" {
+  count    = var.enable_purge ? 1 : 0
+  project  = var.project
+  location = var.region
+  name     = "${var.service_name}-purge"
+
+  template {
+    template {
+      service_account = var.service_account_email
+      # A purge that fails is retried once; a purge that fails twice
+      # should page a human rather than thrash the database.
+      max_retries = 1
+      timeout     = "900s"
+
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [var.sql_connection_name]
+        }
+      }
+
+      containers {
+        image = var.image
+        args  = ["purge"]
+
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+
+        dynamic "env" {
+          for_each = var.env
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
+          for_each = var.secret_env
+          content {
+            name = env.key
+            value_source {
+              secret_key_ref {
+                secret  = env.value
+                version = "latest"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].template[0].containers[0].image,
+      template[0].labels,
+      template[0].annotations,
+      client,
+      client_version,
+      labels,
+    ]
+  }
+}
+
+# 04:07 UTC: after the nightly database export (03:17) so a backup exists
+# of the data about to be erased, and off the top of the hour.
+resource "google_cloud_scheduler_job" "purge" {
+  count     = var.enable_purge ? 1 : 0
+  project   = var.project
+  region    = var.region
+  name      = "${var.service_name}-purge"
+  schedule  = "7 4 * * *"
+  time_zone = "UTC"
+
+  http_target {
+    http_method = "POST"
+    uri         = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project}/jobs/${google_cloud_run_v2_job.purge[0].name}:run"
+
+    oauth_token {
+      service_account_email = var.scheduler_service_account_email
+    }
+  }
+}
+
+# The scheduler's identity may start this job and nothing else.
+resource "google_cloud_run_v2_job_iam_member" "purge_invoker" {
+  count    = var.enable_purge ? 1 : 0
+  project  = var.project
+  location = var.region
+  name     = google_cloud_run_v2_job.purge[0].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${var.scheduler_service_account_email}"
+}

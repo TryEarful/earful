@@ -140,6 +140,9 @@ type Querier interface {
 	SetUserGoogleSub(ctx context.Context, arg SetUserGoogleSubParams) error
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	SetUserSuperAdmin(ctx context.Context, arg SetUserSuperAdminParams) (uuid.UUID, error)
+	// M8-T1: a creator can remove a response; support can restore it until
+	// the purge job hard-deletes it 30 days later.
+	SoftDeleteResponse(ctx context.Context, arg SoftDeleteResponseParams) (int64, error)
 	SoftDeleteSurvey(ctx context.Context, arg SoftDeleteSurveyParams) error
 	SoftDeleteUser(ctx context.Context, arg SoftDeleteUserParams) error
 	SoftDeleteWorkspacesForUser(ctx context.Context, arg SoftDeleteWorkspacesForUserParams) error

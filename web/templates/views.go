@@ -89,6 +89,20 @@ type SurveyResultsData struct {
 	ResponseCount int
 	Questions     []QuestionResultsView
 	Stats         SurveyStatsView
+	Notice        string
+	// Table is story 58's tabular view: one row per response, the same
+	// shape the CSV exports.
+	TableHeaders []string
+	Table        []ResponseRowView
+}
+
+// ResponseRowView is one response as a table row.
+type ResponseRowView struct {
+	ID           string
+	SubmittedAt  string
+	VersionLabel string
+	Participant  string
+	Cells        []string
 }
 
 // SurveyStatsView is ADR-0009's blessed list and nothing else: how many
@@ -178,4 +192,50 @@ type ExportView struct {
 	FinishedAt   string
 	ExpiresAt    string
 	DownloadPath string
+}
+
+// --- erasure fast-path (M8-T3) -------------------------------------------
+
+// ErasureData is the support-only erasure page.
+type ErasureData struct {
+	Searched bool
+	Subject  SubjectView
+	Done     bool
+	// ErasedRow is the number of rows removed — counts only, because an
+	// erasure record naming the person erased would defeat the point.
+	ErasedRow int64
+}
+
+// SubjectView is what will be erased, shown before anything is.
+type SubjectView struct {
+	Email         string
+	Found         bool
+	HasAccount    bool
+	Workspaces    int
+	Surveys       int
+	ParticipantIn int
+	Responses     int
+	Suppressed    bool
+}
+
+// --- trust page (M8-T4) --------------------------------------------------
+
+// TrustData is the public trust page. Everything on it is a claim the
+// code can be checked against, so the values come from configuration and
+// from the processor list in PLAN.md Appendix B rather than from prose.
+type TrustData struct {
+	InstanceName      string
+	Region            string
+	ContactEmail      string
+	Processors        []ProcessorView
+	GeoAttribution    string
+	GeoAttributionURL string
+}
+
+// ProcessorView is one sub-processor, as disclosed.
+type ProcessorView struct {
+	Name    string
+	Purpose string
+	Data    string
+	Region  string
 }

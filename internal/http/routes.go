@@ -19,6 +19,9 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", s.healthz)
 	mux.HandleFunc("GET /goodbye", s.goodbye)
 	mux.HandleFunc("GET /robots.txt", robotsTxt)
+	// The trust page (M8-T4): public, and served by the instance that
+	// actually holds the data it describes.
+	mux.HandleFunc("GET /trust", s.trustPage)
 
 	// Respondent path (M4). No session, no workspace: the share link is
 	// the credential.
@@ -75,6 +78,9 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /admin/beta-codes", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminBetaCodesPage))))
 	mux.Handle("POST /admin/beta-codes", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminBetaCodesMint)))))
 	mux.Handle("POST /admin/beta-codes/revoke", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminBetaCodesRevoke)))))
+	// Erasure fast-path (M8-T3): look up, then confirm.
+	mux.Handle("GET /admin/erasure", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminErasurePage))))
+	mux.Handle("POST /admin/erasure", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminErasureRun)))))
 	mux.Handle("POST /admin/reset-password", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminResetPassword)))))
 
 	// Survey building (M3). Every handler resolves the survey through the
@@ -88,6 +94,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// Results and exports (M7). Both read the same fold-by-identity view.
 	get("/surveys/{surveyID}/results", s.surveyResults)
 	get("/surveys/{surveyID}/results.csv", s.resultsCSV)
+	post("/surveys/{surveyID}/responses/{responseID}/delete", s.responseDelete)
 	// Preview renders the draft through the real respondent renderer
 	// (M3-T6). Its POST writes nothing at all.
 	get("/surveys/{surveyID}/preview", s.previewPage)

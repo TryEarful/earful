@@ -166,10 +166,15 @@ func pluralAnswers(n int) string {
 // respondentDisclosure states who is running the survey and what happens
 // to the answers, before anyone answers anything (SPEC.md story 63; the
 // fuller M8-T5 treatment builds on this).
+// respondentDisclosure states who is running the survey, what happens to
+// the answers, and — when the mic is on offer — what happens to a voice
+// (stories 63 and M8-T5). It is above the first question, not behind a
+// link, because it is the thing a respondent needs before deciding to
+// answer at all.
 templ respondentDisclosure(data RespondData) {
 	<div class="disclosure">
 		<p>
-			This survey is run by <strong>{ data.WorkspaceName }</strong>.
+			This survey is run by <strong>{ data.WorkspaceName }</strong>, who decides what happens to the answers.
 			if data.IsAnonymous {
 				It's anonymous: your answers are stored with no email address, no IP address and no device details — nothing that identifies you.
 			} else if data.ParticipantEmail != "" {
@@ -177,6 +182,15 @@ templ respondentDisclosure(data RespondData) {
 			} else {
 				Your answers are linked to your invitation, so { data.WorkspaceName } can see who answered what.
 			}
+		</p>
+		if data.VoiceEnabled() {
+			<p>
+				You can answer by speaking. What you say is turned into text you can read and edit before
+				it becomes your answer — your voice itself is never stored.
+			</p>
+		}
+		<p class="muted">
+			<a href="/trust">How Earful handles your data</a>
 		</p>
 	</div>
 }

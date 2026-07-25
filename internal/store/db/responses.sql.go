@@ -175,3 +175,24 @@ func (q *Queries) MarkParticipantSubmitted(ctx context.Context, arg MarkParticip
 	_, err := q.db.Exec(ctx, markParticipantSubmitted, arg.ID, arg.SubmittedAt)
 	return err
 }
+
+const softDeleteResponse = `-- name: SoftDeleteResponse :execrows
+UPDATE responses SET deleted_at = $3
+WHERE id = $1 AND survey_id = $2 AND deleted_at IS NULL
+`
+
+type SoftDeleteResponseParams struct {
+	ID        uuid.UUID  `json:"id"`
+	SurveyID  uuid.UUID  `json:"survey_id"`
+	DeletedAt *time.Time `json:"deleted_at"`
+}
+
+// M8-T1: a creator can remove a response; support can restore it until
+// the purge job hard-deletes it 30 days later.
+func (q *Queries) SoftDeleteResponse(ctx context.Context, arg SoftDeleteResponseParams) (int64, error) {
+	result, err := q.db.Exec(ctx, softDeleteResponse, arg.ID, arg.SurveyID, arg.DeletedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
