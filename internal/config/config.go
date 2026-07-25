@@ -140,8 +140,26 @@ const (
 	EnvProduction  = "production"
 )
 
-// Load reads configuration from the environment and validates it.
+// Load reads configuration from the environment and validates it for a
+// process that serves HTTP.
 func Load() (Config, error) {
+	return load(true)
+}
+
+// LoadJob is Load for a process that serves nothing — `migrate`, `purge`,
+// and the CLI subcommands. It skips the invariants that only protect an
+// exposed HTTP surface.
+//
+// The distinction earned itself during an M9-T4 drill: a purge run on
+// staging refused to start because STAGING_BASIC_AUTH was unset, which
+// is a rule about a wall in front of routes a batch job does not have.
+// Requiring a web credential to erase expired data is the kind of thing
+// that fails at 04:07 in the morning, so it is a rule about serving now.
+func LoadJob() (Config, error) {
+	return load(false)
+}
+
+func load(serving bool) (Config, error) {
 	cfg := Config{
 		Env:                getEnv("APP_ENV", EnvDevelopment),
 		DatabaseURL:        getEnv("DATABASE_URL", ""),
@@ -213,13 +231,13 @@ func Load() (Config, error) {
 		*v.target = n
 	}
 
-	if err := cfg.validate(); err != nil {
+	if err := cfg.validate(serving); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
 }
 
-func (c Config) validate() error {
+func (c Config) validate(serving bool) error {
 	switch c.Env {
 	case EnvDevelopment, EnvStaging, EnvProduction:
 	default:
@@ -250,8 +268,10 @@ func (c Config) validate() error {
 	}
 	// Staging is a test bench, not a public site: every route except the
 	// probes sits behind HTTP Basic Auth (BasicAuthGate). Enforced at
-	// boot so a missing credential can never silently publish staging.
-	if c.Env == EnvStaging && c.StagingBasicAuth == "" {
+	// boot so a missing credential can never silently publish staging —
+	// but only for a process that has routes to publish. A job serves
+	// nothing, so the wall is not its business.
+	if serving && c.Env == EnvStaging && c.StagingBasicAuth == "" {
 		return fmt.Errorf("config: APP_ENV=staging requires STAGING_BASIC_AUTH (user:pass)")
 	}
 	if _, _, ok := c.BasicAuthCredentials(); c.StagingBasicAuth != "" && !ok {

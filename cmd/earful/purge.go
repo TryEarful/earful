@@ -28,7 +28,7 @@ func runPurge(ctx context.Context, args []string) int {
 		return 2
 	}
 
-	cfg, err := config.Load()
+	cfg, err := config.LoadJob()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

@@ -170,6 +170,28 @@ func TestLoad_StagingRequiresBasicAuth(t *testing.T) {
 			t.Fatalf("Load() rejected development without STAGING_BASIC_AUTH: %v", err)
 		}
 	})
+
+	// A batch job has no routes, so the wall in front of routes is not
+	// its business. Found by an M9-T4 drill: the nightly purge refused to
+	// start on staging over a missing web credential.
+	t.Run("not required by a job on staging", func(t *testing.T) {
+		t.Setenv("APP_ENV", "staging")
+		t.Setenv("DATABASE_URL", "postgres://localhost/earful")
+		if _, err := config.LoadJob(); err != nil {
+			t.Fatalf("LoadJob() rejected staging without STAGING_BASIC_AUTH: %v", err)
+		}
+	})
+
+	// Everything else staging promises still holds for a job: it must
+	// never be able to send real email.
+	t.Run("job still refuses a real sender on staging", func(t *testing.T) {
+		t.Setenv("APP_ENV", "staging")
+		t.Setenv("EMAIL_SENDER", "brevo")
+		t.Setenv("BREVO_API_KEY", "x")
+		if _, err := config.LoadJob(); err == nil {
+			t.Fatal("LoadJob() accepted EMAIL_SENDER=brevo on staging")
+		}
+	})
 }
 
 func TestBasicAuthCredentials_SplitsAtFirstColon(t *testing.T) {

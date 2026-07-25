@@ -135,7 +135,7 @@ func runAdmin(ctx context.Context, args []string) int {
 }
 
 func betaService(ctx context.Context) (*auth.Service, *pgxpool.Pool, error) {
-	cfg, err := config.Load()
+	cfg, err := config.LoadJob()
 	if err != nil {
 		return nil, nil, err
 	}

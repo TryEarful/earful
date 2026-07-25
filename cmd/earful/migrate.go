@@ -11,7 +11,7 @@ import (
 )
 
 func runMigrate(_ context.Context, _ []string) int {
-	cfg, err := config.Load()
+	cfg, err := config.LoadJob()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
