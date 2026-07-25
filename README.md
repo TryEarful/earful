@@ -1,5 +1,13 @@
 # Earful
 
+> [!WARNING]
+> **Beta, and moving fast.** Earful is under rapid development: schemas,
+> APIs and behaviour change without notice, and **there is a real risk of
+> data loss** until the functionality is stabilised and properly tested.
+> Do not use it for anything you cannot afford to lose, and keep your own
+> copy of anything that matters (`Account → Export my workspace` gives
+> you everything, any time).
+
 Open-source, AI-enhanced, voice-first surveys. Trust, privacy and
 self-hostability are the differentiators.
 
