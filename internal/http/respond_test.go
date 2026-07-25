@@ -64,6 +64,43 @@ func TestRespond_AnonymousSubmission(t *testing.T) {
 	}
 }
 
+// TestRespond_DropdownAnswersLikeAChoiceList: a dropdown renders as a
+// lettered radio list rather than a <select>, because a browser draws
+// its own option popup and there is nowhere in it to put a key hint
+// (story 80). What must not change is the wire: same field name, same
+// values, so handlers, validation, results and exports cannot tell the
+// difference.
+func TestRespond_DropdownAnswersLikeAChoiceList(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("respond-dropdown"))
+	id := publishedSurvey(t, app, creator, "Where from", true,
+		[3]string{"dropdown", "Where did you hear about us?", "A friend\nSearch\nAn ad"},
+	)
+
+	respondent := &http.Client{}
+	page := mustGet(t, respondent, app.Server.URL+"/s/"+id)
+	if strings.Contains(page, "<select name=\"q_") {
+		t.Errorf("dropdown still renders a <select>, which cannot carry a key hint:\n%s", page)
+	}
+	if !bodyContains(page, `type="radio"`) {
+		t.Errorf("dropdown did not render selectable options:\n%s", page)
+	}
+	// The hint is decoration for the eye only; the accessible name must
+	// stay the option text alone.
+	if !bodyContains(page, `class="key-hint" data-key="A" aria-hidden="true"`) {
+		t.Errorf("options carry no aria-hidden key hint:\n%s", page)
+	}
+
+	identities := extractAnswerFields(t, page)
+	form := respondForm(t, page)
+	form.Set("q_"+identities[0], "An ad")
+	resp, body := submitAfterReading(t, app, respondent, id, form)
+	if resp.StatusCode != http.StatusOK || !bodyContains(body, "Thank you") {
+		t.Fatalf("dropdown answer did not submit (status %d):\n%s", resp.StatusCode, body)
+	}
+}
+
 // TestRespond_WorksWithoutJavaScript is story 29's core claim, and the
 // reason the server renders the whole form: no test here executes any
 // JavaScript, so everything these tests do is what a JS-less browser does.

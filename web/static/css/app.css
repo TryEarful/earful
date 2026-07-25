@@ -497,6 +497,39 @@ fieldset {
   cursor: pointer;
 }
 
+/* Key hints (story 80).
+   Hidden by default and shown only when BOTH are true: JavaScript has
+   upgraded the form (respond.js adds .paged, and the keys do not work
+   without it) and the device has a real keyboard. A hint for a key
+   nobody can press is worse than no hint — it is a promise the page
+   cannot keep. */
+.key-hint {
+  display: none;
+  flex: none;
+  min-width: 1.5rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: center;
+  font-variant: tabular-nums;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .paged .key-hint {
+    display: inline-block;
+  }
+
+  /* On a button the hint follows the label rather than sitting in the
+     flex row an option uses. */
+  .paged button > .key-hint {
+    margin-left: 0.5rem;
+  }
+}
+
 .option:hover {
   border-color: var(--accent);
 }

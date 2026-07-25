@@ -211,6 +211,51 @@ Consequences that make it honest rather than merely convenient:
 - **An enhancement, like everything else in `web/static/js`**: with
   JavaScript off there is no draft, and the form still works.
 
+### Answering from the keyboard (added 2026-07-25, post-MVP)
+
+80. As a respondent, I want to answer the whole survey from the keyboard, with the key for each answer shown next to it, so that I can move as fast as I think instead of aiming a mouse at every option.
+
+The scheme is Typeform's, because they solved this and the design has
+been proven on millions of respondents:
+
+| Where | Key | Does |
+|---|---|---|
+| Single / multiple choice, dropdown | `A` `B` `C` … | Select, or toggle for multiple choice |
+| Rating & NPS | `0`–`9`, buffered so `1` `0` means ten | Pick that point |
+| Yes / No | `Y` `N` | Pick |
+| Text question offering voice | `⇧Space` | Start, then stop recording |
+| Not in a text field | `↵` / `⇧↵` | Next / Back |
+| In a textarea | `↵`, `⇧↵` | Newline, untouched |
+| In a textarea | `⌘↵` / `Ctrl↵` | Next |
+| Last question | `↵` (or `⌘↵` from a textarea) | Submit |
+
+**Letters for choices, digits for scales** is the load-bearing decision.
+Digits on options would collide with rating questions, where `3` already
+means "a rating of 3", and most surveys mix the two.
+
+**Enter stays a newline inside a textarea**, unlike Typeform. This
+product's flagship answer is a spoken paragraph somebody then edits, and
+throwing a respondent to the next question mid-thought costs more than
+the keystroke it saves. `⌘↵` is the way out without reaching for the
+mouse.
+
+Consequences:
+
+- **Hints are shown only where they can be used**: the keys need
+  JavaScript, so the hints appear only once it has upgraded the form,
+  and only on devices with a real keyboard. A hint for a key nobody can
+  press is a promise the page cannot keep.
+- **Hints are `aria-hidden`.** Without that the option's accessible name
+  becomes "B Pro", and every choice reads wrong aloud.
+- **Nothing native is replaced.** Tab, arrow keys within a radio group,
+  Space to toggle — all still work, because they are what a
+  screen-reader user already relies on.
+- **Dropdowns render as a lettered list** rather than a `<select>`: a
+  browser draws its own option popup and there is nowhere in it to put a
+  hint. The submitted field name and values are unchanged. The cost is
+  that a dropdown and a single-choice question now look the same to a
+  respondent, and the distinction survives only in the editor.
+
 ## Implementation Decisions
 
 All load-bearing decisions are recorded as ADRs; the spec inherits them:

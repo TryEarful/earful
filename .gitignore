@@ -74,6 +74,5 @@ node_modules/
 test-results/
 playwright-report/
 
-
-# scratchpad
+# Scratchpad file
 ~notes.txt

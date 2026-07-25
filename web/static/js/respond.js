@@ -62,10 +62,12 @@
   backButton.type = "button";
   backButton.className = "secondary";
   backButton.textContent = "Back";
+  addKeyHint(backButton, "⇧↵");
 
   var nextButton = document.createElement("button");
   nextButton.type = "button";
   nextButton.textContent = "Next";
+  addKeyHint(nextButton, "↵");
 
   nav.appendChild(backButton);
   nav.appendChild(nextButton);
@@ -81,16 +83,109 @@
     show(current + 1);
   });
 
-  // Enter moves on rather than submitting early — except in a textarea,
-  // where Enter is a newline and must stay one.
-  form.addEventListener("keydown", function (event) {
-    if (event.key !== "Enter") return;
-    if (event.target.tagName === "TEXTAREA") return;
-    if (current < questions.length - 1) {
-      event.preventDefault();
-      show(current + 1);
+  // Answering from the keyboard (SPEC.md story 80). Letters pick
+  // options, digits pick scale points, Y/N answer yes-no, Enter moves
+  // on — the scheme Typeform proved, including the reason for the
+  // split: digits belong to scales, so options get letters.
+  //
+  // Every branch here is additive. Tab, the arrow keys inside a radio
+  // group, Space to toggle — all untouched, because they are what a
+  // screen-reader user already relies on.
+  var digits = "";
+  var digitTimer = null;
+
+  // On the document, not the form: after the voice consent dialog closes
+  // focus sits on <body>, and a form-scoped listener never sees the key
+  // that stops the recording. Anything focused outside the form — the
+  // language picker, the dialog's own buttons — keeps its own keyboard
+  // behaviour and is ignored here.
+  document.addEventListener("keydown", function (event) {
+    var target = event.target;
+    if (target !== document.body && !form.contains(target)) return;
+
+    if (event.altKey || event.metaKey || event.ctrlKey) {
+      // ⌘↵ / Ctrl↵ is the way out of a textarea without a mouse. On the
+      // last question it falls through to the browser and submits.
+      if (event.key === "Enter" && current < questions.length - 1) {
+        event.preventDefault();
+        show(current + 1);
+      }
+      return;
+    }
+
+    var typing = isTextField(event.target);
+
+    if (event.key === "Enter") {
+      // Inside a textarea Enter and ⇧↵ stay newlines: this product's
+      // flagship answer is a spoken paragraph somebody then edits, and
+      // being thrown to the next question mid-thought is worse than a
+      // saved keystroke.
+      if (event.target.tagName === "TEXTAREA") return;
+      if (event.shiftKey) {
+        if (current > 0) {
+          event.preventDefault();
+          show(current - 1);
+        }
+        return;
+      }
+      if (current < questions.length - 1) {
+        event.preventDefault();
+        show(current + 1);
+      }
+      return;
+    }
+
+    // Shift+Space starts and stops recording. It is the one key that
+    // overrides typing — in a textarea it would insert a space — and it
+    // costs nothing, because plain Space still types one and voice is
+    // only ever offered on text questions.
+    if (event.shiftKey && event.key === " ") {
+      var mic = questions[current].querySelector(".voice-button");
+      if (mic) {
+        event.preventDefault();
+        mic.click();
+      }
+      return;
+    }
+
+    if (typing || event.shiftKey) return;
+
+    if (event.key >= "0" && event.key <= "9") {
+      // Buffered, because a 0–10 scale needs "1" then "0" to mean ten
+      // rather than one.
+      digits += event.key;
+      if (digitTimer) window.clearTimeout(digitTimer);
+      if (!pickByValue(digits) && digits.length > 1) pickByValue(event.key);
+      digitTimer = window.setTimeout(function () {
+        digits = "";
+      }, 600);
+      return;
+    }
+
+    var control = questions[current].querySelector(
+      '[data-key="' + event.key.toUpperCase() + '"]'
+    );
+    if (control) {
+      var input = control.parentNode.querySelector("input");
+      if (input) {
+        event.preventDefault();
+        input.click();
+      }
     }
   });
+
+  function pickByValue(value) {
+    var input = questions[current].querySelector(
+      '.scale-point input[value="' + value + '"]'
+    );
+    if (!input) return false;
+    input.click();
+    return true;
+  }
+
+  function isTextField(node) {
+    return node.tagName === "TEXTAREA" || (node.tagName === "INPUT" && node.type === "text");
+  }
 
   function show(index) {
     if (index < 0 || index > questions.length - 1) return;
@@ -109,6 +204,17 @@
 
     if (draft) draft.rememberPosition(index);
     focusFirstControl(questions[index]);
+  }
+
+  // The nav buttons are built here, so their hints are too. Same
+  // aria-hidden rule as the template's: the button is named "Next", not
+  // "Next ↵".
+  function addKeyHint(button, key) {
+    var hint = document.createElement("span");
+    hint.className = "key-hint";
+    hint.setAttribute("aria-hidden", "true");
+    hint.textContent = key;
+    button.appendChild(hint);
   }
 
   function focusFirstControl(question) {

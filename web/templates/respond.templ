@@ -310,43 +310,38 @@ templ answerControl(q domain.Question, data RespondData) {
 					aria-describedby={ "err-" + q.IdentityID }
 				}
 			/>
-		case domain.SingleChoice:
+		case domain.SingleChoice, domain.Dropdown:
+			// Dropdown renders as this same list rather than a <select>:
+			// a browser draws its own option popup, so there is nowhere
+			// to put a key hint. The submitted name and value are
+			// identical either way, so nothing downstream can tell.
 			<div class="options">
-				for _, opt := range q.Options {
+				for i, opt := range q.Options {
 					<label class="option">
 						if data.Answers[q.IdentityID].Choice == opt {
 							<input type="radio" name={ "q_" + q.IdentityID } value={ opt } checked/>
 						} else {
 							<input type="radio" name={ "q_" + q.IdentityID } value={ opt }/>
 						}
+						@keyHint(optionKey(i))
 						<span>{ opt }</span>
 					</label>
 				}
 			</div>
 		case domain.MultipleChoice:
 			<div class="options">
-				for _, opt := range q.Options {
+				for i, opt := range q.Options {
 					<label class="option">
 						if hasChoice(data.Answers[q.IdentityID].Choices, opt) {
 							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt } checked/>
 						} else {
 							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt }/>
 						}
+						@keyHint(optionKey(i))
 						<span>{ opt }</span>
 					</label>
 				}
 			</div>
-		case domain.Dropdown:
-			<select name={ "q_" + q.IdentityID } aria-labelledby={ "qt-" + q.IdentityID }>
-				<option value="">Choose an option</option>
-				for _, opt := range q.Options {
-					if data.Answers[q.IdentityID].Choice == opt {
-						<option value={ opt } selected>{ opt }</option>
-					} else {
-						<option value={ opt }>{ opt }</option>
-					}
-				}
-			</select>
 		case domain.RatingScale, domain.NPS:
 			<div class="scale">
 				for _, point := range q.ScalePoints() {
@@ -364,6 +359,8 @@ templ answerControl(q domain.Question, data RespondData) {
 				<p class="scale-hint"><span>0 — not at all likely</span><span>10 — extremely likely</span></p>
 			}
 		case domain.YesNo:
+			// Y and N rather than A and B: the initial is the obvious key
+			// and it survives translation of the visible label.
 			<div class="options">
 				<label class="option">
 					if boolEquals(data.Answers[q.IdentityID].Bool, true) {
@@ -371,6 +368,7 @@ templ answerControl(q domain.Question, data RespondData) {
 					} else {
 						<input type="radio" name={ "q_" + q.IdentityID } value="yes"/>
 					}
+					@keyHint("Y")
 					<span>Yes</span>
 				</label>
 				<label class="option">
@@ -379,10 +377,38 @@ templ answerControl(q domain.Question, data RespondData) {
 					} else {
 						<input type="radio" name={ "q_" + q.IdentityID } value="no"/>
 					}
+					@keyHint("N")
 					<span>No</span>
 				</label>
 			</div>
 	}
+}
+
+// keyHint is the little [A] beside a control. aria-hidden is not
+// decoration: without it the option's accessible name becomes "A Weekly"
+// and every choice reads wrong to a screen reader. The key itself is
+// carried in a data attribute so respond.js can build its map from the
+// DOM rather than recomputing the same letters in two languages.
+templ keyHint(key string) {
+	if key != "" {
+		<span class="key-hint" data-key={ key } aria-hidden="true">{ key }</span>
+	}
+}
+
+// optionKey is the key a respondent presses to pick the nth option:
+// A, B, C… by position, so it follows the localized option order and
+// needs no server state. Past 26 options there is no key — the option
+// still works by click and by Tab.
+//
+// Letters, not digits, and that is the whole trick: digits belong to
+// rating scales, where 3 already means "a rating of 3". A survey mixing
+// a choice question and a rating question would otherwise have the same
+// key meaning two things.
+func optionKey(index int) string {
+	if index < 0 || index > 25 {
+		return ""
+	}
+	return string(rune('A' + index))
 }
 
 func hasChoice(choices []string, want string) bool {

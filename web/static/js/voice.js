@@ -73,7 +73,22 @@
     var button = document.createElement("button");
     button.type = "button";
     button.className = "voice-button secondary";
-    button.textContent = "Answer by speaking";
+    // The label is its own text node so the key hint beside it survives
+    // every label change; setting button.textContent would delete it.
+    var label = document.createTextNode("Answer by speaking");
+    button.appendChild(label);
+    // Shift+Space toggles recording (story 80); respond.js owns the key,
+    // this is only the label for it. aria-hidden so the button is named
+    // "Answer by speaking", not "Answer by speaking ⇧Space".
+    var micHint = document.createElement("span");
+    micHint.className = "key-hint";
+    micHint.setAttribute("aria-hidden", "true");
+    micHint.textContent = "⇧Space";
+    button.appendChild(micHint);
+
+    function setLabel(text) {
+      label.nodeValue = text;
+    }
 
     var status = document.createElement("span");
     status.className = "voice-status";
@@ -93,6 +108,11 @@
         return;
       }
       askConsent(function () {
+        // The consent dialog took focus and is now gone. Put it back on
+        // the field the words are about to land in, so the respondent
+        // can edit as they speak and the keyboard shortcuts keep working
+        // instead of talking to <body>.
+        field.focus();
         start();
       });
     });
@@ -103,7 +123,7 @@
 
     function reset() {
       recorder = null;
-      button.textContent = "Answer by speaking";
+      setLabel("Answer by speaking");
       button.classList.remove("recording");
     }
 
@@ -111,7 +131,7 @@
       if (!recorder) return;
       var current = recorder;
       recorder = null;
-      button.textContent = "Answer by speaking";
+      setLabel("Answer by speaking");
       button.classList.remove("recording");
       current.stop();
     }
@@ -139,7 +159,7 @@
               return;
             }
             recorder = handle;
-            button.textContent = "Stop and transcribe";
+            setLabel("Stop and transcribe");
             button.classList.add("recording");
             say("Listening… speak now.");
           },
