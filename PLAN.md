@@ -31,7 +31,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | M6 — AI question generation | [x] done | 3/3 · T1 verified against live Vertex 2026-07-25 |
 | M7 — Results & export | [x] done | 4/4 |
 | M8 — Data lifecycle & trust | [x] done | 5/5 |
-| M9 — Production launch | [~] in progress | T1/T6/T7 `[x]`; T4 `[~]` (purge drill PASSED 2026-07-25 and found a real defect; erasure drill pending); T2 `[~]` (purge alerts live on pro; AI-breaker test-fire needs staging back); T3 `[~]` (review done, soak blocked by the staging suspension); **T5 (launch) is the only unstarted ticket in the plan** |
+| M9 — Production launch | [~] in progress | T1/T6/T7 `[x]`; **T4 `[x]` — both drills walked 2026-07-25** (purge as a real Cloud Run job, which found a defect; erasure end to end, which confirmed the procedure as written); T2 `[~]` (purge alerts live on pro; AI-breaker test-fire needs staging back); T3 `[~]` (review done, soak blocked by the staging suspension); **T5 (launch) is the only unstarted ticket in the plan** |
 | M10 — Cross-respondent insights | [x] done | 2/2 |
 | M11 — Localization & translation | [x] done | 3/3 |
 | M12 — Private beta gate (temporary) | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted) |
