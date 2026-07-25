@@ -16,6 +16,8 @@ type Querier interface {
 	AddAbuseEvent(ctx context.Context, arg AddAbuseEventParams) error
 	AddSuppression(ctx context.Context, arg AddSuppressionParams) error
 	AuthenticateSession(ctx context.Context, tokenHash []byte) (AuthenticateSessionRow, error)
+	// Only one worker may build a job, whichever instance gets there first.
+	ClaimExportJob(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	// Rolls a failed send back to pending so the next run retries it.
 	ClearParticipantInvited(ctx context.Context, id uuid.UUID) error
 	ConsumeBetaCode(ctx context.Context, arg ConsumeBetaCodeParams) (uuid.UUID, error)
@@ -26,6 +28,8 @@ type Querier interface {
 	CreateBetaCode(ctx context.Context, arg CreateBetaCodeParams) (uuid.UUID, error)
 	CreateDraft(ctx context.Context, arg CreateDraftParams) (SurveyDraft, error)
 	CreateDraftRevision(ctx context.Context, arg CreateDraftRevisionParams) error
+	// M7-T3: workspace export jobs.
+	CreateExportJob(ctx context.Context, arg CreateExportJobParams) (CreateExportJobRow, error)
 	CreateMagicLinkToken(ctx context.Context, arg CreateMagicLinkTokenParams) error
 	CreateQuestion(ctx context.Context, arg CreateQuestionParams) (Question, error)
 	CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error)
@@ -53,6 +57,8 @@ type Querier interface {
 	// only reach the database at publish. ON CONFLICT keeps republishing an
 	// unchanged question idempotent.
 	EnsureQuestionIdentity(ctx context.Context, arg EnsureQuestionIdentityParams) error
+	FailExportJob(ctx context.Context, arg FailExportJobParams) error
+	FinishExportJob(ctx context.Context, arg FinishExportJobParams) error
 	// Validate-and-lock an unused invite code BEFORE any account work, so a
 	// request that lacks a valid code learns nothing about which emails exist
 	// (closes the signup enumeration oracle). FOR UPDATE serialises this
@@ -60,6 +66,9 @@ type Querier interface {
 	// one code.
 	GetActiveBetaCodeForUpdate(ctx context.Context, codeHash []byte) (uuid.UUID, error)
 	GetDraftForSurvey(ctx context.Context, surveyID uuid.UUID) (SurveyDraft, error)
+	// The download, scoped to the workspace: the id alone is not a
+	// capability, because the route also requires a session here.
+	GetExportArchive(ctx context.Context, arg GetExportArchiveParams) (GetExportArchiveRow, error)
 	GetLatestVersion(ctx context.Context, surveyID uuid.UUID) (SurveyVersion, error)
 	GetMagicLinkToken(ctx context.Context, tokenHash []byte) (MagicLinkToken, error)
 	GetParticipantByTokenHash(ctx context.Context, tokenHash []byte) (GetParticipantByTokenHashRow, error)
@@ -91,6 +100,7 @@ type Querier interface {
 	// no longer an aggregate, and TestAggregatesCannotBeLinkedToResponses
 	// fails the build if one appears.
 	IncrementSurveyStat(ctx context.Context, arg IncrementSurveyStatParams) error
+	LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (LatestExportJobRow, error)
 	// One row per stored answer, with the version it was given under and the
 	// participant it belongs to (NULL forever for anonymous surveys).
 	// Skipped questions store no row at all, which is what keeps "skipped"

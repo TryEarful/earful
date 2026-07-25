@@ -96,7 +96,8 @@ func (s *server) accountEmail(w http.ResponseWriter, r *http.Request) {
 		r.PostFormValue("email"), r.PostFormValue("password"))
 	rerender := func(msg string) {
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Account(info.Email, info.WorkspaceName, info.CSRFToken, info.IsSuperAdmin, "", msg))
+			templates.Account(info.Email, info.WorkspaceName, info.CSRFToken,
+				templates.AccountData{IsSuperAdmin: info.IsSuperAdmin, EmailError: msg}))
 	}
 	switch {
 	case errors.Is(err, auth.ErrInvalidEmail):

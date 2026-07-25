@@ -65,7 +65,54 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 	}
 }
 
-templ Account(email string, workspaceName string, csrf string, isAdmin bool, emailNotice string, emailErr string) {
+// workspaceExport is the "leave anytime" promise as a button (M7-T3).
+// It is on the account page rather than hidden in settings because the
+// point of it is that it is easy to find.
+templ workspaceExport(csrf string, export ExportView) {
+	<div class="card">
+		<h2>Export everything</h2>
+		<p>
+			Download every survey, version, question and response in this workspace — a documented
+			JSON file plus a CSV per survey. It's the same data Earful holds, in a format you can
+			import into your own instance.
+		</p>
+		if export.Building {
+			<p class="notice" role="status">
+				Building your export… reload this page in a moment.
+			</p>
+		} else if export.Ready {
+			<p class="notice">
+				Ready
+				if export.SizeLabel != "" {
+					{ " (" + export.SizeLabel + ")" }
+				}
+				if export.FinishedAt != "" {
+					{ ", built " + export.FinishedAt }
+				}
+				{ ". The link expires " + export.ExpiresAt + "." }
+			</p>
+			<p><a class="button" href={ templ.SafeURL(export.DownloadPath) } download>Download the archive</a></p>
+		} else if export.Failed && export.Error != "" {
+			<p class="notice error-text">{ export.Error }</p>
+		}
+		<form method="post" action="/account/export">
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<button type="submit" class="secondary">
+				if export.Ready {
+					Build a fresh export
+				} else {
+					Export my workspace
+				}
+			</button>
+		</form>
+		<p class="muted">
+			Earful is AGPL-3.0 and self-hostable: <code>docker compose up</code> gives you the same
+			application this export came from.
+		</p>
+	</div>
+}
+
+templ Account(email string, workspaceName string, csrf string, data AccountData) {
 	@Layout("Account — Earful") {
 		@AuthedHeader(email, csrf)
 		<main>
@@ -73,14 +120,14 @@ templ Account(email string, workspaceName string, csrf string, isAdmin bool, ema
 			<div class="card">
 				<p>Signed in as <strong>{ email }</strong></p>
 				<p>Workspace: <strong>{ workspaceName }</strong></p>
-				if isAdmin {
+				if data.IsSuperAdmin {
 					<p><a href="/admin/beta-codes">Private beta admin</a></p>
 				}
 			</div>
 			<div class="card">
 				<h2>Change email</h2>
-				if emailNotice != "" {
-					<p class="notice">{ emailNotice }</p>
+				if data.EmailNotice != "" {
+					<p class="notice">{ data.EmailNotice }</p>
 				}
 				<form method="post" action="/account/email">
 					<input type="hidden" name="_csrf" value={ csrf }/>
@@ -92,13 +139,14 @@ templ Account(email string, workspaceName string, csrf string, isAdmin bool, ema
 						<span>Current password</span>
 						<input type="password" name="password" required autocomplete="current-password"/>
 					</label>
-					if emailErr != "" {
-						<p class="error-text">{ emailErr }</p>
+					if data.EmailError != "" {
+						<p class="error-text">{ data.EmailError }</p>
 					}
 					<button type="submit">Change email</button>
 				</form>
 				<p class="muted">The change applies immediately — you'll sign in with the new address from now on.</p>
 			</div>
+			@workspaceExport(csrf, data.Export)
 			<div class="card">
 				<h2>Delete account</h2>
 				<p>Deleting your account deactivates it immediately and permanently erases your data after 30 days. Within those 30 days, support can restore it.</p>

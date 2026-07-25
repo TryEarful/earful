@@ -62,6 +62,11 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	get("/account", s.accountPage)
 	post("/account/delete", s.accountDelete)
 	post("/account/email", s.accountEmail)
+	// Workspace export (M7-T3): the "leave anytime" promise. The download
+	// needs a session in the owning workspace, so the link is not a
+	// bearer capability — and it expires anyway.
+	post("/account/export", s.accountExport)
+	get("/exports/{jobID}", s.exportDownload)
 	post("/logout", s.logout)
 
 	// Super-admin surface (M12): invite-code management and password

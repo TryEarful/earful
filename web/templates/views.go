@@ -154,3 +154,28 @@ type TextAnswerView struct {
 	// AnswerLongish marks answers worth rendering with more room.
 	AnswerLongish bool
 }
+
+// AccountData is the account page. It grew a struct when the workspace
+// export arrived: six positional strings was already one too many.
+type AccountData struct {
+	IsSuperAdmin bool
+	// EmailNotice/EmailError belong to the change-email form.
+	EmailNotice string
+	EmailError  string
+	Notice      string
+	Export      ExportView
+}
+
+// ExportView is the state of the workspace export (M7-T3): building,
+// ready with an expiring link, or failed with a readable reason.
+type ExportView struct {
+	Status       string
+	Building     bool
+	Ready        bool
+	Failed       bool
+	Error        string
+	SizeLabel    string
+	FinishedAt   string
+	ExpiresAt    string
+	DownloadPath string
+}

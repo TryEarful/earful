@@ -165,16 +165,16 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### Results, insights and export
 
-50. As a survey creator, I want results aggregated across all Survey Versions by Question Identity, with wording changes labelled per version, so that editing never hides or distorts history.
-51. As a survey creator, I want distributions for choice/rating/NPS/yes-no questions and a transcript list for text questions, so that I can read the story at a glance.
+50. As a survey creator, I want results aggregated across all Survey Versions by Question Identity, with wording changes labelled per version, so that editing never hides or distorts history. [tested](internal/http/results_test.go)
+51. As a survey creator, I want distributions for choice/rating/NPS/yes-no questions and a transcript list for text questions, so that I can read the story at a glance. [tested](internal/http/results_test.go)
 52. As a survey creator, I want an on-demand Insight Summary — themes, patterns, and representative quotes across all responses — so that hundreds of answers become a story in minutes.
 53. As a survey creator, I want Insight Summaries clearly labelled as AI-generated with model and timestamp, so that I never mistake analysis for data.
 54. As a survey creator, I want insight runs cached until new responses arrive and counted against my quota, so that curiosity doesn't torch the budget.
-55. As a survey creator, I want survey stats — starts, completions, completion rate, average duration, drop-off per question — so that I can improve my surveys.
-56. As a survey creator, I want audience aggregates (browser family, device class, country) that are never linkable to any individual response, so that I understand my audience without betraying anyone.
-57. As an anonymous respondent, I want aggregate buckets suppressed below five observations, so that small samples can't single me out.
-58. As a survey creator, I want all responses in a tabular view and exportable as CSV that opens cleanly and safely in spreadsheet tools, so that analysis can continue elsewhere.
-59. As a workspace owner, I want a one-click full Workspace export (documented JSON + CSVs, async, expiring download), so that I can leave for a self-hosted instance at any time — the trust promise made real.
+55. As a survey creator, I want survey stats — starts, completions, completion rate, average duration, drop-off per question — so that I can improve my surveys. [tested](internal/http/stats_test.go) — with one honest limit: "where answers stop" is derived from submitted responses, since true abandonment would need a per-question beacon on respondent pages (see the M7-T4 note)
+56. As a survey creator, I want audience aggregates (browser family, device class, country) that are never linkable to any individual response, so that I understand my audience without betraying anyone. [tested](internal/http/stats_test.go) — including the ADR-0009 unlinkability guard, which fails the build if any query touches the counters and responses together
+57. As an anonymous respondent, I want aggregate buckets suppressed below five observations, so that small samples can't single me out. [tested](internal/http/stats_test.go)
+58. As a survey creator, I want all responses in a tabular view and exportable as CSV that opens cleanly and safely in spreadsheet tools, so that analysis can continue elsewhere. [tested](internal/http/results_test.go) — a respondent's `=cmd|…` payload exports as text, not as a formula
+59. As a workspace owner, I want a one-click full Workspace export (documented JSON + CSVs, async, expiring download), so that I can leave for a self-hosted instance at any time — the trust promise made real. [tested](internal/http/export_workspace_test.go) — the archive round-trips against [the documented format](docs/export-format.md)
 
 ### Data lifecycle and trust
 
@@ -200,7 +200,7 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 73. As a self-hoster, I want `docker compose up` to give me the full core loop (app + Postgres + local email catcher), so that adoption takes minutes.
 74. As a self-hoster, I want AI features to work against ollama/llamafile via configuration or degrade gracefully when absent, so that no Google dependency is required. [tested](internal/ai/ai_test.go) — streaming verified against a real llamafile (opt-in integration test); unconfigured capabilities answer ErrUnsupported and the product treats them as absent features
 75. As a self-hoster, I want magic-link auth over my own SMTP and optional Google OIDC, so that login works on my infrastructure.
-76. As a self-hoster, I want the workspace export format documented as a stable contract, so that migrating into my instance is a solved problem (import tool: first post-MVP ticket).
+76. As a self-hoster, I want the workspace export format documented as a stable contract, so that migrating into my instance is a solved problem (import tool: first post-MVP ticket). [tested](internal/http/export_workspace_test.go) — [docs/export-format.md](docs/export-format.md) is the contract; the test decodes a real archive into the documented types
 
 ### Private beta (temporary mode, decided 2026-07-24)
 
@@ -224,6 +224,7 @@ All load-bearing decisions are recorded as ADRs; the spec inherits them:
 - **Email (ADR-0005):** Brevo behind a two-method `Sender` interface; SMTP for self-hosters; SPF/DKIM/DMARC on a dedicated subdomain; webhook-fed suppression; drip caps. CRM integration is out of scope; the interface is the future integration point.
 - **Anti-abuse (ADR-0006):** ALTCHA in-app, first-party widget; zero third-party scripts on respondent pages (CI-enforced); honeypot; token-bucket rate limits; session-bound LLM tokens; per-workspace daily AI quotas plus a global daily € breaker.
 - **Platform (ADR-0007):** Cloud Run, separate stg/pro projects, opentofu; one Go binary with `serve | purge | migrate` subcommands; purge cron = same binary as a scheduled Cloud Run job; WebSocket clients auto-reconnect.
+- **Workspace export (ADR-0010):** the archive is built asynchronously and stored in Postgres, not object storage — one code path for the SaaS and for `docker compose up`, at the cost of a documented size cap.
 - **Backups (ADR-0008):** daily Cloud SQL Admin API exports to a retention-locked bucket in a separate backups project; lifecycle rule owns the rolling 30-day window; export credentials create-only.
 - **Audience aggregates (ADR-0009):** survey stats (starts, completions, completion rate, drop-off per question position, average duration) plus audience aggregates (browser family, device class, country) exist only as survey-level counters with no join path to responses; country derived in-process from an embedded GeoIP database with the IP discarded in-request (no new processor); per-response duration is the only per-response addition; UI suppresses buckets with n < 5. The blessed list is exhaustive.
 - **Survey Status:** Draft / Open / Closed is a derived, first-class status (never-published; published and accepting; not accepting). Manual close and reopen plus Close Date enforcement. Status is survey-level, like Close Date — not part of the versioned structure.

@@ -2,19 +2,34 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
+	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/web/templates"
 )
 
 func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 	info, _ := authFrom(r.Context())
-	notice := ""
-	if r.URL.Query().Get("notice") == "email_changed" {
-		notice = "Your email address has been changed."
+	data := templates.AccountData{IsSuperAdmin: info.IsSuperAdmin}
+	switch r.URL.Query().Get("notice") {
+	case "email_changed":
+		data.EmailNotice = "Your email address has been changed."
+	case "export_started":
+		data.Notice = "Building your export."
+	case "export_running":
+		data.Notice = "An export is already being built."
 	}
-	render(w, r, http.StatusOK, templates.Account(info.Email, info.WorkspaceName, info.CSRFToken, info.IsSuperAdmin, notice, ""))
+	// The latest export's state, if there has ever been one. A missing
+	// row is the normal case, not a problem.
+	if job, err := s.surveys.LatestExportJob(r.Context(), info.WorkspaceID); err == nil {
+		data.Export = viewExportJob(job, s.clock.Now())
+	} else if !errors.Is(err, store.ErrNotFound) {
+		s.internalError(w, r, "read latest export", err)
+		return
+	}
+	render(w, r, http.StatusOK, templates.Account(info.Email, info.WorkspaceName, info.CSRFToken, data))
 }
 
 func (s *server) accountDelete(w http.ResponseWriter, r *http.Request) {

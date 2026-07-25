@@ -55,6 +55,19 @@ type DraftRevision struct {
 	SavedAt   time.Time     `json:"saved_at"`
 }
 
+type ExportJob struct {
+	ID          uuid.UUID     `json:"id"`
+	WorkspaceID uuid.UUID     `json:"workspace_id"`
+	RequestedBy uuid.NullUUID `json:"requested_by"`
+	Status      string        `json:"status"`
+	Archive     []byte        `json:"archive"`
+	SizeBytes   int64         `json:"size_bytes"`
+	Error       *string       `json:"error"`
+	CreatedAt   time.Time     `json:"created_at"`
+	FinishedAt  *time.Time    `json:"finished_at"`
+	ExpiresAt   *time.Time    `json:"expires_at"`
+}
+
 type MagicLinkToken struct {
 	TokenHash []byte     `json:"token_hash"`
 	Email     string     `json:"email"`
