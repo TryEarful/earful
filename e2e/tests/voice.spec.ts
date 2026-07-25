@@ -23,9 +23,17 @@ import {
 test.use({ permissions: ["microphone"] });
 
 test("a spoken answer becomes an editable transcript", async ({ page, browser }) => {
-  // Recording, uploading and transcribing for real does not fit the
-  // default 30s budget once a model is involved.
-  if (!scriptedVoice) test.slow();
+  // Never against a real transcriber. The suite has no microphone, so
+  // whatever it sends is machine-generated — and a loop of synthesized
+  // audio arriving at a speech model is both useless as a test and the
+  // likeliest thing to get a project suspended, which is exactly what
+  // happened to staging on 2026-07-25. Real transcription is proven by
+  // internal/ai's opt-in integration test, which sends real recorded
+  // speech, once, deliberately.
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
 
   const share = await createPublishedSurvey(page, `E2E voice ${Date.now()}`);
 
@@ -76,29 +84,15 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   await respondent.waitForTimeout(1500); // a second of speech to transcribe
   await stop.click();
 
+  // Canned transcription, always (see the skip at the top): the words
+  // are deterministic, so the whole promise is checkable — the
+  // transcript lands in the textarea, where it can be edited before
+  // submitting (story 36).
   const answer = respondent.locator("textarea");
-  if (scriptedVoice) {
-    // Canned transcription: the words are deterministic, so the whole
-    // promise is checkable — the transcript lands in the textarea, where
-    // it can be edited before submitting (story 36).
-    await expect(answer).not.toBeEmpty({ timeout: aiTimeout });
-    const transcript = await answer.inputValue();
-    expect(transcript.length).toBeGreaterThan(0);
-    await answer.fill(transcript + " — edited before submitting.");
-  } else {
-    // A real transcriber hears what Chromium's fake capture device
-    // actually emits: a tone, not speech. Correctly transcribing that
-    // yields no words, so asserting on the text would fail the gate for
-    // the model being right. What must still hold is everything around
-    // the words — the socket completed, the server answered, the status
-    // says transcribed rather than an error, and the field stays the
-    // respondent's to edit.
-    await expect(respondent.locator(".voice-status").first()).toHaveText(/Transcribed/, {
-      timeout: aiTimeout,
-    });
-    await expect(mic).toHaveText("Answer by speaking");
-    await answer.fill("Typed after speaking — edited before submitting.");
-  }
+  await expect(answer).not.toBeEmpty({ timeout: aiTimeout });
+  const transcript = await answer.inputValue();
+  expect(transcript.length).toBeGreaterThan(0);
+  await answer.fill(transcript + " — edited before submitting.");
   await expect(answer).toHaveValue(/edited before submitting/);
 
   await context.close();

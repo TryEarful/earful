@@ -181,23 +181,34 @@ under test, not a concession: an absent capability is an absent feature
 questions by hand, and a respondent page with no mic must still take a
 typed answer.
 
+**A rule with a scar behind it: automated tests never send audio to a
+real transcription model.** The runner has no microphone, so anything it
+sends is machine-generated. That proves nothing about transcription, and
+a loop of it arriving at a hosted speech API looks like probing —
+Google suspended the staging project on 2026-07-25, hours after Vertex
+was enabled there, and a synthesized tone was the only thing in that
+window worth suspecting. `voice.spec.ts` therefore **skips itself**
+unless the transcriber is scripted; the rule is enforced, not
+remembered. Real transcription is checked by `internal/ai`'s opt-in
+integration test with real recorded speech, and by a person speaking
+into a microphone.
+
 `E2E_AI_MODE` says what is behind the seam, and `E2E_VOICE_MODE` says it
-for transcription specifically — the two need not agree. Staging runs
-text AI on Vertex and transcription on the scripted provider, so that a
-suite with no microphone is not feeding synthesized audio to a real
-speech model in a loop:
+for transcription specifically — the two need not agree, and on staging
+they deliberately do not:
 
-| Value | Where | What the voice test asserts |
-|---|---|---|
-| `scripted` (default) | laptop, CI compose | The exact transcript lands in the textarea and can be edited. |
-| `real` | staging (set by `deploy.yml`) | Consent → capture → socket → `Transcribed`, with no error and the field still editable. |
+| Variable | Value | Where | Effect |
+|---|---|---|---|
+| `E2E_AI_MODE` | `scripted` (default) | laptop, CI compose | Generation and insights assert on the canned content itself. |
+| `E2E_AI_MODE` | `real` | staging, set by `deploy.yml` | Those tests assert behaviour around the content, and take the slow-test allowance. |
+| `E2E_VOICE_MODE` | `scripted` (default, and set explicitly on staging) | everywhere the suite runs | The exact transcript lands in the textarea and can be edited. |
+| `E2E_VOICE_MODE` | anything else | nowhere, deliberately | The voice capture test **skips**, refusing to send synthesized audio to a real model. |
 
-The distinction exists because the microphone emits a **tone, not
-speech**. The scripted provider ignores the audio and returns a canned
-sentence; a real transcriber correctly hears no words. Asserting on the
-words against a real model would fail the promotion gate for the model
-being right, so against `real` the suite asserts everything around the
-words instead.
+Staging therefore runs text AI on Vertex and transcription on the
+scripted provider. Voice keeps its full browser coverage — consent,
+socket, transcript, caps — and its strong assertion, because a canned
+transcript is deterministic; what it no longer does is prove that Vertex
+transcribes, which is not a browser's job to prove.
 
 ### The microphone is synthesized, not faked by the browser
 
