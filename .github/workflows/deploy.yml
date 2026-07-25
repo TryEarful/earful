@@ -9,6 +9,8 @@
 #   GCP_REGION          europe-west4
 #   GCP_AR              europe-west4-docker.pkg.dev/earful-ops-<sfx>/earful
 #   GCP_WIF_PROVIDER    projects/<ops#>/locations/global/workloadIdentityPools/github/providers/github-oidc
+#   GCP_BUILDER_SA      github-builder@earful-ops-<sfx>.iam.gserviceaccount.com
+#                       (= `tofu output -raw image_builder_sa_email` in bootstrap)
 #   GCP_STG_PROJECT     earful-stg-<sfx>
 #   GCP_STG_DEPLOY_SA   github-deploy@earful-stg-<sfx>.iam.gserviceaccount.com
 #   GCP_PRO_PROJECT     earful-pro-<sfx>
@@ -41,10 +43,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The builder lives in ops, with the registry, not in an
+      # environment. Using staging's deploy account here — which is what
+      # this did until 2026-07-25 — meant that when Google suspended the
+      # staging project, no image could be built for ANY environment,
+      # including the production hotfix path that shares nothing else
+      # with staging.
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_STG_DEPLOY_SA }}
+          service_account: ${{ vars.GCP_BUILDER_SA }}
 
       - uses: google-github-actions/setup-gcloud@v2
 

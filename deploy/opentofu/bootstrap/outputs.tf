@@ -61,3 +61,8 @@ output "artifact_registry_repo_id" {
 output "github_repo" {
   value = var.github_repo
 }
+
+output "image_builder_sa_email" {
+  description = "Service account GitHub Actions uses to build and push images (repo variable GCP_BUILDER_SA). Lives in ops so a lost environment cannot stop builds."
+  value       = google_service_account.image_builder.email
+}

@@ -11,11 +11,10 @@ versions, get an AI Insight Summary, translate what people wrote, and
 export everything you hold. Localization, retention purging, a GDPR
 erasure fast-path and a public trust page are all in.
 
-`v0.1.0` runs on production; the M5–M11 work above is pushed, proven
-against a deployed instance, and waiting on a promotion. What remains is
-the launch itself (M9-T5). See [PLAN.md](PLAN.md) for per-ticket status
-and current blockers, and [SPEC.md](SPEC.md) for the product spec these
-tickets implement.
+All of it runs on production, with AI on Vertex in europe-west4. What
+remains is the launch itself (M9-T5). See [PLAN.md](PLAN.md) for
+per-ticket status and current blockers, and [SPEC.md](SPEC.md) for the
+product spec these tickets implement.
 
 ## Quickstart (docker compose)
 
