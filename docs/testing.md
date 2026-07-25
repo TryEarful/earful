@@ -295,7 +295,7 @@ wire format matches reality:
 
 ```sh
 # Vertex, against the real API with your own ADC (M6-T1). Last run
-# 2026-07-25 against earful-stg-aeir with gemini-2.5-flash (and
+# 2026-07-25 against the staging project with gemini-2.5-flash (and
 # gemini-2.5-pro for the analyze tier): generation and transcription
 # both green. Those ids are the best europe-west4 offers; 3.x is
 # global-only and deliberately unused (ADR-0011). Set VERTEX_TEST_AUDIO to a 16-bit PCM

@@ -25,17 +25,26 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
+# env files: .env.local and friends hold real values for local runs
 .env
+.env.*
+!.env.example
 
 # Secrets & credentials — none are committed today; these patterns are
-# belt-and-suspenders so a stray key can't slip into a public repo.
+# belt-and-suspenders so a stray key can't slip into a public repo. The
+# wildcards on both sides are deliberate: the filenames that actually
+# occur are prefixed, not bare (ADC writes
+# application_default_credentials.json, and google-github-actions/auth
+# drops gha-creds-*.json into the workspace).
 *.pem
 *.key
 *.p12
 *.pfx
-credentials*.json
-service-account*.json
+*credentials*.json
+*service-account*.json
+*-creds-*.json
+key*.json
+sa-*.json
 
 # Editor/IDE
 .idea/
@@ -55,5 +64,12 @@ Thumbs.db
 *.tfstate
 *.tfstate.*
 *.tfvars
+*.tfvars.json
 tfplan
 *.tfplan
+
+# Test output. e2e/.gitignore covers the same names one level down; these
+# catch a run started from the repo root.
+node_modules/
+test-results/
+playwright-report/
