@@ -280,6 +280,14 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 		if err != nil {
 			return Version{}, fmt.Errorf("store: encode options: %w", err)
 		}
+		// Scale bounds are frozen alongside the wording: a later version
+		// may rescale a question, and a response must be read back against
+		// the scale it was actually shown (ADR-0001).
+		var scaleMin, scaleMax *int32
+		if q.Type.NeedsScale() {
+			min, max := q.Scale()
+			scaleMin, scaleMax = int32ptr(min), int32ptr(max)
+		}
 		if _, err := qtx.CreateQuestion(ctx, db.CreateQuestionParams{
 			VersionID:          version.ID,
 			QuestionIdentityID: identityID,
@@ -288,6 +296,8 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 			Options:            options,
 			Required:           q.Required,
 			Position:           int32(i),
+			ScaleMin:           scaleMin,
+			ScaleMax:           scaleMax,
 		}); err != nil {
 			return Version{}, fmt.Errorf("store: create question: %w", err)
 		}
@@ -327,13 +337,22 @@ func (s *Surveys) QuestionsForVersion(ctx context.Context, versionID uuid.UUID) 
 				return nil, fmt.Errorf("store: decode options: %w", err)
 			}
 		}
-		out = append(out, domain.Question{
+		q := domain.Question{
 			IdentityID: r.QuestionIdentityID.String(),
 			Type:       domain.QuestionType(r.Type),
 			Text:       r.Text,
 			Options:    options,
 			Required:   r.Required,
-		})
+		}
+		// NULL for versions published before migration 00009; Scale() then
+		// applies the documented fallback rather than a 0..0 scale.
+		if r.ScaleMin != nil {
+			q.ScaleMin = int(*r.ScaleMin)
+		}
+		if r.ScaleMax != nil {
+			q.ScaleMax = int(*r.ScaleMax)
+		}
+		out = append(out, q)
 	}
 	return out, nil
 }
@@ -432,6 +451,11 @@ func surveyFromRow(r db.Survey, latestVersion, questionCount int) Survey {
 
 // questionsEqual compares a published version to a draft on everything a
 // respondent would notice.
+func int32ptr(v int) *int32 {
+	n := int32(v)
+	return &n
+}
+
 func questionsEqual(a, b []domain.Question) bool {
 	if len(a) != len(b) {
 		return false
@@ -439,6 +463,13 @@ func questionsEqual(a, b []domain.Question) bool {
 	for i := range a {
 		x, y := a[i], b[i]
 		if x.IdentityID != y.IdentityID || x.Type != y.Type || x.Text != y.Text || x.Required != y.Required {
+			return false
+		}
+		// Rescaling a rating question is a real change, so it must not be
+		// mistaken for "nothing to publish".
+		xMin, xMax := x.Scale()
+		yMin, yMax := y.Scale()
+		if xMin != yMin || xMax != yMax {
 			return false
 		}
 		if len(x.Options) != len(y.Options) {

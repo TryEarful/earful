@@ -142,10 +142,25 @@ type Question struct {
 	ScaleMax   int          `json:"scale_max,omitempty"`
 }
 
-// Scale returns the effective bounds for scale-shaped types.
+// DefaultRatingScaleMin/Max are the bounds assumed for a rating scale
+// that carries none. Only rows published before migration 00009 can be in
+// that state — publish did not persist the bounds then — and these are
+// the values the editor itself offers by default, so an old survey reads
+// back as the scale it almost certainly was.
+const (
+	DefaultRatingScaleMin = 1
+	DefaultRatingScaleMax = 5
+)
+
+// Scale returns the effective bounds for scale-shaped types. NPS is fixed
+// by its definition; a rating scale with no usable bounds falls back to
+// the defaults rather than degenerating to a single point.
 func (q Question) Scale() (min, max int) {
 	if q.Type == NPS {
 		return NPSMin, NPSMax
+	}
+	if q.ScaleMax <= q.ScaleMin {
+		return DefaultRatingScaleMin, DefaultRatingScaleMax
 	}
 	return q.ScaleMin, q.ScaleMax
 }

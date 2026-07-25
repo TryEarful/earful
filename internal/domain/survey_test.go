@@ -218,6 +218,14 @@ func TestQuestionType_Traits(t *testing.T) {
 	if got := len(rating.ScalePoints()); got != 5 {
 		t.Errorf("1-5 rating has %d points, want 5", got)
 	}
+	// Versions published before migration 00009 stored no bounds at all.
+	// Such a question must read back as the editor's default scale, never
+	// as the degenerate 0-0 that used to render a single radio.
+	legacy := domain.Question{Type: domain.RatingScale, Text: "Rate"}
+	if min, max := legacy.Scale(); min != domain.DefaultRatingScaleMin || max != domain.DefaultRatingScaleMax {
+		t.Errorf("boundless rating scale = %d-%d, want %d-%d",
+			min, max, domain.DefaultRatingScaleMin, domain.DefaultRatingScaleMax)
+	}
 	for _, tc := range []struct {
 		t     domain.QuestionType
 		needs bool

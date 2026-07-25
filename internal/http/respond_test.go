@@ -3,6 +3,7 @@ package http_test
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -131,6 +132,73 @@ func TestRespond_RequiredAnswerValidation(t *testing.T) {
 	}
 	if bodyContains(body, "Thank you") {
 		t.Error("an incomplete submission was accepted")
+	}
+}
+
+// TestRespond_PublishedRatingScaleKeepsItsBounds pins the defect fixed by
+// migration 00009: publish used to drop ScaleMin/ScaleMax, so a live
+// rating question rendered as a single radio labelled "0" and accepted
+// only 0. Preview reads the draft and looked fine, which is exactly why
+// this assertion has to run against the *published* share link.
+func TestRespond_PublishedRatingScaleKeepsItsBounds(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("scale"))
+	id := app.CreateSurvey(t, creator, "Scale bounds", true)
+	app.AddQuestion(t, creator, id, "rating_scale", "Rate the onboarding",
+		url.Values{"scale_min": {"1"}, "scale_max": {"7"}})
+	app.Publish(t, creator, id)
+
+	respondent := &http.Client{}
+	page := mustGet(t, respondent, app.Server.URL+"/s/"+id)
+	identity := extractAnswerFields(t, page)[0]
+
+	for point := 1; point <= 7; point++ {
+		want := `name="q_` + identity + `" value="` + strconv.Itoa(point) + `"`
+		if !strings.Contains(page, want) {
+			t.Errorf("scale point %d missing from the published survey:\n%s", point, page)
+		}
+	}
+	if strings.Contains(page, `name="q_`+identity+`" value="0"`) {
+		t.Error("a 1..7 scale offered 0")
+	}
+
+	form := respondForm(t, page)
+	form.Set("q_"+identity, "7")
+	resp, body := submitAfterReading(t, app, respondent, id, form)
+	if resp.StatusCode != http.StatusOK || !bodyContains(body, "Thank you") {
+		t.Errorf("top of the scale was refused (status %d):\n%s", resp.StatusCode, body)
+	}
+}
+
+// TestSurvey_RescalingIsPublishable: changing only a rating question's
+// bounds is a real change, not "nothing to publish" — the same defect
+// seen from the creator's side.
+func TestSurvey_RescalingIsPublishable(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("rescale"))
+	id := app.CreateSurvey(t, creator, "Rescale", true)
+	app.AddQuestion(t, creator, id, "rating_scale", "How was it?",
+		url.Values{"scale_min": {"1"}, "scale_max": {"5"}})
+	app.Publish(t, creator, id)
+
+	identity := app.QuestionIdentities(t, creator, id)[0]
+	resp := app.PostForm(t, creator, "/surveys/"+id+"/questions/"+identity, url.Values{
+		"type": {"rating_scale"}, "text": {"How was it?"},
+		"scale_min": {"1"}, "scale_max": {"10"},
+	})
+	resp.Body.Close()
+
+	body := app.Publish(t, creator, id)
+	if !bodyContains(body, "Published version 2") {
+		t.Errorf("rescaling was treated as no change:\n%s", body)
+	}
+
+	respondent := &http.Client{}
+	page := mustGet(t, respondent, app.Server.URL+"/s/"+id)
+	if !strings.Contains(page, `value="10"`) {
+		t.Errorf("live survey still serves the old scale:\n%s", page)
 	}
 }
 

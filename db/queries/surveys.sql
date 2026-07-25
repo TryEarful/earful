@@ -95,8 +95,9 @@ VALUES ($1, $2)
 ON CONFLICT (id) DO NOTHING;
 
 -- name: CreateQuestion :one
-INSERT INTO questions (version_id, question_identity_id, type, text, options, required, position)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO questions (version_id, question_identity_id, type, text, options, required, position,
+                       scale_min, scale_max)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
 -- name: ListQuestionsForVersion :many
