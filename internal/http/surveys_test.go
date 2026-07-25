@@ -345,7 +345,14 @@ func TestSurvey_CloseDateClosesAutomatically(t *testing.T) {
 		t.Fatalf("survey should still be open before its close date:\n%s", page)
 	}
 
-	app.Clock.Advance(72 * time.Hour)
+	// Well past it, not just past it. The close date is chosen in local
+	// time (the fake clock starts at time.Now()) but a close date means
+	// "through the end of that day" in UTC, so the real boundary can sit
+	// up to a day and a timezone offset beyond the formatted date. 72h
+	// was enough for most of the day and not enough around local
+	// midnight, which made this fail only for whoever ran the suite late
+	// at night.
+	app.Clock.Advance(120 * time.Hour)
 	page := app.SurveyPage(t, client, id)
 	if !bodyContains(page, "closed automatically on its close date") {
 		t.Errorf("survey should be closed once the close date passed:\n%s", page)
