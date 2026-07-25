@@ -3,12 +3,18 @@
 Open-source, AI-enhanced, voice-first surveys. Trust, privacy and
 self-hostability are the differentiators.
 
-**Status**: M0 (Foundations), M2 (Auth & workspaces) and M3-T1…T5 (Survey
-building) complete — sign in with a magic link or Google, get a personal
-workspace, build surveys from eight question types, and publish them into
-immutable versions. Answering them comes next (M4). See [PLAN.md](PLAN.md)
-for the full milestone/ticket breakdown and current status, and
-[SPEC.md](SPEC.md) for the product spec these tickets implement.
+**Status**: feature-complete for the MVP. Build surveys from eight
+question types (or have AI draft them), publish into immutable versions,
+collect answers anonymously or by invitation — typed or **spoken**, with
+the audio transcribed and discarded — then read results folded across
+versions, get an AI Insight Summary, translate what people wrote, and
+export everything you hold. Localization, retention purging, a GDPR
+erasure fast-path and a public trust page are all in.
+
+`v0.1.0` runs on production; the M5–M11 work above is committed and
+awaits a deploy. What remains is the launch itself (M9-T5). See
+[PLAN.md](PLAN.md) for per-ticket status and [SPEC.md](SPEC.md) for the
+product spec these tickets implement.
 
 ## Quickstart (docker compose)
 
@@ -18,9 +24,14 @@ docker compose up --build
 
 Fresh clone to running app in one command: Postgres starts, migrations run
 once via a one-shot `migrate` service, then the app serves on
-[localhost:8080](http://localhost:8080). Add `--profile ollama` to also
-start a local Ollama instance for AI features (once wired up in later
-milestones).
+[localhost:8080](http://localhost:8080).
+
+AI features work out of the box: the compose stack runs the `scripted`
+provider, which produces deterministic canned output for generation,
+transcription, insights and translation with no model running — enough to
+click through everything. Point `AI_PROVIDER` at ollama, llamafile or
+Vertex for the real thing (see [Configuration](#ai)), or add
+`--profile ollama` to start Ollama alongside.
 
 ```sh
 docker compose down       # stop
@@ -93,7 +104,8 @@ install, so you shouldn't need to think about it.
 | `make test` | Bring up compose Postgres, run `go test ./...` |
 | `make e2e-smoke` | Playwright + axe suite against the compose stack, at phone/tablet/desktop widths |
 | `make migrate` | Run `earful migrate` against `DATABASE_URL` |
-| `make purge` | Run `earful purge --dry-run` |
+| `make purge` | Run `earful purge --dry-run` (retention, reported not applied) |
+| `make geoip` | Rebuild the embedded country table from a DB-IP CSV |
 | `make generate-check` | Fail if committed templ output is stale (used by `make check`) |
 | `make compose-up` / `make compose-down` | `docker compose` against `deploy/compose.yaml` |
 | `make docker-build` | Build the production image locally |
@@ -167,6 +179,11 @@ Short version: `make test` or `make check`.
 - [CONTEXT.md](CONTEXT.md) — vocabulary
 - [docs/adr/](docs/adr/) — architecture decision records
 - [docs/testing.md](docs/testing.md) — test harness conventions
+- [docs/export-format.md](docs/export-format.md) — the workspace export contract
+- [docs/voice-support.md](docs/voice-support.md) — how voice behaves per browser, and why
+- [docs/metrics.md](docs/metrics.md) — founder-metric definitions and their caveats
+- [docs/security-review.md](docs/security-review.md) — findings triage and the standing guards
+- [docs/runbook.md](docs/runbook.md) — operator procedures
 
 ## License
 

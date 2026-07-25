@@ -1,8 +1,8 @@
 ---
 status: ready-for-agent
-source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0009
+source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0010
 pending: EU AI Act additions (companion doc) — separate pass
-implementation: "M0, M1 (staging + pipeline), M2, M3, M4 (incl. live Brevo), M12 (private beta) complete; v0.1.0 live on production 2026-07-24, staging Basic-Auth-gated; see PLAN.md's Status section for per-ticket progress"
+implementation: "Every milestone complete except M9's launch acts: M0–M8, M10, M11 and M12 shipped; v0.1.0 on production since 2026-07-24, with M5–M11 built 2026-07-25 and awaiting a deploy. Open: M9-T3's soak run, M9-T4's remaining drills, M9-T5 (launch). See PLAN.md's Status section for per-ticket progress"
 ---
 
 # Earful MVP — Specification
@@ -11,74 +11,35 @@ implementation: "M0, M1 (staging + pipeline), M2, M3, M4 (incl. live Brevo), M12
 
 Granular, per-ticket status lives in [PLAN.md](PLAN.md)'s Status section —
 this is the single source of truth, kept aligned with this doc as work
-lands. As of 2026-07-24:
+lands. As of 2026-07-25, **every milestone is complete except the launch
+itself**:
 
-- **M0 (Foundations)** — complete. Go skeleton, docker compose local env,
-  CI, config convention, structured/scrubbed logging. Pure infrastructure;
-  no numbered user story.
-- **M2 (Auth & workspaces)** — complete. Stories 1–5 below are implemented
-  and tested, each carrying an inline `[tested]` link to its test file.
-  Story 5's erasure completes at M8-T2, when the purge job hard-deletes
-  after the 30-day window; the soft-delete half is live now.
-- **M3 (Survey building)** — complete, including T6 (preview), which
-  landed with M4's renderer. Stories 6–17: creation with permanently-fixed
-  anonymity, the eight question types, revision-per-save, publish into
-  immutable versions with stable Question Identities, the dashboard with
-  derived status, close and reopen, the audit log, and preview through the
-  real respondent renderer.
-- **M4 (Answering) — in progress.** The respondent renderer and anonymous
-  submission path are live: share link → whole-form no-JS rendering with a
-  vanilla-JS one-question-at-a-time enhancement → typed validation →
-  response pinned to the version served (stories 28–32, 41). Security
-  headers ship on every page (M4-T7), and the anti-abuse layer is live
-  (T5, completing T2): invisible ALTCHA proof-of-work with a first-party
-  solver, honeypot, a min-fill-time check that keeps the no-JS path
-  bot-resistant, tiered rate buckets, a quarantined abuse log, and
-  double-submit dedupe (stories 42, 43, 68). Invited surveys work end to
-  end (stories 44–49): import, drip-capped invites, personal one-shot
-  links, suppressions via ESP webhook, with mailpit as the local inbox
-  (T3/T4; T6 closed 2026-07-24 — mail.tryearful.com authenticated with
-  Brevo, production on the live sender, DMARC and the suppression
-  webhook verified against the real ESP). The `e2e/` Playwright + axe suite closes T1: the
-  core loop in a real browser at three viewport widths, a
-  JavaScript-disabled run, and axe-core accessibility gates that already
-  forced two real fixes (contrast, control labeling). **M4 is complete**,
-  T6's live-ESP half included (2026-07-24).
-- **M6-T1/T2 (AI provider + quotas)** — the streaming `ai.Provider` seam
-  is live with OpenAI-compatible (ollama/llamafile), whisper-cli,
-  composite and scripted-fake implementations, verified against the dev
-  machine's real llamafile and whisper-cli; usage accounting, workspace
-  quotas and the € breaker are enforced and tested (stories 21, 67, 74).
-  The Vertex implementation waits for cloud credentials. No product
-  endpoint consumes AI yet — that's M5 (voice) and M6-T3 (generation),
-  next.
+- **Shipped and live** (through 2026-07-24): M0 foundations, M1 cloud +
+  deploy pipeline, M2 auth and workspaces, M3 survey building, M4
+  answering (anonymous and invited, live Brevo included), M6-T1/T2 (the
+  AI seam and its spend guards), M12's private-beta gate. `v0.1.0` runs
+  on production; staging is Basic-Auth-gated and gates promotion with the
+  full browser suite.
+- **Shipped 2026-07-25, not yet deployed**: M5 voice (transcript-only,
+  ADR-0004), M6-T3 AI question generation, M7 results/exports/stats,
+  M8 data lifecycle and trust, M10 Insight Summaries, M11 localization
+  and answer translation, plus M9-T7 founder metrics and most of M9-T3's
+  security pass. Every numbered story below carries a `[tested]` link.
+- **Open**: M9-T3's rate-limit soak (needs a deployed instance;
+  `tools/soak` is written), M9-T4's remaining runbook drills, and M9-T5,
+  the launch itself — DNS is already cut over, so what remains is the
+  homepage copy fix in the other repo, a dogfood survey answered by voice
+  on a phone, and the announcement. M12 retires at that point.
 
-- **M1 + M9 infra (cloud, opentofu) — in progress** (pulled forward at
-  the collaborator's request, 2026-07-24). `deploy/opentofu/` describes
-  the whole GCP footprint — four projects (ops/stg/pro/backups), Cloud
-  Run + Cloud SQL per environment in europe-west4, Cloud DNS for
-  tryearful.com replicating every live record (the GitHub Pages site and
-  the Workspace mailbox survive the nameserver flip untouched), keyless
-  GitHub deploys, the alert set, billing budgets, and the immutable
-  export pipeline (ADR-0008) with its own `tofu test` contract. The
-  deploy pipeline makes the **entire e2e suite the staging promotion
-  gate** (story 72's deployed form), reading magic links back from Cloud
-  Logging; production only ever receives the exact image digest staging
-  smoke-tested. The operator sequence has since run to the end — applies,
-  drills, DNS cutover and the Brevo flip (2026-07-24) — leaving only
-  M9's open tickets (T3/T5/T7) on the launch path.
+Two things found while building, both fixed and worth knowing: published
+rating scales had been losing their bounds since M3 (every published
+rating question rendered a single radio labelled "0" — preview read the
+draft, which is why it shipped), and the request logger's
+`ResponseWriter` wrapper hid `http.Hijacker`, so every WebSocket upgrade
+would have failed with a puzzling 501.
 
-- **Private beta decision (2026-07-24)** — the SaaS is invite-only until
-  launch: stories 77–78 (below) specify invite codes as both the signup
-  gate and the sign-in credential, with zero emails sent in the account
-  loop. Designed while Brevo was still postponed; live email (M4-T6)
-  arrived later the same day, which unblocks invited-survey sending but
-  changes nothing here — the code-gated account loop stays email-free
-  until launch. PLAN.md M12 is the ticket; it retires at launch.
-
-Everything else below is not yet implemented. Execution order in
-practice: M0 → M2 → M3 → M4 → M6-T1/T2 → **M1+M9 (cloud, in progress)**
-→ **M12 (private beta gate, next)** → M5 → M6-T3 → M7 → M8 → M10 → M11.
+Execution order in practice: M0 → M2 → M3 → M4 → M6-T1/T2 → M1+M9 (cloud)
+→ M12 → M5 → M6-T3 → M7 → M8 → M10 → M11 → M9-T5 (launch).
 
 ## Problem Statement
 

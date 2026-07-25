@@ -32,6 +32,10 @@ resp, _ := client.Get(app.Server.URL + "/dashboard")
 | `app.CSRFToken(t, client)` | reads the session's CSRF token off a rendered form |
 | `apptest.Options{Env: "staging"}` | production-shaped instance (asserts `Secure` cookies) |
 | `apptest.Options{GoogleIssuer: ...}` | enables Google login against `internal/oidctest` |
+| `apptest.Options{AI: fake}` | injects an `ai.Fake`; without it an instance has no AI at all, which is itself the "degrades gracefully when absent" proof |
+| `apptest.Options{AIQuota: 1}` | a quota small enough to trip, for the refusal paths |
+| `app.LoginAsSuperAdmin(t, addr)` | a session on the support surfaces (invite codes, erasure, metrics) |
+| `apptest.NewIsolatedDB(t, "purge")` | a separate database for tests that operate on the whole of it — see below |
 
 **Fakes stop at the world's edge.** `internal/oidctest` is a real OIDC
 issuer (discovery, JWKS, RS256-signed ID tokens) so everything on our side
@@ -90,9 +94,24 @@ counts** ("there are 3 users"), only on data the test itself created.
 Aggregate-shaped assertions (M7 stats, M10 insights) must be scoped to a
 survey or workspace the test owns.
 
-The one exception is `earful purge` (M8-T2), which is global by nature:
-its tests seed a dedicated workspace, time-travel the fake clock, and
-assert on that workspace's rows only.
+### The purge exception (M8-T2)
+
+`earful purge` is global by definition, which breaks the shared-database
+model twice over: a global DELETE cannot run against data other tests are
+still using, and two purges running concurrently see each other's
+half-finished work. Both showed up immediately — foreign-key violations
+mid-transaction and a dry run reporting 63 surveys where the real run
+removed 27.
+
+So the purge suite gets its own database (`apptest.NewIsolatedDB`, which
+creates and migrates `<base>_purge` on first use) and **does not call
+`t.Parallel()`**. Within that it behaves normally: seed a workspace
+through the real application, time-travel `app.Clock`, assert on what
+survives.
+
+This is the only test in the repository that needs its own database. If a
+second one appears, ask hard whether the feature really has to be
+global.
 
 ### Private-beta helpers (M12)
 
@@ -143,6 +162,12 @@ both). Locally nothing changes: mailpit stays the default source.
 make e2e-smoke   # compose up + npm install + playwright test
 ```
 
+The suite covers the core loop, voice (with Chromium's fake microphone),
+AI question generation with JavaScript on and off, results, the CSV
+download, an Insight Summary, and a workspace export — 40 tests across
+phone, tablet and desktop. The compose stack runs `AI_PROVIDER=scripted`
+by default, which is what makes the AI paths testable without a model.
+
 Two things worth knowing:
 
 - The suite signs in **once** (a setup project saves storage state).
@@ -153,6 +178,19 @@ Two things worth knowing:
 - The axe gate is strict (`violations == []`). It has already caught real
   defects: muted-text contrast at 4.34:1 and answer controls that relied
   on the fieldset legend instead of a programmatic label.
+
+## Guards that fail the build
+
+Five tests exist to keep a rule true as the code grows, rather than to
+check today's behaviour. They are worth knowing before you trip one:
+
+| Guard | Where | Rule |
+|---|---|---|
+| Metered AI | `internal/http/ai_meter_guard_test.go` | Every `ai.Provider` call has an `aiMeter.Check` in the same function. It has caught two real gaps — a wired-up-but-unchecked call, and a translation batch checking quota once for twenty calls. |
+| Aggregate unlinkability | `internal/http/stats_test.go` | No query mentions `survey_stats` together with `responses`/`answers`, and the table holds no FK to either (ADR-0009). |
+| Audio non-persistence | `internal/voice/voice_test.go` | The one package holding audio has no way to write it anywhere (ADR-0004). |
+| No third-party origins | `internal/http/respond_test.go` | Respondent pages reference only first-party URLs (ADR-0006). |
+| Immutability | `internal/store/immutability_test.go` | Published versions, questions, revisions, localizations and insight runs refuse UPDATE/DELETE in raw SQL — the deliberate exception to the HTTP-only seam. |
 
 ## Front-end verification (Playwright MCP)
 
@@ -241,10 +279,33 @@ Live as of M2:
 
 - **AI `Provider`** — `internal/ai.Fake`, scripted streaming outputs per
   operation, recording every request (including the transcription
-  language hint M11-T3 asserts on).
+  language hint M11-T3 asserts on). It can also pace fragments
+  (`FragmentDelay`) and die mid-stream (`StreamErr`, `StreamErrAfter`),
+  because "arrives token by token" and "survives a provider hanging up"
+  are both behaviours worth pinning.
+- **A development-only provider** — `AI_PROVIDER=scripted` produces
+  deterministic, well-formed output for every operation with no model
+  running. It is what lets the browser suite exercise voice, generation
+  and insights on a laptop, and it is refused at boot outside
+  `APP_ENV=development` (serving invented content to a real user would
+  be a lie, so it is an invariant rather than a convention).
 
-The AI integration test (`TestOpenAICompat_Integration`) is opt-in: point
-it at a real OpenAI-compatible backend with
+Three integration tests are opt-in, and each is the only witness that a
+wire format matches reality:
+
+```sh
+# Vertex, against the real API with your own ADC (M6-T1)
+VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=<model> \
+  go test ./internal/ai/ -run Vertex_Integration -v
+
+# whisper.cpp, against a real model (M5)
+say -o /tmp/speech.wav --data-format=LEI16@16000 "the capital of France is Paris"
+WHISPER_TEST_MODEL=$HOME/models/ggml-base.bin WHISPER_TEST_AUDIO=/tmp/speech.wav \
+  go test ./internal/ai/ -run WhisperCLI_Integration -v
+```
+
+The OpenAI-compatible one is the same shape: point it at a real backend
+with
 
 ```sh
 # ollama
