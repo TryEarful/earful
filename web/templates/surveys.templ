@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/web/static"
 )
 
 func responseCountLabel(n int) string {
@@ -116,6 +117,9 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 					</ol>
 				}
 			</section>
+			if data.AIEnabled {
+				@generatePanel(csrf, data.Survey.ID)
+			}
 			@addQuestionForm(csrf, data.Survey.ID)
 			if !data.Survey.IsAnonymous {
 				@participantsPanel(csrf, data)
@@ -124,6 +128,10 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			@versionsPanel(data.Survey, data.Versions)
 			@settingsPanel(csrf, data.Survey)
 		</main>
+		if data.AIEnabled {
+			<script src={ static.AssetURL("js/wsclient.js") } defer></script>
+			<script src={ static.AssetURL("js/generate.js") } defer></script>
+		}
 	}
 }
 
@@ -194,6 +202,38 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 			</div>
 		</details>
 	</li>
+}
+
+// generatePanel is M6-T3's entrance. The form works on its own: without
+// JavaScript it posts, waits, and comes back with the questions added.
+// generate.js upgrades it to a live stream against the same handler.
+templ generatePanel(csrf string, surveyID string) {
+	<section class="card" id="ai-generate">
+		<h2>Draft questions with AI</h2>
+		<p class="muted">
+			Describe what you want to learn and I'll draft questions into this survey.
+			They arrive as ordinary draft questions — edit, reorder or delete them like any others.
+		</p>
+		<form
+			method="post"
+			action={ templ.SafeURL("/surveys/" + surveyID + "/generate") }
+			class="generate-form"
+			data-generate-path={ "/surveys/" + surveyID + "/generate/stream" }
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<label class="field">
+				<span>What do you want to learn?</span>
+				<textarea
+					name="prompt"
+					rows="3"
+					maxlength="1000"
+					placeholder="How new customers experienced their first week, especially onboarding and support"
+				></textarea>
+			</label>
+			<button type="submit">Draft questions</button>
+		</form>
+		<pre class="generate-output" aria-live="polite" hidden></pre>
+	</section>
 }
 
 templ addQuestionForm(csrf string, surveyID string) {

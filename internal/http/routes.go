@@ -91,6 +91,10 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/surveys/{surveyID}/delete", s.surveyDelete)
 	post("/surveys/{surveyID}/participants", s.participantsImport)
 	post("/surveys/{surveyID}/participants/send", s.participantsSend)
+	// AI-drafted questions (M6-T3). The POST is the whole feature; the
+	// socket is the same operation with the output visible as it arrives.
+	post("/surveys/{surveyID}/generate", s.surveyGenerate)
+	mux.Handle("GET /surveys/{surveyID}/generate/stream", s.requireAuth(http.HandlerFunc(s.surveyGenerateSocket)))
 	post("/surveys/{surveyID}/questions", s.questionAdd)
 	post("/surveys/{surveyID}/questions/{questionID}", s.questionUpdate)
 	post("/surveys/{surveyID}/questions/{questionID}/delete", s.questionDelete)

@@ -91,6 +91,7 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 		Questions:     draft.Questions,
 		Versions:      viewVersions(versions),
 		ResponseCount: responses,
+		AIEnabled:     s.canGenerate(),
 		Error:         errMsg,
 		Notice:        notice,
 	}

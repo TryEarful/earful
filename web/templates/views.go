@@ -63,6 +63,10 @@ type SurveyEditorData struct {
 	Questions     []domain.Question
 	Versions      []VersionView
 	ResponseCount int
+	// AIEnabled shows the "draft with AI" panel. False when no text
+	// provider is configured: an absent capability is an absent feature,
+	// not a button that fails (Appendix D).
+	AIEnabled bool
 	// Participants is populated for invited surveys only.
 	Participants []ParticipantView
 	PendingCount int

@@ -116,8 +116,8 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### AI-assisted creation
 
-19. As a survey creator, I want to describe my goal in a prompt and watch AI-generated draft questions stream in, so that I start from a solid draft instead of a blank page.
-20. As a survey creator, I want generated questions to arrive as editable Draft content restricted to the supported types, so that AI output is never a special case.
+19. As a survey creator, I want to describe my goal in a prompt and watch AI-generated draft questions stream in, so that I start from a solid draft instead of a blank page. [tested](internal/http/generate_test.go) — streamed over a WebSocket, with the same operation available as a plain form post for JS-free use ([e2e](e2e/tests/generate.spec.ts))
+20. As a survey creator, I want generated questions to arrive as editable Draft content restricted to the supported types, so that AI output is never a special case. [tested](internal/http/generate_test.go) — invalid or invented types are dropped and counted, never silently accepted; what lands is an ordinary Draft Revision
 21. As a workspace owner, I want AI usage counted against a daily workspace quota, so that one enthusiastic teammate cannot burn the budget. [tested](internal/ai/meter_test.go) — quota and breaker logic; the SQL sums in [store](internal/store/aiusage_test.go)
 
 ### Localization and translation
