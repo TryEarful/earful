@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { createPublishedSurvey } from "./helpers";
+import { aiTimeout, createPublishedSurvey, offersVoice, scriptedAI } from "./helpers";
 
 // Spoken answers, in a real browser with a fake microphone (M5).
 //
@@ -25,6 +25,18 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   });
   const respondent = await context.newPage();
   await respondent.goto(share);
+
+  const offered = await offersVoice(respondent);
+  if (!offered) {
+    // No transcription configured means no mic — and a typed answer
+    // that works exactly as it always did. That is the whole promise
+    // when the capability is absent.
+    await expect(respondent.getByRole("button", { name: "Answer by speaking" })).toHaveCount(0);
+    await respondent.locator("textarea").fill("Typed, because this instance has no mic.");
+    await expect(respondent.locator("textarea")).not.toBeEmpty();
+    await context.close();
+  }
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
   // The mic is offered on the long-text question, next to a textarea
   // that already works.
@@ -53,13 +65,29 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   await respondent.waitForTimeout(1500); // a second of speech to transcribe
   await stop.click();
 
-  // The transcript lands in the textarea, where it can be edited.
   const answer = respondent.locator("textarea");
-  await expect(answer).not.toBeEmpty({ timeout: 15000 });
-  const transcript = await answer.inputValue();
-  expect(transcript.length).toBeGreaterThan(0);
-
-  await answer.fill(transcript + " — edited before submitting.");
+  if (scriptedAI) {
+    // Canned transcription: the words are deterministic, so the whole
+    // promise is checkable — the transcript lands in the textarea, where
+    // it can be edited before submitting (story 36).
+    await expect(answer).not.toBeEmpty({ timeout: aiTimeout });
+    const transcript = await answer.inputValue();
+    expect(transcript.length).toBeGreaterThan(0);
+    await answer.fill(transcript + " — edited before submitting.");
+  } else {
+    // A real transcriber hears what Chromium's fake capture device
+    // actually emits: a tone, not speech. Correctly transcribing that
+    // yields no words, so asserting on the text would fail the gate for
+    // the model being right. What must still hold is everything around
+    // the words — the socket completed, the server answered, the status
+    // says transcribed rather than an error, and the field stays the
+    // respondent's to edit.
+    await expect(respondent.locator(".voice-status").first()).toHaveText(/Transcribed/, {
+      timeout: aiTimeout,
+    });
+    await expect(mic).toHaveText("Answer by speaking");
+    await answer.fill("Typed after speaking — edited before submitting.");
+  }
   await expect(answer).toHaveValue(/edited before submitting/);
 
   await context.close();
@@ -71,6 +99,11 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
 test("local recognition is only claimed when the browser proves it", async ({ page }) => {
   const share = await createPublishedSurvey(page, `E2E voice detect ${Date.now()}`);
   await page.goto(share);
+
+  // voice.js — and with it the detector under test — is only loaded when
+  // the page offers a mic at all.
+  const offered = await offersVoice(page);
+  test.skip(!offered, "this instance has no transcription configured, so voice.js is not loaded");
 
   const results = await page.evaluate(() => {
     const detect = (window as any).EarfulVoice.detectLocalRecognition;

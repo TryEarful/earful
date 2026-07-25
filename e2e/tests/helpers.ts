@@ -82,6 +82,48 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
   throw new Error(`no logged email with a matching link found for ${addr}`);
 }
 
+// --- What this instance offers -------------------------------------
+//
+// "An absent capability is an absent feature" (SPEC.md Appendix D): an
+// instance with no AI configured renders no mic, no drafting panel and
+// no insight card, and that is correct behaviour rather than a fault.
+// One suite has to gate a laptop running the scripted provider, a CI
+// compose stack, and staging running Vertex — so it asks the page what
+// is on offer and asserts accordingly, instead of assuming.
+//
+// The probes read server-rendered markers, not the JavaScript-built UI,
+// so they answer the same way with scripting disabled.
+
+// offersAIDrafting: the M6-T3 panel on a survey editor page.
+export async function offersAIDrafting(page: Page): Promise<boolean> {
+  return (await page.locator("#ai-generate").count()) > 0;
+}
+
+// offersVoice: the M5 socket endpoint on a respondent page. voice.js
+// builds the mic from this attribute; without it there is no mic.
+export async function offersVoice(page: Page): Promise<boolean> {
+  return (await page.locator("form[data-voice-path]").count()) > 0;
+}
+
+// offersInsights: the M10 panel on a results page. It also needs at
+// least one response, so probe after answers exist.
+export async function offersInsights(page: Page): Promise<boolean> {
+  return (await page.locator("#insights").count()) > 0;
+}
+
+// E2E_AI_MODE says what sits behind the AI seam: "scripted" (canned,
+// deterministic output — the compose stack and CI) or "real" (an actual
+// model). Assertions about generated *content* only hold for scripted;
+// against a real model the suite asserts the behaviour around the
+// content instead. Chromium's fake capture device is the reason this
+// distinction matters most: it emits a tone, so a real transcriber
+// correctly hears no words where the scripted one returns a sentence.
+export const scriptedAI = (process.env.E2E_AI_MODE ?? "scripted") === "scripted";
+
+// aiTimeout: canned output returns immediately; a real model is allowed
+// to think.
+export const aiTimeout = scriptedAI ? 15000 : 60000;
+
 export function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
 }

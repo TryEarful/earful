@@ -184,6 +184,12 @@ resource "google_cloud_run_v2_job" "migrate" {
 # so what runs nightly in production is exactly what a developer runs
 # with `make purge`. Retention promises that depend on someone
 # remembering to run something are not promises.
+#
+# The image below is only the seed: like the service, this job's image is
+# in ignore_changes and is moved to each promoted digest by
+# .github/workflows/deploy.yml. That step is not optional — without it
+# retention would run whatever image happened to exist the day the job
+# was created, and would look healthy while doing it.
 resource "google_cloud_run_v2_job" "purge" {
   count    = var.enable_purge ? 1 : 0
   project  = var.project

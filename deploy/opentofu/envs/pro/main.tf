@@ -187,6 +187,7 @@ module "app" {
       VERTEX_LOCATION     = local.region
       AI_MODEL            = var.ai_model
       AI_MODEL_ANALYZE    = var.ai_model_analyze
+      AI_DAILY_BUDGET_EUR = tostring(var.ai_daily_budget_eur)
       LOG_LEVEL           = "info"
       # M12: production is invite-only — one-shot codes create accounts,
       # email+password signs in, zero emails sent. Staging deliberately

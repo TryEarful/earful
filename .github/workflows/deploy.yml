@@ -146,6 +146,11 @@ jobs:
           E2E_BASE_URL: ${{ needs.deploy-stg.outputs.url }}
           E2E_BASIC_AUTH: ${{ secrets.STG_BASIC_AUTH }} # staging's Basic Auth wall
           E2E_LINK_SOURCE: logging
+          # Staging runs a real model, so the suite stops asserting on
+          # generated content: Chromium's fake microphone emits a tone,
+          # and a transcriber that correctly hears no words must not fail
+          # the gate for being right (see e2e/tests/helpers.ts).
+          E2E_AI_MODE: real
           E2E_LOG_PROJECT: ${{ vars.GCP_STG_PROJECT }}
           E2E_GCP_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
 
@@ -172,6 +177,22 @@ jobs:
           gcloud run services update earful \
             --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
             --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+
+      # The nightly retention purge is the same binary, so it has to move
+      # with the same digest. Tofu creates the job from the seed image and
+      # then ignores its image forever (deploys change code, tofu does
+      # not), which means nothing else would ever update it — and a purge
+      # job quietly running a year-old binary is the worst possible way to
+      # break a retention promise, because it looks like it is working.
+      - run: |
+          if gcloud run jobs describe earful-purge \
+               --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}" >/dev/null 2>&1; then
+            gcloud run jobs update earful-purge \
+              --image "${{ vars.GCP_AR }}/earful@${{ needs.build.outputs.digest }}" \
+              --project "${{ vars.GCP_PRO_PROJECT }}" --region "${{ vars.GCP_REGION }}"
+          else
+            echo "earful-purge is not provisioned here (enable_purge=false) — nothing to update"
+          fi
 
       # Shallow on purpose: the full e2e suite would write junk surveys
       # into the production database; the digest it exercised on staging

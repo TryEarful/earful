@@ -168,7 +168,34 @@ download, an Insight Summary, and a workspace export — 40 tests across
 phone, tablet and desktop. The compose stack runs `AI_PROVIDER=scripted`
 by default, which is what makes the AI paths testable without a model.
 
-Two things worth knowing:
+### The suite asks what the instance offers
+
+One suite gates three different configurations — a laptop with the
+scripted provider, the CI compose stack, and staging running Vertex — so
+it probes rather than assumes. `helpers.ts` reads server-rendered
+markers (`#ai-generate`, `form[data-voice-path]`, `#insights`) and the
+AI tests **skip with a reason** where the capability is absent, after
+asserting that the page around it still works. That is the product rule
+under test, not a concession: an absent capability is an absent feature
+(Appendix D), so a survey editor with no drafting panel must still add
+questions by hand, and a respondent page with no mic must still take a
+typed answer.
+
+`E2E_AI_MODE` says what is behind the seam:
+
+| Value | Where | What the voice test asserts |
+|---|---|---|
+| `scripted` (default) | laptop, CI compose | The exact transcript lands in the textarea and can be edited. |
+| `real` | staging (set by `deploy.yml`) | Consent → capture → socket → `Transcribed`, with no error and the field still editable. |
+
+The distinction exists because Chromium's fake capture device emits a
+**tone, not speech**. The scripted provider ignores the audio and
+returns a canned sentence; a real transcriber correctly hears no words.
+Asserting on the words against a real model would fail the promotion
+gate for the model being right, so against `real` the suite asserts
+everything around the words instead.
+
+Two more things worth knowing:
 
 - The suite signs in **once** (a setup project saves storage state).
   Signing in per test would trip the app's own per-IP magic-link rate

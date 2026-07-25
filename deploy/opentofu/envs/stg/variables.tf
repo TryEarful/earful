@@ -49,3 +49,14 @@ variable "ai_model_analyze" {
   type        = string
   default     = "gemini-2.5-pro"
 }
+
+# Set here rather than left on the application default, because the first
+# way to discover an unset budget is a breaker tripping mid-run. Staging's
+# job is to exercise the AI paths for the smoke gate, and a gate run costs
+# a fraction of a cent -- €1/day is far more than that and still a bill
+# that cannot surprise anyone.
+variable "ai_daily_budget_eur" {
+  description = "Global daily AI breaker: every AI endpoint refuses once the day's estimated spend reaches this."
+  type        = number
+  default     = 1
+}

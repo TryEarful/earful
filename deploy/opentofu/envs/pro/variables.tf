@@ -72,3 +72,14 @@ variable "ai_model_analyze" {
   type        = string
   default     = "gemini-2.5-pro"
 }
+
+# Set here rather than left on the application default, because the first
+# way to discover an unset budget is a breaker tripping mid-run. €2/day is
+# ~€60/month at the cap, which is the top of PLAN.md Appendix C's AI line
+# — a ceiling, not a forecast: real early usage is a few cents a day.
+# Raise it deliberately when the breaker starts tripping for real reasons.
+variable "ai_daily_budget_eur" {
+  description = "Global daily AI breaker: every AI endpoint refuses once the day's estimated spend reaches this."
+  type        = number
+  default     = 2
+}
