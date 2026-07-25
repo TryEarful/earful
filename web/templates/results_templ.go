@@ -51,7 +51,7 @@ func SurveyResults(email string, workspaceName string, csrf string, data SurveyR
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <main><nav class=\"breadcrumb\"><a href=\"/surveys\">Surveys</a> / <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <main><nav class=\"breadcrumb\" aria-label=\"Breadcrumb\"><a href=\"/surveys\">Surveys</a> / <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -10,7 +10,7 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 	@Layout(data.Survey.Title + " — results — Earful") {
 		@AuthedHeader(email, csrf)
 		<main>
-			<nav class="breadcrumb">
+			<nav class="breadcrumb" aria-label="Breadcrumb">
 				<a href="/surveys">Surveys</a> /
 				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> /
 				Results

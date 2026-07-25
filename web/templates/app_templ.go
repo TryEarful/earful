@@ -34,7 +34,7 @@ func AuthedHeader(email string, csrf string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"site-header\"><a class=\"brand\" href=\"/dashboard\">Earful</a><nav><a href=\"/dashboard\">Dashboard</a> <a href=\"/account\">Account</a> <span class=\"muted\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"site-header\"><a class=\"brand\" href=\"/dashboard\">Earful</a><nav aria-label=\"Main\"><a href=\"/dashboard\">Dashboard</a> <a href=\"/account\">Account</a> <span class=\"muted\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

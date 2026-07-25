@@ -8,7 +8,7 @@ import "fmt"
 templ AuthedHeader(email string, csrf string) {
 	<header class="site-header">
 		<a class="brand" href="/dashboard">Earful</a>
-		<nav>
+		<nav aria-label="Main">
 			<a href="/dashboard">Dashboard</a>
 			<a href="/account">Account</a>
 			<span class="muted">{ email }</span>

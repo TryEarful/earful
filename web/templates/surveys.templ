@@ -78,7 +78,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 	@Layout(data.Survey.Title + " — Earful") {
 		@AuthedHeader(email, csrf)
 		<main>
-			<nav class="breadcrumb"><a href="/surveys">Surveys</a> / { data.Survey.Title }</nav>
+			<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/surveys">Surveys</a> / { data.Survey.Title }</nav>
 			<div class="title-row">
 				<h1>{ data.Survey.Title }</h1>
 				@StatusChip(data.Survey.Status)
@@ -107,12 +107,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 					<h2>Questions</h2>
 					<div class="button-row">
 						if data.Survey.LatestVersion > 0 {
-							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>
-								Results
-								if data.ResponseCount > 0 {
-									{ " (" + responseCountLabel(data.ResponseCount) + ")" }
-								}
-							</a>
+							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>Results</a>
 						}
 						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>Preview as respondent</a>
 					</div>
@@ -444,7 +439,7 @@ templ SurveyAudit(email string, workspaceName string, csrf string, data SurveyAu
 	@Layout("Audit log — " + data.Survey.Title) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<nav class="breadcrumb">
+			<nav class="breadcrumb" aria-label="Breadcrumb">
 				<a href="/surveys">Surveys</a> /
 				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> / Audit log
 			</nav>
