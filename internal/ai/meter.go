@@ -79,6 +79,33 @@ func (m *Meter) Check(ctx context.Context, workspaceID uuid.UUID) error {
 	return nil
 }
 
+// Counted wraps a stream and tallies the characters it delivers, so a
+// caller can meter what a model actually produced rather than guessing
+// before the fact. Prompt characters are added by the caller, which knows
+// what it sent.
+//
+//	counted := ai.Counted(stream)
+//	defer func() { _ = s.aiMeter.Record(ctx, wsID, &id, string(ai.OpGenerate), counted.Chars()+len(prompt)) }()
+type CountedStream struct {
+	inner Stream
+	chars int
+}
+
+func Counted(s Stream) *CountedStream { return &CountedStream{inner: s} }
+
+func (c *CountedStream) Recv() (string, error) {
+	fragment, err := c.inner.Recv()
+	c.chars += len(fragment)
+	return fragment, err
+}
+
+func (c *CountedStream) Close() error { return c.inner.Close() }
+
+// Chars is the number of characters delivered so far — meaningful even
+// when a stream failed midway, which is the case that must still be paid
+// for.
+func (c *CountedStream) Chars() int { return c.chars }
+
 // Record accounts a completed call. Tokens are estimated from characters
 // (~4 chars/token, the industry rule of thumb) until a provider reports
 // real counts; overestimating slightly is the safe direction for a

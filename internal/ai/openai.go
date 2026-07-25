@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -23,8 +22,10 @@ type OpenAICompat struct {
 	// "http://localhost:11434/v1" (ollama) or "http://localhost:8081/v1"
 	// (llamafile).
 	BaseURL string
-	Model   string
-	APIKey  string // optional; local backends ignore it
+	// Models is the model per operation; most local setups serve one
+	// model and set only Default.
+	Models ModelSet
+	APIKey string // optional; local backends ignore it
 	// Client defaults to a client with a generous timeout — model
 	// inference is slow by web standards.
 	Client *http.Client
@@ -41,29 +42,19 @@ func (o *OpenAICompat) client() *http.Client {
 }
 
 func (o *OpenAICompat) Generate(ctx context.Context, req GenerateRequest) (Stream, error) {
-	return o.chat(ctx, req.System, req.Prompt)
+	return o.chat(ctx, OpGenerate, req.System, req.Prompt)
 }
 
 func (o *OpenAICompat) Analyze(ctx context.Context, req AnalyzeRequest) (Stream, error) {
-	return o.chat(ctx, req.System, req.Prompt)
+	return o.chat(ctx, OpAnalyze, req.System, req.Prompt)
 }
 
 func (o *OpenAICompat) Translate(ctx context.Context, req TranslateRequest) (Stream, error) {
-	system := fmt.Sprintf(
-		"You are a translator. Translate the user's text from %s to %s. Output only the translation — no preamble, no notes.",
-		orAuto(req.SourceLang), req.TargetLang)
-	return o.chat(ctx, system, req.Text)
-}
-
-func orAuto(lang string) string {
-	if lang == "" {
-		return "the source language (detect it)"
-	}
-	return lang
+	return o.chat(ctx, OpTranslate, translationSystemPrompt(req.SourceLang, req.TargetLang), req.Text)
 }
 
 // chat starts a streaming chat completion and returns the SSE stream.
-func (o *OpenAICompat) chat(ctx context.Context, system, prompt string) (Stream, error) {
+func (o *OpenAICompat) chat(ctx context.Context, op Op, system, prompt string) (Stream, error) {
 	messages := []map[string]string{}
 	if system != "" {
 		messages = append(messages, map[string]string{"role": "system", "content": system})
@@ -71,7 +62,7 @@ func (o *OpenAICompat) chat(ctx context.Context, system, prompt string) (Stream,
 	messages = append(messages, map[string]string{"role": "user", "content": prompt})
 
 	payload, err := json.Marshal(map[string]any{
-		"model":    o.Model,
+		"model":    o.Models.For(op),
 		"messages": messages,
 		"stream":   true,
 	})
@@ -97,46 +88,29 @@ func (o *OpenAICompat) chat(ctx context.Context, system, prompt string) (Stream,
 		resp.Body.Close()
 		return nil, fmt.Errorf("ai: chat request: status %d: %s", resp.StatusCode, body)
 	}
-	return &sseStream{body: resp.Body, scanner: bufio.NewScanner(resp.Body)}, nil
+	return newSSEStream(resp.Body, decodeOpenAIEvent), nil
 }
 
-// sseStream parses OpenAI-style server-sent events into text fragments.
-type sseStream struct {
-	body    io.ReadCloser
-	scanner *bufio.Scanner
-}
-
-func (s *sseStream) Recv() (string, error) {
-	for s.scanner.Scan() {
-		line := strings.TrimSpace(s.scanner.Text())
-		if !strings.HasPrefix(line, "data:") {
-			continue
-		}
-		data := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
-		if data == "[DONE]" {
-			return "", io.EOF
-		}
-		var event struct {
-			Choices []struct {
-				Delta struct {
-					Content string `json:"content"`
-				} `json:"delta"`
-			} `json:"choices"`
-		}
-		if err := json.Unmarshal([]byte(data), &event); err != nil {
-			continue // keep-alives and unknown event shapes are skippable
-		}
-		if len(event.Choices) > 0 && event.Choices[0].Delta.Content != "" {
-			return event.Choices[0].Delta.Content, nil
-		}
+// decodeOpenAIEvent reads one chat-completion delta.
+func decodeOpenAIEvent(data []byte) (string, error) {
+	if string(data) == "[DONE]" {
+		return "", io.EOF
 	}
-	if err := s.scanner.Err(); err != nil {
-		return "", fmt.Errorf("ai: read stream: %w", err)
+	var event struct {
+		Choices []struct {
+			Delta struct {
+				Content string `json:"content"`
+			} `json:"delta"`
+		} `json:"choices"`
 	}
-	return "", io.EOF
+	if err := json.Unmarshal(data, &event); err != nil {
+		return "", nil // keep-alives and unknown event shapes are skippable
+	}
+	if len(event.Choices) > 0 {
+		return event.Choices[0].Delta.Content, nil
+	}
+	return "", nil
 }
-
-func (s *sseStream) Close() error { return s.body.Close() }
 
 // Transcribe posts multipart audio to the whisper-style endpoint. The
 // response arrives whole (these endpoints don't stream), so it is
@@ -148,7 +122,7 @@ func (o *OpenAICompat) Transcribe(ctx context.Context, req TranscribeRequest) (S
 
 	var buf bytes.Buffer
 	form := newAudioForm(&buf)
-	if err := form.write(req, o.Model); err != nil {
+	if err := form.write(req, o.Models.For(OpTranscribe)); err != nil {
 		return nil, err
 	}
 

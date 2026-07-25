@@ -111,9 +111,44 @@ see `.env.example` for a copy-pasteable starting point.
 | `DATABASE_URL` | *(empty)* | Postgres DSN; required by `serve`, `migrate` and `purge` |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, or `error` |
 | `BASE_URL` | `http://localhost:8080` | Externally-visible origin; sign-in links in emails are built from it |
-| `EMAIL_SENDER` | `console` | Only `console` for now — prints emails to stdout. Brevo/SMTP arrive with M4-T6 |
+| `EMAIL_SENDER` | `console` | `console` (stdout is your inbox), `smtp` (mailpit locally, any relay when self-hosting), or `brevo` (needs `BREVO_API_KEY`). Staging refuses anything but `console` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(empty)* | Set both to enable Google login; unset hides it |
 | `GOOGLE_OIDC_ISSUER` | `https://accounts.google.com` | Override only for testing against a fake issuer |
+| `BETA_MODE` | `false` | Invite-code signup + password login, zero emails sent (M12; retires at launch) |
+| `STAGING_BASIC_AUTH` | *(empty)* | `user:pass`; required on staging, which is walled behind it |
+
+### AI
+
+Every AI feature goes through one `Provider` seam, and the product never
+names a model: which backend and which model serve which operation is
+configuration. Nothing is enabled by default — unconfigured capabilities
+report themselves absent and the features degrade (Appendix D).
+
+| Variable | Default | Notes |
+|---|---|---|
+| `AI_PROVIDER` | `none` | `none`, `openai` (anything OpenAI-compatible: ollama's `/v1`, llamafile, a hosted gateway), `vertex`, or `scripted` (canned output, development only) |
+| `AI_BASE_URL` | `http://localhost:11434/v1` | For `openai`; include the version prefix |
+| `AI_API_KEY` | *(empty)* | For `openai` backends that want one; local ones ignore it |
+| `AI_MODEL` | *(empty)* | Default model for every operation |
+| `AI_MODEL_GENERATE` / `_ANALYZE` / `_TRANSLATE` / `_TRANSCRIBE` | *(empty)* | Per-operation override — this is how insights run on a stronger tier than question generation |
+| `VERTEX_PROJECT` | *(empty)* | Required by the `vertex` provider; credentials come from Application Default Credentials, never a key file |
+| `VERTEX_LOCATION` | `europe-west4` | ADR-0004 pins voice here |
+| `TRANSCRIBE_PROVIDER` | `none` | `none`, `whisper-cli`, `openai`, `vertex`, or `scripted`; voice is selected separately from text because they routinely come from different places |
+| `WHISPER_BIN` / `WHISPER_MODEL` | `whisper-cli` / *(empty)* | whisper.cpp binary and `ggml-*.bin` model path |
+| `AI_DAILY_BUDGET_EUR` | `3` | Global daily breaker: every AI endpoint refuses once the day's estimated spend reaches it |
+| `AI_WORKSPACE_DAILY_TOKENS` | `200000` | Per-workspace daily cap |
+| `AI_COST_PER_1K_TOKENS_EUR` | `0.001` | Token-to-cost estimate feeding both limits |
+
+Local setups that need everything working:
+
+```sh
+# text via ollama, voice via whisper.cpp
+AI_PROVIDER=openai AI_MODEL=gemma4 TRANSCRIBE_PROVIDER=whisper-cli \
+  WHISPER_MODEL=$HOME/models/ggml-base.bin earful serve
+
+# no model at hand — deterministic canned streams, development only
+AI_PROVIDER=scripted TRANSCRIBE_PROVIDER=scripted earful serve
+```
 
 No secrets are committed to this repo, and the binary never auto-loads
 `.env` files — see the note at the top of `.env.example`.

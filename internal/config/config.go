@@ -51,16 +51,29 @@ type Config struct {
 	// --- AI (M6). Model IDs are configuration, never code. ---
 
 	// AIProvider selects the text-AI backend: "none" (features degrade
-	// gracefully, Appendix D) or "openai" (any OpenAI-compatible server:
-	// ollama's /v1, llamafile, ...). "vertex" arrives with the cloud
-	// milestone.
+	// gracefully, Appendix D), "openai" (any OpenAI-compatible server:
+	// ollama's /v1, llamafile, a hosted gateway), "vertex" (Vertex AI via
+	// Application Default Credentials), or "scripted" (deterministic
+	// canned output, development only).
 	AIProvider string
 	AIBaseURL  string
 	AIModel    string
 	AIAPIKey   string
+	// AIModel<Op> overrides AIModel for one operation, which is how
+	// "insights use a stronger tier than the rest" stays configuration
+	// rather than code (SPEC.md "AI surface"). Empty means: use AIModel.
+	AIModelGenerate   string
+	AIModelAnalyze    string
+	AIModelTranslate  string
+	AIModelTranscribe string
+	// VertexProject/VertexLocation address the Vertex AI endpoint.
+	// ADR-0004 pins voice to europe-west4; the location is configuration
+	// so the pin is visible in the environment, not buried in code.
+	VertexProject  string
+	VertexLocation string
 	// TranscribeProvider selects the voice backend: "none",
-	// "whisper-cli" (local whisper.cpp binary), or "openai" (the text
-	// backend's whisper-style audio endpoint).
+	// "whisper-cli" (local whisper.cpp binary), "openai" (the text
+	// backend's whisper-style audio endpoint), "vertex", or "scripted".
 	TranscribeProvider string
 	WhisperBin         string
 	WhisperModel       string
@@ -133,6 +146,12 @@ func Load() (Config, error) {
 		AIBaseURL:          getEnv("AI_BASE_URL", "http://localhost:11434/v1"),
 		AIModel:            getEnv("AI_MODEL", ""),
 		AIAPIKey:           getEnv("AI_API_KEY", ""),
+		AIModelGenerate:    getEnv("AI_MODEL_GENERATE", ""),
+		AIModelAnalyze:     getEnv("AI_MODEL_ANALYZE", ""),
+		AIModelTranslate:   getEnv("AI_MODEL_TRANSLATE", ""),
+		AIModelTranscribe:  getEnv("AI_MODEL_TRANSCRIBE", ""),
+		VertexProject:      getEnv("VERTEX_PROJECT", ""),
+		VertexLocation:     getEnv("VERTEX_LOCATION", "europe-west4"),
 		TranscribeProvider: getEnv("TRANSCRIBE_PROVIDER", "none"),
 		WhisperBin:         getEnv("WHISPER_BIN", "whisper-cli"),
 		WhisperModel:       getEnv("WHISPER_MODEL", ""),
@@ -218,8 +237,16 @@ func (c Config) validate() error {
 		if c.AIModel == "" {
 			return fmt.Errorf("config: AI_PROVIDER=openai requires AI_MODEL")
 		}
+	case "vertex":
+		if err := c.validateVertex(); err != nil {
+			return err
+		}
+	case "scripted":
+		if err := c.validateScripted("AI_PROVIDER"); err != nil {
+			return err
+		}
 	default:
-		return fmt.Errorf("config: unknown AI_PROVIDER %q (want none or openai; vertex arrives with the cloud milestone)", c.AIProvider)
+		return fmt.Errorf("config: unknown AI_PROVIDER %q (want none, openai, vertex, or scripted)", c.AIProvider)
 	}
 	switch c.TranscribeProvider {
 	case "none", "openai":
@@ -227,8 +254,41 @@ func (c Config) validate() error {
 		if c.WhisperModel == "" {
 			return fmt.Errorf("config: TRANSCRIBE_PROVIDER=whisper-cli requires WHISPER_MODEL")
 		}
+	case "vertex":
+		if err := c.validateVertex(); err != nil {
+			return err
+		}
+	case "scripted":
+		if err := c.validateScripted("TRANSCRIBE_PROVIDER"); err != nil {
+			return err
+		}
 	default:
-		return fmt.Errorf("config: unknown TRANSCRIBE_PROVIDER %q (want none, whisper-cli, or openai)", c.TranscribeProvider)
+		return fmt.Errorf("config: unknown TRANSCRIBE_PROVIDER %q (want none, whisper-cli, openai, vertex, or scripted)", c.TranscribeProvider)
+	}
+	return nil
+}
+
+func (c Config) validateVertex() error {
+	if c.VertexProject == "" {
+		return fmt.Errorf("config: the vertex provider requires VERTEX_PROJECT")
+	}
+	if c.VertexLocation == "" {
+		return fmt.Errorf("config: the vertex provider requires VERTEX_LOCATION")
+	}
+	if c.AIModel == "" && c.AIModelGenerate == "" && c.AIModelAnalyze == "" &&
+		c.AIModelTranslate == "" && c.AIModelTranscribe == "" {
+		return fmt.Errorf("config: the vertex provider requires AI_MODEL (or a per-operation AI_MODEL_* override)")
+	}
+	return nil
+}
+
+// validateScripted keeps invented content out of anything a real user can
+// reach. The scripted provider exists for local development and the
+// browser suite; a deployed environment serving it would be presenting
+// canned text as AI output.
+func (c Config) validateScripted(key string) error {
+	if c.Env != EnvDevelopment {
+		return fmt.Errorf("config: %s=scripted is development-only (APP_ENV is %q)", key, c.Env)
 	}
 	return nil
 }

@@ -182,3 +182,26 @@ func (c *capturedLog) hasError(substr string) bool {
 	}
 	return false
 }
+
+// TestCounted_TalliesWhatTheModelDelivered: metering must charge for the
+// output that actually arrived, including output from a stream that then
+// failed — the tokens were spent either way.
+func TestCounted_TalliesWhatTheModelDelivered(t *testing.T) {
+	t.Parallel()
+	fake := &ai.Fake{
+		GenerateScript: [][]string{{"one ", "two ", "three"}},
+		StreamErr:      errors.New("provider hung up"),
+		StreamErrAfter: 2,
+	}
+	stream, err := fake.Generate(context.Background(), ai.GenerateRequest{Prompt: "hi"})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	counted := ai.Counted(stream)
+	if _, err := ai.Collect(counted); err == nil {
+		t.Fatal("a mid-stream failure must surface, not be swallowed")
+	}
+	if got := counted.Chars(); got != len("one two ") {
+		t.Errorf("counted %d chars, want %d (what was delivered before the failure)", got, len("one two "))
+	}
+}

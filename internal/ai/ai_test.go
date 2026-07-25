@@ -2,6 +2,7 @@ package ai_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +53,7 @@ type recorded struct {
 func TestOpenAICompat_StreamsChatFragments(t *testing.T) {
 	t.Parallel()
 	srv, rec := fakeOpenAIServer(t)
-	provider := &ai.OpenAICompat{BaseURL: srv.URL + "/v1", Model: "test-model", APIKey: "sk-test"}
+	provider := &ai.OpenAICompat{BaseURL: srv.URL + "/v1", Models: ai.ModelSet{Default: "test-model"}, APIKey: "sk-test"}
 
 	stream, err := provider.Generate(context.Background(), ai.GenerateRequest{Prompt: "hi"})
 	if err != nil {
@@ -79,7 +80,7 @@ func TestOpenAICompat_StreamsChatFragments(t *testing.T) {
 func TestOpenAICompat_TranscribePassesLanguageHint(t *testing.T) {
 	t.Parallel()
 	srv, rec := fakeOpenAIServer(t)
-	provider := &ai.OpenAICompat{BaseURL: srv.URL + "/v1", Model: "whisper-test", SupportsAudio: true}
+	provider := &ai.OpenAICompat{BaseURL: srv.URL + "/v1", Models: ai.ModelSet{Default: "whisper-test"}, SupportsAudio: true}
 
 	stream, err := provider.Transcribe(context.Background(), ai.TranscribeRequest{
 		Audio:    strings.NewReader("fake-audio-bytes"),
@@ -101,7 +102,7 @@ func TestOpenAICompat_TranscribePassesLanguageHint(t *testing.T) {
 
 func TestOpenAICompat_TranscribeWithoutAudioSupport(t *testing.T) {
 	t.Parallel()
-	provider := &ai.OpenAICompat{BaseURL: "http://unused", Model: "m"}
+	provider := &ai.OpenAICompat{BaseURL: "http://unused", Models: ai.ModelSet{Default: "m"}}
 	_, err := provider.Transcribe(context.Background(), ai.TranscribeRequest{Audio: strings.NewReader("x")})
 	if err != ai.ErrUnsupported {
 		t.Errorf("err = %v, want ErrUnsupported", err)
@@ -230,6 +231,95 @@ func TestFromConfig_SwapsViaEnv(t *testing.T) {
 	if local == nil {
 		t.Fatal("FromConfig returned nil")
 	}
+
+	// Text configured but voice left off must not accidentally acquire a
+	// transcriber, and vice versa — that split is how a self-hoster runs
+	// text AI with no voice at all (Appendix D).
+	textOnly := ai.FromConfig(config.Config{
+		AIProvider: "openai", AIBaseURL: "http://x/v1", AIModel: "m", TranscribeProvider: "none",
+	})
+	if _, err := textOnly.Transcribe(context.Background(), ai.TranscribeRequest{Audio: strings.NewReader("a")}); err != ai.ErrUnsupported {
+		t.Errorf("transcribe with TRANSCRIBE_PROVIDER=none: err = %v, want ErrUnsupported", err)
+	}
+	// Asking for the OpenAI audio endpoint without an OpenAI text backend
+	// cannot silently half-work.
+	orphan := ai.FromConfig(config.Config{AIProvider: "none", TranscribeProvider: "openai"})
+	if _, err := orphan.Transcribe(context.Background(), ai.TranscribeRequest{Audio: strings.NewReader("a")}); err != ai.ErrUnsupported {
+		t.Errorf("orphaned openai transcriber: err = %v, want ErrUnsupported", err)
+	}
+
+	// Vertex serves both halves from one client when both are pointed at
+	// it, and the per-operation models reach the provider.
+	vertex := ai.FromConfig(config.Config{
+		AIProvider: "vertex", VertexProject: "earful-stg", VertexLocation: "europe-west4",
+		AIModel: "flash", AIModelAnalyze: "pro", TranscribeProvider: "vertex",
+	})
+	if vertex == nil {
+		t.Fatal("FromConfig returned nil for vertex")
+	}
+}
+
+func TestModelSet_PerOperationOverrides(t *testing.T) {
+	t.Parallel()
+	models := ai.ModelSet{Default: "flash", Analyze: "pro"}
+	if got := models.For(ai.OpAnalyze); got != "pro" {
+		t.Errorf("analyze model = %q, want pro", got)
+	}
+	for _, op := range []ai.Op{ai.OpGenerate, ai.OpTranslate, ai.OpTranscribe} {
+		if got := models.For(op); got != "flash" {
+			t.Errorf("%s model = %q, want the default", op, got)
+		}
+	}
+	if !(ai.ModelSet{}).Empty() || (ai.ModelSet{Translate: "x"}).Empty() {
+		t.Error("Empty() misreports whether any model is configured")
+	}
+}
+
+func TestScripted_ProducesUsableOutputForEveryOperation(t *testing.T) {
+	t.Parallel()
+	provider := &ai.Scripted{}
+
+	stream, err := provider.Generate(context.Background(), ai.GenerateRequest{Prompt: "customer onboarding"})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	generated, err := ai.Collect(stream)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	// One JSON object per line, so a reader can surface each question as
+	// it completes (M6-T3).
+	for _, line := range strings.Split(strings.TrimSpace(generated), "\n") {
+		var q struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		}
+		if err := json.Unmarshal([]byte(line), &q); err != nil {
+			t.Fatalf("scripted generation is not NDJSON: %q: %v", line, err)
+		}
+		if q.Type == "" || q.Text == "" {
+			t.Errorf("scripted question missing type or text: %q", line)
+		}
+	}
+
+	stream, err = provider.Translate(context.Background(), ai.TranslateRequest{Text: "How was it?", TargetLang: "nl"})
+	if err != nil {
+		t.Fatalf("Translate: %v", err)
+	}
+	translated, err := ai.Collect(stream)
+	if err != nil || !strings.Contains(translated, "[nl]") {
+		t.Errorf("scripted translation = %q (%v); it must be visibly scripted", translated, err)
+	}
+
+	stream, err = provider.Transcribe(context.Background(),
+		ai.TranscribeRequest{Audio: strings.NewReader("audio"), MIMEType: "audio/wav"})
+	if err != nil {
+		t.Fatalf("Transcribe: %v", err)
+	}
+	transcript, err := ai.Collect(stream)
+	if err != nil || transcript == "" {
+		t.Errorf("scripted transcript = %q (%v)", transcript, err)
+	}
 }
 
 // TestOpenAICompat_Integration runs against a real OpenAI-compatible
@@ -242,7 +332,7 @@ func TestOpenAICompat_Integration(t *testing.T) {
 	if baseURL == "" || model == "" {
 		t.Skip("AI_TEST_BASE_URL / AI_TEST_MODEL not set; see docs/testing.md")
 	}
-	provider := &ai.OpenAICompat{BaseURL: baseURL, Model: model}
+	provider := &ai.OpenAICompat{BaseURL: baseURL, Models: ai.ModelSet{Default: model}}
 	stream, err := provider.Generate(context.Background(), ai.GenerateRequest{
 		System: "Answer with exactly one word.",
 		Prompt: "What is the capital of France?",

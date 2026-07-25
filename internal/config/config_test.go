@@ -226,3 +226,74 @@ func TestLoad_StagingNeverSendsEmail(t *testing.T) {
 		}
 	})
 }
+
+// TestLoad_AIProviders covers the provider whitelist and the conditional
+// requirements each backend carries. Model IDs are configuration, so the
+// only thing config can insist on is that *some* model is named.
+func TestLoad_AIProviders(t *testing.T) {
+	cases := []struct {
+		name    string
+		env     map[string]string
+		wantErr bool
+	}{
+		{"none by default", nil, false},
+		{"openai needs a model", map[string]string{"AI_PROVIDER": "openai"}, true},
+		{"openai with a model", map[string]string{"AI_PROVIDER": "openai", "AI_MODEL": "qwen"}, false},
+		{"vertex needs a project", map[string]string{"AI_PROVIDER": "vertex", "AI_MODEL": "flash"}, true},
+		{"vertex needs a model", map[string]string{
+			"AI_PROVIDER": "vertex", "VERTEX_PROJECT": "earful-stg",
+		}, true},
+		{"vertex with a per-operation model only", map[string]string{
+			"AI_PROVIDER": "vertex", "VERTEX_PROJECT": "earful-stg", "AI_MODEL_GENERATE": "flash",
+		}, false},
+		{"unknown provider", map[string]string{"AI_PROVIDER": "openai-ish"}, true},
+		{"unknown transcriber", map[string]string{"TRANSCRIBE_PROVIDER": "deepgram"}, true},
+		{"whisper-cli needs a model file", map[string]string{"TRANSCRIBE_PROVIDER": "whisper-cli"}, true},
+		{"vertex transcription", map[string]string{
+			"TRANSCRIBE_PROVIDER": "vertex", "VERTEX_PROJECT": "earful-stg", "AI_MODEL": "flash",
+		}, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for k, v := range tc.env {
+				t.Setenv(k, v)
+			}
+			_, err := config.Load()
+			if tc.wantErr && err == nil {
+				t.Errorf("Load() accepted %v", tc.env)
+			}
+			if !tc.wantErr && err != nil {
+				t.Errorf("Load() rejected %v: %v", tc.env, err)
+			}
+		})
+	}
+}
+
+// TestLoad_ScriptedProviderIsDevelopmentOnly: the scripted provider
+// invents content. A deployed environment serving it would be presenting
+// canned text as AI output, so it is refused at boot — the same shape of
+// invariant as staging's console-only sender.
+func TestLoad_ScriptedProviderIsDevelopmentOnly(t *testing.T) {
+	t.Run("development", func(t *testing.T) {
+		t.Setenv("APP_ENV", "development")
+		t.Setenv("AI_PROVIDER", "scripted")
+		if _, err := config.Load(); err != nil {
+			t.Fatalf("Load() rejected development+scripted: %v", err)
+		}
+	})
+	for _, env := range []string{"staging", "production"} {
+		t.Run(env, func(t *testing.T) {
+			t.Setenv("APP_ENV", env)
+			t.Setenv("STAGING_BASIC_AUTH", "user:pass")
+			t.Setenv("AI_PROVIDER", "scripted")
+			if _, err := config.Load(); err == nil {
+				t.Fatalf("Load() accepted AI_PROVIDER=scripted in %s", env)
+			}
+			t.Setenv("AI_PROVIDER", "none")
+			t.Setenv("TRANSCRIBE_PROVIDER", "scripted")
+			if _, err := config.Load(); err == nil {
+				t.Fatalf("Load() accepted TRANSCRIBE_PROVIDER=scripted in %s", env)
+			}
+		})
+	}
+}
