@@ -63,6 +63,14 @@ tofu taint random_password.basic_auth && tofu apply
 gh secret set STG_BASIC_AUTH -b "$(tofu output -raw staging_basic_auth)"
 ```
 
+The first authenticated request also sets an `earful_staging_wall`
+cookie (12h, HttpOnly, Secure, derived from the credential so it works
+across instances). That is not a convenience: **Chrome does not send
+cached HTTP credentials on a WebSocket handshake**, so without it voice
+and streamed generation get a 401 on staging while ordinary pages load
+fine — for people, not just for the smoke suite. Rotating the credential
+invalidates every outstanding cookie, which is the behaviour you want.
+
 ## Service down (uptime alert fired)
 
 1. `curl -sS https://app.tryearful.com/health` — 503 "db unreachable"

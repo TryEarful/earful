@@ -54,6 +54,68 @@ func TestBasicAuthGate_Staging(t *testing.T) {
 	}
 }
 
+// The cookie exists because Chrome does not send cached HTTP credentials
+// on a WebSocket handshake: without it, a browser that is loading pages
+// perfectly well gets a 401 the moment voice or streamed generation opens
+// a socket. Cookies do travel with a same-origin handshake.
+func TestBasicAuthGate_CookieCarriesThePass(t *testing.T) {
+	cfg := config.Config{Env: config.EnvStaging, StagingBasicAuth: "earful:s3cret"}
+
+	// A successful Basic auth hands the browser the cookie.
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.SetBasicAuth("earful", "s3cret")
+	w := httptest.NewRecorder()
+	gated(cfg).ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	var pass *http.Cookie
+	for _, c := range w.Result().Cookies() {
+		if c.Name == "earful_staging_wall" {
+			pass = c
+		}
+	}
+	if pass == nil {
+		t.Fatal("no wall cookie set after successful credentials")
+	}
+	if !pass.HttpOnly || !pass.Secure {
+		t.Errorf("wall cookie must be HttpOnly and Secure, got %+v", pass)
+	}
+
+	// A later request — the WebSocket handshake, in practice — carries
+	// only that cookie, and gets through.
+	t.Run("cookie alone is enough", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/s/abc/voice", nil)
+		r.AddCookie(pass)
+		w := httptest.NewRecorder()
+		gated(cfg).ServeHTTP(w, r)
+		if w.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200 for a request carrying the wall cookie", w.Code)
+		}
+	})
+
+	t.Run("a made-up cookie is not", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.AddCookie(&http.Cookie{Name: "earful_staging_wall", Value: "letmein"})
+		w := httptest.NewRecorder()
+		gated(cfg).ServeHTTP(w, r)
+		if w.Code != http.StatusUnauthorized {
+			t.Fatalf("status = %d, want 401 for a forged wall cookie", w.Code)
+		}
+	})
+
+	t.Run("a cookie from another credential is not", func(t *testing.T) {
+		other := config.Config{Env: config.EnvStaging, StagingBasicAuth: "earful:different"}
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.AddCookie(pass)
+		w := httptest.NewRecorder()
+		gated(other).ServeHTTP(w, r)
+		if w.Code != http.StatusUnauthorized {
+			t.Fatalf("status = %d, want 401 after the credential was rotated", w.Code)
+		}
+	})
+}
+
 func TestBasicAuthGate_PasswordMayContainColons(t *testing.T) {
 	cfg := config.Config{Env: config.EnvStaging, StagingBasicAuth: "earful:pa:ss"}
 	r := httptest.NewRequest(http.MethodGet, "/", nil)

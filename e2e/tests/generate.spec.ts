@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { aiTimeout, offersAIDrafting } from "./helpers";
+import { aiTimeout, offersAIDrafting, scriptedAI } from "./helpers";
 
 // AI-drafted questions in a real browser (M6-T3). The compose stack runs
 // the scripted provider, which emits the same NDJSON shape the prompt
@@ -11,6 +11,10 @@ import { aiTimeout, offersAIDrafting } from "./helpers";
 // configuration, and what has to keep working is the editor around it.
 
 test("questions stream in and land in the draft", async ({ page }) => {
+  // Canned output returns instantly; a real model has to think, and the
+  // default 30s budget covers neither the wait nor the page around it.
+  if (!scriptedAI) test.slow();
+
   await page.goto("/surveys/new");
   await page.getByLabel("Title").fill(`E2E generate ${Date.now()}`);
   await page.getByRole("button", { name: "Create survey" }).click();
@@ -30,8 +34,10 @@ test("questions stream in and land in the draft", async ({ page }) => {
   await panel.getByRole("button", { name: "Draft questions" }).click();
 
   // Output appears while the model is still talking, ends with the
-  // summary, and the editor then shows the questions themselves.
-  await expect(panel.locator(".generate-output")).not.toBeEmpty();
+  // summary, and the editor then shows the questions themselves. The
+  // first fragment is where a real model's thinking time lands, so this
+  // gets the AI budget rather than the default 5s.
+  await expect(panel.locator(".generate-output")).not.toBeEmpty({ timeout: aiTimeout });
   await expect(panel.locator(".generate-output")).toContainText(/Added \d+ questions?/, {
     timeout: aiTimeout,
   });

@@ -23,6 +23,10 @@ import {
 test.use({ permissions: ["microphone"] });
 
 test("a spoken answer becomes an editable transcript", async ({ page, browser }) => {
+  // Recording, uploading and transcribing for real does not fit the
+  // default 30s budget once a model is involved.
+  if (!scriptedAI) test.slow();
+
   const share = await createPublishedSurvey(page, `E2E voice ${Date.now()}`);
 
   const context = await browser.newContext({

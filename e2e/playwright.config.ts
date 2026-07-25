@@ -8,12 +8,22 @@ import { defineConfig, devices } from "@playwright/test";
 // reuse it, so the suite stays inside the app's own magic-link rate
 // limits.
 // Staging sits behind HTTP Basic Auth; E2E_BASIC_AUTH ("user:pass") is
-// unset for local runs. Sent as a static Authorization header rather
-// than httpCredentials: Playwright's auth interception stalls every
-// navigation against Cloud Run's HTTP/2 front end — even ungated ones —
-// while a plain header sails through. Applying it to every host is
-// deliberate: the suite hits both the run.app URL (E2E_BASE_URL) and
-// the custom domain that magic links point at.
+// unset for local runs.
+//
+// A static Authorization header, not httpCredentials: Playwright's auth
+// interception stalls every navigation against Cloud Run's HTTP/2 front
+// end — measured again while chasing the WebSocket 401s below, in both
+// challenge-response and send:"always" modes, so this is not a stale
+// note. Applying it to every host is deliberate: the suite hits both the
+// run.app URL (E2E_BASE_URL) and the custom domain magic links point at.
+//
+// The header only covers requests the page makes. The WebSocket
+// handshake and the audio worklet are fetched by the browser outside
+// that context and arrive without it — which is why the wall now hands
+// out a cookie on the first authenticated request and accepts it
+// afterwards (internal/http/basicauth.go). That fix is for people as
+// much as for this suite: Chrome does not send cached credentials on a
+// handshake either, so voice on staging was broken for anyone.
 const basicAuth = process.env.E2E_BASIC_AUTH ?? "";
 const extraHTTPHeaders = basicAuth.includes(":")
   ? { Authorization: "Basic " + Buffer.from(basicAuth).toString("base64") }

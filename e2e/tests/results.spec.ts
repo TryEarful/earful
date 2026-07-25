@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { aiTimeout, createPublishedSurvey, minFillWait, offersInsights } from "./helpers";
+import {
+  aiTimeout,
+  createPublishedSurvey,
+  minFillWait,
+  offersInsights,
+  scriptedAI,
+} from "./helpers";
 
 // Results, stats and exports in a real browser (M7).
 
@@ -56,6 +62,9 @@ test("results read back what respondents said, and export cleanly", async ({ pag
 });
 
 test("an insight summary streams in and is labelled as AI output", async ({ page, browser }) => {
+  // Two respondents, then a model reading their answers: past 30s.
+  if (!scriptedAI) test.slow();
+
   const title = `E2E insights ${Date.now()}`;
   const share = await createPublishedSurvey(page, title);
 
