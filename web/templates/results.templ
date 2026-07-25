@@ -1,0 +1,132 @@
+package templates
+
+import "strconv"
+
+// SurveyResults is the creator's read of a survey (M7-T1). Results are
+// aggregated by Question Identity across every version, so rewording a
+// question keeps its answers together — and where the wording changed,
+// the page says so instead of pretending it didn't.
+templ SurveyResults(email string, workspaceName string, csrf string, data SurveyResultsData) {
+	@Layout(data.Survey.Title + " — results — Earful") {
+		@AuthedHeader(email, csrf)
+		<main>
+			<nav class="breadcrumb">
+				<a href="/surveys">Surveys</a> /
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> /
+				Results
+			</nav>
+			<div class="title-row">
+				<h1>Results</h1>
+				@StatusChip(data.Survey.Status)
+			</div>
+			<p class="muted">
+				{ responseCountLabel(data.ResponseCount) }
+				if data.Survey.LatestVersion > 0 {
+					{ " across " + versionSpan(data.Survey.LatestVersion) }
+				}
+			</p>
+			<div class="results-actions">
+				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results.csv") }>
+					Download CSV
+				</a>
+			</div>
+
+			if data.ResponseCount == 0 {
+				<section class="card">
+					<h2>No responses yet</h2>
+					<p class="muted">
+						Share the survey link and answers will appear here. Results are grouped by question,
+						so you can keep improving the wording without losing comparability.
+					</p>
+				</section>
+			} else {
+				for _, q := range data.Questions {
+					@questionResults(q)
+				}
+			}
+		</main>
+	}
+}
+
+templ questionResults(q QuestionResultsView) {
+	<section class="card result">
+		<h2>{ q.Text }</h2>
+		<p class="muted">
+			{ q.TypeLabel } · { answerCountLabel(q.Answered) }
+			if q.SkippedNote != "" {
+				{ " · " + q.SkippedNote }
+			}
+		</p>
+		if len(q.Wordings) > 0 {
+			<details class="wordings">
+				<summary>This question was reworded — see how it was asked</summary>
+				<ul>
+					for _, w := range q.Wordings {
+						<li><span class="chip chip-small">{ w.Label }</span> { w.Text }</li>
+					}
+				</ul>
+				<p class="muted">
+					Answers from every version are counted together: they are the same question (ADR-0001).
+				</p>
+			</details>
+		}
+		if q.Summary != "" {
+			<p class="result-summary">{ q.Summary }</p>
+		}
+		if len(q.Distribution) > 0 {
+			<ul class="distribution">
+				for _, row := range q.Distribution {
+					<li>
+						<span class="bar-label">{ row.Label }</span>
+						<span class="bar" aria-hidden="true">
+							<span class="bar-fill" style={ barWidth(row.Percent) }></span>
+						</span>
+						<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
+					</li>
+				}
+			</ul>
+		}
+		if len(q.Texts) > 0 {
+			<ol class="transcripts">
+				for _, answer := range q.Texts {
+					<li>
+						<p class="transcript-text">{ answer.Text }</p>
+						<p class="muted transcript-meta">
+							{ answer.SubmittedAt } · <span class="chip chip-small">{ answer.VersionLabel }</span>
+							if answer.Participant != "" {
+								{ " · " + answer.Participant }
+							}
+						</p>
+					</li>
+				}
+			</ol>
+		}
+		if len(q.Distribution) == 0 && len(q.Texts) == 0 {
+			<p class="muted">No answers to this question yet.</p>
+		}
+	</section>
+}
+
+// barWidth is the one piece of inline style on any page: a percentage
+// that is data, not design. The CSP forbids inline <style> and inline
+// event handlers; a style attribute carrying a computed width is neither.
+func barWidth(percent int) string {
+	if percent < 2 && percent > 0 {
+		percent = 2 // keep a non-zero result visible
+	}
+	return "width:" + strconv.Itoa(percent) + "%"
+}
+
+func answerCountLabel(n int) string {
+	if n == 1 {
+		return "1 answer"
+	}
+	return strconv.Itoa(n) + " answers"
+}
+
+func versionSpan(latest int) string {
+	if latest == 1 {
+		return "1 version"
+	}
+	return strconv.Itoa(latest) + " versions"
+}

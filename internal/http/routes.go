@@ -80,6 +80,9 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/surveys", s.surveyCreate)
 	get("/surveys/{surveyID}", s.surveyPage)
 	get("/surveys/{surveyID}/audit", s.surveyAudit)
+	// Results and exports (M7). Both read the same fold-by-identity view.
+	get("/surveys/{surveyID}/results", s.surveyResults)
+	get("/surveys/{surveyID}/results.csv", s.resultsCSV)
 	// Preview renders the draft through the real respondent renderer
 	// (M3-T6). Its POST writes nothing at all.
 	get("/surveys/{surveyID}/preview", s.previewPage)

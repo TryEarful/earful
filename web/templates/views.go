@@ -79,3 +79,60 @@ type SurveyAuditData struct {
 	Entries  []AuditEntry
 	Versions []VersionView
 }
+
+// --- results (M7) --------------------------------------------------------
+
+// SurveyResultsData is the results page. Everything here is already
+// formatted: the template counts nothing and rounds nothing.
+type SurveyResultsData struct {
+	Survey        SurveyView
+	ResponseCount int
+	Questions     []QuestionResultsView
+}
+
+// QuestionResultsView is one question's results, folded across versions
+// by Question Identity (ADR-0001).
+type QuestionResultsView struct {
+	IdentityID string
+	Type       domain.QuestionType
+	TypeLabel  string
+	// Text is the current wording. Wordings is non-empty only when the
+	// question was reworded, in which case each version's phrasing is
+	// shown rather than smoothed over (story 50).
+	Wordings []WordingView
+	Text     string
+	Answered int
+	// SkippedNote is empty when nobody skipped the question.
+	SkippedNote string
+	// Distribution is filled for countable types, Texts for text ones.
+	Distribution []CountView
+	Summary      string
+	Texts        []TextAnswerView
+}
+
+type WordingView struct {
+	Label string
+	Text  string
+}
+
+// CountView is one bar: a label, its count, and the share as both a
+// number (for the bar) and a string (for the reader).
+type CountView struct {
+	Label   string
+	Count   int
+	Percent int
+	Share   string
+}
+
+// TextAnswerView is one written or spoken answer.
+type TextAnswerView struct {
+	Text         string
+	VersionLabel string
+	SubmittedAt  string
+	// Participant is empty for anonymous surveys, where no such thing
+	// exists to show.
+	Participant string
+	ResponseID  string
+	// AnswerLongish marks answers worth rendering with more room.
+	AnswerLongish bool
+}

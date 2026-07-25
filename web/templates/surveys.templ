@@ -105,7 +105,17 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			<section class="card">
 				<div class="title-row">
 					<h2>Questions</h2>
-					<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>Preview as respondent</a>
+					<div class="button-row">
+						if data.Survey.LatestVersion > 0 {
+							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>
+								Results
+								if data.ResponseCount > 0 {
+									{ " (" + responseCountLabel(data.ResponseCount) + ")" }
+								}
+							</a>
+						}
+						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>Preview as respondent</a>
+					</div>
 				</div>
 				if len(data.Questions) == 0 {
 					<p class="muted">No questions yet. Add the first one below.</p>

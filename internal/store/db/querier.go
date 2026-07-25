@@ -83,10 +83,28 @@ type Querier interface {
 	// placeholder; the real one is minted at send time, because only the hash
 	// is ever stored and the emailed link needs the raw token.
 	ImportParticipant(ctx context.Context, arg ImportParticipantParams) (int64, error)
+	// One row per stored answer, with the version it was given under and the
+	// participant it belongs to (NULL forever for anonymous surveys).
+	// Skipped questions store no row at all, which is what keeps "skipped"
+	// and "answered blank" distinguishable.
+	ListAnswersForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListAnswersForSurveyRow, error)
 	ListBetaCodes(ctx context.Context) ([]ListBetaCodesRow, error)
 	ListDraftRevisions(ctx context.Context, draftID uuid.UUID) ([]ListDraftRevisionsRow, error)
 	ListParticipants(ctx context.Context, surveyID uuid.UUID) ([]ListParticipantsRow, error)
+	// M7: reading results.
+	//
+	// Everything here aggregates by question_identity_id, which `answers`
+	// carries denormalised for exactly this purpose: a response stays pinned
+	// to the version it was served (ADR-0001), and results are assembled at
+	// read time across versions rather than by copying anything forward.
+	// Every version's questions, oldest version first. The caller folds them
+	// by identity to get the current wording plus the history of how it was
+	// worded when each response was collected.
+	ListQuestionsAcrossVersions(ctx context.Context, surveyID uuid.UUID) ([]ListQuestionsAcrossVersionsRow, error)
 	ListQuestionsForVersion(ctx context.Context, versionID uuid.UUID) ([]Question, error)
+	// The response rows themselves, so a table can show one row per response
+	// including responses that answered nothing.
+	ListResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListResponsesForSurveyRow, error)
 	ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]ListSurveysForWorkspaceRow, error)
 	ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error)
 	// By address across all surveys: a hard bounce means the mailbox is gone,
