@@ -153,6 +153,14 @@ export async function offersInsights(page: Page): Promise<boolean> {
 // correctly hears no words where the scripted one returns a sentence.
 export const scriptedAI = (process.env.E2E_AI_MODE ?? "scripted") === "scripted";
 
+// E2E_VOICE_MODE says the same thing about transcription specifically,
+// because the two need not match: staging runs text AI on Vertex and
+// transcription on the scripted provider, so that a suite with no
+// microphone is not feeding synthesized audio to a real speech model in
+// a loop. Defaults to whatever E2E_AI_MODE says.
+export const scriptedVoice =
+  (process.env.E2E_VOICE_MODE ?? process.env.E2E_AI_MODE ?? "scripted") === "scripted";
+
 // aiTimeout: canned output returns immediately; a real model is allowed
 // to think.
 export const aiTimeout = scriptedAI ? 15000 : 60000;

@@ -71,8 +71,12 @@ reasoning.
    instance, the effective limit multiplies by instance count. Acceptable
    while production runs a small instance count; a shared limiter is the
    fix if that changes.
-5. **`AI_PROVIDER=scripted` invents content.** Refused at boot outside
-   `APP_ENV=development`, so no deployed environment can serve it.
+5. **`AI_PROVIDER=scripted` invents content.** Refused at boot in
+   production, so no real respondent can ever be served canned text
+   presented as AI output. Staging may use it (changed 2026-07-25): it
+   has no real respondents, and it needs a deterministic backend for the
+   same reason CI does — specifically so a browser suite with no
+   microphone is not sending synthesized audio to a real speech model.
 
 ### Scheduled
 

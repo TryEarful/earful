@@ -291,31 +291,34 @@ func TestLoad_AIProviders(t *testing.T) {
 	}
 }
 
-// TestLoad_ScriptedProviderIsDevelopmentOnly: the scripted provider
-// invents content. A deployed environment serving it would be presenting
-// canned text as AI output, so it is refused at boot — the same shape of
-// invariant as staging's console-only sender.
-func TestLoad_ScriptedProviderIsDevelopmentOnly(t *testing.T) {
-	t.Run("development", func(t *testing.T) {
-		t.Setenv("APP_ENV", "development")
-		t.Setenv("AI_PROVIDER", "scripted")
-		if _, err := config.Load(); err != nil {
-			t.Fatalf("Load() rejected development+scripted: %v", err)
-		}
-	})
-	for _, env := range []string{"staging", "production"} {
-		t.Run(env, func(t *testing.T) {
+// TestLoad_ScriptedProviderNeverServesRealRespondents: the scripted
+// providers invent content, so production refuses them at boot — the
+// same shape of invariant as staging's console-only sender. Development
+// and staging are allowed: neither has a real respondent to mislead, and
+// both want a deterministic AI backend.
+func TestLoad_ScriptedProviderNeverServesRealRespondents(t *testing.T) {
+	for _, env := range []string{"development", "staging"} {
+		t.Run(env+" may use it", func(t *testing.T) {
 			t.Setenv("APP_ENV", env)
 			t.Setenv("STAGING_BASIC_AUTH", "user:pass")
 			t.Setenv("AI_PROVIDER", "scripted")
-			if _, err := config.Load(); err == nil {
-				t.Fatalf("Load() accepted AI_PROVIDER=scripted in %s", env)
-			}
-			t.Setenv("AI_PROVIDER", "none")
 			t.Setenv("TRANSCRIBE_PROVIDER", "scripted")
-			if _, err := config.Load(); err == nil {
-				t.Fatalf("Load() accepted TRANSCRIBE_PROVIDER=scripted in %s", env)
+			if _, err := config.Load(); err != nil {
+				t.Fatalf("Load() rejected %s+scripted: %v", env, err)
 			}
 		})
 	}
+
+	t.Run("production may not", func(t *testing.T) {
+		t.Setenv("APP_ENV", "production")
+		t.Setenv("AI_PROVIDER", "scripted")
+		if _, err := config.Load(); err == nil {
+			t.Fatal("Load() accepted AI_PROVIDER=scripted in production")
+		}
+		t.Setenv("AI_PROVIDER", "none")
+		t.Setenv("TRANSCRIBE_PROVIDER", "scripted")
+		if _, err := config.Load(); err == nil {
+			t.Fatal("Load() accepted TRANSCRIBE_PROVIDER=scripted in production")
+		}
+	})
 }

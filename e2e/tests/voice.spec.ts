@@ -5,7 +5,7 @@ import {
   createPublishedSurvey,
   fakeMicrophone,
   offersVoice,
-  scriptedAI,
+  scriptedVoice,
 } from "./helpers";
 
 // Spoken answers, in a real browser with a fake microphone (M5).
@@ -25,7 +25,7 @@ test.use({ permissions: ["microphone"] });
 test("a spoken answer becomes an editable transcript", async ({ page, browser }) => {
   // Recording, uploading and transcribing for real does not fit the
   // default 30s budget once a model is involved.
-  if (!scriptedAI) test.slow();
+  if (!scriptedVoice) test.slow();
 
   const share = await createPublishedSurvey(page, `E2E voice ${Date.now()}`);
 
@@ -77,7 +77,7 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   await stop.click();
 
   const answer = respondent.locator("textarea");
-  if (scriptedAI) {
+  if (scriptedVoice) {
     // Canned transcription: the words are deterministic, so the whole
     // promise is checkable — the transcript lands in the textarea, where
     // it can be edited before submitting (story 36).

@@ -139,7 +139,7 @@ report themselves absent and the features degrade (Appendix D).
 
 | Variable | Default | Notes |
 |---|---|---|
-| `AI_PROVIDER` | `none` | `none`, `openai` (anything OpenAI-compatible: ollama's `/v1`, llamafile, a hosted gateway), `vertex`, or `scripted` (canned output, development only) |
+| `AI_PROVIDER` | `none` | `none`, `openai` (anything OpenAI-compatible: ollama's `/v1`, llamafile, a hosted gateway), `vertex`, or `scripted` (canned output; refused in production, which must never serve invented content to a respondent) |
 | `AI_BASE_URL` | `http://localhost:11434/v1` | For `openai`; include the version prefix |
 | `AI_API_KEY` | *(empty)* | For `openai` backends that want one; local ones ignore it |
 | `AI_MODEL` | *(empty)* | Default model for every operation |

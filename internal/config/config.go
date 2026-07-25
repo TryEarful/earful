@@ -332,9 +332,24 @@ func (c Config) validateVertex() error {
 // reach. The scripted provider exists for local development and the
 // browser suite; a deployed environment serving it would be presenting
 // canned text as AI output.
+// validateScripted keeps invented content away from real people.
+//
+// The scripted providers return plausible, deterministic nonsense. Served
+// to someone answering a real survey that would be a lie, so production
+// refuses them outright and always will.
+//
+// Staging is allowed, which is a change of 2026-07-25 and worth its
+// reasoning: it has no real respondents (every route sits behind Basic
+// Auth, its data is disposable, and it is a boot invariant that it can
+// never send email), and it needs a deterministic AI backend for the
+// same reason CI does. The immediate cause was Google suspending the
+// staging project hours after Vertex was first enabled there — the
+// likeliest trigger being a browser suite feeding synthetic audio to a
+// speech model in a loop, which is a poor thing to point at a real
+// model whatever Google's classifier thought of it.
 func (c Config) validateScripted(key string) error {
-	if c.Env != EnvDevelopment {
-		return fmt.Errorf("config: %s=scripted is development-only (APP_ENV is %q)", key, c.Env)
+	if c.Env == EnvProduction {
+		return fmt.Errorf("config: %s=scripted invents content and must never serve real respondents (APP_ENV is %q)", key, c.Env)
 	}
 	return nil
 }

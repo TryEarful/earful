@@ -181,7 +181,11 @@ under test, not a concession: an absent capability is an absent feature
 questions by hand, and a respondent page with no mic must still take a
 typed answer.
 
-`E2E_AI_MODE` says what is behind the seam:
+`E2E_AI_MODE` says what is behind the seam, and `E2E_VOICE_MODE` says it
+for transcription specifically — the two need not agree. Staging runs
+text AI on Vertex and transcription on the scripted provider, so that a
+suite with no microphone is not feeding synthesized audio to a real
+speech model in a loop:
 
 | Value | Where | What the voice test asserts |
 |---|---|---|

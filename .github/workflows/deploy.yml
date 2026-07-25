@@ -146,11 +146,15 @@ jobs:
           E2E_BASE_URL: ${{ needs.deploy-stg.outputs.url }}
           E2E_BASIC_AUTH: ${{ secrets.STG_BASIC_AUTH }} # staging's Basic Auth wall
           E2E_LINK_SOURCE: logging
-          # Staging runs a real model, so the suite stops asserting on
-          # generated content: Chromium's fake microphone emits a tone,
-          # and a transcriber that correctly hears no words must not fail
-          # the gate for being right (see e2e/tests/helpers.ts).
+          # Staging runs text AI on a real model, so the suite stops
+          # asserting on generated content (see e2e/tests/helpers.ts).
           E2E_AI_MODE: real
+          # Transcription there is the scripted provider on purpose: a
+          # suite with no microphone sends synthesized audio, which is
+          # not something to point at a real speech model in a loop. That
+          # makes the transcript deterministic again, so voice keeps its
+          # strong assertion.
+          E2E_VOICE_MODE: scripted
           E2E_LOG_PROJECT: ${{ vars.GCP_STG_PROJECT }}
           E2E_GCP_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
 
