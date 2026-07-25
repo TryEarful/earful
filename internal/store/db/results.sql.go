@@ -13,7 +13,7 @@ import (
 )
 
 const listAnswersForSurvey = `-- name: ListAnswersForSurvey :many
-SELECT a.response_id, a.question_identity_id, a.value,
+SELECT a.id AS answer_id, a.response_id, a.question_identity_id, a.value,
        v.number AS version_number, r.submitted_at, r.duration_secs,
        p.email AS participant_email
 FROM answers a
@@ -25,6 +25,7 @@ ORDER BY r.submitted_at, a.question_identity_id
 `
 
 type ListAnswersForSurveyRow struct {
+	AnswerID           uuid.UUID `json:"answer_id"`
 	ResponseID         uuid.UUID `json:"response_id"`
 	QuestionIdentityID uuid.UUID `json:"question_identity_id"`
 	Value              []byte    `json:"value"`
@@ -48,6 +49,7 @@ func (q *Queries) ListAnswersForSurvey(ctx context.Context, surveyID uuid.UUID) 
 	for rows.Next() {
 		var i ListAnswersForSurveyRow
 		if err := rows.Scan(
+			&i.AnswerID,
 			&i.ResponseID,
 			&i.QuestionIdentityID,
 			&i.Value,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -45,18 +46,31 @@ func dialVoice(t *testing.T, app *apptest.App, path, page string) *websocket.Con
 	t.Cleanup(func() { conn.CloseNow() })
 
 	form := respondForm(t, page)
+	// The browser sends what the page declares (document.documentElement
+	// .lang), which is how a respondent's chosen language reaches the
+	// transcriber (M11-T3).
 	start, _ := json.Marshal(map[string]any{
 		"action": "start",
 		"params": map[string]string{
 			"token": form.Get("form_ts"),
 			"nonce": form.Get("form_nonce"),
-			"lang":  "nl",
+			"lang":  pageLanguage(page),
 		},
 	})
 	if err := conn.Write(context.Background(), websocket.MessageText, start); err != nil {
 		t.Fatalf("send start: %v", err)
 	}
 	return conn
+}
+
+var htmlLangRe = regexp.MustCompile(`<html lang="([^"]+)"`)
+
+// pageLanguage reads what the page declares itself to be.
+func pageLanguage(page string) string {
+	if m := htmlLangRe.FindStringSubmatch(page); m != nil {
+		return m[1]
+	}
+	return ""
 }
 
 // speak sends seconds of (silent) PCM and stops the take.
@@ -130,10 +144,10 @@ func TestVoice_SpokenAnswerBecomesAnEditableTranscript(t *testing.T) {
 		t.Fatalf("provider calls = %d, want 1", len(fake.TranscribeCalls))
 	}
 	call := fake.TranscribeCalls[0]
-	// The respondent's language reaches the model (M11-T3's contract,
-	// exercised as soon as voice exists).
-	if call.Language != "nl" {
-		t.Errorf("language hint = %q, want nl", call.Language)
+	// The page's language reaches the model. On an untranslated survey
+	// that is "en"; M11-T3's test covers a respondent who chose another.
+	if call.Language != "en" {
+		t.Errorf("language hint = %q, want the page's language", call.Language)
 	}
 	// What arrives is a well-formed WAV of the audio that was sent, not a
 	// file path or a reference to storage.

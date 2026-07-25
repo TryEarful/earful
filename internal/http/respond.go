@@ -29,6 +29,7 @@ func (s *server) respondPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	s.applyLanguage(r, &version)
 	// Counted here rather than in renderRespondPage: a validation
 	// re-render is the same visit, not a second start (M7-T4).
 	s.recordStart(r, survey.ID)
@@ -56,6 +57,8 @@ func (s *server) renderRespondPage(
 	}
 	data := templates.RespondData{
 		SurveyID:        survey.ID.String(),
+		Lang:            version.Lang,
+		Languages:       viewLanguageChoices(version, r),
 		Title:           survey.Title,
 		WorkspaceName:   survey.WorkspaceName,
 		IsAnonymous:     survey.IsAnonymous,

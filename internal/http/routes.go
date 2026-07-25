@@ -97,6 +97,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/surveys/{surveyID}/responses/{responseID}/delete", s.responseDelete)
 	// Insight Summaries (M10). The POST is the whole feature; the socket
 	// streams the same run as it is written.
+	post("/surveys/{surveyID}/answers/translate", s.answersTranslate)
 	post("/surveys/{surveyID}/insights", s.surveyInsights)
 	mux.Handle("GET /surveys/{surveyID}/insights/stream", s.requireAuth(http.HandlerFunc(s.surveyInsightsSocket)))
 	// Preview renders the draft through the real respondent renderer
@@ -114,6 +115,13 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// socket is the same operation with the output visible as it arrives.
 	post("/surveys/{surveyID}/generate", s.surveyGenerate)
 	mux.Handle("GET /surveys/{surveyID}/generate/stream", s.requireAuth(http.HandlerFunc(s.surveyGenerateSocket)))
+	// Localization (M11-T1): drafted by AI, reviewed by a person, frozen
+	// into the version at publish.
+	get("/surveys/{surveyID}/localizations", s.localizationsPage)
+	post("/surveys/{surveyID}/localizations", s.localizationAdd)
+	post("/surveys/{surveyID}/localizations/{lang}", s.localizationSave)
+	post("/surveys/{surveyID}/localizations/{lang}/draft", s.localizationDraft)
+	post("/surveys/{surveyID}/localizations/{lang}/delete", s.localizationRemove)
 	post("/surveys/{surveyID}/questions", s.questionAdd)
 	post("/surveys/{surveyID}/questions/{questionID}", s.questionUpdate)
 	post("/surveys/{surveyID}/questions/{questionID}/delete", s.questionDelete)

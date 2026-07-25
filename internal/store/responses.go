@@ -45,6 +45,11 @@ type ServedVersion struct {
 	ID        uuid.UUID
 	Number    int
 	Questions []domain.Question
+	// Languages are the languages this version was frozen with, and Lang
+	// is the one being served. Both are read-time facts: a respondent's
+	// choice is never stored (story 25).
+	Languages []string
+	Lang      string
 }
 
 // PublicSurvey resolves a share link. The link itself is the credential,

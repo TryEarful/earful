@@ -13,6 +13,11 @@ import (
 // publishing is what turns it into relational, immutable rows.
 type Draft struct {
 	Questions []Question `json:"questions"`
+	// Localizations are the translations being written, keyed by
+	// language (M11-T1). They live here while they are editable — every
+	// save appends a revision, like any other draft change — and are
+	// frozen into the published version at publish.
+	Localizations map[string]Localization `json:"localizations,omitempty"`
 }
 
 // maxQuestionsPerSurvey bounds a single survey. A survey this long is a

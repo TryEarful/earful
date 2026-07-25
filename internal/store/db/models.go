@@ -37,6 +37,14 @@ type Answer struct {
 	Value              []byte    `json:"value"`
 }
 
+type AnswerTranslation struct {
+	AnswerID  uuid.UUID `json:"answer_id"`
+	Lang      string    `json:"lang"`
+	Text      string    `json:"text"`
+	Model     string    `json:"model"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type BetaCode struct {
 	ID        uuid.UUID     `json:"id"`
 	CodeHash  []byte        `json:"code_hash"`
@@ -116,6 +124,14 @@ type QuestionIdentity struct {
 	ID        uuid.UUID `json:"id"`
 	SurveyID  uuid.UUID `json:"survey_id"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type QuestionLocalization struct {
+	VersionID  uuid.UUID `json:"version_id"`
+	QuestionID uuid.UUID `json:"question_id"`
+	Lang       string    `json:"lang"`
+	Text       string    `json:"text"`
+	Options    []byte    `json:"options"`
 }
 
 type Response struct {

@@ -756,6 +756,48 @@ fieldset {
   overflow-x: auto;
 }
 
+.language-picker {
+  margin-bottom: 1rem;
+}
+
+.language-picker .field {
+  max-width: 16rem;
+}
+
+.translate-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.translate-form .field {
+  max-width: 10rem;
+  margin: 0;
+}
+
+/* A translation is visibly secondary to the words a respondent chose. */
+.transcript-translation {
+  margin: 0.2rem 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+
+.translations {
+  padding-left: 1.25rem;
+}
+
+.translations li {
+  margin-bottom: 1.25rem;
+}
+
+.source-text {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
 .responses {
   border-collapse: collapse;
   font-size: 0.9rem;

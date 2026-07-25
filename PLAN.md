@@ -27,7 +27,7 @@ M0 → M2 → M3 (T1–T5) → M4 (+M3-T6) → M6-T1/T2 → M1 (done) + M9 (in p
 | M8 — Data lifecycle & trust | [x] done | 5/5 |
 | M9 — Production launch | [~] in progress | T1/T6 `[x]` (T1 closed by v0.1.0's deploy-on-tag); T2/T4 drilled in part; T3/T5/T7 open |
 | M10 — Cross-respondent insights | [x] done | 2/2 |
-| M11 — Localization & translation | [ ] not started | 0/3 |
+| M11 — Localization & translation | [x] done | 3/3 |
 | M12 — Private beta gate (temporary) | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted) |
 
 ### Status log
@@ -254,9 +254,12 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 ### M11 — Localization & translation (executed before launch)
 
-- [ ] **M11-T1 Question localization.** Goal: creator selects target languages; `ai.Provider.Translate` drafts a Localization of the question set; creator reviews/edits; publish freezes localizations into the immutable version. Respondent picks language (browser-language suggested; choice stored nowhere). AC: unreviewed machine translations cannot be published silently; localizations immutable post-publish; renderer serves every frozen language; adding a language later = new version. Deps: M3-T3, M6-T1
-- [ ] **M11-T2 Answer translation.** Goal: creator-side on-demand translation of text answers/transcripts into the workspace language; original always preserved and viewable; translations cached, marked machine-translated, counted against quota. AC: original never overwritten; original/translation toggle works in results and exports carry both. Deps: M7-T1, M6-T1
-- [ ] **M11-T3 Voice language hint.** Goal: the respondent's chosen language drives the voice path — local recognition locale and Vertex transcription hint. AC: fake-provider test verifies hint passthrough; typing path unaffected. Deps: M11-T1, M5-T2
+- [x] **M11-T1 Question localization.** Goal: creator selects target languages; `ai.Provider.Translate` drafts a Localization of the question set; creator reviews/edits; publish freezes localizations into the immutable version. Respondent picks language (browser-language suggested; choice stored nowhere). AC: unreviewed machine translations cannot be published silently; localizations immutable post-publish; renderer serves every frozen language; adding a language later = new version. Deps: M3-T3, M6-T1
+  _Note (2026-07-25): translations live in the draft while they are being written, so drafting and editing are ordinary draft edits — revisions, audit trail and undo for free — and freeze into the version in the publish transaction, guarded by the same trigger as questions. "Reviewed" is per question and is **cleared when the source wording changes**: a translation of a question that has since been reworded has not been reviewed, whatever it was marked before, and the page says so. Drafting checks the meter before each question rather than once for the batch, so a twenty-question survey cannot overshoot its allowance twentyfold — a gap the AST meter guard caught. Options are left in the source language by default, because a mistranslated option changes what an answer means; the creator can translate them per question. The respondent's picker is a plain form with a visible button (the CSP forbids inline handlers, so submit-on-change is an enhancement, not the mechanism)._
+- [x] **M11-T2 Answer translation.** Goal: creator-side on-demand translation of text answers/transcripts into the workspace language; original always preserved and viewable; translations cached, marked machine-translated, counted against quota. AC: original never overwritten; original/translation toggle works in results and exports carry both. Deps: M7-T1, M6-T1
+  _Note (2026-07-25): translations are separate rows keyed by (answer, language), cached so a second run costs nothing, and rendered beneath the original in muted type with a "Machine translation" chip and the model that produced it. One deviation from the ticket's wording: there is no "workspace language" setting to translate into — the creator types the language they want on the results page, which avoids inventing a workspace preference nobody asked for. The CSV export deliberately carries the originals only: an export is what respondents said._
+- [x] **M11-T3 Voice language hint.** Goal: the respondent's chosen language drives the voice path — local recognition locale and Vertex transcription hint. AC: fake-provider test verifies hint passthrough; typing path unaffected. Deps: M11-T1, M5-T2
+  _Note (2026-07-25): the page declares its language (`<html lang>`), voice.js sends that to the socket, and it reaches both the on-device recogniser's locale and the server transcriber's hint. That one declaration also fixes screen-reader pronunciation, which is the same fact serving two purposes rather than two mechanisms._
 
 ### M12 — Private beta gate (temporary; added 2026-07-24, retires at M9-T5)
 

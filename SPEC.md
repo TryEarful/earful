@@ -122,12 +122,12 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### Localization and translation
 
-22. As a survey creator, I want to write questions once and have AI draft translations into the languages I choose, so that respondents can answer in their mother tongue.
-23. As a survey creator, I want to review and edit every machine translation before publishing, so that nothing goes out in my name that I couldn't read.
-24. As a survey creator, I want Localizations frozen into the published Survey Version, so that what a respondent saw in their language is as immutable as everything else.
-25. As a respondent, I want to pick my language (with my browser's language suggested), so that the survey speaks to me — without my choice being stored anywhere.
-26. As a survey creator, I want text answers and Transcripts translated on demand into my workspace language, with the original always preserved and viewable, so that I can read a global audience without losing what they actually said.
-27. As a survey creator, I want machine-translated content clearly marked, so that I never mistake AI translation for the respondent's own words.
+22. As a survey creator, I want to write questions once and have AI draft translations into the languages I choose, so that respondents can answer in their mother tongue. [tested](internal/http/localizations_test.go)
+23. As a survey creator, I want to review and edit every machine translation before publishing, so that nothing goes out in my name that I couldn't read. [tested](internal/http/localizations_test.go) — publishing is refused while anything is unreviewed, and rewording a question un-reviews its translation
+24. As a survey creator, I want Localizations frozen into the published Survey Version, so that what a respondent saw in their language is as immutable as everything else. [tested](internal/http/localizations_test.go) — frozen in the publish transaction and guarded by the same trigger as questions
+25. As a respondent, I want to pick my language (with my browser's language suggested), so that the survey speaks to me — without my choice being stored anywhere. [tested](internal/http/localizations_test.go) — the choice travels in the URL; no cookie, no column, and the browser's preference is suggested rather than applied
+26. As a survey creator, I want text answers and Transcripts translated on demand into my workspace language, with the original always preserved and viewable, so that I can read a global audience without losing what they actually said. [tested](internal/http/localizations_test.go) — cached per answer and language, so a second run costs nothing
+27. As a survey creator, I want machine-translated content clearly marked, so that I never mistake AI translation for the respondent's own words. [tested](internal/http/localizations_test.go) — labelled with the model, shown beneath the original, and absent from the CSV export, which carries what was actually said
 
 ### Answering — the respondent experience
 

@@ -1,0 +1,111 @@
+package templates
+
+import "strconv"
+
+// Localizations is the translation workspace (M11-T1). Every translation
+// sits beside the question it translates, because reviewing means
+// comparing — and the page never lets a language look publishable until
+// a person has actually read every line.
+templ Localizations(email string, workspaceName string, csrf string, data LocalizationsData) {
+	@Layout(data.Survey.Title + " — languages — Earful") {
+		@AuthedHeader(email, csrf)
+		<main>
+			<nav class="breadcrumb" aria-label="Breadcrumb">
+				<a href="/surveys">Surveys</a> /
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> /
+				Languages
+			</nav>
+			<h1>Languages</h1>
+			<p class="muted">
+				Respondents can answer in their own language. Translations are drafted for you, but
+				nothing is published until you have read it — a machine translation going out in your
+				name is your reputation, not the model's.
+			</p>
+
+			if data.Error != "" {
+				<p class="notice error-text">{ data.Error }</p>
+			}
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+
+			<section class="card">
+				<h2>Add a language</h2>
+				<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<label class="field">
+						<span>Language code <small class="muted">(like nl, de, pt-BR)</small></span>
+						<input type="text" name="lang" required maxlength="8" placeholder="nl"/>
+					</label>
+					<button type="submit">Add language</button>
+				</form>
+				if len(data.Questions) == 0 {
+					<p class="muted">Add questions to the survey first — there is nothing to translate yet.</p>
+				}
+			</section>
+
+			for _, lang := range data.Languages {
+				@languagePanel(csrf, data, lang)
+			}
+		</main>
+	}
+}
+
+templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
+	<section class="card" id={ "lang-" + lang.Code }>
+		<div class="title-row">
+			<h2>{ lang.Name } <span class="muted">({ lang.Code })</span></h2>
+			if lang.Ready {
+				<span class="chip chip-open">Reviewed</span>
+			} else {
+				<span class="chip chip-draft">{ strconv.Itoa(lang.PendingCount) } to review</span>
+			}
+		</div>
+		<p class="muted">
+			{ strconv.Itoa(lang.Reviewed) } of { strconv.Itoa(lang.Total) } questions reviewed.
+			if !lang.Ready {
+				{ " Publishing is blocked until every one has been read." }
+			}
+		</p>
+
+		<div class="button-row">
+			if data.CanTranslate {
+				<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations/" + lang.Code + "/draft") }>
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<button type="submit" class="secondary">Draft the missing translations with AI</button>
+				</form>
+			}
+			<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations/" + lang.Code + "/delete") }>
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				<button type="submit" class="button-link danger">Remove { lang.Name }</button>
+			</form>
+		</div>
+
+		<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations/" + lang.Code) }>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<ol class="translations">
+				for _, q := range lang.Questions {
+					<li>
+						<p class="source-text">{ q.SourceText }</p>
+						if q.Stale {
+							<p class="notice">The question changed after this was translated — read it again.</p>
+						} else if !q.Reviewed && q.Text != "" {
+							<p class="muted">Drafted by AI, not yet reviewed.</p>
+						}
+						<label class="field">
+							<span>{ lang.Name }</span>
+							<textarea name={ "t_" + q.IdentityID } rows="2">{ q.Text }</textarea>
+						</label>
+						if q.NeedsOptions {
+							<label class="field">
+								<span>Options <small class="muted">(one per line; leave empty to keep the originals)</small></span>
+								<textarea name={ "o_" + q.IdentityID } rows="3" placeholder={ q.SourceOptions }>{ q.Options }</textarea>
+							</label>
+						}
+					</li>
+				}
+			</ol>
+			<button type="submit">Save and mark reviewed</button>
+		</form>
+	</section>
+}

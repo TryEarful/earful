@@ -235,6 +235,12 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 	if err := draft.ValidateForPublish(); err != nil {
 		return Version{}, err
 	}
+	// Story 23: nothing goes out in a creator's name that they have not
+	// read. A language with an unreviewed or stale translation blocks
+	// the publish rather than shipping a machine's guess.
+	if err := draft.ReadyToPublish(); err != nil {
+		return Version{}, err
+	}
 
 	// Refuse a republish that would change nothing.
 	latestQuestions, err := s.LatestQuestions(ctx, surveyID)
@@ -288,7 +294,7 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 			min, max := q.Scale()
 			scaleMin, scaleMax = int32ptr(min), int32ptr(max)
 		}
-		if _, err := qtx.CreateQuestion(ctx, db.CreateQuestionParams{
+		question, err := qtx.CreateQuestion(ctx, db.CreateQuestionParams{
 			VersionID:          version.ID,
 			QuestionIdentityID: identityID,
 			Type:               string(q.Type),
@@ -298,8 +304,32 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 			Position:           int32(i),
 			ScaleMin:           scaleMin,
 			ScaleMax:           scaleMax,
-		}); err != nil {
+		})
+		if err != nil {
 			return Version{}, fmt.Errorf("store: create question: %w", err)
+		}
+
+		// Localizations freeze with the question they translate: what a
+		// respondent saw in their language is as immutable as what
+		// anyone else saw (M11-T1).
+		for _, lang := range draft.Languages() {
+			translated, ok := draft.Localizations[lang].Questions[q.IdentityID]
+			if !ok || translated.Text == "" {
+				continue
+			}
+			options, err := json.Marshal(translated.Options)
+			if err != nil {
+				return Version{}, fmt.Errorf("store: encode localized options: %w", err)
+			}
+			if err := qtx.CreateQuestionLocalization(ctx, db.CreateQuestionLocalizationParams{
+				VersionID:  version.ID,
+				QuestionID: question.ID,
+				Lang:       lang,
+				Text:       translated.Text,
+				Options:    options,
+			}); err != nil {
+				return Version{}, fmt.Errorf("store: create localization: %w", err)
+			}
 		}
 	}
 

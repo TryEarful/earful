@@ -109,6 +109,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 						if data.Survey.LatestVersion > 0 {
 							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>Results</a>
 						}
+						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>Languages</a>
 						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>Preview as respondent</a>
 					</div>
 				</div>

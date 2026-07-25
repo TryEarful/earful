@@ -357,6 +357,10 @@ func isUserError(err error) bool {
 		domain.ErrEmptyOption, domain.ErrDuplicateOption, domain.ErrBadScale,
 		domain.ErrDraftEmpty, domain.ErrDraftTooLong, domain.ErrQuestionUnknown,
 		domain.ErrEmptyTitle,
+		// M11: a publish blocked by an unreviewed translation is the
+		// creator being told something, not the server failing.
+		domain.ErrUnreviewedTrans, domain.ErrUnknownLanguage,
+		domain.ErrLanguageInvalid, domain.ErrLanguageExists, domain.ErrTooManyLanguages,
 	} {
 		if errors.Is(err, sentinel) {
 			return true

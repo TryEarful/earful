@@ -35,6 +35,9 @@ type Querier interface {
 	CreateInsightRun(ctx context.Context, arg CreateInsightRunParams) (InsightRun, error)
 	CreateMagicLinkToken(ctx context.Context, arg CreateMagicLinkTokenParams) error
 	CreateQuestion(ctx context.Context, arg CreateQuestionParams) (Question, error)
+	// M11: localizations (frozen at publish) and answer translations
+	// (cached, creator-side).
+	CreateQuestionLocalization(ctx context.Context, arg CreateQuestionLocalizationParams) error
 	CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	// M3: surveys, drafts, revisions, versions, questions.
@@ -105,6 +108,9 @@ type Querier interface {
 	IncrementSurveyStat(ctx context.Context, arg IncrementSurveyStatParams) error
 	LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (LatestExportJobRow, error)
 	LatestInsightRun(ctx context.Context, surveyID uuid.UUID) (InsightRun, error)
+	// Every translation for a survey's answers in one language, so the
+	// results page can show them beside the originals without N queries.
+	ListAnswerTranslations(ctx context.Context, arg ListAnswerTranslationsParams) ([]ListAnswerTranslationsRow, error)
 	// One row per stored answer, with the version it was given under and the
 	// participant it belongs to (NULL forever for anonymous surveys).
 	// Skipped questions store no row at all, which is what keeps "skipped"
@@ -112,6 +118,7 @@ type Querier interface {
 	ListAnswersForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListAnswersForSurveyRow, error)
 	ListBetaCodes(ctx context.Context) ([]ListBetaCodesRow, error)
 	ListDraftRevisions(ctx context.Context, draftID uuid.UUID) ([]ListDraftRevisionsRow, error)
+	ListLocalizationsForVersion(ctx context.Context, versionID uuid.UUID) ([]ListLocalizationsForVersionRow, error)
 	ListParticipants(ctx context.Context, surveyID uuid.UUID) ([]ListParticipantsRow, error)
 	// M7: reading results.
 	//
@@ -129,6 +136,7 @@ type Querier interface {
 	ListResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListResponsesForSurveyRow, error)
 	ListSurveyStats(ctx context.Context, surveyID uuid.UUID) ([]ListSurveyStatsRow, error)
 	ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]ListSurveysForWorkspaceRow, error)
+	ListVersionLanguages(ctx context.Context, versionID uuid.UUID) ([]string, error)
 	ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error)
 	// By address across all surveys: a hard bounce means the mailbox is gone,
 	// not that one survey's invite failed.
@@ -158,6 +166,7 @@ type Querier interface {
 	// (ADR-0003 trigger), but the query shape means no caller can even try.
 	UpdateSurveySettings(ctx context.Context, arg UpdateSurveySettingsParams) error
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
+	UpsertAnswerTranslation(ctx context.Context, arg UpsertAnswerTranslationParams) error
 	WorkspaceTokensOnDay(ctx context.Context, arg WorkspaceTokensOnDayParams) (int64, error)
 }
 

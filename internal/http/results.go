@@ -32,8 +32,11 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	notice := ""
-	if r.URL.Query().Get("notice") == "response_deleted" {
+	switch r.URL.Query().Get("notice") {
+	case "response_deleted":
 		notice = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
+	case "translated":
+		notice = "Answers translated. The originals are untouched — both are shown, and the translation is marked as machine-made."
 	}
 	s.renderResults(w, r, survey, results, notice)
 }
@@ -44,9 +47,21 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 	survey store.Survey, results store.Results, notice string) {
 	info, _ := authFrom(r.Context())
-	stats, err := s.surveys.SurveyStats(r.Context(), survey.ID)
-	if err != nil {
-		s.internalError(w, r, "load survey stats", err)
+	// A creator reading a global audience picks a language; translations
+	// are cached per answer, and the original is always kept (M11-T2).
+	lang := domain.NormalizeLang(r.URL.Query().Get("lang"))
+	translations := map[uuid.UUID]store.AnswerTranslation{}
+	if lang != "" {
+		cached, err := s.surveys.AnswerTranslations(r.Context(), survey.ID, lang)
+		if err != nil {
+			s.internalError(w, r, "load answer translations", err)
+			return
+		}
+		translations = cached
+	}
+	stats, statsErr := s.surveys.SurveyStats(r.Context(), survey.ID)
+	if statsErr != nil {
+		s.internalError(w, r, "load survey stats", statsErr)
 		return
 	}
 	insight := templates.InsightView{Available: s.canAnalyze()}
@@ -57,7 +72,10 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 		templates.SurveyResultsData{
 			Survey:        viewSurvey(survey, s.clock.Now()),
 			ResponseCount: len(results.Responses),
-			Questions:     viewQuestionResults(results),
+			Questions:     viewQuestionResults(results, translations),
+			CanTranslate:  s.canTranslate(),
+			TranslateLang: lang,
+			TranslateName: domain.LanguageName(lang),
 			Stats:         viewSurveyStats(stats, results),
 			Insight:       insight,
 			Notice:        notice,
@@ -69,7 +87,7 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 // viewQuestionResults turns stored answers into what a reader sees: a
 // distribution for anything countable, the answers themselves for text.
 // All formatting decisions live here, so the template holds no logic.
-func viewQuestionResults(results store.Results) []templates.QuestionResultsView {
+func viewQuestionResults(results store.Results, translations map[uuid.UUID]store.AnswerTranslation) []templates.QuestionResultsView {
 	out := make([]templates.QuestionResultsView, 0, len(results.Questions))
 	for _, question := range results.Questions {
 		view := templates.QuestionResultsView{
@@ -92,14 +110,19 @@ func viewQuestionResults(results store.Results) []templates.QuestionResultsView 
 		switch question.Type {
 		case domain.LongText, domain.ShortText:
 			for _, answer := range question.Answers {
-				view.Texts = append(view.Texts, templates.TextAnswerView{
+				text := templates.TextAnswerView{
 					Text:          answer.Value.Text,
 					VersionLabel:  "v" + strconv.Itoa(answer.VersionNumber),
 					SubmittedAt:   answer.SubmittedAt.Format(dateTimeLayout),
 					Participant:   participantLabel(answer.ParticipantEmail),
 					ResponseID:    answer.ResponseID.String(),
 					AnswerLongish: len(answer.Value.Text) > 240,
-				})
+				}
+				if translated, ok := translations[answer.ID]; ok {
+					text.Translation = translated.Text
+					text.TranslationModel = translated.Model
+				}
+				view.Texts = append(view.Texts, text)
 			}
 		case domain.SingleChoice, domain.MultipleChoice, domain.Dropdown:
 			view.Distribution = choiceDistribution(question)

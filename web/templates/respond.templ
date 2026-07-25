@@ -43,6 +43,11 @@ type RespondData struct {
 	// disclosure names the invitee.
 	ParticipantToken string
 	ParticipantEmail string
+	// Lang is the language being served (empty for the original), and
+	// Languages are the choices offered. The choice lives in the URL and
+	// is stored nowhere (story 25).
+	Lang      string
+	Languages []LanguageChoice
 	// VoicePath is the WebSocket endpoint for spoken answers, empty when
 	// no transcription is configured (M5). The mic is built entirely by
 	// voice.js: nothing about it is server-rendered, so a respondent
@@ -58,9 +63,9 @@ func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Previe
 // deliberately does not reuse the creator chrome: a respondent has no
 // account, no navigation, and nothing to sign out of. `noindex` keeps
 // surveys out of search results and LLM scrapes (M4-T5).
-templ RespondLayout(title string) {
+templ RespondLayout(title string, lang string) {
 	<!DOCTYPE html>
-	<html lang="en">
+	<html lang={ htmlLang(lang) }>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -74,8 +79,18 @@ templ RespondLayout(title string) {
 	</html>
 }
 
+// htmlLang is what the page declares itself to be. It matters beyond
+// tidiness: screen readers pick pronunciation from it, and voice.js
+// passes it to the transcriber as the recognition language (M11-T3).
+func htmlLang(lang string) string {
+	if lang == "" {
+		return "en"
+	}
+	return lang
+}
+
 templ Respond(data RespondData) {
-	@RespondLayout(data.Title) {
+	@RespondLayout(data.Title, data.Lang) {
 		<main>
 			if data.Preview {
 				<div class="preview-banner" role="status">
@@ -83,6 +98,7 @@ templ Respond(data RespondData) {
 				</div>
 			}
 			<h1>{ data.Title }</h1>
+			@languagePicker(data)
 			@respondentDisclosure(data)
 			if data.AlreadyAnswered && !data.Preview {
 				<p class="notice">It looks like you've answered this survey before. You can answer again — each submission is recorded separately.</p>
@@ -163,6 +179,32 @@ func pluralAnswers(n int) string {
 	return fmt.Sprintf("%d answers", n)
 }
 
+// languagePicker offers the languages this version was published with
+// (story 25). It is a plain form: choosing reloads the page in that
+// language, and nothing about the choice is stored — no cookie, no
+// column, nothing that could later say what language a respondent reads.
+templ languagePicker(data RespondData) {
+	if len(data.Languages) > 1 && !data.Preview {
+		<form method="get" class="language-picker">
+			<label class="field">
+				<span>Language</span>
+				<select name="lang" data-language-picker>
+					for _, choice := range data.Languages {
+						if choice.Selected {
+							<option value={ choice.Code } selected>{ choice.Name }</option>
+						} else if choice.Suggested {
+							<option value={ choice.Code }>{ choice.Name + " (suggested)" }</option>
+						} else {
+							<option value={ choice.Code }>{ choice.Name }</option>
+						}
+					}
+				</select>
+			</label>
+			<button type="submit">Change language</button>
+		</form>
+	}
+}
+
 // respondentDisclosure states who is running the survey and what happens
 // to the answers, before anyone answers anything (SPEC.md story 63; the
 // fuller M8-T5 treatment builds on this).
@@ -197,7 +239,7 @@ templ respondentDisclosure(data RespondData) {
 
 // RespondAlreadySubmitted is the one-per-participant page (M4-T3).
 templ RespondAlreadySubmitted(title string) {
-	@RespondLayout("Already answered") {
+	@RespondLayout("Already answered", "") {
 		<main>
 			<h1>You've already answered</h1>
 			if title != "" {
@@ -349,7 +391,7 @@ func boolEquals(got *bool, want bool) bool { return got != nil && *got == want }
 
 // RespondThanks closes the loop for the respondent.
 templ RespondThanks(title string, anonymous bool) {
-	@RespondLayout("Thank you — " + title) {
+	@RespondLayout("Thank you — "+title, "") {
 		<main>
 			<h1>Thank you</h1>
 			<p>Your answers have been recorded.</p>
@@ -363,7 +405,7 @@ templ RespondThanks(title string, anonymous bool) {
 // RespondPreviewSubmitted is what a creator sees if they submit the
 // preview form. Nothing is written; the page says so plainly.
 templ RespondPreviewSubmitted(surveyID string, title string) {
-	@RespondLayout("Preview — " + title) {
+	@RespondLayout("Preview — "+title, "") {
 		<main>
 			<h1>Nothing was submitted</h1>
 			<p>This was a preview, so no response was recorded.</p>
@@ -375,7 +417,7 @@ templ RespondPreviewSubmitted(surveyID string, title string) {
 // RespondUnavailable covers every reason a survey cannot be answered
 // right now, in the respondent's language rather than ours.
 templ RespondUnavailable(title string, heading string, message string) {
-	@RespondLayout(heading) {
+	@RespondLayout(heading, "") {
 		<main>
 			<h1>{ heading }</h1>
 			if title != "" {

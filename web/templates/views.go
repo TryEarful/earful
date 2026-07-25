@@ -91,6 +91,11 @@ type SurveyResultsData struct {
 	Stats         SurveyStatsView
 	Insight       InsightView
 	Notice        string
+	// CanTranslate offers on-demand answer translation; TranslateLang is
+	// the language currently shown beside the originals (M11-T2).
+	CanTranslate  bool
+	TranslateLang string
+	TranslateName string
 	// Table is story 58's tabular view: one row per response, the same
 	// shape the CSV exports.
 	TableHeaders []string
@@ -168,6 +173,10 @@ type TextAnswerView struct {
 	ResponseID  string
 	// AnswerLongish marks answers worth rendering with more room.
 	AnswerLongish bool
+	// Translation is a cached machine translation, shown beside the
+	// original and never instead of it (stories 26, 27).
+	Translation      string
+	TranslationModel string
 }
 
 // AccountData is the account page. It grew a struct when the workspace
@@ -257,4 +266,56 @@ type InsightView struct {
 	CountLabel    string
 	Stale         bool
 	StaleNote     string
+}
+
+// --- localization (M11-T1) -----------------------------------------------
+
+// LocalizationsData is the translation workspace for one survey.
+type LocalizationsData struct {
+	Survey    SurveyView
+	Languages []LanguageView
+	Questions []domain.Question
+	// CanTranslate is false when no text AI is configured: the language
+	// list still works, translations are then written by hand.
+	CanTranslate bool
+	Error        string
+	Notice       string
+}
+
+// LanguageView is one language and how far along it is.
+type LanguageView struct {
+	Code         string
+	Name         string
+	Total        int
+	Reviewed     int
+	PendingCount int
+	// Ready means every question is translated and reviewed against the
+	// current wording — the condition publishing requires.
+	Ready     bool
+	Questions []LocalizedQuestionView
+}
+
+// LocalizedQuestionView is one question in one language, beside its
+// source, so a reviewer can compare rather than trust.
+type LocalizedQuestionView struct {
+	IdentityID    string
+	SourceText    string
+	Text          string
+	Options       string
+	SourceOptions string
+	NeedsOptions  bool
+	Reviewed      bool
+	// Stale marks a translation of a wording the creator has since
+	// changed: reviewed once, but not for what the question says now.
+	Stale bool
+}
+
+// LanguageChoice is one option in the respondent's language picker.
+// Suggested marks the browser's own preference — a suggestion, never a
+// selection made for them.
+type LanguageChoice struct {
+	Code      string
+	Name      string
+	Selected  bool
+	Suggested bool
 }

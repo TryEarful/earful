@@ -36,6 +36,9 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results.csv") }>
 					Download CSV
 				</a>
+				if data.CanTranslate {
+					@translateForm(csrf, data)
+				}
 			</div>
 
 			@insightPanel(csrf, data)
@@ -227,6 +230,25 @@ templ responseTable(csrf string, data SurveyResultsData) {
 	</section>
 }
 
+// translateForm is M11-T2's entrance: translate the written answers into
+// a language you read. Originals are never replaced.
+templ translateForm(csrf string, data SurveyResultsData) {
+	<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/answers/translate") } class="translate-form">
+		<input type="hidden" name="_csrf" value={ csrf }/>
+		<label class="field">
+			<span>Translate answers into</span>
+			<input type="text" name="lang" maxlength="8" placeholder="en" value={ data.TranslateLang } required/>
+		</label>
+		<button type="submit" class="secondary">Translate</button>
+	</form>
+	if data.TranslateLang != "" {
+		<p class="muted">
+			Showing machine translations into { data.TranslateName } beside each answer.
+			<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>Show originals only</a>
+		</p>
+	}
+}
+
 templ questionResults(q QuestionResultsView) {
 	<section class="card result">
 		<h2>{ q.Text }</h2>
@@ -270,6 +292,13 @@ templ questionResults(q QuestionResultsView) {
 				for _, answer := range q.Texts {
 					<li>
 						<p class="transcript-text">{ answer.Text }</p>
+						if answer.Translation != "" {
+							<p class="transcript-translation">
+								<span class="chip chip-small">Machine translation</span>
+								{ answer.Translation }
+							</p>
+							<p class="muted transcript-meta">Translated by { answer.TranslationModel }; the original is above.</p>
+						}
 						<p class="muted transcript-meta">
 							{ answer.SubmittedAt } · <span class="chip chip-small">{ answer.VersionLabel }</span>
 							if answer.Participant != "" {

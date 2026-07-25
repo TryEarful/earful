@@ -21,7 +21,7 @@ ORDER BY v.number, q.position;
 -- participant it belongs to (NULL forever for anonymous surveys).
 -- Skipped questions store no row at all, which is what keeps "skipped"
 -- and "answered blank" distinguishable.
-SELECT a.response_id, a.question_identity_id, a.value,
+SELECT a.id AS answer_id, a.response_id, a.question_identity_id, a.value,
        v.number AS version_number, r.submitted_at, r.duration_secs,
        p.email AS participant_email
 FROM answers a

@@ -63,6 +63,9 @@ type Wording struct {
 
 // AnswerRow is one answer to one question.
 type AnswerRow struct {
+	// ID is the answer's own id, which a cached translation attaches to
+	// (M11-T2).
+	ID               uuid.UUID
 	ResponseID       uuid.UUID
 	VersionNumber    int
 	SubmittedAt      time.Time
@@ -135,6 +138,7 @@ func (s *Surveys) SurveyResults(ctx context.Context, surveyID uuid.UUID) (Result
 		identity := row.QuestionIdentityID.String()
 		if question, ok := byIdentity[identity]; ok {
 			question.Answers = append(question.Answers, AnswerRow{
+				ID:               row.AnswerID,
 				ResponseID:       row.ResponseID,
 				VersionNumber:    int(row.VersionNumber),
 				SubmittedAt:      row.SubmittedAt,
