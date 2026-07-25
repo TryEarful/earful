@@ -144,7 +144,7 @@ report themselves absent and the features degrade (Appendix D).
 | `AI_MODEL` | *(empty)* | Default model for every operation |
 | `AI_MODEL_GENERATE` / `_ANALYZE` / `_TRANSLATE` / `_TRANSCRIBE` | *(empty)* | Per-operation override — this is how insights run on a stronger tier than question generation |
 | `VERTEX_PROJECT` | *(empty)* | Required by the `vertex` provider; credentials come from Application Default Credentials, never a key file |
-| `VERTEX_LOCATION` | `europe-west4` | ADR-0004 pins voice here |
+| `VERTEX_LOCATION` | `europe-west4` | ADR-0004 pins voice here, and ADR-0011 keeps every other call here too — even when a newer model family is available only at Vertex's `global` location |
 | `TRANSCRIBE_PROVIDER` | `none` | `none`, `whisper-cli`, `openai`, `vertex`, or `scripted`; voice is selected separately from text because they routinely come from different places |
 | `WHISPER_BIN` / `WHISPER_MODEL` | `whisper-cli` / *(empty)* | whisper.cpp binary and `ggml-*.bin` model path |
 | `AI_DAILY_BUDGET_EUR` | `3` | Global daily breaker: every AI endpoint refuses once the day's estimated spend reaches it |

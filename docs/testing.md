@@ -294,8 +294,14 @@ Three integration tests are opt-in, and each is the only witness that a
 wire format matches reality:
 
 ```sh
-# Vertex, against the real API with your own ADC (M6-T1)
-VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=<model> \
+# Vertex, against the real API with your own ADC (M6-T1). Last run
+# 2026-07-25 against earful-stg-aeir with gemini-2.5-flash (and
+# gemini-2.5-pro for the analyze tier): generation and transcription
+# both green. Those ids are the best europe-west4 offers; 3.x is
+# global-only and deliberately unused (ADR-0011). Set VERTEX_TEST_AUDIO to a 16-bit PCM
+# WAV to include the voice half.
+VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=gemini-2.5-flash \
+  VERTEX_TEST_AUDIO=/tmp/speech.wav \
   go test ./internal/ai/ -run Vertex_Integration -v
 
 # whisper.cpp, against a real model (M5)

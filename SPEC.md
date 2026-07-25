@@ -1,6 +1,6 @@
 ---
 status: ready-for-agent
-source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0010
+source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0011
 pending: EU AI Act additions (companion doc) — separate pass
 implementation: "Every milestone complete except M9's launch acts: M0–M8, M10, M11 and M12 shipped; v0.1.0 on production since 2026-07-24, with M5–M11 built 2026-07-25 and awaiting a deploy. Open: M9-T3's soak run, M9-T4's remaining drills, M9-T5 (launch). See PLAN.md's Status section for per-ticket progress"
 ---
@@ -186,6 +186,7 @@ All load-bearing decisions are recorded as ADRs; the spec inherits them:
 - **Anti-abuse (ADR-0006):** ALTCHA in-app, first-party widget; zero third-party scripts on respondent pages (CI-enforced); honeypot; token-bucket rate limits; session-bound LLM tokens; per-workspace daily AI quotas plus a global daily € breaker.
 - **Platform (ADR-0007):** Cloud Run, separate stg/pro projects, opentofu; one Go binary with `serve | purge | migrate` subcommands; purge cron = same binary as a scheduled Cloud Run job; WebSocket clients auto-reconnect.
 - **Workspace export (ADR-0010):** the archive is built asynchronously and stored in Postgres, not object storage — one code path for the SaaS and for `docker compose up`, at the cost of a documented size cap.
+- **AI residency (ADR-0011):** every AI call stays pinned to europe-west4 even when a newer model family is available only at Vertex's global location. Model ids are configuration; upgrading when Gemini 3.x reaches an EU region is a tfvars change.
 - **Backups (ADR-0008):** daily Cloud SQL Admin API exports to a retention-locked bucket in a separate backups project; lifecycle rule owns the rolling 30-day window; export credentials create-only.
 - **Audience aggregates (ADR-0009):** survey stats (starts, completions, completion rate, drop-off per question position, average duration) plus audience aggregates (browser family, device class, country) exist only as survey-level counters with no join path to responses; country derived in-process from an embedded GeoIP database with the IP discarded in-request (no new processor); per-response duration is the only per-response addition; UI suppresses buckets with n < 5. The blessed list is exhaustive.
 - **Survey Status:** Draft / Open / Closed is a derived, first-class status (never-published; published and accepting; not accepting). Manual close and reopen plus Close Date enforcement. Status is survey-level, like Close Date — not part of the versioned structure.

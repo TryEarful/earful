@@ -22,7 +22,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | M3 — Survey building | [x] done | 6/6 |
 | M4 — Answering (anonymous + invited) | [x] done | 7/7 · T6 closed 2026-07-24: live Brevo on pro, domain authenticated, both ACs verified |
 | M5 — Voice (transcript-only) | [x] done | 4/4 |
-| M6 — AI question generation | [x] done | 3/3 · T1 completed by the Vertex implementation (live check pending credentials) |
+| M6 — AI question generation | [x] done | 3/3 · T1 verified against live Vertex 2026-07-25 |
 | M7 — Results & export | [x] done | 4/4 |
 | M8 — Data lifecycle & trust | [x] done | 5/5 |
 | M9 — Production launch | [~] in progress | T1/T6/T7 `[x]`; T2/T3/T4 `[~]` (soak + drills need a deployed instance); **T5 (launch) is the only unstarted ticket in the plan** |
@@ -63,6 +63,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0008 | Daily Cloud SQL exports to a retention-locked immutable bucket; rolling 30-day window via lifecycle rules, not cron delete permissions |
 | 0009 | Audience stats exist only as unlinked survey-level aggregates (browser family, device class, country via in-process GeoIP); n<5 suppression; amends 0003 |
 | 0010 | Workspace export archives live in Postgres, not object storage: one code path for SaaS and self-hosting, at the cost of a size cap |
+| 0011 | EU residency outranks model recency: every AI call stays pinned to europe-west4, so Gemini 3.x (global-only) is not used |
 
 ## MVP scope
 
@@ -200,7 +201,8 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 ### M6 — AI question generation
 
-- [~] **M6-T1 ai.Provider interface.** Goal: `Generate`, `Transcribe`, `Translate`, `Analyze` (all streaming) behind one interface; Vertex impl (europe-west4, no-training config verified) + openai-compatible local impl (ollama/llamafile). AC: swap via env var; integration test against ollama in CI. Deps: M0-T4
+- [x] **M6-T1 ai.Provider interface.** Goal: `Generate`, `Transcribe`, `Translate`, `Analyze` (all streaming) behind one interface; Vertex impl (europe-west4, no-training config verified) + openai-compatible local impl (ollama/llamafile). AC: swap via env var; integration test against ollama in CI. Deps: M0-T4
+  _Note (2026-07-25, closed): the Vertex implementation is live-verified. `aiplatform` enabled on staging, and the opt-in integration test passed against the real API on both halves: generation answered "Paris", and transcription returned "The capital of France is Paris." from a real WAV — the whole ADR-0004 server path, end to end, against the models production will use (`gemini-2.5-flash`, and `gemini-2.5-pro` for insights, both verified). **Model choice is a documented trade (ADR-0011)**: Gemini 3.x is available only at Vertex's `global` location — confirmed absent from seven EU regions — and the europe-west4 pin outranks model recency, so the newest family is deliberately not used. Upgrading when 3.x reaches an EU region is a tfvars change, because nothing in the product names a model. Two things this proved that the stub could not: the streamGenerateContent SSE frame shape, and that inline audio with a prompt is enough for transcription (no separate speech API). Production's API enablement is in the bootstrap code and will land with the next apply; staging was brought forward by hand._
   _Note (2026-07-20): interface + local impls done and verified against the real local stack — the SSE streaming client passed its integration test against the dev machine's Qwen 3.5 llamafile, and whisper-cli transcribed generated speech using exactly the flags the exec wrapper passes. Providers: `OpenAICompat` (ollama `/v1`, llamafile), `WhisperCLI` (exec; audio touches disk only as a deferred-removed temp file — the local-dev ADR-0004 trade-off, noted in code), `Composite` (routes voice/text separately so either can be absent and degrade per Appendix D), scripted `Fake` for tests. Swap-via-env: `AI_PROVIDER`/`TRANSCRIBE_PROVIDER` + friends. Stays `[~]` for the **Vertex impl**, which cannot be written honestly without credentials — cloud milestone. AC deviation: the ollama integration test exists but is opt-in (`AI_TEST_BASE_URL`/`AI_TEST_MODEL`) rather than in CI — a model download in every CI run buys little over the fake-backend SSE tests; revisit when the cloud pipeline exists._
 - [x] **M6-T2 Quotas + budget breaker.** Goal: ai_usage accounting; per-workspace daily caps; global daily € breaker that hard-disables AI endpoints and alerts. AC: breaker trips in test; alert fires. Deps: M6-T1
   _Note (2026-07-20): both limits are sums over the ai_usage table, so restarts and multiple instances agree and the day rolls over by itself (UTC). The breaker outranks the quota and its Error-level log line IS the alert until M9-T2 wires a channel — the test asserts the line fires. Token counts are chars/4 estimates until Vertex reports real ones; overestimating is the safe direction for a budget guard. The meter is wired into the server; M5/M6-T3 endpoints consume it._

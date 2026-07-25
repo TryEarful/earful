@@ -81,7 +81,10 @@ func (s *server) processors() []templates.ProcessorView {
 			Name:    "Google Vertex AI",
 			Purpose: "Transcribing spoken answers, drafting questions, summaries and translations",
 			Data:    "Audio in transit (never stored), question and answer text",
-			Region:  s.cfg.VertexLocation,
+			// The configured region, not a claim: ADR-0011 keeps every
+			// call pinned here, and this cell would change if that ever
+			// stopped being true.
+			Region: s.cfg.VertexLocation,
 		})
 	case "openai":
 		out = append(out, templates.ProcessorView{

@@ -56,14 +56,19 @@ variable "transcribe_provider" {
   default     = "none"
 }
 
+# The ids below are what europe-west4 actually offers, verified against
+# the live publisher list on 2026-07-25 and exercised end to end by
+# internal/ai's integration test. Gemini 3.x is deliberately NOT used:
+# it resolves only at Vertex's `global` location, and the EU pin outranks
+# model recency (ADR-0011). Upgrade when 3.x reaches an EU region.
 variable "ai_model" {
-  description = "Default model for every AI operation (verify the id against the live publisher list before setting)."
+  description = "Default model for every AI operation. Must be available in var.region (ADR-0011)."
   type        = string
-  default     = ""
+  default     = "gemini-2.5-flash"
 }
 
 variable "ai_model_analyze" {
   description = "Model for Insight Summaries, which want a stronger tier than question drafting. Empty falls back to ai_model."
   type        = string
-  default     = ""
+  default     = "gemini-2.5-pro"
 }
