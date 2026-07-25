@@ -29,6 +29,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
 
+	"github.com/TryEarful/earful/internal/ai"
 	"github.com/TryEarful/earful/internal/auth"
 	"github.com/TryEarful/earful/internal/clock"
 	"github.com/TryEarful/earful/internal/config"
@@ -52,6 +53,16 @@ type Options struct {
 	// BetaMode boots the instance with the private-beta gate on (M12):
 	// invite-code signup, password login, no account-creating side doors.
 	BetaMode bool
+	// AI injects a provider — normally an *ai.Fake with scripted output.
+	// Left nil, the instance boots with no AI configured at all, which is
+	// how every pre-M5 test runs and is itself the "degrades gracefully
+	// when absent" regression proof (story 74).
+	AI ai.Provider
+	// AIQuota and AIBudgetEUR override the per-workspace daily token cap
+	// and the global daily € breaker, so quota-exhaustion paths are
+	// reachable without burning a real budget.
+	AIQuota     int64
+	AIBudgetEUR float64
 }
 
 // App is one booted application instance plus the fakes tests observe
@@ -99,6 +110,20 @@ func New(t *testing.T, opts Options) *App {
 	srv := httptest.NewUnstartedServer(nil)
 	baseURL := "http://" + srv.Listener.Addr().String()
 
+	// AI accounting defaults are deliberately generous. The workspace
+	// quota is per-workspace and therefore per-test, but the € breaker
+	// sums the whole shared database for the day: a tight default would
+	// let one test's usage trip another test's breaker. Tests that want a
+	// trip set the limit themselves.
+	quota := opts.AIQuota
+	if quota == 0 {
+		quota = 1_000_000
+	}
+	budget := opts.AIBudgetEUR
+	if budget == 0 {
+		budget = 1_000
+	}
+
 	cfg := config.Config{
 		Env:         env,
 		Port:        0,
@@ -107,8 +132,11 @@ func New(t *testing.T, opts Options) *App {
 		BaseURL:     baseURL,
 		EmailSender: "console",
 		// Fixed secret so tests can drive the ESP webhook.
-		EmailWebhookSecret: WebhookSecret,
-		BetaMode:           opts.BetaMode,
+		EmailWebhookSecret:     WebhookSecret,
+		BetaMode:               opts.BetaMode,
+		AIWorkspaceDailyTokens: quota,
+		AIDailyBudgetEUR:       budget,
+		AICostPer1KTokensEUR:   0.001,
 	}
 
 	var google *auth.GoogleOIDC
@@ -132,6 +160,7 @@ func New(t *testing.T, opts Options) *App {
 		Clock:  app.Clock,
 		Email:  app.Emails,
 		Google: google,
+		AI:     opts.AI,
 	})
 	srv.Start()
 	t.Cleanup(srv.Close)
