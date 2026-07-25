@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TryEarful/earful/internal/ai"
 	"github.com/TryEarful/earful/internal/apptest"
 	"github.com/TryEarful/earful/internal/export"
 )
@@ -206,6 +207,62 @@ func TestWorkspaceExport_ContainsEverythingTheWorkspaceHolds(t *testing.T) {
 		if strings.Contains(strings.ToLower(raw), `"`+forbidden+`"`) {
 			t.Errorf("export contains a %q field near responses", forbidden)
 		}
+	}
+}
+
+// TestWorkspaceExport_CarriesInsightsLabelled is M10-T2's export half:
+// a summary travels, and it travels as analysis rather than as data.
+func TestWorkspaceExport_CarriesInsightsLabelled(t *testing.T) {
+	t.Parallel()
+	fake := &ai.Fake{AnalyzeScript: [][]string{{"Themes: onboarding friction."}}}
+	app := apptest.New(t, apptest.Options{AI: fake})
+	creator := app.Login(t, apptest.UniqueEmail("export-insight"))
+
+	id := app.CreateSurvey(t, creator, "Insightful survey", true)
+	app.AddQuestion(t, creator, id, "long_text", "How was it?", nil)
+	app.Publish(t, creator, id)
+	answerSurvey(t, app, id, map[int]string{0: "Onboarding was confusing"})
+	app.PostForm(t, creator, "/surveys/"+id+"/insights", nil).Body.Close()
+
+	link := waitForExport(t, app, creator)
+	resp, err := creator.Get(app.Server.URL + link)
+	if err != nil {
+		t.Fatalf("download: %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read archive: %v", err)
+	}
+	files := openArchive(t, body)
+
+	var archive export.Archive
+	if err := json.Unmarshal(files["workspace.json"], &archive); err != nil {
+		t.Fatalf("workspace.json: %v", err)
+	}
+	if len(archive.Surveys) != 1 || len(archive.Surveys[0].Insights) != 1 {
+		t.Fatalf("no insight in the export: %+v", archive.Surveys)
+	}
+	insight := archive.Surveys[0].Insights[0]
+	if !strings.Contains(insight.Output, "onboarding friction") {
+		t.Errorf("exported summary = %q", insight.Output)
+	}
+	if insight.Note == "" || insight.Model == "" {
+		t.Errorf("exported summary is not labelled: %+v", insight)
+	}
+
+	// And a human opening the zip finds it beside the CSV, labelled.
+	var sidecar string
+	for name, content := range files {
+		if strings.HasSuffix(name, ".insight.txt") {
+			sidecar = string(content)
+		}
+	}
+	if sidecar == "" {
+		t.Fatalf("no insight sidecar in the archive; files: %v", keys(files))
+	}
+	if !strings.Contains(sidecar, "AI-generated summary") || !strings.Contains(sidecar, "Model:") {
+		t.Errorf("the sidecar does not label itself:\n%s", sidecar)
 	}
 }
 

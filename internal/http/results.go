@@ -22,7 +22,6 @@ import (
 // rather than hiding it (ADR-0001, story 50).
 
 func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
-	info, _ := authFrom(r.Context())
 	survey, ok := s.loadSurvey(w, r)
 	if !ok {
 		return
@@ -32,14 +31,27 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "load results", err)
 		return
 	}
+	notice := ""
+	if r.URL.Query().Get("notice") == "response_deleted" {
+		notice = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
+	}
+	s.renderResults(w, r, survey, results, notice)
+}
+
+// renderResults is the one place the results page is built, so the
+// insight run that redirects back here shows the same page a plain
+// visit does.
+func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
+	survey store.Survey, results store.Results, notice string) {
+	info, _ := authFrom(r.Context())
 	stats, err := s.surveys.SurveyStats(r.Context(), survey.ID)
 	if err != nil {
 		s.internalError(w, r, "load survey stats", err)
 		return
 	}
-	notice := ""
-	if r.URL.Query().Get("notice") == "response_deleted" {
-		notice = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
+	insight := templates.InsightView{Available: s.canAnalyze()}
+	if run, err := s.surveys.LatestInsightRun(r.Context(), survey.ID); err == nil {
+		insight = viewInsight(run, results, s.canAnalyze())
 	}
 	render(w, r, http.StatusOK, templates.SurveyResults(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyResultsData{
@@ -47,6 +59,7 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 			ResponseCount: len(results.Responses),
 			Questions:     viewQuestionResults(results),
 			Stats:         viewSurveyStats(stats, results),
+			Insight:       insight,
 			Notice:        notice,
 			TableHeaders:  tableHeaders(results),
 			Table:         viewResponseTable(results),

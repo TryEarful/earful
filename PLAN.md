@@ -26,7 +26,7 @@ M0 → M2 → M3 (T1–T5) → M4 (+M3-T6) → M6-T1/T2 → M1 (done) + M9 (in p
 | M7 — Results & export | [x] done | 4/4 |
 | M8 — Data lifecycle & trust | [x] done | 5/5 |
 | M9 — Production launch | [~] in progress | T1/T6 `[x]` (T1 closed by v0.1.0's deploy-on-tag); T2/T4 drilled in part; T3/T5/T7 open |
-| M10 — Cross-respondent insights | [ ] not started | 0/2 |
+| M10 — Cross-respondent insights | [x] done | 2/2 |
 | M11 — Localization & translation | [ ] not started | 0/3 |
 | M12 — Private beta gate (temporary) | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted) |
 
@@ -247,8 +247,10 @@ Tracer-bullet ordering: each milestone ends with something demonstrable. Tickets
 
 ### M10 — Cross-respondent insights (executed before launch)
 
-- [ ] **M10-T1 Analysis engine.** Goal: on-demand "Analyze" per survey — themes, patterns, representative quotes across all responses, aggregated by Question Identity across versions — via `ai.Provider.Analyze` (Gemini Pro tier); cached against a response watermark; counts against workspace quota + global breaker; output stored append-only and labelled AI-generated (model + timestamp). Prompts never include participant identity. AC: re-run without new responses serves cache; quota exhaustion degrades gracefully; works for both survey kinds. Deps: M7-T1, M6-T2
-- [ ] **M10-T2 Insights in results + export.** Goal: Insight Summary panel on the results page (WS-streamed) and included in CSV/workspace export, clearly marked AI-generated. AC: the ADR-0001 scenario (50 v1 + 30 v2) yields one insight run spanning both versions; export contains the labelled summary. Deps: M10-T1
+- [x] **M10-T1 Analysis engine.** Goal: on-demand "Analyze" per survey — themes, patterns, representative quotes across all responses, aggregated by Question Identity across versions — via `ai.Provider.Analyze` (Gemini Pro tier); cached against a response watermark; counts against workspace quota + global breaker; output stored append-only and labelled AI-generated (model + timestamp). Prompts never include participant identity. AC: re-run without new responses serves cache; quota exhaustion degrades gracefully; works for both survey kinds. Deps: M7-T1, M6-T2
+  _Note (2026-07-25): the cache key is the newest response plus the count, so a re-run with nothing new never reaches the provider (asserted by call count) and a summary older than the answers is marked stale rather than quietly served as current. Prompts carry the questions, their earlier wordings and the answers — and never a participant's email, which a test greps for. Runs are append-only by trigger, like versions and revisions: a run records what the answers said at a moment, and rewriting it would make its own label a lie. The model name in that label comes from configuration, and says "an unnamed model" rather than inventing one._
+- [x] **M10-T2 Insights in results + export.** Goal: Insight Summary panel on the results page (WS-streamed) and included in CSV/workspace export, clearly marked AI-generated. AC: the ADR-0001 scenario (50 v1 + 30 v2) yields one insight run spanning both versions; export contains the labelled summary. Deps: M10-T1
+  _Note (2026-07-25): the panel streams over the WebSocket and then reloads, deliberately — an unlabelled block of prose on screen is exactly what this feature must never leave behind, so the summary only settles once it can be rendered with its model and timestamp. The plain form does the same thing without JavaScript. In the workspace archive the summary appears twice: inside workspace.json with its note, and as a `.insight.txt` beside the survey's CSV so a person who opens the zip finds it labelled too._
 
 ### M11 — Localization & translation (executed before launch)
 

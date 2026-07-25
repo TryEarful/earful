@@ -68,6 +68,16 @@ type ExportJob struct {
 	ExpiresAt   *time.Time    `json:"expires_at"`
 }
 
+type InsightRun struct {
+	ID                uuid.UUID  `json:"id"`
+	SurveyID          uuid.UUID  `json:"survey_id"`
+	ResponseWatermark *time.Time `json:"response_watermark"`
+	ResponseCount     int32      `json:"response_count"`
+	Model             string     `json:"model"`
+	Output            string     `json:"output"`
+	CreatedAt         time.Time  `json:"created_at"`
+}
+
 type MagicLinkToken struct {
 	TokenHash []byte     `json:"token_hash"`
 	Email     string     `json:"email"`

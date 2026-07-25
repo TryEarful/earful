@@ -95,6 +95,10 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	get("/surveys/{surveyID}/results", s.surveyResults)
 	get("/surveys/{surveyID}/results.csv", s.resultsCSV)
 	post("/surveys/{surveyID}/responses/{responseID}/delete", s.responseDelete)
+	// Insight Summaries (M10). The POST is the whole feature; the socket
+	// streams the same run as it is written.
+	post("/surveys/{surveyID}/insights", s.surveyInsights)
+	mux.Handle("GET /surveys/{surveyID}/insights/stream", s.requireAuth(http.HandlerFunc(s.surveyInsightsSocket)))
 	// Preview renders the draft through the real respondent renderer
 	// (M3-T6). Its POST writes nothing at all.
 	get("/surveys/{surveyID}/preview", s.previewPage)

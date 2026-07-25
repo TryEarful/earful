@@ -200,6 +200,24 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 			})
 		}
 
+		// The stored Insight Summary, if there is one, travels with its
+		// label attached (story 53 and M10-T2).
+		if run, err := s.surveys.LatestInsightRun(ctx, survey.ID); err == nil && run.Output != "" {
+			exported.Insights = append(exported.Insights, export.Insight{
+				Model:         run.Model,
+				GeneratedAt:   run.CreatedAt.UTC(),
+				ResponseCount: run.ResponseCount,
+				Output:        run.Output,
+				Note:          export.InsightNote,
+			})
+			csvs = append(csvs, export.CSVFile{
+				Name: strings.TrimSuffix(exportCSVName(survey), ".csv") + ".insight.txt",
+				Content: []byte(fmt.Sprintf("%s\nModel: %s\nGenerated: %s\nResponses read: %d\n\n%s\n",
+					export.InsightNote, run.Model, run.CreatedAt.UTC().Format(time.RFC3339),
+					run.ResponseCount, run.Output)),
+			})
+		}
+
 		// The same CSV the survey's own download produces: one format,
 		// not two.
 		var csv bytes.Buffer

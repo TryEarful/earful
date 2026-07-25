@@ -737,6 +737,25 @@ fieldset {
   margin: 0.75rem 0 0.2rem;
 }
 
+/* AI output is visually distinct from data on purpose: a summary must
+   never be mistakable for the answers it summarises. */
+.ai-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-left: 3px solid var(--accent);
+  padding-left: 0.75rem;
+}
+
+.insight-output {
+  white-space: pre-wrap;
+  font-family: inherit;
+  background: color-mix(in srgb, var(--accent) 6%, Canvas);
+  border-radius: 0.375rem;
+  padding: 0.9rem 1rem;
+  margin: 0 0 1rem;
+  overflow-x: auto;
+}
+
 .responses {
   border-collapse: collapse;
   font-size: 0.9rem;

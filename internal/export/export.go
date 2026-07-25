@@ -52,7 +52,25 @@ type Survey struct {
 	Participants []Participant `json:"participants,omitempty"`
 	Responses    []Response    `json:"responses"`
 	Stats        []Stat        `json:"stats,omitempty"`
+	// Insights are AI readings of the answers, exported with the label
+	// they carry in the product: a model and a time, never presented as
+	// data (story 53).
+	Insights []Insight `json:"insights,omitempty"`
 }
+
+// Insight is one stored Insight Summary.
+type Insight struct {
+	Model         string    `json:"model"`
+	GeneratedAt   time.Time `json:"generated_at"`
+	ResponseCount int       `json:"response_count"`
+	Output        string    `json:"output"`
+	// Note is spelled out in the file itself so a reader who opens only
+	// this object still knows what they are reading.
+	Note string `json:"note"`
+}
+
+// InsightNote is the label every exported summary carries.
+const InsightNote = "AI-generated summary of the responses, not the responses themselves."
 
 type Version struct {
 	Number      int        `json:"number"`
@@ -178,6 +196,9 @@ workspace.json   Everything, in one documented JSON document: every
 surveys/         One CSV per survey — the same file the survey's own
                  "Download CSV" button produces. Convenient for
                  spreadsheets; workspace.json is the complete record.
+                 Where a survey has an AI Insight Summary, it sits
+                 beside its CSV as a .insight.txt file, labelled with
+                 the model that wrote it. It is analysis, not data.
 
 What's deliberately absent
 --------------------------

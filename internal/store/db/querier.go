@@ -30,6 +30,9 @@ type Querier interface {
 	CreateDraftRevision(ctx context.Context, arg CreateDraftRevisionParams) error
 	// M7-T3: workspace export jobs.
 	CreateExportJob(ctx context.Context, arg CreateExportJobParams) (CreateExportJobRow, error)
+	// M10: Insight Summaries. Append-only by trigger; the newest run for a
+	// survey is the one shown, and its watermark is the cache key.
+	CreateInsightRun(ctx context.Context, arg CreateInsightRunParams) (InsightRun, error)
 	CreateMagicLinkToken(ctx context.Context, arg CreateMagicLinkTokenParams) error
 	CreateQuestion(ctx context.Context, arg CreateQuestionParams) (Question, error)
 	CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error)
@@ -101,6 +104,7 @@ type Querier interface {
 	// fails the build if one appears.
 	IncrementSurveyStat(ctx context.Context, arg IncrementSurveyStatParams) error
 	LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (LatestExportJobRow, error)
+	LatestInsightRun(ctx context.Context, surveyID uuid.UUID) (InsightRun, error)
 	// One row per stored answer, with the version it was given under and the
 	// participant it belongs to (NULL forever for anonymous surveys).
 	// Skipped questions store no row at all, which is what keeps "skipped"

@@ -89,6 +89,7 @@ type SurveyResultsData struct {
 	ResponseCount int
 	Questions     []QuestionResultsView
 	Stats         SurveyStatsView
+	Insight       InsightView
 	Notice        string
 	// Table is story 58's tabular view: one row per response, the same
 	// shape the CSV exports.
@@ -238,4 +239,22 @@ type ProcessorView struct {
 	Purpose string
 	Data    string
 	Region  string
+}
+
+// InsightView is an Insight Summary as displayed (M10). Every field
+// except Output exists to keep analysis from passing for data: the model
+// that wrote it, when, over how many responses, and whether responses
+// have arrived since.
+type InsightView struct {
+	// Available is false when no text AI is configured at all, in which
+	// case the panel is not offered.
+	Available     bool
+	Present       bool
+	Output        string
+	Model         string
+	GeneratedAt   string
+	ResponseCount int
+	CountLabel    string
+	Stale         bool
+	StaleNote     string
 }

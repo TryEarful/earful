@@ -138,6 +138,11 @@ func New(t *testing.T, opts Options) *App {
 		AIDailyBudgetEUR:       budget,
 		AICostPer1KTokensEUR:   0.001,
 	}
+	if opts.AI != nil {
+		// An injected provider stands for a configured one, so the model
+		// name features label their output with is present too.
+		cfg.AIModel = "test-model"
+	}
 
 	var google *auth.GoogleOIDC
 	if opts.GoogleIssuer != "" {
