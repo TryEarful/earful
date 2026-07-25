@@ -162,7 +162,7 @@ both). Locally nothing changes: mailpit stays the default source.
 make e2e-smoke   # compose up + npm install + playwright test
 ```
 
-The suite covers the core loop, voice (with Chromium's fake microphone),
+The suite covers the core loop, voice (with a synthesized microphone),
 AI question generation with JavaScript on and off, results, the CSV
 download, an Insight Summary, and a workspace export — 40 tests across
 phone, tablet and desktop. The compose stack runs `AI_PROVIDER=scripted`
@@ -188,12 +188,30 @@ typed answer.
 | `scripted` (default) | laptop, CI compose | The exact transcript lands in the textarea and can be edited. |
 | `real` | staging (set by `deploy.yml`) | Consent → capture → socket → `Transcribed`, with no error and the field still editable. |
 
-The distinction exists because Chromium's fake capture device emits a
-**tone, not speech**. The scripted provider ignores the audio and
-returns a canned sentence; a real transcriber correctly hears no words.
-Asserting on the words against a real model would fail the promotion
-gate for the model being right, so against `real` the suite asserts
-everything around the words instead.
+The distinction exists because the microphone emits a **tone, not
+speech**. The scripted provider ignores the audio and returns a canned
+sentence; a real transcriber correctly hears no words. Asserting on the
+words against a real model would fail the promotion gate for the model
+being right, so against `real` the suite asserts everything around the
+words instead.
+
+### The microphone is synthesized, not faked by the browser
+
+`fakeMicrophone` (in `helpers.ts`) replaces `getUserMedia` with a
+MediaStream built from the page's own `AudioContext`. It reads like a
+workaround and is worth explaining, because the obvious alternative is
+broken: **Chromium's `--use-fake-device-for-media-capture` is a no-op in
+Chrome 149** — with the flag set, `enumerateDevices()` returns only real
+hardware. So the suite was recording from the developer's actual
+microphone on a laptop (silence, which the scripted provider ignored)
+and failing outright on CI runners, which have no audio device at all
+(`NotFoundError: Requested device not found`).
+
+A stream generated in the page needs no hardware, sounds the same on
+every machine, and stops the test suite opening anybody's mic.
+Everything downstream of `getUserMedia` — PCM conversion, the socket,
+the transcript, the caps — is untouched; what is skipped is the
+browser's own device plumbing, which is not ours to test.
 
 Two more things worth knowing:
 

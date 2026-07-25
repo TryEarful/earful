@@ -1,4 +1,4 @@
-import { expect, Page } from "@playwright/test";
+import { expect, BrowserContext, Page } from "@playwright/test";
 
 const mailpitURL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 
@@ -80,6 +80,39 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
   throw new Error(`no logged email with a matching link found for ${addr}`);
+}
+
+// fakeMicrophone gives a context a synthetic capture device: a 440 Hz
+// tone from the page's own AudioContext, handed back as a MediaStream.
+//
+// This replaced Chromium's --use-fake-device-for-media-capture, which is
+// a no-op in Chrome 149: enumerateDevices shows only real hardware with
+// the flag set, so the suite was quietly recording from the developer's
+// actual microphone on a laptop, and failing with NotFoundError on CI
+// runners, which have no audio device at all. A stream built in the page
+// needs no hardware, behaves the same on every machine, and stops the
+// test suite opening anybody's mic.
+//
+// Everything downstream of getUserMedia — the PCM conversion, the
+// socket, the transcript, the caps — is the code under test and is
+// untouched. What is skipped is the browser's own device plumbing, which
+// is not ours to test.
+export async function fakeMicrophone(context: BrowserContext): Promise<void> {
+  await context.addInitScript(() => {
+    const audio = new AudioContext();
+    const tone = audio.createOscillator();
+    const sink = audio.createMediaStreamDestination();
+    tone.frequency.value = 440;
+    tone.connect(sink);
+    tone.start();
+    navigator.mediaDevices.getUserMedia = async () => {
+      // An AudioContext created without a user gesture starts suspended,
+      // and a suspended graph produces nothing. This call always happens
+      // inside the consent click, which is a gesture.
+      await audio.resume();
+      return sink.stream;
+    };
+  });
 }
 
 // --- What this instance offers -------------------------------------

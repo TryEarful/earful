@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { aiTimeout, createPublishedSurvey, offersVoice, scriptedAI } from "./helpers";
+import {
+  aiTimeout,
+  createPublishedSurvey,
+  fakeMicrophone,
+  offersVoice,
+  scriptedAI,
+} from "./helpers";
 
 // Spoken answers, in a real browser with a fake microphone (M5).
 //
@@ -23,6 +29,7 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
     storageState: undefined,
     permissions: ["microphone"],
   });
+  await fakeMicrophone(context);
   const respondent = await context.newPage();
   await respondent.goto(share);
 

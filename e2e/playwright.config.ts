@@ -28,12 +28,16 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
     trace: "retain-on-failure",
     extraHTTPHeaders,
-    // A fake microphone for the voice tests (M5). Browser launch options
-    // are worker-scoped, so they live here rather than in the spec that
-    // needs them; no other test calls getUserMedia, so a fake capture
-    // device changes nothing for them.
+    // No --use-fake-device-for-media-capture here: it is a no-op in
+    // Chrome 149 (enumerateDevices returns only real hardware with the
+    // flag set), which meant the voice tests were recording from the
+    // developer's actual microphone locally and failing on CI runners,
+    // which have no audio device at all. The mic is synthesized in the
+    // page instead — see fakeMicrophone in tests/helpers.ts.
     launchOptions: {
-      args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-capture"],
+      // Still useful: it auto-accepts the permission prompt, so a voice
+      // test that ever reaches the real getUserMedia does not hang.
+      args: ["--use-fake-ui-for-media-stream"],
     },
   },
   projects: [

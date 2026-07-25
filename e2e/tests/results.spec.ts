@@ -106,8 +106,23 @@ test("a workspace export can be built and downloaded", async ({ page }) => {
     });
   }).toPass({ timeout: 30000 });
 
-  const download = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Download the archive" }).click();
-  const file = await download;
-  expect(file.suggestedFilename()).toContain(".zip");
+  // Fetched rather than clicked. The link carries the `download`
+  // attribute, so Chromium hands it to its download manager, which does
+  // not send the context's extra headers — against Basic-Auth-gated
+  // staging that download 401s while every in-page request succeeds.
+  // page.request shares the page's cookies and headers, so this asks the
+  // same endpoint the same way the browser would, and then reads the
+  // bytes: a stronger assertion than the suggested filename ever was.
+  const href = await page.getByRole("link", { name: "Download the archive" }).getAttribute("href");
+  expect(href).toBeTruthy();
+  const archive = await page.request.get(href!);
+  expect(archive.status()).toBe(200);
+  expect(archive.headers()["content-type"]).toBe("application/zip");
+  expect(archive.headers()["content-disposition"]).toContain(".zip");
+
+  // "PK" is a zip's magic number: proof this is an archive, not an error
+  // page with a hopeful content type.
+  const bytes = await archive.body();
+  expect(bytes.length).toBeGreaterThan(100);
+  expect(bytes.subarray(0, 2).toString("latin1")).toBe("PK");
 });
