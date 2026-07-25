@@ -91,6 +91,10 @@ test("an insight summary streams in and is labelled as AI output", async ({ page
   }
   test.skip(!offered, "this instance has no AI configured, so it offers no Insight Summary");
 
+  // Same as generation: wait for insights.js to own the submit, or this
+  // silently tests the plain POST instead of the stream.
+  await expect(page.locator(".insight-form[data-enhanced]")).toBeAttached();
+
   await page.getByRole("button", { name: "Analyse the responses" }).click();
 
   // The summary arrives, and the page reloads showing it with the label

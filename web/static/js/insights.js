@@ -17,6 +17,10 @@
     return;
   }
 
+  // Same marker as generate.js: the streaming path is wired now, and a
+  // submit that arrives before this is the plain POST instead.
+  form.setAttribute("data-enhanced", "1");
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     button.disabled = true;

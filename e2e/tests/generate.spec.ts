@@ -30,6 +30,11 @@ test("questions stream in and land in the draft", async ({ page }) => {
   const panel = page.locator("#ai-generate");
   await expect(panel).toBeVisible();
 
+  // This test is about the streamed path, so wait until generate.js says
+  // it owns the submit. Clicking earlier is not a failure — the plain
+  // POST still drafts the questions — but it is the other test.
+  await expect(panel.locator(".generate-form[data-enhanced]")).toBeAttached();
+
   await panel.locator('textarea[name="prompt"]').fill("how our first week feels to a new customer");
   await panel.getByRole("button", { name: "Draft questions" }).click();
 

@@ -17,6 +17,15 @@
   var prompt = form.querySelector('[name="prompt"]');
   if (!output || !button || !prompt) return;
 
+  // Say so once the streaming path is actually wired. A submit that
+  // beats this script still works — that is the whole design — but then
+  // it is the plain POST, not the stream, and something driving the page
+  // needs to be able to tell those apart. Found on the promotion gate:
+  // over a network with real latency, an automated click can land before
+  // a deferred script has run, and the test was asserting the stream
+  // while triggering the fallback.
+  form.setAttribute("data-enhanced", "1");
+
   form.addEventListener("submit", function (event) {
     var text = prompt.value.trim();
     if (!text) return; // let the server say what it wants said
