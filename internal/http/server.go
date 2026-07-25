@@ -26,6 +26,7 @@ import (
 	"github.com/TryEarful/earful/internal/email"
 	"github.com/TryEarful/earful/internal/invites"
 	"github.com/TryEarful/earful/internal/store"
+	"github.com/TryEarful/earful/internal/voice"
 )
 
 // Deps carries the runtime dependencies of the handler. Pool is required;
@@ -51,10 +52,10 @@ type server struct {
 	invites     *invites.Service
 	emailSender email.Sender
 	google      *auth.GoogleOIDC
-	// ai and aiMeter are wired but not yet reached by any handler. When an
-	// AI operation IS wired up, every ai.Provider call MUST be preceded by
-	// aiMeter.Check (the per-workspace token cap + global daily € breaker);
-	// TestAIProviderCallsAreMetered fails the build if one isn't.
+	// Every ai.Provider call MUST be preceded by aiMeter.Check (the
+	// per-workspace token cap + global daily € breaker) in the same
+	// function; TestAIProviderCallsAreMetered fails the build if one
+	// isn't.
 	ai      ai.Provider
 	aiMeter *ai.Meter
 
@@ -76,6 +77,14 @@ type server struct {
 	limitChallenged   *antibot.Limiter
 	limitUnchallenged *antibot.Limiter
 	limitChallengeAPI *antibot.Limiter
+
+	// Voice (M5). limitVoice caps how many spoken takes one network may
+	// start on one survey per hour; voiceBudget caps the seconds one
+	// respondent's session may transcribe. Both in-memory: the keys are a
+	// client IP and a form nonce, neither of which anonymous surveys may
+	// persist (ADR-0003).
+	limitVoice  *antibot.Limiter
+	voiceBudget *voice.Budget
 }
 
 // NewHandler builds the full request-handling chain for earful serve.
@@ -106,12 +115,13 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		google:      deps.Google,
 		ai:          deps.AI,
 		aiMeter: &ai.Meter{
-			Store:                surveys,
-			Clock:                deps.Clock,
-			WorkspaceDailyTokens: cfg.AIWorkspaceDailyTokens,
-			DailyBudgetEUR:       cfg.AIDailyBudgetEUR,
-			CostPer1KTokensEUR:   cfg.AICostPer1KTokensEUR,
-			Logger:               logger,
+			Store:                   surveys,
+			Clock:                   deps.Clock,
+			WorkspaceDailyTokens:    cfg.AIWorkspaceDailyTokens,
+			DailyBudgetEUR:          cfg.AIDailyBudgetEUR,
+			CostPer1KTokensEUR:      cfg.AICostPer1KTokensEUR,
+			VoiceSurveyDailySeconds: cfg.VoiceSurveyDailySeconds,
+			Logger:                  logger,
 		},
 
 		challenges:        antibot.NewChallenges(deps.Clock),
@@ -120,6 +130,13 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		limitChallenged:   antibot.NewLimiter(30, time.Hour, deps.Clock),
 		limitUnchallenged: antibot.NewLimiter(5, time.Hour, deps.Clock),
 		limitChallengeAPI: antibot.NewLimiter(120, time.Hour, deps.Clock),
+
+		// A spoken answer is a handful of takes; 60 an hour from one
+		// network on one survey is generous for a person and cheap to
+		// refuse for a script.
+		limitVoice: antibot.NewLimiter(60, time.Hour, deps.Clock),
+		voiceBudget: voice.NewBudget(cfg.VoiceMaxSecondsPerResponse,
+			2*time.Hour, deps.Clock),
 	}
 
 	// Senders with an event feed (Brevo live, Capture in tests) push

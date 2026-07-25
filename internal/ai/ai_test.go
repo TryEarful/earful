@@ -349,3 +349,43 @@ func TestOpenAICompat_Integration(t *testing.T) {
 	}
 	t.Logf("model said: %q", out)
 }
+
+// TestWhisperCLI_Integration runs the real whisper.cpp binary against a
+// real model when WHISPER_TEST_MODEL points at a ggml file — the local
+// half of ADR-0004's voice path, verified rather than assumed:
+//
+//	say -o /tmp/earful-speech.wav --data-format=LEI16@16000 "the capital of France is Paris"
+//	WHISPER_TEST_MODEL=$HOME/models/ggml-base.bin WHISPER_TEST_AUDIO=/tmp/earful-speech.wav \
+//	  go test ./internal/ai/ -run WhisperCLI_Integration -v
+func TestWhisperCLI_Integration(t *testing.T) {
+	model := os.Getenv("WHISPER_TEST_MODEL")
+	audioPath := os.Getenv("WHISPER_TEST_AUDIO")
+	if model == "" || audioPath == "" {
+		t.Skip("WHISPER_TEST_MODEL / WHISPER_TEST_AUDIO not set; see docs/testing.md")
+	}
+	audio, err := os.Open(audioPath)
+	if err != nil {
+		t.Fatalf("open audio: %v", err)
+	}
+	defer audio.Close()
+
+	bin := os.Getenv("WHISPER_TEST_BIN")
+	if bin == "" {
+		bin = "whisper-cli"
+	}
+	provider := &ai.WhisperCLI{Bin: bin, Model: model}
+	stream, err := provider.Transcribe(context.Background(), ai.TranscribeRequest{
+		Audio: audio, MIMEType: "audio/wav", Language: "en",
+	})
+	if err != nil {
+		t.Fatalf("Transcribe: %v", err)
+	}
+	transcript, err := ai.Collect(stream)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if !strings.Contains(strings.ToLower(transcript), "paris") {
+		t.Errorf("transcript %q does not contain the spoken word", transcript)
+	}
+	t.Logf("whisper heard: %q", strings.TrimSpace(transcript))
+}

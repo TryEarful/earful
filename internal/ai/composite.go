@@ -40,3 +40,16 @@ func (c *Composite) Transcribe(ctx context.Context, req TranscribeRequest) (Stre
 	}
 	return c.Transcriber.Transcribe(ctx, req)
 }
+
+// Supports reports whether this composite can perform op. It is what
+// lets the product hide a feature instead of offering it and failing:
+// the mic button only appears when transcription is configured, the
+// "draft with AI" panel only when text generation is.
+func (c *Composite) Supports(op Op) bool {
+	switch op {
+	case OpTranscribe:
+		return c.Transcriber != nil && Supports(c.Transcriber, op)
+	default:
+		return c.Text != nil && Supports(c.Text, op)
+	}
+}

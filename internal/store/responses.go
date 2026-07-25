@@ -18,8 +18,12 @@ import (
 // it is anonymous, and whether it is accepting answers. Notably absent is
 // anything about the workspace beyond its display name.
 type PublicSurvey struct {
-	ID            uuid.UUID
-	Title         string
+	ID    uuid.UUID
+	Title string
+	// WorkspaceID never reaches the page. It is here because AI spent on
+	// a respondent's behalf — transcribing a spoken answer — has to be
+	// charged to the workspace that owns the survey (M5-T4).
+	WorkspaceID   uuid.UUID
 	WorkspaceName string
 	IsAnonymous   bool
 	CloseAt       *time.Time
@@ -55,7 +59,8 @@ func (s *Surveys) PublicSurvey(ctx context.Context, surveyID uuid.UUID) (PublicS
 		return PublicSurvey{}, fmt.Errorf("store: get public survey: %w", err)
 	}
 	return PublicSurvey{
-		ID: row.ID, Title: row.Title, WorkspaceName: row.WorkspaceName,
+		ID: row.ID, Title: row.Title,
+		WorkspaceID: row.WorkspaceID, WorkspaceName: row.WorkspaceName,
 		IsAnonymous: row.IsAnonymous, CloseAt: row.CloseAt, ClosedAt: row.ClosedAt,
 		LatestVersion: int(row.LatestVersion),
 	}, nil

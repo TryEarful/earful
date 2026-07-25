@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,9 +16,10 @@ import (
 // UsageStore is what the meter needs from storage; internal/store's
 // Surveys satisfies it.
 type UsageStore interface {
-	AddAIUsageRecord(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, tokens int64, estCostEUR float64, day time.Time) error
+	AddAIUsageRecord(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, tokens int64, estCostEUR float64, durationSecs int, day time.Time) error
 	WorkspaceTokensOnDay(ctx context.Context, workspaceID uuid.UUID, day time.Time) (int64, error)
 	GlobalCostOnDay(ctx context.Context, day time.Time) (float64, error)
+	SurveyVoiceSecondsOnDay(ctx context.Context, surveyID uuid.UUID, day time.Time) (int64, error)
 }
 
 var (
@@ -45,8 +47,17 @@ type Meter struct {
 	// CostPer1KTokensEUR converts token estimates to cost estimates;
 	// tuned to real provider pricing at the cloud milestone.
 	CostPer1KTokensEUR float64
-	Logger             *slog.Logger
+	// VoiceSurveyDailySeconds caps how much speech one survey may have
+	// transcribed per day (M5-T4). Zero disables the cap.
+	VoiceSurveyDailySeconds int
+	Logger                  *slog.Logger
 }
+
+// audioTokensPerSecond estimates what a second of speech costs a
+// multimodal model. Gemini bills audio at roughly this rate; like the
+// chars/4 estimate for text it errs high, which is the safe direction for
+// a budget guard.
+const audioTokensPerSecond = 32
 
 // day truncates to the accounting day (UTC — one unambiguous boundary).
 func (m *Meter) day() time.Time {
@@ -111,9 +122,20 @@ func (c *CountedStream) Chars() int { return c.chars }
 // real counts; overestimating slightly is the safe direction for a
 // budget guard.
 func (m *Meter) Record(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, chars int) error {
-	tokens := int64(chars/4) + 1
+	return m.record(ctx, workspaceID, surveyID, kind, int64(chars/4)+1, 0)
+}
+
+// RecordVoice accounts one transcription. Audio is billed by duration
+// rather than by the size of the transcript it produced — a minute of
+// silence costs the same as a minute of speech.
+func (m *Meter) RecordVoice(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, seconds, transcriptChars int) error {
+	tokens := int64(seconds*audioTokensPerSecond) + int64(transcriptChars/4) + 1
+	return m.record(ctx, workspaceID, surveyID, string(OpTranscribe), tokens, seconds)
+}
+
+func (m *Meter) record(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, tokens int64, seconds int) error {
 	cost := float64(tokens) / 1000 * m.CostPer1KTokensEUR
-	if err := m.Store.AddAIUsageRecord(ctx, workspaceID, surveyID, kind, tokens, cost, m.day()); err != nil {
+	if err := m.Store.AddAIUsageRecord(ctx, workspaceID, surveyID, kind, tokens, cost, seconds, m.day()); err != nil {
 		return fmt.Errorf("ai: record usage: %w", err)
 	}
 	// One scrub-safe line per AI call (kind + counts only, never content):
@@ -121,4 +143,23 @@ func (m *Meter) Record(ctx context.Context, workspaceID uuid.UUID, surveyID *uui
 	m.Logger.Info("ai usage recorded",
 		"kind", kind, "tokens", tokens, "est_cost_eur", cost)
 	return nil
+}
+
+// VoiceSecondsLeft is how much more speech this survey may have
+// transcribed today. It is checked in addition to Check, never instead of
+// it: the € breaker and the workspace quota still apply to voice. A
+// configured cap of zero means uncapped, and reports as such.
+func (m *Meter) VoiceSecondsLeft(ctx context.Context, surveyID uuid.UUID) (int, error) {
+	if m.VoiceSurveyDailySeconds <= 0 {
+		return math.MaxInt32, nil
+	}
+	spent, err := m.Store.SurveyVoiceSecondsOnDay(ctx, surveyID, m.day())
+	if err != nil {
+		return 0, err
+	}
+	left := m.VoiceSurveyDailySeconds - int(spent)
+	if left < 0 {
+		return 0, nil
+	}
+	return left, nil
 }

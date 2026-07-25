@@ -19,13 +19,14 @@ type AbuseLog struct {
 }
 
 type AiUsage struct {
-	ID          uuid.UUID     `json:"id"`
-	WorkspaceID uuid.NullUUID `json:"workspace_id"`
-	SurveyID    uuid.NullUUID `json:"survey_id"`
-	Kind        string        `json:"kind"`
-	Tokens      int64         `json:"tokens"`
-	EstCost     float64       `json:"est_cost"`
-	Day         time.Time     `json:"day"`
+	ID           uuid.UUID     `json:"id"`
+	WorkspaceID  uuid.NullUUID `json:"workspace_id"`
+	SurveyID     uuid.NullUUID `json:"survey_id"`
+	Kind         string        `json:"kind"`
+	Tokens       int64         `json:"tokens"`
+	EstCost      float64       `json:"est_cost"`
+	Day          time.Time     `json:"day"`
+	DurationSecs int32         `json:"duration_secs"`
 }
 
 type Answer struct {

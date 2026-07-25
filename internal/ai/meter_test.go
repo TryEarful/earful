@@ -24,16 +24,34 @@ type memoryUsage struct {
 
 type usageRow struct {
 	workspace uuid.UUID
+	survey    *uuid.UUID
+	kind      string
 	tokens    int64
 	cost      float64
+	seconds   int
 	day       time.Time
 }
 
-func (m *memoryUsage) AddAIUsageRecord(_ context.Context, workspaceID uuid.UUID, _ *uuid.UUID, _ string, tokens int64, cost float64, day time.Time) error {
+func (m *memoryUsage) AddAIUsageRecord(_ context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, tokens int64, cost float64, seconds int, day time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.rows = append(m.rows, usageRow{workspace: workspaceID, tokens: tokens, cost: cost, day: day})
+	m.rows = append(m.rows, usageRow{
+		workspace: workspaceID, survey: surveyID, kind: kind,
+		tokens: tokens, cost: cost, seconds: seconds, day: day,
+	})
 	return nil
+}
+
+func (m *memoryUsage) SurveyVoiceSecondsOnDay(_ context.Context, surveyID uuid.UUID, day time.Time) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var sum int64
+	for _, r := range m.rows {
+		if r.survey != nil && *r.survey == surveyID && r.day.Equal(day) {
+			sum += int64(r.seconds)
+		}
+	}
+	return sum, nil
 }
 
 func (m *memoryUsage) WorkspaceTokensOnDay(_ context.Context, workspaceID uuid.UUID, day time.Time) (int64, error) {
@@ -203,5 +221,64 @@ func TestCounted_TalliesWhatTheModelDelivered(t *testing.T) {
 	}
 	if got := counted.Chars(); got != len("one two ") {
 		t.Errorf("counted %d chars, want %d (what was delivered before the failure)", got, len("one two "))
+	}
+}
+
+// TestMeter_VoiceIsBilledByDuration: a transcription's cost follows the
+// seconds of speech, not the length of the transcript, and the
+// per-survey daily cap is what a respondent runs into first (M5-T4).
+func TestMeter_VoiceIsBilledByDuration(t *testing.T) {
+	t.Parallel()
+	usage := &memoryUsage{}
+	clk := clock.NewFake(time.Now())
+	meter := newMeter(usage, clk)
+	meter.VoiceSurveyDailySeconds = 90
+
+	workspace, survey := uuid.New(), uuid.New()
+
+	left, err := meter.VoiceSecondsLeft(context.Background(), survey)
+	if err != nil || left != 90 {
+		t.Fatalf("fresh survey has %d seconds left (%v), want 90", left, err)
+	}
+	if err := meter.RecordVoice(context.Background(), workspace, &survey, 60, len("a short transcript")); err != nil {
+		t.Fatalf("RecordVoice: %v", err)
+	}
+	left, err = meter.VoiceSecondsLeft(context.Background(), survey)
+	if err != nil || left != 30 {
+		t.Fatalf("after 60s, %d seconds left (%v), want 30", left, err)
+	}
+	if err := meter.RecordVoice(context.Background(), workspace, &survey, 45, 0); err != nil {
+		t.Fatalf("RecordVoice: %v", err)
+	}
+	if left, _ := meter.VoiceSecondsLeft(context.Background(), survey); left != 0 {
+		t.Errorf("an exhausted cap reports %d seconds left, want 0", left)
+	}
+
+	// A minute of speech must cost far more than a minute of transcript
+	// would as text, or voice would be effectively unmetered.
+	tokens, err := usage.WorkspaceTokensOnDay(context.Background(), workspace, clk.Now().UTC().Truncate(24*time.Hour))
+	if err != nil {
+		t.Fatalf("WorkspaceTokensOnDay: %v", err)
+	}
+	if tokens < int64(105*32) {
+		t.Errorf("105 seconds of audio billed %d tokens; duration is not driving the estimate", tokens)
+	}
+
+	// Another survey's voice budget is its own.
+	other := uuid.New()
+	if left, _ := meter.VoiceSecondsLeft(context.Background(), other); left != 90 {
+		t.Errorf("a different survey has %d seconds left, want a full 90", left)
+	}
+}
+
+// TestMeter_VoiceCapCanBeDisabled: self-hosters running a local whisper
+// pay nothing per second and should not be rationed.
+func TestMeter_VoiceCapCanBeDisabled(t *testing.T) {
+	t.Parallel()
+	meter := newMeter(&memoryUsage{}, clock.NewFake(time.Now()))
+	meter.VoiceSurveyDailySeconds = 0
+	left, err := meter.VoiceSecondsLeft(context.Background(), uuid.New())
+	if err != nil || left < 3600 {
+		t.Errorf("uncapped survey reports %d seconds (%v), want effectively unlimited", left, err)
 	}
 }

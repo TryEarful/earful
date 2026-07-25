@@ -8,7 +8,7 @@
 -- The respondent-facing lookup: by id alone, with no workspace scoping,
 -- because a share link is the credential. Soft-deleted surveys vanish.
 SELECT s.id, s.title, s.is_anonymous, s.close_at, s.closed_at,
-       w.name AS workspace_name,
+       s.workspace_id, w.name AS workspace_name,
        coalesce((SELECT max(v.number) FROM survey_versions v WHERE v.survey_id = s.id), 0)::int AS latest_version
 FROM surveys s
 JOIN workspaces w ON w.id = s.workspace_id AND w.deleted_at IS NULL

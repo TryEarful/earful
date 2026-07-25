@@ -106,6 +106,9 @@ type Querier interface {
 	SoftDeleteSurvey(ctx context.Context, arg SoftDeleteSurveyParams) error
 	SoftDeleteUser(ctx context.Context, arg SoftDeleteUserParams) error
 	SoftDeleteWorkspacesForUser(ctx context.Context, arg SoftDeleteWorkspacesForUserParams) error
+	// The per-survey daily voice cap (M5-T4): how many seconds of speech this
+	// survey has had transcribed today, across every respondent.
+	SurveyVoiceSecondsOnDay(ctx context.Context, arg SurveyVoiceSecondsOnDayParams) (int64, error)
 	UpdateDraftStructure(ctx context.Context, arg UpdateDraftStructureParams) (SurveyDraft, error)
 	// Deliberately cannot touch is_anonymous; the database refuses it anyway
 	// (ADR-0003 trigger), but the query shape means no caller can even try.

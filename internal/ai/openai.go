@@ -153,3 +153,12 @@ func (o *OpenAICompat) Transcribe(ctx context.Context, req TranscribeRequest) (S
 	}
 	return newSliceStream(result.Text), nil
 }
+
+// Supports: the chat endpoint covers every text operation; audio needs
+// the whisper-style endpoint, which most local backends lack.
+func (o *OpenAICompat) Supports(op Op) bool {
+	if op == OpTranscribe {
+		return o.SupportsAudio
+	}
+	return true
+}

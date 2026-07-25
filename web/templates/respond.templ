@@ -43,7 +43,16 @@ type RespondData struct {
 	// disclosure names the invitee.
 	ParticipantToken string
 	ParticipantEmail string
+	// VoicePath is the WebSocket endpoint for spoken answers, empty when
+	// no transcription is configured (M5). The mic is built entirely by
+	// voice.js: nothing about it is server-rendered, so a respondent
+	// without JavaScript sees exactly the form they can actually use.
+	VoicePath       string
+	VoiceMaxSeconds int
 }
+
+// VoiceEnabled reports whether this page offers spoken answers.
+func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Preview }
 
 // RespondLayout is a self-contained page shell for respondent pages. It
 // deliberately does not reuse the creator chrome: a respondent has no
@@ -99,6 +108,10 @@ templ Respond(data RespondData) {
 				if !data.Preview && data.ParticipantToken == "" {
 					data-challenge-url={ "/s/" + data.SurveyID + "/challenge" }
 				}
+				if data.VoiceEnabled() {
+					data-voice-path={ data.VoicePath }
+					data-voice-max-seconds={ strconv.Itoa(data.VoiceMaxSeconds) }
+				}
 				novalidate
 			>
 				<input type="hidden" name="version_id" value={ data.VersionID }/>
@@ -124,6 +137,10 @@ templ Respond(data RespondData) {
 				</div>
 			</form>
 		</main>
+		if data.VoiceEnabled() {
+			<script src={ static.AssetURL("js/wsclient.js") } defer></script>
+			<script src={ static.AssetURL("js/voice.js") } defer></script>
+		}
 		<script src={ static.AssetURL("js/respond.js") } defer></script>
 	}
 }
@@ -182,6 +199,9 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 		class="respond-question"
 		id={ "q-" + q.IdentityID }
 		data-index={ strconv.Itoa(index) }
+		if data.VoiceEnabled() && q.Type.AcceptsVoice() {
+			data-voice="1"
+		}
 	>
 		<fieldset>
 			<legend>
@@ -197,6 +217,9 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 				<p class="error-text" id={ "err-" + q.IdentityID }>{ data.Errors[q.IdentityID] }</p>
 			}
 			@answerControl(q, data)
+			if data.Preview && q.Type.AcceptsVoice() {
+				<p class="muted voice-preview-note">Respondents can answer this by speaking; their words are transcribed and the audio is never stored.</p>
+			}
 		</fieldset>
 	</li>
 }

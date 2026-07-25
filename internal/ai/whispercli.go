@@ -75,3 +75,6 @@ func truncate(s string, n int) string {
 	}
 	return s[:n] + "…"
 }
+
+// Supports: transcription only.
+func (w *WhisperCLI) Supports(op Op) bool { return op == OpTranscribe }

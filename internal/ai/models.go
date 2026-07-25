@@ -72,3 +72,23 @@ func transcriptionPrompt(language string) string {
 	}
 	return prompt
 }
+
+// Capable is implemented by providers that know in advance which
+// operations they can perform.
+type Capable interface {
+	Supports(op Op) bool
+}
+
+// Supports reports whether p can perform op. A provider that does not
+// implement Capable is assumed able: the honest failure is then an
+// ErrUnsupported at call time, which callers already handle, and
+// assuming otherwise would hide a working feature.
+func Supports(p Provider, op Op) bool {
+	if p == nil {
+		return false
+	}
+	if c, ok := p.(Capable); ok {
+		return c.Supports(op)
+	}
+	return true
+}

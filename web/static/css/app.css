@@ -554,6 +554,71 @@ fieldset {
   overflow: hidden;
 }
 
+/* --- voice answering (M5) ------------------------------------------- */
+
+.voice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.voice-button.recording {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* A dot that reads as "live" without relying on colour alone — the
+   button label changes too. */
+.voice-button.recording::before {
+  content: "";
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.voice-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.voice-preview-note {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* The consent moment (M5-T3): shown once, before the first microphone
+   request, stating that the voice is never stored. */
+.voice-consent {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(28rem, calc(100% - 2rem));
+  height: fit-content;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 25%);
+  z-index: 10;
+}
+
+.voice-consent h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.voice-consent-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 30rem) {
   body {
     padding: 1rem;

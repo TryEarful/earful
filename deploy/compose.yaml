@@ -60,6 +60,20 @@ services:
       # Google login is optional; set both to enable it (see README).
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      # AI defaults to the scripted provider: deterministic canned
+      # streams, so voice, question generation and insights can be tried
+      # (and browser-tested) on a laptop with no model running. It is
+      # refused outside APP_ENV=development. Point these at a real
+      # backend to use one:
+      #   AI_PROVIDER=openai AI_BASE_URL=http://host.docker.internal:11434/v1 AI_MODEL=gemma4
+      #   TRANSCRIBE_PROVIDER=whisper-cli WHISPER_MODEL=/models/ggml-base.bin
+      AI_PROVIDER: "${AI_PROVIDER:-scripted}"
+      AI_BASE_URL: "${AI_BASE_URL:-http://host.docker.internal:11434/v1}"
+      AI_MODEL: "${AI_MODEL:-}"
+      AI_MODEL_ANALYZE: "${AI_MODEL_ANALYZE:-}"
+      TRANSCRIBE_PROVIDER: "${TRANSCRIBE_PROVIDER:-scripted}"
+      WHISPER_BIN: "${WHISPER_BIN:-whisper-cli}"
+      WHISPER_MODEL: "${WHISPER_MODEL:-}"
     healthcheck:
       # The runtime image is distroless (no shell, no curl), so the binary
       # probes its own /healthz -- which also pings the database.

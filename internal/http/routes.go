@@ -25,9 +25,13 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /s/{surveyID}", s.respondPage)
 	mux.HandleFunc("POST /s/{surveyID}", s.respondSubmit)
 	mux.HandleFunc("GET /s/{surveyID}/challenge", s.respondChallenge)
+	// Voice (M5-T2): a WebSocket carries audio up and the transcript back.
+	// Audio is held in memory for one request and never stored (ADR-0004).
+	mux.HandleFunc("GET /s/{surveyID}/voice", s.voiceSocket)
 	// Personal invite links (M4-T3): the token is the credential.
 	mux.HandleFunc("GET /p/{token}", s.participantRespondPage)
 	mux.HandleFunc("POST /p/{token}", s.participantRespondSubmit)
+	mux.HandleFunc("GET /p/{token}/voice", s.participantVoiceSocket)
 	// ESP events (M4-T6); a wrong or absent secret is a plain 404.
 	mux.HandleFunc("POST /webhooks/email/{secret}", s.emailWebhook)
 

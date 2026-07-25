@@ -49,7 +49,7 @@ func TestConn_CarriesControlFramesBinaryAndStreamedText(t *testing.T) {
 	srv := serve(t, ws.Options{}, func(conn *ws.Conn) {
 		// One control frame, then one binary payload, then a stream back.
 		msg, err := conn.Receive()
-		if err != nil || msg.Binary || msg.Control.Action != "start" || msg.Control.Lang != "nl" {
+		if err != nil || msg.Binary || msg.Control.Action != "start" || msg.Control.Param("lang") != "nl" {
 			t.Errorf("first message = %+v (%v), want a start control frame in nl", msg, err)
 		}
 		msg, err = conn.Receive()
@@ -64,7 +64,7 @@ func TestConn_CarriesControlFramesBinaryAndStreamedText(t *testing.T) {
 
 	client := dial(t, srv, nil)
 	ctx := context.Background()
-	if err := client.Write(ctx, websocket.MessageText, []byte(`{"action":"start","lang":"nl"}`)); err != nil {
+	if err := client.Write(ctx, websocket.MessageText, []byte(`{"action":"start","params":{"lang":"nl"}}`)); err != nil {
 		t.Fatalf("write control: %v", err)
 	}
 	if err := client.Write(ctx, websocket.MessageBinary, []byte("audio-bytes")); err != nil {

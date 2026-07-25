@@ -83,6 +83,17 @@ type Config struct {
 	AIDailyBudgetEUR       float64
 	AIWorkspaceDailyTokens int64
 	AICostPer1KTokensEUR   float64
+	// Voice caps (M5-T4), all in seconds of audio: one take, one
+	// respondent's whole response, and one survey per day. Exceeding any
+	// of them degrades to typing rather than failing (story 39). Zero
+	// disables the per-response and per-survey caps — the sensible
+	// setting for a self-hoster running a local whisper, where a second
+	// of speech costs nothing. The per-answer cap is never disabled: it
+	// bounds the memory one socket can hold, so zero means the built-in
+	// default rather than "unlimited".
+	VoiceMaxSecondsPerAnswer   int
+	VoiceMaxSecondsPerResponse int
+	VoiceSurveyDailySeconds    int
 	// GoogleClientID/GoogleClientSecret enable Google OIDC login when
 	// both are set; the login page hides the Google option otherwise.
 	GoogleClientID     string
@@ -185,6 +196,21 @@ func Load() (Config, error) {
 	cfg.AICostPer1KTokensEUR, err = strconv.ParseFloat(getEnv("AI_COST_PER_1K_TOKENS_EUR", "0.001"), 64)
 	if err != nil {
 		return Config{}, fmt.Errorf("config: invalid AI_COST_PER_1K_TOKENS_EUR: %w", err)
+	}
+	for _, v := range []struct {
+		key    string
+		def    string
+		target *int
+	}{
+		{"VOICE_MAX_SECONDS_PER_ANSWER", "120", &cfg.VoiceMaxSecondsPerAnswer},
+		{"VOICE_MAX_SECONDS_PER_RESPONSE", "300", &cfg.VoiceMaxSecondsPerResponse},
+		{"VOICE_SURVEY_DAILY_SECONDS", "3600", &cfg.VoiceSurveyDailySeconds},
+	} {
+		n, err := strconv.Atoi(getEnv(v.key, v.def))
+		if err != nil || n < 0 {
+			return Config{}, fmt.Errorf("config: invalid %s: want a non-negative number of seconds", v.key)
+		}
+		*v.target = n
 	}
 
 	if err := cfg.validate(); err != nil {

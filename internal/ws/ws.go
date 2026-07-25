@@ -59,12 +59,15 @@ type Message struct {
 }
 
 // Control is the client's side of the vocabulary. Handlers interpret
-// Action; the rest is per-feature payload.
+// Action; Params carries whatever that feature needs (a language, a form
+// token, a prompt) without this package having to know about any of them.
 type Control struct {
-	Action string `json:"action"`
-	Lang   string `json:"lang,omitempty"`
-	Text   string `json:"text,omitempty"`
+	Action string            `json:"action"`
+	Params map[string]string `json:"params,omitempty"`
 }
+
+// Param returns a parameter, or "" when absent.
+func (c Control) Param(key string) string { return c.Params[key] }
 
 // Options tune one connection. Zero values mean the defaults below,
 // which are the right answer for every current caller.

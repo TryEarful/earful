@@ -71,6 +71,16 @@ func (s *server) renderRespondPage(
 		data.ParticipantEmail = pc[0].email
 		data.AlreadyAnswered = false // the one-per-token index owns this
 	}
+	// Voice is offered only when a transcriber is configured: an absent
+	// capability is an absent feature, never a button that fails (M5-T1).
+	if s.voiceEnabled() {
+		if data.ParticipantToken != "" {
+			data.VoicePath = "/p/" + data.ParticipantToken + "/voice"
+		} else {
+			data.VoicePath = "/s/" + survey.ID.String() + "/voice"
+		}
+		data.VoiceMaxSeconds = s.voiceAnswerSeconds()
+	}
 	render(w, r, status, templates.Respond(data))
 }
 

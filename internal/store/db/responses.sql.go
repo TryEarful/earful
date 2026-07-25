@@ -121,7 +121,7 @@ func (q *Queries) GetParticipantByTokenHash(ctx context.Context, tokenHash []byt
 const getPublicSurvey = `-- name: GetPublicSurvey :one
 
 SELECT s.id, s.title, s.is_anonymous, s.close_at, s.closed_at,
-       w.name AS workspace_name,
+       s.workspace_id, w.name AS workspace_name,
        coalesce((SELECT max(v.number) FROM survey_versions v WHERE v.survey_id = s.id), 0)::int AS latest_version
 FROM surveys s
 JOIN workspaces w ON w.id = s.workspace_id AND w.deleted_at IS NULL
@@ -134,6 +134,7 @@ type GetPublicSurveyRow struct {
 	IsAnonymous   bool       `json:"is_anonymous"`
 	CloseAt       *time.Time `json:"close_at"`
 	ClosedAt      *time.Time `json:"closed_at"`
+	WorkspaceID   uuid.UUID  `json:"workspace_id"`
 	WorkspaceName string     `json:"workspace_name"`
 	LatestVersion int32      `json:"latest_version"`
 }
@@ -154,6 +155,7 @@ func (q *Queries) GetPublicSurvey(ctx context.Context, id uuid.UUID) (GetPublicS
 		&i.IsAnonymous,
 		&i.CloseAt,
 		&i.ClosedAt,
+		&i.WorkspaceID,
 		&i.WorkspaceName,
 		&i.LatestVersion,
 	)

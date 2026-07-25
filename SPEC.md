@@ -139,14 +139,14 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### Answering — voice
 
-33. As a respondent, I want to answer text questions by speaking, so that I can give rich answers without typing.
-34. As a respondent, I want my speech recognized locally in the browser when that is verifiably possible, so that my voice doesn't leave my device unnecessarily.
-35. As a respondent whose browser can't do local recognition, I want my audio streamed to Earful's EU transcription and immediately discarded, so that speaking stays possible without my voice being kept.
-36. As a respondent, I want to see and edit the Transcript before it becomes my Answer, so that the record says what I meant.
-37. As a respondent, I want a clear consent moment before first microphone use stating that my voice is never stored, so that I can decide informed.
-38. As a respondent, I want typing always available as an alternative, so that voice is a convenience, never a requirement.
-39. As a respondent who exceeds the voice quota, I want a graceful fallback to typing with a clear message, so that I can still finish.
-40. As a respondent answering in my chosen language, I want speech recognition to use that language, so that my words are transcribed correctly.
+33. As a respondent, I want to answer text questions by speaking, so that I can give rich answers without typing. [tested](internal/http/voice_test.go) — and the whole path in a real browser with a microphone in [the e2e suite](e2e/tests/voice.spec.ts)
+34. As a respondent, I want my speech recognized locally in the browser when that is verifiably possible, so that my voice doesn't leave my device unnecessarily. [tested](e2e/tests/voice.spec.ts) — the detector refuses every browser that cannot *prove* on-device recognition; the decision table is [docs/voice-support.md](docs/voice-support.md)
+35. As a respondent whose browser can't do local recognition, I want my audio streamed to Earful's EU transcription and immediately discarded, so that speaking stays possible without my voice being kept. [tested](internal/http/voice_test.go) — plus [internal/voice](internal/voice/voice_test.go), where a build-time test fails if the one package holding audio ever gains a way to write it anywhere
+36. As a respondent, I want to see and edit the Transcript before it becomes my Answer, so that the record says what I meant. [tested](internal/http/voice_test.go) — transcribing stores nothing; the answer is the text the respondent submits
+37. As a respondent, I want a clear consent moment before first microphone use stating that my voice is never stored, so that I can decide informed. [tested](e2e/tests/voice.spec.ts) — including an axe scan of the dialog
+38. As a respondent, I want typing always available as an alternative, so that voice is a convenience, never a requirement. [tested](internal/http/voice_test.go) — the mic is built by JavaScript, so a browser that cannot record never renders one
+39. As a respondent who exceeds the voice quota, I want a graceful fallback to typing with a clear message, so that I can still finish. [tested](internal/http/voice_test.go)
+40. As a respondent answering in my chosen language, I want speech recognition to use that language, so that my words are transcribed correctly. [tested](internal/http/voice_test.go) — the hint reaches the provider; the respondent-facing language picker arrives with M11-T1
 
 ### Anonymous surveys
 

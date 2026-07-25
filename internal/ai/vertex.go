@@ -205,3 +205,8 @@ func decodeVertexEvent(data []byte) (string, error) {
 	}
 	return out.String(), nil
 }
+
+// Supports: whatever has a model configured, in a project and region.
+func (v *Vertex) Supports(op Op) bool {
+	return v.Project != "" && v.Location != "" && v.Models.For(op) != ""
+}

@@ -13,17 +13,18 @@ import (
 )
 
 const addAIUsage = `-- name: AddAIUsage :exec
-INSERT INTO ai_usage (workspace_id, survey_id, kind, tokens, est_cost, day)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO ai_usage (workspace_id, survey_id, kind, tokens, est_cost, duration_secs, day)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type AddAIUsageParams struct {
-	WorkspaceID uuid.NullUUID `json:"workspace_id"`
-	SurveyID    uuid.NullUUID `json:"survey_id"`
-	Kind        string        `json:"kind"`
-	Tokens      int64         `json:"tokens"`
-	EstCost     float64       `json:"est_cost"`
-	Day         time.Time     `json:"day"`
+	WorkspaceID  uuid.NullUUID `json:"workspace_id"`
+	SurveyID     uuid.NullUUID `json:"survey_id"`
+	Kind         string        `json:"kind"`
+	Tokens       int64         `json:"tokens"`
+	EstCost      float64       `json:"est_cost"`
+	DurationSecs int32         `json:"duration_secs"`
+	Day          time.Time     `json:"day"`
 }
 
 func (q *Queries) AddAIUsage(ctx context.Context, arg AddAIUsageParams) error {
@@ -33,6 +34,7 @@ func (q *Queries) AddAIUsage(ctx context.Context, arg AddAIUsageParams) error {
 		arg.Kind,
 		arg.Tokens,
 		arg.EstCost,
+		arg.DurationSecs,
 		arg.Day,
 	)
 	return err
@@ -45,6 +47,25 @@ SELECT coalesce(sum(est_cost), 0)::float8 FROM ai_usage WHERE day = $1
 func (q *Queries) GlobalCostOnDay(ctx context.Context, day time.Time) (float64, error) {
 	row := q.db.QueryRow(ctx, globalCostOnDay, day)
 	var column_1 float64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const surveyVoiceSecondsOnDay = `-- name: SurveyVoiceSecondsOnDay :one
+SELECT coalesce(sum(duration_secs), 0)::bigint FROM ai_usage
+WHERE survey_id = $1 AND day = $2
+`
+
+type SurveyVoiceSecondsOnDayParams struct {
+	SurveyID uuid.NullUUID `json:"survey_id"`
+	Day      time.Time     `json:"day"`
+}
+
+// The per-survey daily voice cap (M5-T4): how many seconds of speech this
+// survey has had transcribed today, across every respondent.
+func (q *Queries) SurveyVoiceSecondsOnDay(ctx context.Context, arg SurveyVoiceSecondsOnDayParams) (int64, error) {
+	row := q.db.QueryRow(ctx, surveyVoiceSecondsOnDay, arg.SurveyID, arg.Day)
+	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
 }

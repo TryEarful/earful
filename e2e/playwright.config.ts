@@ -28,6 +28,13 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
     trace: "retain-on-failure",
     extraHTTPHeaders,
+    // A fake microphone for the voice tests (M5). Browser launch options
+    // are worker-scoped, so they live here rather than in the spec that
+    // needs them; no other test calls getUserMedia, so a fake capture
+    // device changes nothing for them.
+    launchOptions: {
+      args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-capture"],
+    },
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
