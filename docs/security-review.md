@@ -26,8 +26,31 @@ caught two accessibility defects).
 
 ## Findings
 
-**None critical.** The items below are accepted risks or scheduled work,
-each with its reasoning.
+**None critical.** Two were found and fixed during the rollout of
+2026-07-25; the rest are accepted risks or scheduled work, each with its
+reasoning.
+
+### Found and fixed
+
+1. **Path-borne credentials reached the log sink.** `logging.ScrubURL`
+   redacted query parameters only, and `RequestLogger` writes every
+   request URL — so the ESP webhook secret (`/webhooks/email/{secret}`)
+   and participant invite tokens (`/p/{token}`, where the token *is* the
+   credential) were written verbatim at INFO on every request. Magic
+   links were never affected because they use `?token=`, which is
+   precisely why this survived review. Fixed by redacting the credential
+   segment of the token-bearing routes; survey share links stay readable
+   because they are public by design. Confirmed in the live log sink
+   afterwards: `/exports/[REDACTED]`.
+2. **Staging's wall could not pass a WebSocket.** Chrome does not send
+   cached HTTP credentials on a handshake, so voice and streamed
+   generation got a 401 on staging for anyone — the browser suite merely
+   found it first. Fixed by issuing a cookie on the first authenticated
+   request (HttpOnly, Secure, derived from the credential so it survives
+   across Cloud Run instances, invalidated by rotation). Not a
+   confidentiality bug — the wall never let anything through it
+   shouldn't — but a wall that silently breaks one transport is a wall
+   people route around.
 
 ### Accepted, documented
 
@@ -56,8 +79,11 @@ each with its reasoning.
 6. **Rate-limit soak against staging** (`tools/soak`). The limiter's
    logic is unit-tested and its per-request cost is trivial, but the
    AC asks for a load check against a deployed instance. The tool is
-   written and documented; running it needs staging, which is an operator
-   action.
+   written and documented. Blocked as of 2026-07-25: the staging project
+   was suspended by Google mid-rollout (see the runbook), and the soak
+   deliberately does not run against production — hammering the live
+   respondent path to watch it refuse is not a thing to do to real
+   respondents.
 7. **Vertex terms in writing** — no-training, EU processing, abuse-log
    retention for the exact APIs used. Gap list #7; blocks nothing
    technically, and matters before the product is sold.

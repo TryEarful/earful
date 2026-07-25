@@ -251,6 +251,39 @@ to zero or unlinks billing; until then this is a manual procedure:
    `gcloud billing projects unlink <project>` (breaks the environment;
    backups project's locked bucket is unaffected).
 
+## Project suspended by Google
+
+Symptom: every API call for one project fails with
+`Consumer 'projects/<id>' has been suspended`, and its Cloud Run URLs
+return the front end's own "Error: Page not found" — the service is not
+down, it is unreachable. `gcloud projects describe` still says ACTIVE and
+billing still says enabled: suspension is a separate, service-level
+state, so neither of those rules it out.
+
+Happened 2026-07-25 to staging alone, mid-deploy, an hour after Vertex
+AI was first enabled there.
+
+1. **Establish the blast radius before anything else** — suspension is
+   per project, and ours are separate on purpose:
+   ```
+   curl -s -o /dev/null -w '%{http_code}\n' https://app.tryearful.com/health
+   gcloud artifacts repositories list --project earful-ops-<sfx> --location europe-west4
+   gcloud storage buckets list --project earful-backups-<sfx>
+   ```
+2. **Check the notice.** Google emails the project and billing contacts
+   with the reason and an appeal link; the API error itself never carries
+   one. Nothing else will tell you why.
+3. **Appeal**, then wait. Reinstatement is not something an operator can
+   force from the command line.
+4. **Know what is blocked.** Staging is the promotion gate, so
+   `deploy-stg` and `smoke-stg` both fail and no tag can reach
+   production — by design. Production keeps serving its current revision
+   throughout; it shares nothing with staging but the Artifact Registry
+   in ops.
+5. **Do not work around it by deploying production directly** unless the
+   change is urgent enough to justify shipping ungated, and say so out
+   loud when you do.
+
 ## Alert test-fire checklist (M9-T2 AC)
 
 | Alert | How to fire it | Fired ✓ |
