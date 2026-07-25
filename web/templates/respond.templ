@@ -231,6 +231,15 @@ templ respondentDisclosure(data RespondData) {
 				it becomes your answer — your voice itself is never stored.
 			</p>
 		}
+		if !data.Preview {
+			// Story 79: the draft lives in this browser and nowhere else,
+			// which is a better deal than a server-side draft would be —
+			// but on a shared device it is still worth saying out loud.
+			<p class="muted">
+				Answers you haven't submitted are kept in this browser so a refresh doesn't lose them.
+				They're cleared when you submit, and after a day.
+			</p>
+		}
 		<p class="muted">
 			<a href="/trust">How Earful handles your data</a>
 		</p>

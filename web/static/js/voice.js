@@ -279,7 +279,7 @@
         if (event.results[i].isFinal) {
           // Each final result is a whole utterance, not a fragment, so
           // every one of them needs separating from what came before.
-          field.value = joinTakes(field.value, event.results[i][0].transcript);
+          writeAnswer(field, joinTakes(field.value, event.results[i][0].transcript));
         }
       }
     };
@@ -319,6 +319,16 @@
     return existing + " " + text;
   }
 
+  // Setting field.value from script does not fire an input event, and
+  // anything listening for one therefore never hears about a spoken
+  // answer — including the draft that keeps answers across a reload
+  // (story 79). A transcript is the most expensive answer to lose and
+  // the last one anybody wants to repeat, so say it out loud.
+  function writeAnswer(field, value) {
+    field.value = value;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
   function startRecording(field, say, done) {
     var spoken = false; // has this take put anything in the field yet?
     return navigator.mediaDevices
@@ -351,10 +361,10 @@
             // — which is what a respondent saw in production.
             if (!spoken) {
               spoken = true;
-              field.value = joinTakes(field.value, text);
+              writeAnswer(field, joinTakes(field.value, text));
               return;
             }
-            field.value += text;
+            writeAnswer(field, field.value + text);
           },
           onDone: function () {
             say("Transcribed — edit it if it isn't quite right.");

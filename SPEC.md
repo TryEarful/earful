@@ -174,6 +174,43 @@ AND the credential. This whole section retires at public launch (M9-T5).
 77. As the founder, I want account creation gated by one-shot secret invite codes from a list I control — minted by CLI or from an admin page only super admins can even see, labeled, revocable, and marked used the moment they create an account — so that only people I've invited can enter the private beta. [tested](internal/http/beta_test.go)
 78. As a private-beta user, I want to create my account with an invite code and a password, sign in with email+password from then on, and change my email later (re-proving my password), with no email ever sent, so that I can use Earful before the email infrastructure exists. [tested](internal/http/beta_test.go)
 
+### Draft answers survive a refresh (added 2026-07-25, post-MVP)
+
+Found by dogfooding the live product: a respondent part-way through a
+survey who reloads — or whose phone browser evicts the tab — loses
+everything they have written. That is worst for exactly the answers this
+product exists to collect, because a spoken long-text answer is the most
+expensive thing to lose and the most annoying to repeat.
+
+79. As a respondent, I want the answers I have not submitted yet to survive a page reload, so that a stray refresh, a phone switching apps, or a tab restored an hour later does not cost me everything I have said.
+
+**The draft never leaves the device.** It is kept in the browser's own
+storage, not on the server, and that is a product decision rather than a
+convenience: a server-side draft would need something to key it by, and
+for an anonymous respondent the only candidates are a cookie or a
+fingerprint — which is precisely the identification ADR-0003 refuses.
+Local storage keeps "we do not know who you are" true while still not
+losing anyone's work, and adds nothing to `/trust`'s processor table
+because no processor is involved.
+
+Consequences that make it honest rather than merely convenient:
+
+- **Cleared the moment the response is submitted.** A draft that
+  outlives its purpose is just an answer sitting on a shared computer.
+- **Expires on its own** (24 hours) and is **scoped to the survey
+  version**, so a republished survey never restores answers to questions
+  that have since changed.
+- **Never stores the security fields** — the render timestamp, the
+  proof-of-work solution, the CSRF token, the honeypot. Restoring those
+  would either break the anti-abuse checks or defeat them.
+- **Said plainly in the respondent disclosure**, next to what happens to
+  the answers themselves. "Your voice is never stored" is a statement
+  about our servers; a respondent on a shared device deserves to know
+  their unsent draft is on that device until they submit or a day
+  passes.
+- **An enhancement, like everything else in `web/static/js`**: with
+  JavaScript off there is no draft, and the form still works.
+
 ## Implementation Decisions
 
 All load-bearing decisions are recorded as ADRs; the spec inherits them:

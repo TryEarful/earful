@@ -73,3 +73,7 @@ tfplan
 node_modules/
 test-results/
 playwright-report/
+
+
+# scratchpad
+~notes.txt

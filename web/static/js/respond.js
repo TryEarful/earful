@@ -27,6 +27,7 @@
   if (!form) return;
 
   solveChallenge(form);
+  var draft = attachDraft(form);
 
   var questions = Array.prototype.slice.call(
     form.querySelectorAll(".respond-question")
@@ -106,6 +107,7 @@
     nextButton.hidden = index === questions.length - 1;
     actions.hidden = index !== questions.length - 1;
 
+    if (draft) draft.rememberPosition(index);
     focusFirstControl(questions[index]);
   }
 
@@ -122,8 +124,143 @@
   }
 
   stampStartTime();
-  show(0);
+  show(draft ? draft.startAt(questions.length) : 0);
 })();
+
+// Draft answers that survive a reload (SPEC.md story 79, M4-T8).
+//
+// Kept in this browser and nowhere else. A server-side draft would need
+// something to key it by, and for an anonymous respondent the only
+// candidates are a cookie or a fingerprint — the identification ADR-0003
+// exists to refuse. So the work is never lost and we still do not learn
+// who anybody is.
+//
+// Returns null when there is nothing to store into (private browsing
+// throws on access in some browsers), and the form simply behaves as it
+// did before.
+function attachDraft(form) {
+  "use strict";
+
+  var version = form.querySelector('[name="version_id"]');
+  var survey = form.getAttribute("action") || location.pathname;
+  if (!version || !version.value) return null;
+
+  // Scoped to the exact version: a republished survey must never restore
+  // an answer to a question whose wording has changed.
+  var key = "earful.draft." + survey + "." + version.value;
+  var MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+  var store;
+  try {
+    store = window.localStorage;
+    if (!store) return null;
+    store.setItem(key + ".probe", "1");
+    store.removeItem(key + ".probe");
+  } catch (err) {
+    return null; // private mode, storage disabled, quota — all fine
+  }
+
+  // Never persisted, and never restored. The render timestamp and the
+  // proof-of-work solution belong to THIS page load; restoring a stale
+  // one would either fail the anti-abuse checks or weaken them. The
+  // honeypot must stay empty, and the CSRF token is not ours to cache.
+  var SKIP = ["version_id", "form_ts", "form_nonce", "altcha", "_csrf"];
+
+  function answerable(field) {
+    if (!field.name || SKIP.indexOf(field.name) !== -1) return false;
+    if (field.hasAttribute("data-altcha")) return false;
+    if (field.hasAttribute("data-started-at")) return false;
+    // The honeypot is the hidden field bots fill in; a real respondent
+    // never touches it and nothing should ever put a value back into it.
+    if (field.type === "hidden") return false;
+    return true;
+  }
+
+  function read() {
+    var answers = {};
+    Array.prototype.forEach.call(form.elements, function (field) {
+      if (!answerable(field)) return;
+      if (field.type === "radio" || field.type === "checkbox") {
+        if (field.checked) {
+          answers[field.name] = answers[field.name] || [];
+          answers[field.name].push(field.value);
+        }
+        return;
+      }
+      if (field.value) answers[field.name] = field.value;
+    });
+    return answers;
+  }
+
+  var position = 0;
+
+  function save() {
+    try {
+      store.setItem(
+        key,
+        JSON.stringify({ at: Date.now(), position: position, answers: read() })
+      );
+    } catch (err) {
+      // A full quota must never break answering.
+    }
+  }
+
+  function load() {
+    try {
+      var raw = store.getItem(key);
+      if (!raw) return null;
+      var saved = JSON.parse(raw);
+      if (!saved || Date.now() - saved.at > MAX_AGE_MS) {
+        store.removeItem(key);
+        return null;
+      }
+      return saved;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function restore(saved) {
+    Array.prototype.forEach.call(form.elements, function (field) {
+      if (!answerable(field)) return;
+      var value = saved.answers[field.name];
+      if (value === undefined) return;
+      if (field.type === "radio" || field.type === "checkbox") {
+        field.checked = value.indexOf(field.value) !== -1;
+        return;
+      }
+      field.value = value;
+    });
+  }
+
+  var saved = load();
+  if (saved) restore(saved);
+
+  form.addEventListener("input", save);
+  form.addEventListener("change", save);
+  // Submitting is the moment the draft has done its job. Clearing it
+  // matters most on a shared device: an unsent answer left in storage is
+  // just somebody's words sitting on a computer they borrowed.
+  form.addEventListener("submit", function () {
+    try {
+      store.removeItem(key);
+    } catch (err) {
+      /* nothing useful to do */
+    }
+  });
+
+  return {
+    rememberPosition: function (index) {
+      position = index;
+      save();
+    },
+    startAt: function (count) {
+      if (!saved || typeof saved.position !== "number") return 0;
+      if (saved.position < 0 || saved.position > count - 1) return 0;
+      return saved.position;
+    },
+  };
+}
 
 // ALTCHA proof-of-work, first-party (ADR-0006). Instead of vendoring the
 // upstream widget (a web component that spins up a blob: worker the CSP
