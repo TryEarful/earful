@@ -13,6 +13,17 @@ variable "suffix" {
   }
 }
 
+variable "stg_suffix" {
+  description = "Overrides suffix for the staging project id only, so staging can be rebuilt in place without recreating ops, pro or backups. Null uses var.suffix."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.stg_suffix == null || can(regex("^[a-z0-9]{2,8}$", var.stg_suffix))
+    error_message = "stg_suffix must be 2-8 lowercase alphanumerics (it lands inside a project ID)."
+  }
+}
+
 variable "region" {
   description = "Home region for everything regional. EU residency is a product promise (ADR-0007)."
   type        = string

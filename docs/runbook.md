@@ -284,6 +284,35 @@ AI was first enabled there.
    change is urgent enough to justify shipping ungated, and say so out
    loud when you do.
 
+### Rebuilding staging from scratch
+
+Only after an appeal has failed or stalled. Replacing a suspended
+project can read as circumvention, and enforcement escalates to the
+**billing account and organisation** — which production shares. That
+asymmetry is the whole argument: staging is disposable, the thing it
+would take down with it is not.
+
+The staging project id carries its own `stg_suffix` so this does not
+disturb ops, pro or backups:
+
+1. `deploy/opentofu/bootstrap`: set `stg_suffix` to a fresh value in
+   tfvars, `tofu apply`. This creates the new project and leaves the
+   other three alone. The old project is **not** destroyed —
+   `deletion_policy = "PREVENT"` — so remove it by hand afterwards
+   (`gcloud projects delete`, 30-day soft delete) and `tofu state rm` the
+   old `google_project.stg`. Check the billing account's project cap
+   first; you may need the old one gone before the new one links.
+2. `deploy/opentofu/envs/stg`: the old state cannot refresh through a
+   suspended API, so `tofu state rm` every resource in it and apply
+   clean. Cloud SQL takes ~10 minutes.
+3. Rewire what names the project: repository variables `GCP_STG_PROJECT`
+   and `GCP_STG_DEPLOY_SA`, the `STG_BASIC_AUTH` secret
+   (`tofu output -raw staging_basic_auth`), and the `stg.tryearful.com`
+   domain mapping and its DNS record.
+4. Push to `main` and let the pipeline prove it: migrate, deploy, and the
+   full browser suite against the new instance is exactly the check that
+   the rebuild is complete.
+
 ## Alert test-fire checklist (M9-T2 AC)
 
 | Alert | How to fire it | Fired ✓ |

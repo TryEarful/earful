@@ -54,7 +54,13 @@ locals {
       ]
     }
     stg = {
-      id   = "earful-stg-${var.suffix}"
+      # Staging carries its own suffix so it can be rebuilt without
+      # touching the other three. A project can be lost for reasons that
+      # have nothing to do with its contents — ours was suspended by
+      # Google on 2026-07-25 — and staging is the one that is meant to be
+      # disposable. Set stg_suffix to a fresh value, apply, and rewire;
+      # everything else keeps its id. See the runbook.
+      id   = "earful-stg-${coalesce(var.stg_suffix, var.suffix)}"
       name = "Earful staging"
       apis = local.env_apis
     }
