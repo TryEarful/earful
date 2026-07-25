@@ -23,9 +23,23 @@ test("core loop: build, publish, answer, count", async ({ page, browser }) => {
   await expect(respondent.getByText("What would make surveys less painful?")).toBeVisible();
   await expect(respondent.getByText("How often do you answer surveys?")).toBeHidden();
 
+  // Navigation offers only the moves that exist. Both of these were
+  // broken in production and neither was caught here, because the suite
+  // only ever asked whether the buttons *worked*: `button { display:
+  // inline-block }` outranks the browser's [hidden] rule, so setting
+  // .hidden on a button did nothing at all. Pressing Next on the last
+  // question then looked like a dead button.
+  await expect(respondent.getByRole("button", { name: "Back" })).toBeHidden();
+  await expect(respondent.getByRole("button", { name: "Next" })).toBeVisible();
+
   await respondent.locator("textarea").fill("Let me talk instead of type.");
   await respondent.getByRole("button", { name: "Next" }).click();
   await respondent.getByLabel("Monthly").check();
+
+  // Last question: Next is gone, Back and Submit are the way on.
+  await expect(respondent.getByRole("button", { name: "Next" })).toBeHidden();
+  await expect(respondent.getByRole("button", { name: "Back" })).toBeVisible();
+  await expect(respondent.getByRole("button", { name: "Submit answers" })).toBeVisible();
 
   await minFillWait(respondent);
   await respondent.getByRole("button", { name: "Submit answers" }).click();

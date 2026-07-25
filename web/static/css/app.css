@@ -11,6 +11,23 @@
   --danger: #c0392b;
 }
 
+/* [hidden] must beat every author rule below, or hiding an element from
+   JavaScript silently does nothing.
+
+   Found in production by the founder: the respondent form sets
+   nextButton.hidden on the last question, but `button { display:
+   inline-block }` further down outranks the browser's own [hidden] rule
+   — a UA rule loses to any author rule — so Next stayed on screen and
+   did nothing when pressed. The same bug left Back visible on the first
+   question and the language picker's submit button visible with
+   JavaScript on.
+
+   !important is the right tool here and one of the few places it is:
+   this is a global invariant, not a local override. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   padding: 2rem;

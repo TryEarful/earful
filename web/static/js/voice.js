@@ -277,7 +277,9 @@
     recognition.onresult = function (event) {
       for (var i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          field.value += event.results[i][0].transcript;
+          // Each final result is a whole utterance, not a fragment, so
+          // every one of them needs separating from what came before.
+          field.value = joinTakes(field.value, event.results[i][0].transcript);
         }
       }
     };
@@ -308,7 +310,17 @@
 
   // --- capture -----------------------------------------------------------
 
+  // joinTakes puts a take after whatever is already in the field —
+  // typed or spoken — without gluing two sentences together and without
+  // adding a stray space to an empty field.
+  function joinTakes(existing, text) {
+    if (!existing) return text;
+    if (/\s$/.test(existing) || /^\s/.test(text)) return existing + text;
+    return existing + " " + text;
+  }
+
   function startRecording(field, say, done) {
+    var spoken = false; // has this take put anything in the field yet?
     return navigator.mediaDevices
       .getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
       .then(function (stream) {
@@ -331,6 +343,17 @@
             // The transcript lands in the textarea as it arrives, so the
             // respondent reads and edits their own words before
             // submitting (story 36).
+            //
+            // Only the FIRST chunk of a take gets a separator: the rest
+            // are fragments of one sentence and must join seamlessly, or
+            // words break apart mid-transcription. Without this, a second
+            // take ran straight into the first — "…can you hear me?Yes"
+            // — which is what a respondent saw in production.
+            if (!spoken) {
+              spoken = true;
+              field.value = joinTakes(field.value, text);
+              return;
+            }
             field.value += text;
           },
           onDone: function () {
