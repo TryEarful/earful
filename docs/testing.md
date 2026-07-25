@@ -310,6 +310,44 @@ or the survey handlers):
 9. Console errors: none expected beyond the `favicon.ico` 404
 10. `docker compose down`
 
+**M5–M11 surfaces** (re-run after changes to voice, generation, results,
+insights or localization templates). These are the pages the automated
+suite exercises functionally; a browser pass is for the things a test
+cannot see — layout, wording, whether the labelling reads as honest:
+
+1. `docker compose up --build -d` (the stack runs `AI_PROVIDER=scripted`,
+   so every AI surface is live without a model); sign in via the M2 steps
+2. **Drafting**: on a new survey, the *Draft questions with AI* panel →
+   type a purpose → *Draft questions*. Output appears **while** it runs
+   and the summary line ends it. Snapshot the panel: the form must carry
+   `data-enhanced`, or you are watching the plain POST path instead
+3. **Voice**: publish, open the share link in a new context, press
+   *Answer by speaking*. The consent dialog must say the voice is never
+   stored **before** the mic opens, and the transcript must land in an
+   editable textarea. Note that a laptop with no microphone is a valid
+   state to check: the mic degrades to "please type your answer"
+4. **Results**: answer twice, open *Results*. Check the rewording label
+   ("asked as …") on any question you changed between versions, and that
+   the small-sample audience section is **absent** (ADR-0009 suppresses
+   under n=5 — its absence is the feature)
+5. **Insights**: *Analyse the responses* → the summary streams in, and
+   the label naming the model and the time is visible without scrolling.
+   Reload: the cached run still carries its label
+6. **Localization**: `/surveys/{id}/localizations` → add a language,
+   *Draft with AI*, then confirm a translation stays **unreviewed** until
+   someone marks it, and that rewording the source question un-reviews it
+7. **Trust page**: `/trust` — the sub-processor table must list exactly
+   what this instance is configured to use. With `AI_PROVIDER=none` there
+   is no AI row; that is the table working, not a rendering bug
+8. **Phone width** (390×844) on the results and localization pages, which
+   carry the widest tables:
+   ```js
+   document.documentElement.scrollWidth <= window.innerWidth
+   ```
+9. Console errors: none. A CSP violation here is a real defect — the
+   respondent pages allow no inline handlers and no third-party origins
+10. `docker compose down`
+
 ## Fakes at the true external boundaries
 
 Live as of M2:
