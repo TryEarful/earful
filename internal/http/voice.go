@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -227,14 +228,23 @@ func (s *server) finishVoiceTake(conn *ws.Conn, survey store.PublicSurvey, buf *
 
 	// Charged whatever happens next: the audio was sent and the model
 	// listened to it, so a stream that dies halfway still costs.
-	defer func() {
+	//
+	// Called explicitly before the done frame on the success path, and
+	// left as a defer for every path that returns early. The order
+	// matters: telling the client the transcription finished before the
+	// usage is written lets a client that immediately reconnects open
+	// another session against a quota that has not yet moved. A person
+	// cannot type that fast, but the accounting should not depend on
+	// that being true.
+	recordUsage := sync.OnceFunc(func() {
 		if session != "" {
 			s.voiceBudget.Spend(session, seconds)
 		}
 		if err := s.aiMeter.RecordVoice(ctx, survey.WorkspaceID, &survey.ID, seconds, counted.Chars()); err != nil {
 			s.logger.Error("recording voice usage failed", "error", err)
 		}
-	}()
+	})
+	defer recordUsage()
 
 	var transcript strings.Builder
 	for {
@@ -259,6 +269,7 @@ func (s *server) finishVoiceTake(conn *ws.Conn, survey store.PublicSurvey, buf *
 			break
 		}
 	}
+	recordUsage()
 	_ = conn.Done()
 }
 
