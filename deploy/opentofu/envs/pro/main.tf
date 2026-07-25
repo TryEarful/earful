@@ -252,6 +252,7 @@ module "monitoring" {
   host              = local.host
   sql_instance_name = module.cloudsql.instance_name
   alert_email       = var.alert_email
+  enable_purge      = true # matches module.app; keep the two in step
 }
 
 module "backups" {

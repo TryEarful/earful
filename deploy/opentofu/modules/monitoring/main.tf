@@ -269,3 +269,71 @@ resource "google_monitoring_alert_policy" "ai_usage_anomaly" {
     content = "AI call volume is far above organic use — likely abuse burning quota ahead of the breaker. Runbook: docs/runbook.md → 'AI breaker trip' (same levers)."
   }
 }
+
+# --- Retention purge (M8-T2 / M9-T2) -----------------------------------
+#
+# Two alerts, because retention has two failure modes and only one of them
+# is loud. Deliberately built on Cloud Run's own job metrics rather than
+# on the app's log lines: a job that dies before it can log — a bad image,
+# an OOM, a database it cannot reach — would emit nothing of ours, and
+# those are exactly the failures worth hearing about.
+
+resource "google_monitoring_alert_policy" "purge_failed" {
+  count        = var.enable_purge ? 1 : 0
+  project      = var.project
+  display_name = "Retention purge FAILED (${var.env_name})"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "purge job execution failed"
+    condition_threshold {
+      filter          = "metric.type=\"run.googleapis.com/job/completed_execution_count\" AND resource.type=\"cloud_run_job\" AND resource.label.job_name=\"${var.service_name}-purge\" AND metric.label.result=\"failed\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+      duration        = "0s"
+
+      aggregations {
+        alignment_period   = "3600s"
+        per_series_aligner = "ALIGN_SUM"
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.id]
+
+  documentation {
+    content = "The nightly retention purge failed after its retry. Data that should have been erased is still stored, so this is a promise breaking, not just a job flapping. Runbook: docs/runbook.md → 'Retention purge'."
+  }
+}
+
+# The quiet failure: nothing errors, the job simply stops running — a
+# paused scheduler, a deleted job, a broken invoker binding. Absence
+# detection needs the series to have existed at least once, so this alert
+# only starts protecting after the first successful run; that is a
+# limitation of the mechanism and the reason the failure alert above is
+# not enough on its own.
+resource "google_monitoring_alert_policy" "purge_silent" {
+  count        = var.enable_purge ? 1 : 0
+  project      = var.project
+  display_name = "Retention purge has not run in 36h (${var.env_name})"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "no successful purge execution"
+    condition_absent {
+      filter   = "metric.type=\"run.googleapis.com/job/completed_execution_count\" AND resource.type=\"cloud_run_job\" AND resource.label.job_name=\"${var.service_name}-purge\" AND metric.label.result=\"succeeded\""
+      duration = "129600s" # 36h: a daily job may be late, but not a day and a half late
+
+      aggregations {
+        alignment_period   = "3600s"
+        per_series_aligner = "ALIGN_SUM"
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.id]
+
+  documentation {
+    content = "The retention purge has not completed successfully in 36 hours. Nothing has errored — it simply is not running (paused scheduler, deleted job, revoked invoker). Check `gcloud scheduler jobs describe earful-purge`. Runbook: docs/runbook.md → 'Retention purge'."
+  }
+}

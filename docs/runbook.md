@@ -161,6 +161,23 @@ backup of the data exists before it goes. Staging has no purge job.
   nothing half-done. Re-run it; the operation is idempotent. Repeated
   failures usually mean a foreign key added without a matching purge
   step — the fix is a step in `internal/purge`, never a manual DELETE.
+- **Run it now**:
+  `gcloud run jobs execute earful-purge --wait --project earful-pro-<sfx> --region europe-west4`
+
+Two alerts watch it, because retention fails in two ways and only one of
+them is loud:
+
+| Alert | Means |
+|---|---|
+| "Retention purge FAILED" | An execution failed after its retry. Data that should be gone is still stored. |
+| "Retention purge has not run in 36h" | Nothing errored — it simply is not running: a paused scheduler, a deleted job, a revoked invoker. `gcloud scheduler jobs describe earful-purge --project earful-pro-<sfx> --location europe-west4` |
+
+Both watch Cloud Run's job metrics rather than the app's log lines, so a
+job that dies before it can log — bad image, OOM, unreachable database —
+still pages. **The job's image is moved to each promoted digest by
+`deploy-pro`**; tofu only seeds it. If that step is ever dropped,
+retention silently runs whatever image existed the day the job was
+created.
 
 ## AI breaker trip (alert: "AI budget breaker TRIPPED")
 
