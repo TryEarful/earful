@@ -307,25 +307,39 @@ resource "google_monitoring_alert_policy" "purge_failed" {
 }
 
 # The quiet failure: nothing errors, the job simply stops running — a
-# paused scheduler, a deleted job, a broken invoker binding. Absence
-# detection needs the series to have existed at least once, so this alert
-# only starts protecting after the first successful run; that is a
-# limitation of the mechanism and the reason the failure alert above is
-# not enough on its own.
+# paused scheduler, a deleted job, a revoked invoker binding.
+#
+# Expressed as "the last 24 hours contain fewer than one successful run"
+# rather than with condition_absent, which Cloud Monitoring caps at
+# 23h30m — too short to describe a daily job at all, since it would fire
+# every day in the half hour before the next run. A 24h-wide ALIGN_SUM
+# sits at 1 while the job is healthy and drops to 0 the moment a night is
+# missed.
+#
+# EVALUATION_MISSING_DATA_ACTIVE is the load-bearing part: no data at all
+# is precisely the state being watched for, and the default treatment
+# would make a job that never runs indistinguishable from one that is
+# fine. It does mean the alert is active until the first successful run,
+# which is the honest reading of "retention has never happened here".
 resource "google_monitoring_alert_policy" "purge_silent" {
   count        = var.enable_purge ? 1 : 0
   project      = var.project
-  display_name = "Retention purge has not run in 36h (${var.env_name})"
+  display_name = "Retention purge has not run in 24h (${var.env_name})"
   combiner     = "OR"
 
   conditions {
-    display_name = "no successful purge execution"
-    condition_absent {
-      filter   = "metric.type=\"run.googleapis.com/job/completed_execution_count\" AND resource.type=\"cloud_run_job\" AND resource.label.job_name=\"${var.service_name}-purge\" AND metric.label.result=\"succeeded\""
-      duration = "129600s" # 36h: a daily job may be late, but not a day and a half late
+    display_name = "no successful purge execution in 24h"
+    condition_threshold {
+      filter          = "metric.type=\"run.googleapis.com/job/completed_execution_count\" AND resource.type=\"cloud_run_job\" AND resource.label.job_name=\"${var.service_name}-purge\" AND metric.label.result=\"succeeded\""
+      comparison      = "COMPARISON_LT"
+      threshold_value = 1
+      // Non-zero because evaluation_missing_data requires it. Half an
+      // hour of a 24h window reading empty is not a blip.
+      duration                = "1800s"
+      evaluation_missing_data = "EVALUATION_MISSING_DATA_ACTIVE"
 
       aggregations {
-        alignment_period   = "3600s"
+        alignment_period   = "86400s"
         per_series_aligner = "ALIGN_SUM"
       }
     }
@@ -334,6 +348,6 @@ resource "google_monitoring_alert_policy" "purge_silent" {
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   documentation {
-    content = "The retention purge has not completed successfully in 36 hours. Nothing has errored — it simply is not running (paused scheduler, deleted job, revoked invoker). Check `gcloud scheduler jobs describe earful-purge`. Runbook: docs/runbook.md → 'Retention purge'."
+    content = "The retention purge has not completed successfully in 24 hours. Nothing has errored — it simply is not running (paused scheduler, deleted job, revoked invoker). Check `gcloud scheduler jobs describe earful-purge --location europe-west4`. Runbook: docs/runbook.md → 'Retention purge'."
   }
 }
