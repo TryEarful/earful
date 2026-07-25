@@ -1,4 +1,6 @@
 import { expect, BrowserContext, Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 const mailpitURL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 
@@ -82,37 +84,49 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
   throw new Error(`no logged email with a matching link found for ${addr}`);
 }
 
-// fakeMicrophone gives a context a synthetic capture device: a 440 Hz
-// tone from the page's own AudioContext, handed back as a MediaStream.
+// fakeMicrophone gives a context a capture device that plays real
+// recorded speech (testdata/jfk.wav) as a MediaStream.
 //
-// This replaced Chromium's --use-fake-device-for-media-capture, which is
-// a no-op in Chrome 149: enumerateDevices shows only real hardware with
+// It replaced Chromium's --use-fake-device-for-media-capture, which is a
+// no-op in Chrome 149: enumerateDevices shows only real hardware with
 // the flag set, so the suite was quietly recording from the developer's
 // actual microphone on a laptop, and failing with NotFoundError on CI
 // runners, which have no audio device at all. A stream built in the page
 // needs no hardware, behaves the same on every machine, and stops the
 // test suite opening anybody's mic.
 //
+// It plays a recording rather than a generated tone deliberately. These
+// tests only ever run against the scripted provider, which ignores the
+// audio entirely — but the moment a synthesized signal exists in the
+// suite, someone eventually points it at a real model, and that is what
+// cost us an environment. There is no synthesized audio here to point.
+//
 // Everything downstream of getUserMedia — the PCM conversion, the
 // socket, the transcript, the caps — is the code under test and is
 // untouched. What is skipped is the browser's own device plumbing, which
 // is not ours to test.
 export async function fakeMicrophone(context: BrowserContext): Promise<void> {
-  await context.addInitScript(() => {
-    const audio = new AudioContext();
-    const tone = audio.createOscillator();
-    const sink = audio.createMediaStreamDestination();
-    tone.frequency.value = 440;
-    tone.connect(sink);
-    tone.start();
+  const wav = readFileSync(path.join(__dirname, "..", "..", "testdata", "jfk.wav")).toString(
+    "base64"
+  );
+  await context.addInitScript((encoded: string) => {
+    const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
     navigator.mediaDevices.getUserMedia = async () => {
-      // An AudioContext created without a user gesture starts suspended,
-      // and a suspended graph produces nothing. This call always happens
-      // inside the consent click, which is a gesture.
+      // An AudioContext created without a user gesture starts suspended
+      // and a suspended graph produces nothing; this always runs inside
+      // the consent click, which is a gesture.
+      const audio = new AudioContext();
       await audio.resume();
+      const buffer = await audio.decodeAudioData(bytes.buffer.slice(0) as ArrayBuffer);
+      const source = audio.createBufferSource();
+      const sink = audio.createMediaStreamDestination();
+      source.buffer = buffer;
+      source.loop = true; // outlast any recording length the tests use
+      source.connect(sink);
+      source.start();
       return sink.stream;
     };
-  });
+  }, wav);
 }
 
 // --- What this instance offers -------------------------------------

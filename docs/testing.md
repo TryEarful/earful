@@ -391,20 +391,27 @@ Live as of M2:
 Three integration tests are opt-in, and each is the only witness that a
 wire format matches reality:
 
+**Use `testdata/jfk.wav` as the audio, never a generated file.** It is
+eleven seconds of real recorded speech (public domain — see
+`testdata/README.md`). Synthesizing audio with `say` or a tone
+generator, which this file used to suggest, sends machine-generated
+sound to a hosted speech API; it demonstrates nothing about
+transcription and it is the likeliest reason our staging project was
+suspended on 2026-07-25.
+
 ```sh
 # Vertex, against the real API with your own ADC (M6-T1). Last run
 # 2026-07-25 against the staging project with gemini-2.5-flash (and
 # gemini-2.5-pro for the analyze tier): generation and transcription
 # both green. Those ids are the best europe-west4 offers; 3.x is
-# global-only and deliberately unused (ADR-0011). Set VERTEX_TEST_AUDIO to a 16-bit PCM
-# WAV to include the voice half.
+# global-only and deliberately unused (ADR-0011). VERTEX_TEST_AUDIO adds
+# the voice half; drop it to test text only.
 VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=gemini-2.5-flash \
-  VERTEX_TEST_AUDIO=/tmp/speech.wav \
+  VERTEX_TEST_AUDIO=testdata/jfk.wav \
   go test ./internal/ai/ -run Vertex_Integration -v
 
 # whisper.cpp, against a real model (M5)
-say -o /tmp/speech.wav --data-format=LEI16@16000 "the capital of France is Paris"
-WHISPER_TEST_MODEL=$HOME/models/ggml-base.bin WHISPER_TEST_AUDIO=/tmp/speech.wav \
+WHISPER_TEST_MODEL=$HOME/models/ggml-base.bin WHISPER_TEST_AUDIO=testdata/jfk.wav \
   go test ./internal/ai/ -run WhisperCLI_Integration -v
 ```
 
