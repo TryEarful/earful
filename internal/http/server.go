@@ -85,6 +85,10 @@ type server struct {
 	// persist (ADR-0003).
 	limitVoice  *antibot.Limiter
 	voiceBudget *voice.Budget
+
+	// limitStats keeps a crawler from inflating a survey's "starts"
+	// counter, which would quietly ruin every completion rate (M7-T4).
+	limitStats *antibot.Limiter
 }
 
 // NewHandler builds the full request-handling chain for earful serve.
@@ -137,6 +141,7 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		limitVoice: antibot.NewLimiter(60, time.Hour, deps.Clock),
 		voiceBudget: voice.NewBudget(cfg.VoiceMaxSecondsPerResponse,
 			2*time.Hour, deps.Clock),
+		limitStats: antibot.NewLimiter(10, time.Hour, deps.Clock),
 	}
 
 	// Senders with an event feed (Brevo live, Capture in tests) push

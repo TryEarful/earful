@@ -48,6 +48,7 @@ type Querier interface {
 	CreateWorkspaceMember(ctx context.Context, arg CreateWorkspaceMemberParams) error
 	DeleteSessionByTokenHash(ctx context.Context, tokenHash []byte) error
 	DeleteSessionsForUser(ctx context.Context, userID uuid.UUID) error
+	DeleteSurveyStats(ctx context.Context, surveyID uuid.UUID) error
 	// Identities are minted in Go when a question first appears in a draft and
 	// only reach the database at publish. ON CONFLICT keeps republishing an
 	// unchanged question idempotent.
@@ -83,6 +84,13 @@ type Querier interface {
 	// placeholder; the real one is minted at send time, because only the hash
 	// is ever stored and the emailed link needs the raw token.
 	ImportParticipant(ctx context.Context, arg ImportParticipantParams) (int64, error)
+	// M7-T4: survey stats (ADR-0009).
+	//
+	// Every query here touches survey_stats alone. None of them may mention
+	// responses or answers: a counter that could be joined to a response is
+	// no longer an aggregate, and TestAggregatesCannotBeLinkedToResponses
+	// fails the build if one appears.
+	IncrementSurveyStat(ctx context.Context, arg IncrementSurveyStatParams) error
 	// One row per stored answer, with the version it was given under and the
 	// participant it belongs to (NULL forever for anonymous surveys).
 	// Skipped questions store no row at all, which is what keeps "skipped"
@@ -105,6 +113,7 @@ type Querier interface {
 	// The response rows themselves, so a table can show one row per response
 	// including responses that answered nothing.
 	ListResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListResponsesForSurveyRow, error)
+	ListSurveyStats(ctx context.Context, surveyID uuid.UUID) ([]ListSurveyStatsRow, error)
 	ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]ListSurveysForWorkspaceRow, error)
 	ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error)
 	// By address across all surveys: a hard bounce means the mailbox is gone,

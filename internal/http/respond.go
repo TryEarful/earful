@@ -29,6 +29,9 @@ func (s *server) respondPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// Counted here rather than in renderRespondPage: a validation
+	// re-render is the same visit, not a second start (M7-T4).
+	s.recordStart(r, survey.ID)
 	s.renderRespondPage(w, r, survey, version, domain.Submission{Answers: map[string]domain.AnswerValue{}}, nil, "")
 }
 
@@ -210,6 +213,7 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "submit response", err)
 		return
 	}
+	s.recordCompletion(r, surveyID, version.Questions, submission)
 	s.setAnsweredCookie(w, surveyID)
 	render(w, r, http.StatusOK, templates.RespondThanks(survey.Title, survey.IsAnonymous))
 }

@@ -88,6 +88,24 @@ type SurveyResultsData struct {
 	Survey        SurveyView
 	ResponseCount int
 	Questions     []QuestionResultsView
+	Stats         SurveyStatsView
+}
+
+// SurveyStatsView is ADR-0009's blessed list and nothing else: how many
+// people opened the survey, how many finished, how long it took them,
+// where answers stop, and three coarse facts about the audience — each
+// suppressed below five observations.
+type SurveyStatsView struct {
+	Starts          int
+	Completions     int
+	CompletionRate  string
+	AverageDuration string
+	LastAnswered    []CountView
+	Browsers        []CountView
+	Devices         []CountView
+	Countries       []CountView
+	HasAudience     bool
+	SuppressionNote string
 }
 
 // QuestionResultsView is one question's results, folded across versions

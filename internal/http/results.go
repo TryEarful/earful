@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/TryEarful/earful/internal/audience"
 	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/web/templates"
@@ -28,11 +29,17 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "load results", err)
 		return
 	}
+	stats, err := s.surveys.SurveyStats(r.Context(), survey.ID)
+	if err != nil {
+		s.internalError(w, r, "load survey stats", err)
+		return
+	}
 	render(w, r, http.StatusOK, templates.SurveyResults(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyResultsData{
 			Survey:        viewSurvey(survey, s.clock.Now()),
 			ResponseCount: len(results.Responses),
 			Questions:     viewQuestionResults(results),
+			Stats:         viewSurveyStats(stats, results),
 		}))
 }
 
@@ -272,4 +279,142 @@ func csvFilename(title string) string {
 		safe = "survey"
 	}
 	return strings.ToLower(safe) + "-responses.csv"
+}
+
+// viewSurveyStats turns counters into the numbers a creator can act on
+// (M7-T4). Two rules run through it:
+//
+//   - Buckets below five observations are not shown at all (ADR-0009's
+//     n < 5 rule): a country with one answer would point at a person.
+//   - Nothing here is presented as precise. Starts are page opens, the
+//     completion rate divides by them, and "where answers stop" comes
+//     from submitted responses, so each one says what it means.
+func viewSurveyStats(stats []store.SurveyStat, results store.Results) templates.SurveyStatsView {
+	view := templates.SurveyStatsView{Completions: len(results.Responses)}
+
+	byMetric := map[string][]store.SurveyStat{}
+	for _, stat := range stats {
+		byMetric[stat.Metric] = append(byMetric[stat.Metric], stat)
+	}
+	for _, stat := range byMetric[store.MetricStart] {
+		view.Starts += stat.Count
+	}
+	if view.Starts < view.Completions {
+		// A survey answered before stats existed, or starts throttled
+		// away by the anti-inflation limiter: never report more than 100%.
+		view.Starts = view.Completions
+	}
+	if view.Starts > 0 {
+		view.CompletionRate = fmt.Sprintf("%d%%", int(float64(view.Completions)/float64(view.Starts)*100+0.5))
+	}
+
+	var totalDuration, timed int
+	for _, response := range results.Responses {
+		if response.DurationSecs != nil {
+			totalDuration += *response.DurationSecs
+			timed++
+		}
+	}
+	if timed > 0 {
+		view.AverageDuration = humanDuration(totalDuration / timed)
+	}
+
+	view.Browsers = suppressedBuckets(byMetric[store.MetricBrowser])
+	view.Devices = suppressedBuckets(byMetric[store.MetricDevice])
+	view.Countries = suppressedBuckets(byMetric[store.MetricCountry])
+	view.LastAnswered = positionBuckets(byMetric[store.MetricReached], results)
+	view.HasAudience = len(view.Browsers)+len(view.Devices)+len(view.Countries) > 0
+	view.SuppressionNote = fmt.Sprintf(
+		"Groups with fewer than %d responses are hidden, so a small sample can't point at anyone.",
+		audience.SuppressBelow)
+	return view
+}
+
+// suppressedBuckets drops anything below the n < 5 threshold rather than
+// rounding it or lumping it into "other" — an "other: 1" is just as
+// revealing when the sample is small.
+func suppressedBuckets(stats []store.SurveyStat) []templates.CountView {
+	total := 0
+	for _, stat := range stats {
+		if !audience.Suppressed(stat.Count) {
+			total += stat.Count
+		}
+	}
+	var out []templates.CountView
+	for _, stat := range stats {
+		if audience.Suppressed(stat.Count) {
+			continue
+		}
+		percent := 0
+		if total > 0 {
+			percent = int(float64(stat.Count)/float64(total)*100 + 0.5)
+		}
+		out = append(out, templates.CountView{
+			Label: stat.Bucket, Count: stat.Count,
+			Percent: percent, Share: strconv.Itoa(percent) + "%",
+		})
+	}
+	return out
+}
+
+// positionBuckets orders "last answered question" by position and labels
+// each with the question it refers to.
+func positionBuckets(stats []store.SurveyStat, results store.Results) []templates.CountView {
+	if len(stats) == 0 {
+		return nil
+	}
+	counts := map[int]int{}
+	max := 0
+	for _, stat := range stats {
+		position, err := strconv.Atoi(stat.Bucket)
+		if err != nil {
+			continue
+		}
+		counts[position] += stat.Count
+		if position > max {
+			max = position
+		}
+	}
+	total := 0
+	for _, count := range counts {
+		total += count
+	}
+	var out []templates.CountView
+	for position := 1; position <= max; position++ {
+		count := counts[position]
+		if count == 0 {
+			continue
+		}
+		label := "Question " + strconv.Itoa(position)
+		if position-1 < len(results.Questions) {
+			label += ": " + truncateLabel(results.Questions[position-1].Text)
+		}
+		percent := 0
+		if total > 0 {
+			percent = int(float64(count)/float64(total)*100 + 0.5)
+		}
+		out = append(out, templates.CountView{
+			Label: label, Count: count, Percent: percent, Share: strconv.Itoa(percent) + "%",
+		})
+	}
+	return out
+}
+
+func truncateLabel(text string) string {
+	const limit = 48
+	if len(text) <= limit {
+		return text
+	}
+	return text[:limit-1] + "…"
+}
+
+func humanDuration(seconds int) string {
+	switch {
+	case seconds <= 0:
+		return ""
+	case seconds < 60:
+		return strconv.Itoa(seconds) + "s"
+	default:
+		return fmt.Sprintf("%dm %02ds", seconds/60, seconds%60)
+	}
 }

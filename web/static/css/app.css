@@ -708,6 +708,35 @@ fieldset {
   margin: 0;
 }
 
+.stat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.stat-grid dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.stat-grid dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats h3 {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.stats h4 {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0.75rem 0 0.2rem;
+}
+
 /* Tables (results, admin) scroll on their own rather than pushing the
    page sideways — the phone-width overflow check depends on it. */
 .table-scroll {

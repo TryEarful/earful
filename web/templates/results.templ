@@ -31,6 +31,8 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 				</a>
 			</div>
 
+			@surveyStats(data.Stats)
+
 			if data.ResponseCount == 0 {
 				<section class="card">
 					<h2>No responses yet</h2>
@@ -45,6 +47,81 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 				}
 			}
 		</main>
+	}
+}
+
+// surveyStats is ADR-0009's blessed list, and it says what each number
+// means: "starts" are page opens, not people, and the audience groups are
+// suppressed below five so a small sample cannot point at anyone.
+templ surveyStats(stats SurveyStatsView) {
+	<section class="card stats">
+		<h2>How this survey is going</h2>
+		<dl class="stat-grid">
+			<div>
+				<dt>Opened</dt>
+				<dd>{ strconv.Itoa(stats.Starts) }</dd>
+			</div>
+			<div>
+				<dt>Completed</dt>
+				<dd>{ strconv.Itoa(stats.Completions) }</dd>
+			</div>
+			if stats.CompletionRate != "" {
+				<div>
+					<dt>Completion rate</dt>
+					<dd>{ stats.CompletionRate }</dd>
+				</div>
+			}
+			if stats.AverageDuration != "" {
+				<div>
+					<dt>Average time</dt>
+					<dd>{ stats.AverageDuration }</dd>
+				</div>
+			}
+		</dl>
+		<p class="muted">
+			"Opened" counts times the survey page was loaded, so it is an upper bound on people.
+			Nothing here is linked to any individual response.
+		</p>
+
+		if len(stats.LastAnswered) > 0 {
+			<h3>Where answers stop</h3>
+			<p class="muted">
+				The last question each completed response answered — useful for spotting a question
+				people give up on. Respondents who left without submitting are not counted.
+			</p>
+			<ul class="distribution">
+				for _, row := range stats.LastAnswered {
+					<li>
+						<span class="bar-label">{ row.Label }</span>
+						<span class="bar" aria-hidden="true"><span class="bar-fill" style={ barWidth(row.Percent) }></span></span>
+						<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
+					</li>
+				}
+			</ul>
+		}
+
+		if stats.HasAudience {
+			<h3>Audience</h3>
+			@statBuckets("Browser", stats.Browsers)
+			@statBuckets("Device", stats.Devices)
+			@statBuckets("Country", stats.Countries)
+			<p class="muted">{ stats.SuppressionNote }</p>
+		}
+	</section>
+}
+
+templ statBuckets(title string, rows []CountView) {
+	if len(rows) > 0 {
+		<h4>{ title }</h4>
+		<ul class="distribution">
+			for _, row := range rows {
+				<li>
+					<span class="bar-label">{ row.Label }</span>
+					<span class="bar" aria-hidden="true"><span class="bar-fill" style={ barWidth(row.Percent) }></span></span>
+					<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
+				</li>
+			}
+		</ul>
 	}
 }
 

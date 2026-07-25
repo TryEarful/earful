@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke migrate purge compose-up compose-down docker-build
+.PHONY: tools generate generate-check dev build check test e2e-smoke migrate purge geoip compose-up compose-down docker-build
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -42,6 +42,13 @@ tools:
 generate:
 	templ generate
 	sqlc generate
+
+# Rebuild the embedded country table from a DB-IP IP-to-Country Lite CSV.
+# Run it monthly-ish; see internal/geoip/README.md for the download and
+# the CC-BY attribution the data carries.
+GEOIP_CSV ?= /tmp/dbip-country-lite.csv
+geoip:
+	go run ./tools/geoipgen -in $(GEOIP_CSV)
 
 dev:
 	go run ./cmd/earful serve

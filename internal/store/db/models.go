@@ -140,6 +140,14 @@ type SurveyDraft struct {
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
+// Unlinked survey-level counters (ADR-0009). No join path to responses exists or may be added.
+type SurveyStat struct {
+	SurveyID uuid.UUID `json:"survey_id"`
+	Metric   string    `json:"metric"`
+	Bucket   string    `json:"bucket"`
+	Count    int64     `json:"count"`
+}
+
 type SurveyVersion struct {
 	ID          uuid.UUID     `json:"id"`
 	SurveyID    uuid.UUID     `json:"survey_id"`

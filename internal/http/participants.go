@@ -110,6 +110,7 @@ func (s *server) participantRespondPage(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
+	s.recordStart(r, survey.ID)
 	s.renderRespondPage(w, r, survey, version,
 		domain.Submission{Answers: map[string]domain.AnswerValue{}}, nil, "",
 		respondAsParticipant(r.PathValue("token"), participant))
@@ -173,6 +174,7 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 		s.internalError(w, r, "submit participant response", err)
 		return
 	}
+	s.recordCompletion(r, survey.ID, version.Questions, submission)
 	render(w, r, http.StatusOK, templates.RespondThanks(survey.Title, survey.IsAnonymous))
 }
 
