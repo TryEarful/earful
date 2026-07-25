@@ -319,3 +319,27 @@ type LanguageChoice struct {
 	Selected  bool
 	Suggested bool
 }
+
+// --- founder metrics (M9-T7) ---------------------------------------------
+
+// MetricsData is the super-admin metrics page: our own numbers, from our
+// own database, with nothing added to a respondent page (ADR-0006).
+type MetricsData struct {
+	WindowDays  int
+	Totals      []MetricTotal
+	Signups     []MetricPoint
+	Responses   []MetricPoint
+	AICost      []MetricPoint
+	AICostTotal string
+	BudgetNote  string
+}
+
+type MetricTotal struct {
+	Label string
+	Value string
+}
+
+type MetricPoint struct {
+	Day   string
+	Value string
+}

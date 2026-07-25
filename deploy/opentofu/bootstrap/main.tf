@@ -61,9 +61,10 @@ locals {
     pro = {
       id   = "earful-pro-${var.suffix}"
       name = "Earful production"
-      # Pro additionally runs the daily export pipeline (M9-T6).
+      # Pro additionally runs the daily export pipeline (M9-T6);
+      # Cloud Scheduler is in env_apis because the retention purge
+      # (M8-T2) uses it too.
       apis = concat(local.env_apis, [
-        "cloudscheduler.googleapis.com",
         "workflows.googleapis.com",
       ])
     }
@@ -97,6 +98,12 @@ locals {
     "secretmanager.googleapis.com",
     "sqladmin.googleapis.com",
     "sts.googleapis.com",
+    # M6-T1/M5: Vertex AI. Enabled in both environments so the AI
+    # features can be switched on by configuration rather than by an
+    # apply; nothing is billed until AI_PROVIDER points at it.
+    "aiplatform.googleapis.com",
+    # M8-T2: the nightly retention purge runs as a Cloud Scheduler job.
+    "cloudscheduler.googleapis.com",
   ]
 
   api_pairs = merge([

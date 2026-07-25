@@ -121,7 +121,11 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 				<p>Signed in as <strong>{ email }</strong></p>
 				<p>Workspace: <strong>{ workspaceName }</strong></p>
 				if data.IsSuperAdmin {
-					<p><a href="/admin/beta-codes">Private beta admin</a></p>
+					<p>
+						<a href="/admin/beta-codes">Private beta admin</a> ·
+						<a href="/admin/metrics">Metrics</a> ·
+						<a href="/admin/erasure">Erasure requests</a>
+					</p>
 				}
 			</div>
 			<div class="card">

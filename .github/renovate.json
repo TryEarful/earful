@@ -1,0 +1,43 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommitsDisabled"],
+  "timezone": "Europe/Amsterdam",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "packageRules": [
+    {
+      "description": "Patch and minor updates arrive together, so a quiet week is one PR rather than six.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies"
+    },
+    {
+      "description": "Pinned tool versions live in the Makefile and CI; Renovate keeps them honest.",
+      "matchManagers": ["regex"],
+      "groupName": "toolchain"
+    },
+    {
+      "description": "Go itself is a deliberate upgrade, not an automatic one.",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["golang"],
+      "enabled": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "schedule": ["at any time"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Pinned tool versions in the Makefile",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": [
+        "TEMPL_VERSION := (?<currentValue>v[\\d.]+)",
+        "GOOSE_VERSION := (?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "github.com/a-h/templ",
+      "datasourceTemplate": "go"
+    }
+  ]
+}

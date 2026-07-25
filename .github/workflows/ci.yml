@@ -75,3 +75,18 @@ jobs:
           cd deploy/opentofu/modules/backups
           tofu init -backend=false -input=false > /dev/null
           tofu test
+
+  # M9-T3: a secret that reaches a commit is already leaked, so this runs
+  # on every push and PR alongside GitHub's own push protection. The two
+  # catch different things: push protection knows provider token shapes,
+  # gitleaks knows ours.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

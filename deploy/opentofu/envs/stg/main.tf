@@ -66,6 +66,14 @@ provider "google-beta" {
   user_project_override = true
 }
 
+# Vertex is called with the service's own identity — no key, nothing to
+# leak (see envs/pro for the same grant on production).
+resource "google_project_iam_member" "runtime_vertex" {
+  project = local.project
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.runtime.email}"
+}
+
 resource "google_service_account" "runtime" {
   project      = local.project
   account_id   = "earful-runtime"
@@ -158,10 +166,16 @@ module "app" {
     # links back (e2e E2E_LINK_SOURCE=logging). "Staging never sends
     # real email" is also enforced by the app — APP_ENV=staging refuses
     # to boot with any other sender (internal/config).
-    EMAIL_SENDER        = "console"
-    EMAIL_FROM          = "hello@mail.tryearful.com"
-    AI_PROVIDER         = "none"
-    TRANSCRIBE_PROVIDER = "none"
+    EMAIL_SENDER = "console"
+    EMAIL_FROM   = "hello@mail.tryearful.com"
+    # Same switch as production, so staging can prove an AI change
+    # before production sees it (see envs/pro for the reasoning).
+    AI_PROVIDER         = var.ai_provider
+    TRANSCRIBE_PROVIDER = var.transcribe_provider
+    VERTEX_PROJECT      = local.project
+    VERTEX_LOCATION     = local.region
+    AI_MODEL            = var.ai_model
+    AI_MODEL_ANALYZE    = var.ai_model_analyze
     LOG_LEVEL           = "info"
   }
 

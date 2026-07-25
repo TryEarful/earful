@@ -179,3 +179,69 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 		</main>
 	}
 }
+
+// AdminMetrics is M9-T7: the numbers needed to steer the product, none
+// of which cost a respondent anything. Deliberately plain — this is a
+// place to read six figures, not a dashboard to admire.
+templ AdminMetrics(email string, csrf string, data MetricsData) {
+	@Layout("Metrics — Earful") {
+		@AuthedHeader(email, csrf)
+		<main>
+			<h1>Metrics</h1>
+			<p class="muted">
+				From our own database. Nothing is added to respondent pages to produce these, and
+				completion rate comes from unlinked survey counters, never from anything joined to a
+				response. Definitions: <code>docs/metrics.md</code>.
+			</p>
+
+			<section class="card">
+				<h2>Totals</h2>
+				<dl class="stat-grid">
+					for _, total := range data.Totals {
+						<div>
+							<dt>{ total.Label }</dt>
+							<dd>{ total.Value }</dd>
+						</div>
+					}
+				</dl>
+			</section>
+
+			@metricSeries("Signups", data.Signups, data.WindowDays)
+			@metricSeries("Responses", data.Responses, data.WindowDays)
+
+			<section class="card">
+				<h2>AI spend (estimated)</h2>
+				<p class="muted">{ data.BudgetNote }</p>
+				<p><strong>{ data.AICostTotal }</strong> over the last { fmt.Sprint(data.WindowDays) } days.</p>
+				@metricRows(data.AICost)
+			</section>
+		</main>
+	}
+}
+
+templ metricSeries(title string, points []MetricPoint, windowDays int) {
+	<section class="card">
+		<h2>{ title }</h2>
+		<p class="muted">Last { fmt.Sprint(windowDays) } days.</p>
+		@metricRows(points)
+	</section>
+}
+
+templ metricRows(points []MetricPoint) {
+	if len(points) == 0 {
+		<p class="muted">Nothing yet.</p>
+	} else {
+		<div class="table-scroll">
+			<table class="responses">
+				<tbody>
+					for _, point := range points {
+						<tr>
+							<td>{ point.Day }</td>
+							<td>{ point.Value }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+}

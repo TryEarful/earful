@@ -138,6 +138,15 @@ resource "google_org_policy_policy" "allow_public_iam" {
   }
 }
 
+# Calling Vertex needs no key: the service's own identity is the
+# credential, which is why ai.Vertex uses Application Default
+# Credentials and no secret exists to leak.
+resource "google_project_iam_member" "runtime_vertex" {
+  project = local.project
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.runtime.email}"
+}
+
 # The identity Cloud Scheduler uses to start the nightly purge. It can
 # start that one job and do nothing else.
 resource "google_service_account" "purge_scheduler" {
@@ -163,12 +172,21 @@ module "app" {
 
   env = merge(
     {
-      APP_ENV             = "production"
-      BASE_URL            = local.base_url
-      EMAIL_SENDER        = var.email_sender
-      EMAIL_FROM          = "hello@mail.tryearful.com"
-      AI_PROVIDER         = "none" # Vertex arrives with M6-T1's cloud half
-      TRANSCRIBE_PROVIDER = "none"
+      APP_ENV      = "production"
+      BASE_URL     = local.base_url
+      EMAIL_SENDER = var.email_sender
+      EMAIL_FROM   = "hello@mail.tryearful.com"
+      # AI is configuration, not code: pointing these at Vertex is all
+      # that switches transcription, question generation, insights and
+      # translation on. Left at "none" until the models below are
+      # confirmed against the live publisher list — an unconfigured
+      # capability is an absent feature, never a broken button.
+      AI_PROVIDER         = var.ai_provider
+      TRANSCRIBE_PROVIDER = var.transcribe_provider
+      VERTEX_PROJECT      = local.project
+      VERTEX_LOCATION     = local.region
+      AI_MODEL            = var.ai_model
+      AI_MODEL_ANALYZE    = var.ai_model_analyze
       LOG_LEVEL           = "info"
       # M12: production is invite-only — one-shot codes create accounts,
       # email+password signs in, zero emails sent. Staging deliberately

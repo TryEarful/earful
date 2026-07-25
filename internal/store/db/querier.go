@@ -142,6 +142,18 @@ type Querier interface {
 	// not that one survey's invite failed.
 	MarkParticipantEmailBounced(ctx context.Context, arg MarkParticipantEmailBouncedParams) error
 	MarkParticipantSubmitted(ctx context.Context, arg MarkParticipantSubmittedParams) error
+	MetricAICostByDay(ctx context.Context, day time.Time) ([]MetricAICostByDayRow, error)
+	// Starts and completions across every survey, from the unlinked
+	// counters (ADR-0009) — never from anything joined to a response.
+	MetricCompletionRates(ctx context.Context) (MetricCompletionRatesRow, error)
+	MetricResponsesByDay(ctx context.Context, submittedAt time.Time) ([]MetricResponsesByDayRow, error)
+	MetricSignupsByDay(ctx context.Context, createdAt time.Time) ([]MetricSignupsByDayRow, error)
+	// M9-T7: founder metrics, from our own database.
+	//
+	// Nothing here is added to a respondent page and no third-party
+	// analytics exists to add (ADR-0006). These are counts of the product's
+	// own objects, read by a super admin.
+	MetricTotals(ctx context.Context) (MetricTotalsRow, error)
 	NextVersionNumber(ctx context.Context, surveyID uuid.UUID) (int32, error)
 	// Who still needs an invite: never invited, not bounced, not suppressed.
 	PendingInvites(ctx context.Context, arg PendingInvitesParams) ([]Participant, error)
