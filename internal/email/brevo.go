@@ -79,7 +79,7 @@ func (b *Brevo) Send(ctx context.Context, msg Message) error {
 	return nil
 }
 
-// brevoEvent is the slice of Brevo's webhook body we act on. Parsing is
+// brevoEvent is the slice of Brevo's webhook body acted on here. Parsing is
 // deliberately lenient: unknown fields and unknown events are ignored,
 // because the webhook must never bounce (pun intended) on a payload
 // variation.

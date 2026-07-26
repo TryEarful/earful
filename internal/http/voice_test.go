@@ -203,7 +203,7 @@ func TestVoice_IsAbsentWhenNoTranscriberIsConfigured(t *testing.T) {
 }
 
 // TestVoice_RefusesWithoutAValidRenderToken: the socket is reachable only
-// from a page we served, the same rule the form itself follows.
+// from a served page, the same rule the form itself follows.
 func TestVoice_RefusesWithoutAValidRenderToken(t *testing.T) {
 	t.Parallel()
 	fake := &ai.Fake{TranscribeScript: [][]string{{"should not happen"}}}

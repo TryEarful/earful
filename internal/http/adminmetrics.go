@@ -11,7 +11,7 @@ import (
 )
 
 // Founder metrics (M9-T7). The numbers needed to steer the product,
-// read from our own database by a super admin.
+// read from this instance's own database by a super admin.
 //
 // What makes this ADR-0006-compatible is what it is *not*: nothing is
 // added to a respondent page, no third-party analytics exists to add,

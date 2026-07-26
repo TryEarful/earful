@@ -146,15 +146,14 @@ func Load() (Config, error) {
 	return load(true)
 }
 
-// LoadJob is Load for a process that serves nothing — `migrate`, `purge`,
-// and the CLI subcommands. It skips the invariants that only protect an
-// exposed HTTP surface.
+// LoadJob is Load for a process that serves no HTTP — migrate, purge and
+// the CLI subcommands. It skips the invariants that exist only to protect
+// an exposed HTTP surface.
 //
-// The distinction earned itself during an M9-T4 drill: a purge run on
-// staging refused to start because STAGING_BASIC_AUTH was unset, which
-// is a rule about a wall in front of routes a batch job does not have.
-// Requiring a web credential to erase expired data is the kind of thing
-// that fails at 04:07 in the morning, so it is a rule about serving now.
+// Specifically, staging requires STAGING_BASIC_AUTH because every route
+// sits behind that wall. A batch job has no routes, so requiring a web
+// credential before it can erase expired data would block scheduled
+// maintenance for a reason that does not apply to it.
 func LoadJob() (Config, error) {
 	return load(false)
 }
@@ -328,25 +327,19 @@ func (c Config) validateVertex() error {
 	return nil
 }
 
-// validateScripted keeps invented content out of anything a real user can
-// reach. The scripted provider exists for local development and the
-// browser suite; a deployed environment serving it would be presenting
-// canned text as AI output.
-// validateScripted keeps invented content away from real people.
+// validateScripted keeps invented content away from real respondents.
 //
-// The scripted providers return plausible, deterministic nonsense. Served
-// to someone answering a real survey that would be a lie, so production
-// refuses them outright and always will.
+// The scripted providers return plausible, deterministic output with no
+// model behind it. Presenting that to someone answering a real survey
+// would misrepresent it as AI output, so production refuses it.
 //
-// Staging is allowed, which is a change of 2026-07-25 and worth its
-// reasoning: it has no real respondents (every route sits behind Basic
-// Auth, its data is disposable, and it is a boot invariant that it can
-// never send email), and it needs a deterministic AI backend for the
-// same reason CI does. The immediate cause was Google suspending the
-// staging project hours after Vertex was first enabled there — the
-// likeliest trigger being a browser suite feeding synthetic audio to a
-// speech model in a loop, which is a poor thing to point at a real
-// model whatever Google's classifier thought of it.
+// Development and staging may use it. Neither has real respondents —
+// staging sits entirely behind Basic Auth, holds disposable data, and
+// cannot send email by boot invariant — and both need a deterministic AI
+// backend for the same reason CI does. On staging it also keeps the
+// browser suite from sending generated audio to a hosted speech model,
+// which demonstrates nothing about transcription (see SPEC.md, Testing
+// Decisions).
 func (c Config) validateScripted(key string) error {
 	if c.Env == EnvProduction {
 		return fmt.Errorf("config: %s=scripted invents content and must never serve real respondents (APP_ENV is %q)", key, c.Env)

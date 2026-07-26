@@ -24,7 +24,8 @@ resource "google_sql_database_instance" "main" {
   name             = var.instance_name
   database_version = "POSTGRES_16"
 
-  # Belt (API-level) and suspenders (tofu-level) on pro; both off on stg.
+  # Two independent guards on pro, at the API and tofu levels; both off
+  # on stg, whose data is disposable.
   deletion_protection = var.deletion_protection
 
   settings {

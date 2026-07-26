@@ -17,7 +17,7 @@ import (
 
 // fakeVertex imitates the Vertex AI streamGenerateContent endpoint,
 // recording the path and body so the tests can assert on the wire format
-// we send — the part a live call would otherwise be the only witness to.
+// sent — the part a live call would otherwise be the only witness to.
 type vertexCall struct {
 	path        string
 	contentType string

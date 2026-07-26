@@ -131,7 +131,7 @@ func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
 				continue // audio before start: ignore rather than trust
 			}
 			if err := buf.Append(msg.Data); err != nil {
-				// The cap is reached: transcribe what we have rather than
+				// The cap is reached: transcribe what has arrived rather than
 				// throwing away what the respondent already said.
 				s.finishVoiceTake(conn, survey, buf, session, language)
 				return
@@ -161,7 +161,7 @@ func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
 }
 
 // voiceSessionAllowed applies the same gate the form itself applies: the
-// signed render timestamp proves this socket belongs to a page we served.
+// signed render timestamp proves this socket belongs to a served page.
 // A per-answer minimum fill time makes no sense here (speaking starts
 // immediately), so the token is checked for authenticity and age only.
 func (s *server) voiceSessionAllowed(conn *ws.Conn, survey store.PublicSurvey, control ws.Control) bool {

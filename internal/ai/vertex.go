@@ -17,9 +17,9 @@ import (
 )
 
 // Vertex speaks the Vertex AI REST API directly — no vendor SDK. The
-// wire format is a documented HTTP+SSE contract and we already have an
-// SSE reader, an OAuth2 token source and a JSON encoder, so the whole
-// integration is this file. That keeps PLAN.md Appendix F's
+// wire format is a documented HTTP+SSE contract, and the codebase already
+// has an SSE reader, an OAuth2 token source and a JSON encoder, so the
+// whole integration is this file. That keeps PLAN.md Appendix F's
 // minimal-dependency rule intact (one new indirect module, the GCE
 // metadata client that ADC needs) and, more importantly, keeps Vertex
 // one implementation of Provider among several rather than the shape

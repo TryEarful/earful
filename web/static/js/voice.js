@@ -7,9 +7,9 @@
 // gone — ends by saying "type your answer instead" (story 38, 39).
 //
 // Recognition happens on the device when the browser can prove it is
-// local; otherwise the audio goes to our EU transcription and is
-// discarded (ADR-0004). Non-local browser recognition is never used, so
-// nobody's voice reaches Google or Apple without being told.
+// local; otherwise the audio streams to the EU transcription service and
+// is discarded (ADR-0004). Non-local browser recognition is never used,
+// so no voice reaches a third-party recogniser undisclosed.
 //
 // Capture is 16 kHz mono PCM via an AudioWorklet, not MediaRecorder: the
 // server passes the samples straight to whisper.cpp or Vertex without a
@@ -35,9 +35,9 @@
     var Recognition = win.SpeechRecognition || win.webkitSpeechRecognition;
     if (!Recognition) return { available: false, reason: "no-api" };
     // On-device availability is a newer, separate capability. Without a
-    // way to *prove* the audio stays on the device, we treat browser
-    // recognition as unavailable rather than risk sending a respondent's
-    // voice to a third party (ADR-0004).
+    // way to prove the audio stays on the device, browser recognition is
+    // treated as unavailable rather than risk sending a respondent's voice
+    // to a third party (ADR-0004).
     if (typeof Recognition.available !== "function") {
       return { available: false, reason: "no-locality-guarantee" };
     }
@@ -140,7 +140,7 @@
       say("Starting…");
       // On-device first, when the browser can prove it (ADR-0004): the
       // respondent's voice then never leaves their machine at all.
-      // Otherwise the audio streams to our EU transcription.
+      // Otherwise the audio streams to the EU transcription service.
       chooseEngine()
         .then(function (engine) {
           if (engine === "local") {
@@ -235,7 +235,7 @@
       try {
         window.localStorage.setItem(CONSENT_KEY, "yes");
       } catch (err) {
-        // Fine: we simply ask again next time.
+        // Harmless: consent is simply requested again next time.
       }
       close();
       proceed();
@@ -246,8 +246,8 @@
 
   // chooseEngine asks the browser whether it can recognise this language
   // on the device, and believes only a definite yes. "downloadable" is a
-  // no: the model is not there, and we will not stall a respondent
-  // waiting for a download.
+  // no: the model is absent, and a respondent is never made to wait for
+  // a download.
   function chooseEngine() {
     if (!localRecognition.available) return Promise.resolve("server");
     // Headless Chromium crashes its own renderer inside the availability

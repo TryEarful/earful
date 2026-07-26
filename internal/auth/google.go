@@ -19,7 +19,7 @@ type GoogleOIDC struct {
 }
 
 // ErrEmailUnverified rejects Google accounts whose email Google has not
-// verified — we must not attach such an email to a user row.
+// verified, so such an email must never be attached to a user row.
 var ErrEmailUnverified = errors.New("auth: google email not verified")
 
 func NewGoogleOIDC(ctx context.Context, issuer, clientID, clientSecret, redirectURL string) (*GoogleOIDC, error) {
@@ -39,7 +39,7 @@ func NewGoogleOIDC(ctx context.Context, issuer, clientID, clientSecret, redirect
 	}, nil
 }
 
-// AuthCodeURL builds the provider redirect carrying our anti-CSRF state
+// AuthCodeURL builds the provider redirect carrying the anti-CSRF state
 // and the nonce that must round-trip into the ID token.
 func (g *GoogleOIDC) AuthCodeURL(state, nonce string) string {
 	return g.oauth.AuthCodeURL(state, oidc.Nonce(nonce))

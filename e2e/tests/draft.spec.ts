@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { createPublishedSurvey, fakeMicrophone, minFillWait, offersVoice, scriptedVoice } from "./helpers";
 
-// Draft answers surviving a reload (SPEC.md story 79, M4-T8). Found by
-// dogfooding the live product: a respondent part-way through who
-// refreshes loses everything, which is worst for exactly the long spoken
-// answers this product exists to collect.
+// Draft answers surviving a reload (SPEC.md story 79, M4-T8). Without a
+// draft, a respondent who reloads part-way through loses every answer
+// entered so far — most costly for long dictated answers, which are this
+// product's primary answer type.
 //
-// The draft lives in the browser and nowhere else, so these tests assert
-// both halves of that: the answers come back, and nothing that must not
-// be stored is stored.
+// The draft is held in the browser and nowhere else, so these tests
+// assert both halves of that: the answers return after a reload, and
+// nothing that must not be persisted is.
 
 test("answers and position survive a reload, and clear on submit", async ({ page, browser }) => {
   const share = await createPublishedSurvey(page, `E2E draft ${Date.now()}`);
@@ -35,8 +35,9 @@ test("answers and position survive a reload, and clear on submit", async ({ page
   await respondent.getByRole("button", { name: "Submit answers" }).click();
   await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible();
 
-  // Submitted is the moment the draft has done its job. An unsent answer
-  // left behind is just somebody's words sitting on a borrowed computer.
+  // Submission is the point at which the draft has served its purpose. An
+  // unsubmitted answer left in storage is readable by the next person to
+  // use a shared device.
   const leftover = await respondent.evaluate(() =>
     Object.keys(window.localStorage).filter((k) => k.startsWith("earful.draft."))
   );
@@ -71,10 +72,10 @@ test("the draft never holds a security field", async ({ page, browser }) => {
   await context.close();
 });
 
-// The answer this feature exists for. Setting field.value from script
-// fires no input event, so a transcript would have been the one kind of
-// answer the draft silently missed — and it is the most expensive to
-// lose and the last anyone wants to repeat.
+// Dictated answers are the case this feature matters most for, and the
+// one most easily missed: assigning field.value from script fires no
+// input event, so without an explicit dispatch the draft never sees a
+// transcript.
 test("a spoken answer is kept across a reload too", async ({ page, browser }) => {
   test.skip(
     !scriptedVoice,

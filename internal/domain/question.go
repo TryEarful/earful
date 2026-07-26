@@ -133,7 +133,7 @@ type Question struct {
 	// IdentityID is the Question Identity (ADR-0001): minted when the
 	// question first appears in a draft and preserved through every
 	// rewording, so results aggregate across versions.
-	IdentityID string `json:"identity_id"`
+	IdentityID string       `json:"identity_id"`
 	Type       QuestionType `json:"type"`
 	Text       string       `json:"text"`
 	Options    []string     `json:"options,omitempty"`

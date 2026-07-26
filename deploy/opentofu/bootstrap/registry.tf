@@ -29,19 +29,17 @@ resource "google_artifact_registry_repository" "earful" {
   depends_on = [google_project_service.apis]
 }
 
-# The identity that builds and pushes images, in ops rather than in an
-# environment project.
+# The identity that builds and pushes images. It lives in ops, alongside
+# the registry, rather than in an environment project.
 #
-# It used to be staging's deploy account, on the reasoning that staging
-# is what builds. That coupling cost us on 2026-07-25: Google suspended
-# the staging project, its service accounts went with it, and the
-# pipeline could no longer build an image for ANY environment — including
-# the production hotfix path, which otherwise shares nothing with
-# staging. Building belongs to the registry's own project, which is the
-# one place every environment already depends on.
+# Using an environment's deploy account for builds couples every
+# environment's pipeline to that one environment: if it becomes
+# unavailable, its service accounts go with it and no image can be built
+# for any target, including a production hotfix. The registry's own
+# project is the single dependency every environment already has.
 #
-# It can push images and do nothing else: no deploy rights, no logs, no
-# access to any environment.
+# This account can push images and nothing else: no deploy permissions,
+# no log access, no access to any environment project.
 resource "google_service_account" "image_builder" {
   project      = google_project.ops.project_id
   account_id   = "github-builder"

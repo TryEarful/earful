@@ -1,8 +1,8 @@
 # The tryearful.com zone. CRITICAL: this domain already serves the
-# marketing site (GitHub Pages, apex + www) and the founder's mailbox
-# (Google Workspace MX + DKIM). Every live record was dug on 2026-07-24
-# and is replicated below byte-for-byte, so the nameserver flip at the
-# registrar (Gandi) is invisible to both. Do not prune anything here
+# marketing site (GitHub Pages, apex + www) and the operator's mailbox
+# (Google Workspace MX + DKIM). Every live record was captured with dig
+# from the registrar's zone and is replicated below byte-for-byte, so the
+# nameserver change at the registrar (Gandi) is invisible to both. Do not prune anything here
 # without re-running the pre-cutover dig-diff gate in the README.
 #
 # Deliberate change vs the old zone: app.tryearful.com's A record
@@ -83,7 +83,7 @@ resource "google_dns_record_set" "apex_txt" {
   type         = "TXT"
   ttl          = 3600
   rrdatas = [
-    # Original token (predates us — Workspace-era, owner unknown) kept
+    # Original token (pre-dates this configuration; Workspace-era) kept
     # alongside santiago@'s 2026-07-24 Search Console token: multiple
     # verification TXTs coexist fine, and Cloud Run domain mappings need
     # the applying account itself to be a verified owner.

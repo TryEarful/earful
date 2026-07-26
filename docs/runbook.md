@@ -251,46 +251,46 @@ to zero or unlinks billing; until then this is a manual procedure:
    `gcloud billing projects unlink <project>` (breaks the environment;
    backups project's locked bucket is unaffected).
 
-## Project suspended by Google
+## Project suspended by the cloud provider
 
 Symptom: every API call for one project fails with
 `Consumer 'projects/<id>' has been suspended`, and its Cloud Run URLs
 return the front end's own "Error: Page not found" — the service is not
-down, it is unreachable. `gcloud projects describe` still says ACTIVE and
-billing still says enabled: suspension is a separate, service-level
-state, so neither of those rules it out.
+down, it is unreachable. Note that `gcloud projects describe` still
+reports ACTIVE and billing still reports enabled: suspension is a
+separate, service-level state, so neither of the two things an operator
+checks first will reveal it.
 
-Happened 2026-07-25 to staging alone, mid-deploy, an hour after Vertex
-AI was first enabled there.
-
-1. **Establish the blast radius before anything else** — suspension is
-   per project, and ours are separate on purpose:
+1. **Establish the blast radius before anything else.** Suspension is per
+   project, and the projects are deliberately separate:
    ```
    curl -s -o /dev/null -w '%{http_code}\n' https://app.tryearful.com/health
    gcloud artifacts repositories list --project earful-ops-<sfx> --location europe-west4
    gcloud storage buckets list --project earful-backups-<sfx>
    ```
-2. **Check the notice.** Google emails the project and billing contacts
-   with the reason and an appeal link; the API error itself never carries
-   one. Nothing else will tell you why.
-3. **Appeal**, then wait. Reinstatement is not something an operator can
-   force from the command line.
-4. **Know what is blocked.** Staging is the promotion gate, so
-   `deploy-stg` and `smoke-stg` both fail and no tag can reach
-   production — by design. Production keeps serving its current revision
-   throughout; it shares nothing with staging but the Artifact Registry
-   in ops.
+2. **Read the notice.** The provider emails the project and billing
+   contacts with the reason and an appeal link. The API error carries no
+   reason, and nothing else will supply one.
+3. **Appeal, then wait.** Reinstatement cannot be forced from the command
+   line.
+4. **Know what is blocked.** If staging is suspended, `deploy-stg` and
+   `smoke-stg` fail and no tag can reach production, by design: the
+   promotion gate runs there. Production continues serving its current
+   revision, sharing only the Artifact Registry in ops. Administrative
+   access from datacenter or VPN address ranges is one input to provider
+   abuse heuristics; administer projects from a stable, ordinary
+   connection.
 5. **Do not work around it by deploying production directly** unless the
    change is urgent enough to justify shipping ungated, and say so out
    loud when you do.
 
 ### Rebuilding staging from scratch
 
-Only after an appeal has failed or stalled. Replacing a suspended
-project can read as circumvention, and enforcement escalates to the
-**billing account and organisation** — which production shares. That
-asymmetry is the whole argument: staging is disposable, the thing it
-would take down with it is not.
+Only after an appeal has failed or stalled. Creating a replacement for a
+suspended project may be treated as circumvention, and enforcement can
+escalate to the **billing account and organisation**, both of which
+production shares. Staging is disposable; what a wider enforcement action
+would take with it is not.
 
 The staging project id carries its own `stg_suffix` so this does not
 disturb ops, pro or backups:

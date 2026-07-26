@@ -362,7 +362,7 @@ func (s Subject) Found() bool {
 }
 
 // PreviewSubject reports what EraseSubject would remove. It is
-// deliberately a separate read: "show me, then I'll confirm" is the only
+// deliberately a separate read: preview, then confirm, is the only
 // safe shape for an irreversible action taken on someone else's behalf.
 func PreviewSubject(ctx context.Context, pool *pgxpool.Pool, email string) (Subject, error) {
 	subject := Subject{Email: email}

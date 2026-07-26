@@ -25,8 +25,8 @@ type Draft struct {
 const maxQuestionsPerSurvey = 100
 
 var (
-	ErrDraftEmpty    = errors.New("add at least one question before publishing")
-	ErrDraftTooLong  = fmt.Errorf("a survey can hold at most %d questions", maxQuestionsPerSurvey)
+	ErrDraftEmpty      = errors.New("add at least one question before publishing")
+	ErrDraftTooLong    = fmt.Errorf("a survey can hold at most %d questions", maxQuestionsPerSurvey)
 	ErrQuestionUnknown = errors.New("that question is not part of this draft")
 )
 

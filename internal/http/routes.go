@@ -78,7 +78,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /admin/beta-codes", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminBetaCodesPage))))
 	mux.Handle("POST /admin/beta-codes", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminBetaCodesMint)))))
 	mux.Handle("POST /admin/beta-codes/revoke", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminBetaCodesRevoke)))))
-	// Founder metrics (M9-T7): our own numbers, super-admin only.
+	// Founder metrics (M9-T7): first-party numbers, super-admin only.
 	mux.Handle("GET /admin/metrics", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminMetricsPage))))
 	// Erasure fast-path (M8-T3): look up, then confirm.
 	mux.Handle("GET /admin/erasure", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminErasurePage))))

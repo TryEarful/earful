@@ -10,33 +10,22 @@ implementation: "Every milestone complete except M9's launch acts: M0–M8, M10,
 ## Implementation status
 
 Granular, per-ticket status lives in [PLAN.md](PLAN.md)'s Status section —
-this is the single source of truth, kept aligned with this doc as work
-lands. As of 2026-07-25, **every milestone is complete except the launch
-itself**:
+this is the single source of truth, kept aligned with this document as
+work lands. **Every milestone is complete except the launch itself:**
 
-- **Shipped and live** (through 2026-07-24): M0 foundations, M1 cloud +
-  deploy pipeline, M2 auth and workspaces, M3 survey building, M4
-  answering (anonymous and invited, live Brevo included), M6-T1/T2 (the
-  AI seam and its spend guards), M12's private-beta gate. `v0.1.0` runs
-  on production; staging is Basic-Auth-gated and gates promotion with the
-  full browser suite.
-- **Shipped 2026-07-25, not yet deployed**: M5 voice (transcript-only,
-  ADR-0004), M6-T3 AI question generation, M7 results/exports/stats,
-  M8 data lifecycle and trust, M10 Insight Summaries, M11 localization
-  and answer translation, plus M9-T7 founder metrics and most of M9-T3's
-  security pass. Every numbered story below carries a `[tested]` link.
-- **Open**: M9-T3's rate-limit soak (needs a deployed instance;
-  `tools/soak` is written), M9-T4's remaining runbook drills, and M9-T5,
-  the launch itself — DNS is already cut over, so what remains is the
-  homepage copy fix in the other repo, a dogfood survey answered by voice
-  on a phone, and the announcement. M12 retires at that point.
-
-Two things found while building, both fixed and worth knowing: published
-rating scales had been losing their bounds since M3 (every published
-rating question rendered a single radio labelled "0" — preview read the
-draft, which is why it shipped), and the request logger's
-`ResponseWriter` wrapper hid `http.Hijacker`, so every WebSocket upgrade
-would have failed with a puzzling 501.
+- **Implemented and deployed**: M0 foundations, M1 cloud and deploy
+  pipeline, M2 auth and workspaces, M3 survey building, M4 answering
+  (anonymous and invited, including live email delivery), M5 voice
+  (transcript-only, ADR-0004), M6 AI question generation, M7
+  results/exports/stats, M8 data lifecycle and trust, M10 Insight
+  Summaries, M11 localization and answer translation, M12's private-beta
+  gate, and M9-T7 founder metrics. Every numbered story below carries a
+  `[tested]` link.
+- **Open**: M9-T3's rate-limit soak, which requires a deployed instance
+  that may be load-tested (`tools/soak` is written), and M9-T5, the
+  launch itself: the homepage copy fix in the marketing repository, a
+  feedback survey answered by voice on a phone, and the announcement.
+  M12 retires at that point.
 
 Execution order in practice: M0 → M2 → M3 → M4 → M6-T1/T2 → M1+M9 (cloud)
 → M12 → M5 → M6-T3 → M7 → M8 → M10 → M11 → M9-T5 (launch).
@@ -174,13 +163,13 @@ AND the credential. This whole section retires at public launch (M9-T5).
 77. As the founder, I want account creation gated by one-shot secret invite codes from a list I control — minted by CLI or from an admin page only super admins can even see, labeled, revocable, and marked used the moment they create an account — so that only people I've invited can enter the private beta. [tested](internal/http/beta_test.go)
 78. As a private-beta user, I want to create my account with an invite code and a password, sign in with email+password from then on, and change my email later (re-proving my password), with no email ever sent, so that I can use Earful before the email infrastructure exists. [tested](internal/http/beta_test.go)
 
-### Draft answers survive a refresh (added 2026-07-25, post-MVP)
+### Draft answers survive a refresh (post-MVP)
 
-Found by dogfooding the live product: a respondent part-way through a
-survey who reloads — or whose phone browser evicts the tab — loses
-everything they have written. That is worst for exactly the answers this
-product exists to collect, because a spoken long-text answer is the most
-expensive thing to lose and the most annoying to repeat.
+A respondent part-way through a survey who reloads the page — or whose
+phone browser evicts the tab — loses everything entered so far. The cost
+falls hardest on the answers this product exists to collect: a long
+dictated answer is both the most expensive to lose and the most tedious
+to repeat.
 
 79. As a respondent, I want the answers I have not submitted yet to survive a page reload, so that a stray refresh, a phone switching apps, or a tab restored an hour later does not cost me everything I have said.
 
@@ -189,9 +178,9 @@ storage, not on the server, and that is a product decision rather than a
 convenience: a server-side draft would need something to key it by, and
 for an anonymous respondent the only candidates are a cookie or a
 fingerprint — which is precisely the identification ADR-0003 refuses.
-Local storage keeps "we do not know who you are" true while still not
-losing anyone's work, and adds nothing to `/trust`'s processor table
-because no processor is involved.
+Local storage preserves the work without identifying the respondent, and
+adds nothing to the processor table on `/trust` because no processor is
+involved.
 
 Consequences that make it honest rather than merely convenient:
 
@@ -203,20 +192,20 @@ Consequences that make it honest rather than merely convenient:
 - **Never stores the security fields** — the render timestamp, the
   proof-of-work solution, the CSRF token, the honeypot. Restoring those
   would either break the anti-abuse checks or defeat them.
-- **Said plainly in the respondent disclosure**, next to what happens to
-  the answers themselves. "Your voice is never stored" is a statement
-  about our servers; a respondent on a shared device deserves to know
-  their unsent draft is on that device until they submit or a day
-  passes.
+- **Stated in the respondent disclosure**, next to what happens to the
+  answers themselves. "Your voice is never stored" is a statement about
+  the service's servers; a respondent using a shared device needs to know
+  that an unsubmitted draft remains on that device until submission or
+  expiry.
 - **An enhancement, like everything else in `web/static/js`**: with
   JavaScript off there is no draft, and the form still works.
 
-### Answering from the keyboard (added 2026-07-25, post-MVP)
+### Answering from the keyboard (post-MVP)
 
 80. As a respondent, I want to answer the whole survey from the keyboard, with the key for each answer shown next to it, so that I can move as fast as I think instead of aiming a mouse at every option.
 
-The scheme is Typeform's, because they solved this and the design has
-been proven on millions of respondents:
+The scheme follows the convention established by comparable products —
+letters for choices, digits for scales — rather than inventing one:
 
 | Where | Key | Does |
 |---|---|---|
@@ -230,26 +219,26 @@ been proven on millions of respondents:
 | Last question | `↵` (or `⌘↵` from a textarea) | Submit |
 
 **Letters for choices, digits for scales** is the load-bearing decision.
-Digits on options would collide with rating questions, where `3` already
-means "a rating of 3", and most surveys mix the two.
+Assigning digits to options would collide with rating questions, where a
+digit already names a value, and most surveys mix the two question types.
 
-**Enter stays a newline inside a textarea**, unlike Typeform. This
-product's flagship answer is a spoken paragraph somebody then edits, and
-throwing a respondent to the next question mid-thought costs more than
-the keystroke it saves. `⌘↵` is the way out without reaching for the
-mouse.
+**Enter remains a newline inside a textarea**, which departs from that
+convention. Long answers here are frequently dictated and then edited, so
+advancing on Enter would lose a respondent's place mid-paragraph;
+`Cmd/Ctrl+Enter` advances instead.
 
 Consequences:
 
-- **Hints are shown only where they can be used**: the keys need
-  JavaScript, so the hints appear only once it has upgraded the form,
-  and only on devices with a real keyboard. A hint for a key nobody can
-  press is a promise the page cannot keep.
-- **Hints are `aria-hidden`.** Without that the option's accessible name
-  becomes "B Pro", and every choice reads wrong aloud.
-- **Nothing native is replaced.** Tab, arrow keys within a radio group,
-  Space to toggle — all still work, because they are what a
-  screen-reader user already relies on.
+- **Hints appear only where they can be used**: the shortcuts require
+  JavaScript, so hints render only once it has upgraded the form, and only
+  on devices reporting a keyboard. Displaying a shortcut that cannot be
+  pressed misleads the respondent.
+- **Hints are `aria-hidden`.** Without it an option's accessible name
+  becomes "B Pro" rather than "Pro", and every choice is announced
+  incorrectly.
+- **Nothing native is replaced.** Tab, arrow keys within a radio group and
+  Space to toggle keep their behaviour, since assistive technology relies
+  on them.
 - **Dropdowns render as a lettered list** rather than a `<select>`: a
   browser draws its own option popup and there is nowhere in it to put a
   hint. The submitted field name and values are unchanged. The cost is

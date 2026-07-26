@@ -1,8 +1,9 @@
 # Security review (M9-T3)
 
-Reviewed 2026-07-25, covering everything through M11. The AC is
-"findings triaged to zero criticals"; this is that triage, plus the
-mechanisms that keep it true as the code changes.
+Covers everything through M11. The acceptance criterion is "findings
+triaged to zero criticals"; this document is that triage, together with
+the mechanisms that keep it true as the code changes. Last reviewed
+2026-07-25.
 
 ## What runs continuously
 
@@ -18,17 +19,16 @@ mechanisms that keep it true as the code changes.
 | Audio non-persistence | `internal/voice/voice_test.go` | The audio package gaining any way to write bytes anywhere (ADR-0004) |
 | No third-party origins | `internal/http/respond_test.go` | A respondent page gaining an external request (ADR-0006) |
 
-Four of those are guards written because a rule that only lives in a
-review gets broken by the next feature. Two of them have already caught
-real regressions during this milestone (the meter guard caught a
-per-batch quota check that could overshoot twentyfold; the axe gate
-caught two accessibility defects).
+Four of those exist because a rule recorded only in a review is broken by
+the next feature. Two have already caught regressions: the metered-AI
+guard caught a per-batch quota check that could overshoot by a factor of
+twenty, and the axe gate caught two accessibility defects.
 
 ## Findings
 
-**None critical.** Two were found and fixed during the rollout of
-2026-07-25; the rest are accepted risks or scheduled work, each with its
-reasoning.
+**None critical.** Two were found and fixed during the first deployment
+of this milestone; the rest are accepted risks or scheduled work, each
+with its reasoning.
 
 ### Found and fixed
 
@@ -37,20 +37,18 @@ reasoning.
    request URL — so the ESP webhook secret (`/webhooks/email/{secret}`)
    and participant invite tokens (`/p/{token}`, where the token *is* the
    credential) were written verbatim at INFO on every request. Magic
-   links were never affected because they use `?token=`, which is
-   precisely why this survived review. Fixed by redacting the credential
-   segment of the token-bearing routes; survey share links stay readable
-   because they are public by design. Confirmed in the live log sink
-   afterwards: `/exports/[REDACTED]`.
-2. **Staging's wall could not pass a WebSocket.** Chrome does not send
-   cached HTTP credentials on a handshake, so voice and streamed
-   generation got a 401 on staging for anyone — the browser suite merely
-   found it first. Fixed by issuing a cookie on the first authenticated
-   request (HttpOnly, Secure, derived from the credential so it survives
-   across Cloud Run instances, invalidated by rotation). Not a
-   confidentiality bug — the wall never let anything through it
-   shouldn't — but a wall that silently breaks one transport is a wall
-   people route around.
+   links were unaffected because they use `?token=`, which is why the gap
+   was not obvious. Fixed by redacting the credential segment of the
+   token-bearing routes; survey share links remain readable, being public
+   by design. Verified in a deployed log sink: `/exports/[REDACTED]`.
+2. **Staging's Basic Auth wall could not pass a WebSocket.** Chrome does
+   not send cached HTTP credentials on a WebSocket handshake, so voice and
+   streamed generation returned 401 on staging for any client. Fixed by
+   issuing a cookie on the first authenticated request (HttpOnly, Secure,
+   derived from the credential so it holds across instances, invalidated
+   by rotation). Not a confidentiality defect — the wall admitted nothing
+   it should have refused — but a control that silently breaks one
+   transport invites being worked around.
 
 ### Accepted, documented
 
@@ -73,29 +71,29 @@ reasoning.
    fix if that changes.
 5. **`AI_PROVIDER=scripted` invents content.** Refused at boot in
    production, so no real respondent can ever be served canned text
-   presented as AI output. Staging may use it (changed 2026-07-25): it
-   has no real respondents, and it needs a deterministic backend for the
-   same reason CI does — specifically so a browser suite with no
-   microphone is not sending synthesized audio to a real speech model.
+   presented as AI output. Staging may use it: it has no real
+   respondents, and it needs a deterministic backend for the same reason
+   CI does — in particular so that a browser suite with no microphone does
+   not send generated audio to a hosted speech model.
 
 ### Scheduled
 
 6. **Rate-limit soak against staging** (`tools/soak`). The limiter's
    logic is unit-tested and its per-request cost is trivial, but the
    AC asks for a load check against a deployed instance. The tool is
-   written and documented. Blocked as of 2026-07-25: the staging project
-   was suspended by Google mid-rollout (see the runbook), and the soak
-   deliberately does not run against production — hammering the live
-   respondent path to watch it refuse is not a thing to do to real
-   respondents.
+   written and documented. Blocked while no staging instance is
+   available. The soak deliberately does not run against production:
+   saturating the live respondent path to observe it refusing traffic
+   would degrade the service for real respondents.
 7. **Vertex terms in writing** — no-training, EU processing, abuse-log
    retention for the exact APIs used. Gap list #7; blocks nothing
    technically, and matters before the product is sold.
 8. **Dependency count.** 9 direct modules, all either stdlib-adjacent or
    single-purpose. `cloud.google.com/go/compute/metadata` and
    `github.com/coder/websocket` were added this milestone; both were
-   weighed against hand-rolling and both won on the "we would write the
-   same thing, worse" test.
+   weighed against a hand-rolled implementation, and both were retained
+   on the grounds that reimplementing them would produce something
+   equivalent but less well tested.
 
 ## Notes on the shape of the attack surface
 

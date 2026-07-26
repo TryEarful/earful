@@ -4,8 +4,8 @@
 # nameserver cutover, then flip the custom_domain variable.
 #
 # Prerequisite: the applying identity must be a verified owner of the
-# domain (the zone's google-site-verification TXT record predates us —
-# see bootstrap/dns.tf — so verification is expected to already hold).
+# domain (the zone's google-site-verification TXT record pre-dates this
+# configuration; see bootstrap/dns.tf — verification already holds).
 
 terraform {
   required_providers {

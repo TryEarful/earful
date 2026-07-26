@@ -11,19 +11,17 @@
   --danger: #c0392b;
 }
 
-/* [hidden] must beat every author rule below, or hiding an element from
-   JavaScript silently does nothing.
+/* [hidden] must outrank every author rule below it, or setting .hidden
+   from JavaScript has no visible effect.
 
-   Found in production by the founder: the respondent form sets
-   nextButton.hidden on the last question, but `button { display:
-   inline-block }` further down outranks the browser's own [hidden] rule
-   — a UA rule loses to any author rule — so Next stayed on screen and
-   did nothing when pressed. The same bug left Back visible on the first
-   question and the language picker's submit button visible with
-   JavaScript on.
+   The browser's own [hidden] rule is a user-agent rule, so any author
+   rule beats it — `button { display: inline-block }` below is enough to
+   keep a hidden button on screen. Respondent navigation depends on
+   .hidden working: the Back and Next buttons and the language picker's
+   submit button are all hidden this way.
 
-   !important is the right tool here and one of the few places it is:
-   this is a global invariant, not a local override. */
+   !important is appropriate here and in few other places: this is a
+   global invariant rather than a local override. */
 [hidden] {
   display: none !important;
 }
@@ -497,12 +495,11 @@ fieldset {
   cursor: pointer;
 }
 
-/* Key hints (story 80).
-   Hidden by default and shown only when BOTH are true: JavaScript has
-   upgraded the form (respond.js adds .paged, and the keys do not work
-   without it) and the device has a real keyboard. A hint for a key
-   nobody can press is worse than no hint — it is a promise the page
-   cannot keep. */
+/* Key hints (SPEC.md story 80).
+   Hidden by default, and shown only when two conditions hold: JavaScript
+   has upgraded the form (respond.js adds .paged, and the shortcuts do not
+   exist without it) and the device reports a keyboard. Displaying a
+   shortcut that cannot be pressed misleads the reader. */
 .key-hint {
   display: none;
   flex: none;

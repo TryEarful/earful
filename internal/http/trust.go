@@ -32,7 +32,7 @@ func (s *server) trustPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // instanceName is what a reader should call this deployment: its own
-// host, not a brand, because a self-hosted instance is not us.
+// host, not a brand: a self-hosted instance is not the SaaS.
 func instanceName(cfg config.Config) string {
 	if parsed, err := url.Parse(cfg.BaseURL); err == nil && parsed.Host != "" {
 		return parsed.Host

@@ -46,7 +46,7 @@ func (s *server) clearSessionCookie(w http.ResponseWriter) {
 }
 
 // setEphemeralCookie is for the short-lived OAuth state/nonce pair.
-// SameSite=Lax deliberately: the provider redirect back to our callback
+// SameSite=Lax deliberately: the provider redirect back to the callback
 // is a cross-site top-level GET navigation, which Lax permits.
 func (s *server) setEphemeralCookie(w http.ResponseWriter, name, value string) {
 	http.SetCookie(w, &http.Cookie{

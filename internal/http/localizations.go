@@ -37,12 +37,12 @@ func (s *server) renderLocalizations(w http.ResponseWriter, r *http.Request, err
 	}
 	render(w, r, http.StatusOK, templates.Localizations(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.LocalizationsData{
-			Survey:      viewSurvey(survey, s.clock.Now()),
-			Languages:   viewLanguages(draft),
-			Questions:   draft.Questions,
+			Survey:       viewSurvey(survey, s.clock.Now()),
+			Languages:    viewLanguages(draft),
+			Questions:    draft.Questions,
 			CanTranslate: s.canTranslate(),
-			Error:       errMsg,
-			Notice:      notice,
+			Error:        errMsg,
+			Notice:       notice,
 		}))
 }
 
@@ -238,14 +238,14 @@ func viewLanguages(draft domain.Draft) []templates.LanguageView {
 		for _, question := range draft.Questions {
 			translated := localization.Questions[question.IdentityID]
 			view.Questions = append(view.Questions, templates.LocalizedQuestionView{
-				IdentityID:  question.IdentityID,
-				SourceText:  question.Text,
-				Text:        translated.Text,
-				Options:     strings.Join(translated.Options, "\n"),
+				IdentityID:    question.IdentityID,
+				SourceText:    question.Text,
+				Text:          translated.Text,
+				Options:       strings.Join(translated.Options, "\n"),
 				SourceOptions: strings.Join(question.Options, "\n"),
 				NeedsOptions:  question.Type.NeedsOptions(),
-				Reviewed:    translated.Reviewed && translated.SourceText == question.Text,
-				Stale:       translated.Text != "" && translated.SourceText != question.Text,
+				Reviewed:      translated.Reviewed && translated.SourceText == question.Text,
+				Stale:         translated.Text != "" && translated.SourceText != question.Text,
 			})
 		}
 		out = append(out, view)
@@ -433,7 +433,7 @@ func (s *server) translateAnswers(r *http.Request, workspaceID, surveyID uuid.UU
 			}
 			if saveErr := s.surveys.SaveAnswerTranslation(r.Context(), store.AnswerTranslation{
 				AnswerID: answer.ID, Lang: lang, Text: strings.TrimSpace(out),
-				Model:    s.translateModelName(),
+				Model: s.translateModelName(),
 			}, s.clock.Now()); saveErr != nil {
 				return count, chars, saveErr
 			}

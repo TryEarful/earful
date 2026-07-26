@@ -2,6 +2,8 @@
 
 Open-source, AI-enhanced survey platform (Go + templ). Voice-first answering; trust, privacy and self-hostability are the differentiators.
 
+This file fixes the vocabulary: one term per concept, used consistently in code, UI copy and documentation. How that vocabulary should be written — the register for comments and docs — is in [CONTRIBUTING.md](CONTRIBUTING.md#comments-and-documentation).
+
 ## Language
 
 **Survey**:

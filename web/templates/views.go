@@ -322,8 +322,9 @@ type LanguageChoice struct {
 
 // --- founder metrics (M9-T7) ---------------------------------------------
 
-// MetricsData is the super-admin metrics page: our own numbers, from our
-// own database, with nothing added to a respondent page (ADR-0006).
+// MetricsData is the super-admin metrics page: first-party numbers, read
+// from this instance's own database, with nothing added to a respondent
+// page (ADR-0006).
 type MetricsData struct {
 	WindowDays  int
 	Totals      []MetricTotal

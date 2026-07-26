@@ -12,7 +12,7 @@ import (
 
 // TestGoogleLogin_FullFlow covers SPEC.md story 1: the whole
 // authorization-code dance against the fake issuer (real discovery, real
-// JWKS fetch, real RS256 verification on our side), ending signed-in with
+// JWKS fetch, real RS256 verification server-side), ending signed-in with
 // the personal workspace created.
 func TestGoogleLogin_FullFlow(t *testing.T) {
 	t.Parallel()
@@ -101,7 +101,7 @@ func TestGoogleLogin_BackfillsExistingEmailAccount(t *testing.T) {
 	}
 
 	// Same subject, email changed on Google's side: still the original
-	// account — the dashboard shows the address we know the user by.
+	// account — the dashboard shows the address the user is known by.
 	issuer.SetIdentity(sub, apptest.UniqueEmail("changed"), true)
 	client2 := app.BrowserClient(t)
 	resp, err = client2.Get(app.Server.URL + "/auth/google/start")

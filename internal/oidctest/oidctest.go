@@ -1,7 +1,7 @@
 // Package oidctest is a minimal in-process OpenID Connect issuer for
 // application-edge tests of the Google login flow. The world ends at the
 // identity provider (SPEC.md Testing Decisions), so tests swap
-// accounts.google.com for this issuer via config — everything on our side
+// accounts.google.com for this issuer via config — everything server-side
 // of the seam (go-oidc discovery, JWKS fetch, code exchange, full ID-token
 // verification) runs for real against RS256-signed tokens.
 package oidctest

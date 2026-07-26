@@ -100,7 +100,7 @@ func TestAntibot_TooFastSubmissionIsHeldBack(t *testing.T) {
 }
 
 // TestAntibot_ForgedFormTokenRejected: a submission whose timestamp is
-// missing or hand-crafted did not come from our form render.
+// missing or hand-crafted did not come from a served form render.
 func TestAntibot_ForgedFormTokenRejected(t *testing.T) {
 	t.Parallel()
 	app := apptest.New(t, apptest.Options{})

@@ -38,7 +38,7 @@ resp, _ := client.Get(app.Server.URL + "/dashboard")
 | `apptest.NewIsolatedDB(t, "purge")` | a separate database for tests that operate on the whole of it — see below |
 
 **Fakes stop at the world's edge.** `internal/oidctest` is a real OIDC
-issuer (discovery, JWKS, RS256-signed ID tokens) so everything on our side
+issuer (discovery, JWKS, RS256-signed ID tokens) so everything on this side
 of the boundary — go-oidc discovery, code exchange, full token
 verification — runs for real; only Google itself is replaced.
 
@@ -85,7 +85,7 @@ Why this rather than transaction-per-test or truncate-between-tests:
    workspaces are isolated by the same mechanism that isolates real
    customers — and a test that fails because another test's data leaked
    into it is reporting a real authorization bug, which is exactly the
-   signal we want.
+   signal the suite should produce.
 3. **Tests stay parallel.** `t.Parallel()` everywhere; truncation would
    force serialization.
 
@@ -181,17 +181,14 @@ under test, not a concession: an absent capability is an absent feature
 questions by hand, and a respondent page with no mic must still take a
 typed answer.
 
-**A rule with a scar behind it: automated tests never send audio to a
-real transcription model.** The runner has no microphone, so anything it
-sends is machine-generated. That proves nothing about transcription, and
-a loop of it arriving at a hosted speech API looks like probing —
-Google suspended the staging project on 2026-07-25, hours after Vertex
-was enabled there, and a synthesized tone was the only thing in that
-window worth suspecting. `voice.spec.ts` therefore **skips itself**
-unless the transcriber is scripted; the rule is enforced, not
-remembered. Real transcription is checked by `internal/ai`'s opt-in
-integration test with real recorded speech, and by a person speaking
-into a microphone.
+**Automated tests never send audio to a hosted transcription model.** A
+test runner has no microphone, so anything it sends is machine-generated:
+it demonstrates nothing about transcription, it costs money, and a stream
+of it arriving at a speech API resembles probing rather than use.
+`voice.spec.ts` therefore **skips itself** unless the transcriber is the
+scripted provider, so the rule is enforced rather than remembered. Real
+transcription is verified by `internal/ai`'s opt-in integration test
+using recorded speech, and by a person speaking into a microphone.
 
 `E2E_AI_MODE` says what is behind the seam, and `E2E_VOICE_MODE` says it
 for transcription specifically — the two need not agree, and on staging
@@ -392,12 +389,11 @@ Three integration tests are opt-in, and each is the only witness that a
 wire format matches reality:
 
 **Use `testdata/jfk.wav` as the audio, never a generated file.** It is
-eleven seconds of real recorded speech (public domain — see
-`testdata/README.md`). Synthesizing audio with `say` or a tone
-generator, which this file used to suggest, sends machine-generated
-sound to a hosted speech API; it demonstrates nothing about
-transcription and it is the likeliest reason our staging project was
-suspended on 2026-07-25.
+eleven seconds of recorded speech in the public domain (see
+`testdata/README.md`). Audio synthesized with `say` or a tone generator
+demonstrates nothing about
+transcription, and sending generated audio to a hosted speech API
+resembles probing rather than use.
 
 ```sh
 # Vertex, against the real API with your own ADC (M6-T1). Last run
@@ -479,7 +475,7 @@ Infrastructure and behaviour covered so far:
 deliberate and narrow: ADR-0001's immutability and ADR-0003's fixed
 anonymity are enforced by database triggers precisely so they hold against
 paths the application does not offer — a future admin script, a migration,
-a psql session. A test restricted to our own routes could only show that
-no handler performs the mutation, not that the mutation is impossible,
-which is the actual guarantee. Every other test stays at the application
+a psql session. A test restricted to the application's own routes could
+only show that no handler performs the mutation, not that the mutation is
+impossible, which is the actual guarantee. Every other test stays at the application
 edge.

@@ -23,7 +23,7 @@ provider "google" {
 # Billing budgets and Cloud Monitoring reject plain user credentials
 # without an explicit quota project. Only the budget/channel resources use
 # this alias — everything else (including creating the ops project this
-# names) uses the default provider, or we'd have a cycle. The ID is
+# names) uses the default provider, which avoids a dependency cycle. The ID is
 # spelled out rather than referencing google_project.ops for the same
 # reason.
 provider "google" {
@@ -47,11 +47,10 @@ locals {
         "dns.googleapis.com",
         "iam.googleapis.com",
         "iamcredentials.googleapis.com",
-        # Reading logs here needs the API enabled on the consumer, and it
-        # was not — which is how, on the night both environments were
-        # suspended, ops turned out to be the one healthy project whose
-        # audit trail we could not query. Admin Activity logs are written
-        # regardless; this is about being able to get at them.
+        # Admin Activity audit logs are written regardless, but reading
+        # them through the Logging API requires it enabled on the project
+        # being read. Enabled here so the shared-infrastructure project's
+        # audit trail is queryable.
         "logging.googleapis.com",
         "monitoring.googleapis.com",
         "serviceusage.googleapis.com",
@@ -61,11 +60,11 @@ locals {
     }
     stg = {
       # Staging carries its own suffix so it can be rebuilt without
-      # touching the other three. A project can be lost for reasons that
-      # have nothing to do with its contents — ours was suspended by
-      # Google on 2026-07-25 — and staging is the one that is meant to be
-      # disposable. Set stg_suffix to a fresh value, apply, and rewire;
-      # everything else keeps its id. See the runbook.
+      # recreating the other three projects, which share var.suffix.
+      # Staging is the disposable environment, and a project can become
+      # unusable for reasons unrelated to its contents. Set stg_suffix to
+      # a fresh value, apply, and rewire the pipeline; every other project
+      # id is unchanged. Procedure: docs/runbook.md.
       id   = "earful-stg-${coalesce(var.stg_suffix, var.suffix)}"
       name = "Earful staging"
       apis = local.env_apis

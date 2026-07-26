@@ -87,24 +87,24 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
 // fakeMicrophone gives a context a capture device that plays real
 // recorded speech (testdata/jfk.wav) as a MediaStream.
 //
-// It replaced Chromium's --use-fake-device-for-media-capture, which is a
-// no-op in Chrome 149: enumerateDevices shows only real hardware with
-// the flag set, so the suite was quietly recording from the developer's
-// actual microphone on a laptop, and failing with NotFoundError on CI
-// runners, which have no audio device at all. A stream built in the page
-// needs no hardware, behaves the same on every machine, and stops the
-// test suite opening anybody's mic.
+// Chromium's --use-fake-device-for-media-capture is not used because it
+// is a no-op in Chrome 149: with the flag set, enumerateDevices reports
+// only real hardware. That means the suite would record from whatever
+// microphone the machine has, and fail with NotFoundError on CI runners,
+// which have no audio device. A stream constructed in the page needs no
+// hardware, behaves identically everywhere, and never opens a real
+// microphone.
 //
 // It plays a recording rather than a generated tone deliberately. These
-// tests only ever run against the scripted provider, which ignores the
-// audio entirely — but the moment a synthesized signal exists in the
-// suite, someone eventually points it at a real model, and that is what
-// cost us an environment. There is no synthesized audio here to point.
+// tests run only against the scripted provider, which ignores the audio
+// entirely, but keeping generated audio out of the repository removes the
+// possibility of it later being pointed at a hosted speech model — where
+// it would demonstrate nothing and cost money (see SPEC.md, Testing
+// Decisions).
 //
-// Everything downstream of getUserMedia — the PCM conversion, the
-// socket, the transcript, the caps — is the code under test and is
-// untouched. What is skipped is the browser's own device plumbing, which
-// is not ours to test.
+// Everything downstream of getUserMedia — PCM conversion, the socket, the
+// transcript, the caps — is the code under test and is untouched. Only
+// the browser's own device enumeration is bypassed.
 export async function fakeMicrophone(context: BrowserContext): Promise<void> {
   const wav = readFileSync(path.join(__dirname, "..", "..", "testdata", "jfk.wav")).toString(
     "base64"
@@ -132,11 +132,11 @@ export async function fakeMicrophone(context: BrowserContext): Promise<void> {
 // --- What this instance offers -------------------------------------
 //
 // "An absent capability is an absent feature" (SPEC.md Appendix D): an
-// instance with no AI configured renders no mic, no drafting panel and
-// no insight card, and that is correct behaviour rather than a fault.
-// One suite has to gate a laptop running the scripted provider, a CI
-// compose stack, and staging running Vertex — so it asks the page what
-// is on offer and asserts accordingly, instead of assuming.
+// instance with no AI configured renders no mic, no drafting panel and no
+// insight card, which is correct behaviour rather than a fault. One suite
+// gates several configurations — a local scripted provider, the CI
+// compose stack, and a deployed instance on Vertex — so it asks the page
+// what is offered and asserts accordingly.
 //
 // The probes read server-rendered markers, not the JavaScript-built UI,
 // so they answer the same way with scripting disabled.

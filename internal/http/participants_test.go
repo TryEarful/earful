@@ -166,7 +166,7 @@ func TestParticipants_ResubmitAfterAnswerRefused(t *testing.T) {
 }
 
 // TestParticipants_InvalidTokenIs404: guessing tokens gets nothing
-// (story 45's ≥128-bit guarantee is in auth.NewToken; here we check the
+// (story 45's ≥128-bit guarantee is in auth.NewToken; this checks the
 // response gives no hints).
 func TestParticipants_InvalidTokenIs404(t *testing.T) {
 	t.Parallel()

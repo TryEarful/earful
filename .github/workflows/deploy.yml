@@ -43,12 +43,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The builder lives in ops, with the registry, not in an
-      # environment. Using staging's deploy account here — which is what
-      # this did until 2026-07-25 — meant that when Google suspended the
-      # staging project, no image could be built for ANY environment,
-      # including the production hotfix path that shares nothing else
-      # with staging.
+      # The builder identity lives in ops, alongside the registry, rather
+      # than in an environment project. Authenticating as an environment's
+      # deploy account would make every build depend on that environment
+      # being available — including a production hotfix, which otherwise
+      # shares nothing with staging.
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}

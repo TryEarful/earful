@@ -83,29 +83,30 @@
     show(current + 1);
   });
 
-  // Answering from the keyboard (SPEC.md story 80). Letters pick
-  // options, digits pick scale points, Y/N answer yes-no, Enter moves
-  // on — the scheme Typeform proved, including the reason for the
-  // split: digits belong to scales, so options get letters.
+  // Answering from the keyboard (SPEC.md story 80): letters select
+  // options, digits select scale points, Y/N answer yes-no questions,
+  // Enter advances. Options take letters because digits are reserved for
+  // rating scales, where a digit already names a value.
   //
-  // Every branch here is additive. Tab, the arrow keys inside a radio
-  // group, Space to toggle — all untouched, because they are what a
-  // screen-reader user already relies on.
+  // Every branch below is additive. Tab, the arrow keys within a radio
+  // group and Space to toggle keep their native behaviour, which is what
+  // assistive technology relies on.
   var digits = "";
   var digitTimer = null;
 
-  // On the document, not the form: after the voice consent dialog closes
-  // focus sits on <body>, and a form-scoped listener never sees the key
-  // that stops the recording. Anything focused outside the form — the
-  // language picker, the dialog's own buttons — keeps its own keyboard
-  // behaviour and is ignored here.
+  // Bound to the document rather than the form: closing the voice consent
+  // dialog leaves focus on <body>, where a form-scoped listener would not
+  // receive the key that stops recording. Controls outside the form — the
+  // language picker, the dialog's own buttons — keep their own keyboard
+  // behaviour and are ignored.
   document.addEventListener("keydown", function (event) {
     var target = event.target;
     if (target !== document.body && !form.contains(target)) return;
 
     if (event.altKey || event.metaKey || event.ctrlKey) {
-      // ⌘↵ / Ctrl↵ is the way out of a textarea without a mouse. On the
-      // last question it falls through to the browser and submits.
+      // Cmd/Ctrl+Enter advances from a textarea, where plain Enter is a
+      // newline. On the last question it falls through to the browser,
+      // which submits the form.
       if (event.key === "Enter" && current < questions.length - 1) {
         event.preventDefault();
         show(current + 1);
@@ -116,10 +117,10 @@
     var typing = isTextField(event.target);
 
     if (event.key === "Enter") {
-      // Inside a textarea Enter and ⇧↵ stay newlines: this product's
-      // flagship answer is a spoken paragraph somebody then edits, and
-      // being thrown to the next question mid-thought is worse than a
-      // saved keystroke.
+      // Enter and Shift+Enter remain newlines inside a textarea. Long
+      // answers are frequently dictated and then edited, so advancing
+      // mid-paragraph would cost the respondent more than the keystroke
+      // saves.
       if (event.target.tagName === "TEXTAREA") return;
       if (event.shiftKey) {
         if (current > 0) {
@@ -135,10 +136,10 @@
       return;
     }
 
-    // Shift+Space starts and stops recording. It is the one key that
-    // overrides typing — in a textarea it would insert a space — and it
-    // costs nothing, because plain Space still types one and voice is
-    // only ever offered on text questions.
+    // Shift+Space starts and stops recording. It is the only shortcut
+    // that overrides typing, since in a text field it would otherwise
+    // insert a space; plain Space still does, and voice is offered only
+    // on text questions.
     if (event.shiftKey && event.key === " ") {
       var mic = questions[current].querySelector(".voice-button");
       if (mic) {
@@ -206,9 +207,9 @@
     focusFirstControl(questions[index]);
   }
 
-  // The nav buttons are built here, so their hints are too. Same
-  // aria-hidden rule as the template's: the button is named "Next", not
-  // "Next ↵".
+  // Navigation buttons are built here, so their key hints are too. As in
+  // the template, the hint is aria-hidden: the button's accessible name
+  // must remain "Next", not "Next ↵".
   function addKeyHint(button, key) {
     var hint = document.createElement("span");
     hint.className = "key-hint";
@@ -236,10 +237,9 @@
 // Draft answers that survive a reload (SPEC.md story 79, M4-T8).
 //
 // Kept in this browser and nowhere else. A server-side draft would need
-// something to key it by, and for an anonymous respondent the only
-// candidates are a cookie or a fingerprint — the identification ADR-0003
-// exists to refuse. So the work is never lost and we still do not learn
-// who anybody is.
+// a key, and for an anonymous respondent the only available keys are a
+// cookie or a fingerprint — the identification ADR-0003 refuses. Local
+// storage preserves the work without identifying the respondent.
 //
 // Returns null when there is nothing to store into (private browsing
 // throws on access in some browsers), and the form simply behaves as it
@@ -266,10 +266,10 @@ function attachDraft(form) {
     return null; // private mode, storage disabled, quota — all fine
   }
 
-  // Never persisted, and never restored. The render timestamp and the
-  // proof-of-work solution belong to THIS page load; restoring a stale
-  // one would either fail the anti-abuse checks or weaken them. The
-  // honeypot must stay empty, and the CSRF token is not ours to cache.
+  // Never persisted and never restored. The render timestamp and the
+  // proof-of-work solution belong to a single page load, so a stale one
+  // would either fail the anti-abuse checks or weaken them; the honeypot
+  // must stay empty; the CSRF token is not the draft's to cache.
   var SKIP = ["version_id", "form_ts", "form_nonce", "altcha", "_csrf"];
 
   function answerable(field) {
@@ -344,9 +344,9 @@ function attachDraft(form) {
 
   form.addEventListener("input", save);
   form.addEventListener("change", save);
-  // Submitting is the moment the draft has done its job. Clearing it
-  // matters most on a shared device: an unsent answer left in storage is
-  // just somebody's words sitting on a computer they borrowed.
+  // Submission is the point at which the draft has served its purpose.
+  // Clearing it matters most on a shared device, where an unsubmitted
+  // answer left in storage is readable by the next person to use it.
   form.addEventListener("submit", function () {
     try {
       store.removeItem(key);

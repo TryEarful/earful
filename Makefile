@@ -57,6 +57,11 @@ build:
 	CGO_ENABLED=0 go build -o bin/earful ./cmd/earful
 
 check: tools generate-check
+	@unformatted=$$(gofmt -l $$(git ls-files '*.go' | grep -v '_templ.go')); \
+	  if [ -n "$$unformatted" ]; then \
+	    echo "gofmt: these files are not formatted:"; echo "$$unformatted"; \
+	    echo "run: gofmt -w <file>"; exit 1; \
+	  fi
 	go vet ./...
 	staticcheck ./...
 	govulncheck ./...

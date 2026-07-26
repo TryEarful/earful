@@ -4,12 +4,11 @@ import { fakeMicrophone, minFillWait, offersVoice, scriptedVoice } from "./helpe
 
 // Answering from the keyboard (SPEC.md story 80, M4-T9).
 //
-// The scheme is Typeform's: letters on choices, digits reserved for
-// scales, Y/N on yes-no, Enter to move on. These tests are the proof
-// that a respondent never has to reach for the mouse — and that the
-// hints they read are accurate, which matters more than the keys
-// working, because a wrong hint sends someone somewhere they did not
-// intend.
+// Letters select choices, digits are reserved for rating scales, Y/N
+// answers yes-no questions, Enter advances. These tests assert both that
+// a respondent never needs the mouse and that the hints on screen are
+// accurate — an incorrect hint is worse than none, since it sends the
+// respondent somewhere unintended.
 
 // A survey with one of each keyed question type, built through the UI.
 async function keyedSurvey(page: Page, title: string): Promise<string> {
@@ -117,8 +116,9 @@ test("typing is never swallowed by the key layer", async ({ page, browser }) => 
   await expect(answer).toHaveValue("Plan b, and 10 out of 10 for yes");
   await expect(respondent.locator(".respond-progress")).toHaveText("Question 1 of 2");
 
-  // Enter in a textarea stays a newline — this product's flagship answer
-  // is a spoken paragraph somebody then edits.
+  // Enter remains a newline in a textarea: long answers are frequently
+  // dictated and then edited, so advancing mid-paragraph would lose the
+  // respondent's place.
   await respondent.keyboard.press("Enter");
   await respondent.keyboard.type("second line");
   await expect(answer).toHaveValue(/\nsecond line$/);
@@ -147,9 +147,9 @@ test("hints are visual only, and the page stays axe-clean", async ({ page, brows
   await expect(respondent.getByRole("radio", { name: "B Pro", exact: true })).toHaveCount(0);
   await expect(respondent.locator(".key-hint").first()).toHaveAttribute("aria-hidden", "true");
 
-  // Shown only where there is a keyboard to press. A hint for a key
-  // nobody can reach is a promise the page cannot keep, so on a phone it
-  // must be absent rather than merely small.
+  // Shown only where a keyboard exists. Displaying a shortcut that cannot
+  // be pressed misleads the reader, so on a touch device the hint must be
+  // absent rather than merely small.
   const hasKeyboard = await respondent.evaluate(
     () => matchMedia("(hover: hover) and (pointer: fine)").matches
   );

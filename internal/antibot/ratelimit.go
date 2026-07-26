@@ -30,8 +30,9 @@ type bucket struct {
 }
 
 // maxBuckets bounds memory: when exceeded, expired buckets are swept; if
-// everything is live we still insert (correctness beats the bound — the
-// window is short, so the map cannot grow unbounded in practice).
+// everything is live the insert still happens: correctness beats the
+// bound, and the window is short enough that the map cannot grow
+// unbounded in practice.
 const maxBuckets = 100_000
 
 func NewLimiter(limit int, window time.Duration, c clock.Clock) *Limiter {

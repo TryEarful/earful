@@ -17,7 +17,7 @@
 # cannot read, list, overwrite, or delete anything.
 #
 # No versioning: GCS refuses versioning+retention together (and retention
-# is the guarantee we want). stg is deliberately not exported (cost; its
+# is the guarantee required). stg is deliberately not exported (cost; its
 # data is disposable).
 
 terraform {
@@ -58,16 +58,17 @@ resource "google_storage_bucket" "exports" {
 
 # --- write path: the INSTANCE's own service account ---
 #
-# Two hard-won facts (2026-07-24). First, the grant target: each Cloud
+# Two constraints, both established by the export API's behaviour rather
+# than by its documentation. First, the grant target: each Cloud
 # SQL instance has its own service account (serviceAccountEmailAddress);
 # binding the project-level Cloud SQL service agent instead yields the
 # export API's misleading 412 "does not have the required permissions
 # for the bucket". Second, a deliberate deviation from ADR-0008's
 # create-only role: the export API documents objectAdmin, and narrower
 # grants were refused. This does NOT weaken the guarantee — once
-# lock_retention flips, GCS refuses deletes/overwrites of young objects
-# regardless of IAM; the LOCKED retention policy is, and always was, the
-# actual immutability mechanism. The owner-cannot-delete AC is unchanged.
+# lock_retention flips, GCS refuses deletes and overwrites of young
+# objects regardless of IAM; the LOCKED retention policy is the actual
+# immutability mechanism. The owner-cannot-delete AC is unchanged.
 resource "google_storage_bucket_iam_member" "sql_instance_writes" {
   bucket = google_storage_bucket.exports.name
   role   = "roles/storage.objectAdmin"

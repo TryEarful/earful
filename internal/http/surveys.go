@@ -283,9 +283,9 @@ func (s *server) surveyAudit(w http.ResponseWriter, r *http.Request) {
 	}
 	render(w, r, http.StatusOK, templates.SurveyAudit(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyAuditData{
-			Survey:    viewSurvey(survey, s.clock.Now()),
-			Entries:   auditEntries(revisions, versions),
-			Versions:  viewVersions(versions),
+			Survey:   viewSurvey(survey, s.clock.Now()),
+			Entries:  auditEntries(revisions, versions),
+			Versions: viewVersions(versions),
 		}))
 }
 
