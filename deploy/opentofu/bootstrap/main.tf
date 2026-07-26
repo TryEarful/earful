@@ -47,6 +47,12 @@ locals {
         "dns.googleapis.com",
         "iam.googleapis.com",
         "iamcredentials.googleapis.com",
+        # Reading logs here needs the API enabled on the consumer, and it
+        # was not — which is how, on the night both environments were
+        # suspended, ops turned out to be the one healthy project whose
+        # audit trail we could not query. Admin Activity logs are written
+        # regardless; this is about being able to get at them.
+        "logging.googleapis.com",
         "monitoring.googleapis.com",
         "serviceusage.googleapis.com",
         "storage.googleapis.com",
