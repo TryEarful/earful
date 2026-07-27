@@ -1,13 +1,4 @@
-# The tryearful.com zone. CRITICAL: this domain already serves the
-# marketing site (GitHub Pages, apex + www) and the operator's mailbox
-# (Google Workspace MX + DKIM). Every live record was captured with dig
-# from the registrar's zone and is replicated below byte-for-byte, so the
-# nameserver change at the registrar (Gandi) is invisible to both. Do not prune anything here
-# without re-running the pre-cutover dig-diff gate in the README.
-#
-# Deliberate change vs the old zone: app.tryearful.com's A record
-# (8.228.238.150 — recorded here for rollback) is NOT replicated; the pro
-# env stack points app at Cloud Run instead, per the user's instruction.
+# The tryearful.com zone.
 
 resource "google_dns_managed_zone" "tryearful" {
   project     = google_project.ops.project_id
@@ -18,7 +9,7 @@ resource "google_dns_managed_zone" "tryearful" {
   depends_on = [google_project_service.apis]
 }
 
-# --- GitHub Pages (marketing site) ---
+# GitHub Pages
 
 resource "google_dns_record_set" "apex_a" {
   project      = google_project.ops.project_id
@@ -57,7 +48,7 @@ resource "google_dns_record_set" "www" {
   rrdatas      = ["tryearful.github.io."]
 }
 
-# --- Google Workspace mail (tryearful.com primary mailbox) ---
+# Google Workspace mail
 
 resource "google_dns_record_set" "apex_mx" {
   project      = google_project.ops.project_id
@@ -79,14 +70,6 @@ resource "google_dns_record_set" "apex_mx" {
   }
 }
 
-# One INTENTIONAL improvement over the old Gandi zone (user-approved
-# 2026-07-24; everything else in this file is a byte-for-byte replica):
-# the old SPF omitted _spf.google.com despite all mail flowing through
-# Workspace, and ended in the do-nothing "?all". Fixed here: Google's
-# senders authorized, Gandi's include kept until confirmed unused
-# (includes only authorize — keeping it cannot break anything), softfail.
-# NOTE for the pre-cutover dig-diff gate: apex TXT is EXPECTED to differ
-# from Gandi's live answer unless the same fix is mirrored there.
 resource "google_dns_record_set" "apex_txt" {
   project      = google_project.ops.project_id
   managed_zone = google_dns_managed_zone.tryearful.name
@@ -100,7 +83,14 @@ resource "google_dns_record_set" "apex_txt" {
     # the applying account itself to be a verified owner.
     "\"google-site-verification=7nIancEWTagVFWdVXfzSD1kqB35E7RrtWHqBdafblJo\"",
     "\"google-site-verification=Em37NDvotD_h6Pwnu3T6WpvjU582hbn1Jw79bc7w69I\"",
-    "\"v=spf1 include:_spf.google.com include:_mailcust.gandi.net ~all\"",
+    # SPF authorizes senders, so it lists only what actually sends. The
+    # registrar's include was dropped once the mailbox moved: MX points
+    # at Workspace alone, nothing sends through the registrar any more,
+    # and its ranges are shared — an include that no longer carries mail
+    # still lets every other tenant on those addresses pass SPF for this
+    # domain. Brevo is not here either; it signs and sends as the mail
+    # subdomain, which carries its own SPF.
+    "\"v=spf1 include:_spf.google.com ~all\"",
   ]
 
   # Losing this record stops mail reaching the operator's mailbox, and
@@ -141,7 +131,7 @@ resource "google_dns_record_set" "google_dkim" {
   }
 }
 
-# --- Brevo sending domain (mail.tryearful.com), filled at the Brevo step ---
+# Brevo sending domain (mail.tryearful.com)
 
 resource "google_dns_record_set" "mail" {
   for_each = {
