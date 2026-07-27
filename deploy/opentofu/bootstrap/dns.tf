@@ -66,6 +66,17 @@ resource "google_dns_record_set" "apex_mx" {
   type         = "MX"
   ttl          = 3600
   rrdatas      = ["1 smtp.google.com."]
+
+  # Losing this record stops mail reaching the operator's mailbox, and
+  # nothing would page: there is no uptime check on an MX lookup, and a
+  # deleted DNS record is an error nowhere. This blocks `tofu destroy`
+  # and any change that would replace the record rather than update it.
+  # It does NOT survive deletion of this block — a lifecycle rule is part
+  # of the resource it guards, so removing the resource removes the
+  # guard too. tests/mail_records.tftest.hcl covers that case.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # One INTENTIONAL improvement over the old Gandi zone (user-approved
@@ -91,6 +102,17 @@ resource "google_dns_record_set" "apex_txt" {
     "\"google-site-verification=Em37NDvotD_h6Pwnu3T6WpvjU582hbn1Jw79bc7w69I\"",
     "\"v=spf1 include:_spf.google.com include:_mailcust.gandi.net ~all\"",
   ]
+
+  # Losing this record stops mail reaching the operator's mailbox, and
+  # nothing would page: there is no uptime check on an MX lookup, and a
+  # deleted DNS record is an error nowhere. This blocks `tofu destroy`
+  # and any change that would replace the record rather than update it.
+  # It does NOT survive deletion of this block — a lifecycle rule is part
+  # of the resource it guards, so removing the resource removes the
+  # guard too. tests/mail_records.tftest.hcl covers that case.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_dns_record_set" "google_dkim" {
@@ -106,6 +128,17 @@ resource "google_dns_record_set" "google_dkim" {
       "\"allsF2AeWaEG5V5UgLMjWELCJE/62DN7dnapzij11UkstFYFJrMrqG8jfo1cOGlyK5arIWmts5/CflBWS5YqxXnUs/ippdNrL3UVowIDAQAB\"",
     ])
   ]
+
+  # Losing this record stops mail reaching the operator's mailbox, and
+  # nothing would page: there is no uptime check on an MX lookup, and a
+  # deleted DNS record is an error nowhere. This blocks `tofu destroy`
+  # and any change that would replace the record rather than update it.
+  # It does NOT survive deletion of this block — a lifecycle rule is part
+  # of the resource it guards, so removing the resource removes the
+  # guard too. tests/mail_records.tftest.hcl covers that case.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # --- Brevo sending domain (mail.tryearful.com), filled at the Brevo step ---
