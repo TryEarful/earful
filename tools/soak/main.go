@@ -5,7 +5,20 @@
 // in-memory, so a meaningful soak has to run against a deployed
 // instance rather than an in-process one. Point it at staging.
 //
-//	go run ./tools/soak -url https://stg.tryearful.com/s/<survey-id> -n 200
+// Point it at a bucketed endpoint. Not every respondent route has a
+// limiter, and hammering one that does not is the easiest way to come
+// away believing the limiter works when nothing was measured:
+//
+//	GET  /s/<id>/challenge   120/hour per IP
+//	POST /s/<id>             30/hour per IP+survey with a solved challenge,
+//	                         5/hour without one
+//	GET  /s/<id>             no limiter — the page itself is free to fetch
+//
+// The challenge endpoint is the one to soak by default: it is bucketed,
+// it writes nothing, and it exercises the same limiter type as the
+// submit path.
+//
+//	go run ./tools/soak -url https://stg.tryearful.com/s/<survey-id>/challenge -n 200
 //
 // A healthy result is a wall of 429s after the bucket empties, and no
 // 5xx at all: refusing cheaply is the whole point of the limiter, and a
@@ -22,14 +35,15 @@ import (
 )
 
 func main() {
-	target := flag.String("url", "", "URL to hammer (a respondent page or its submit endpoint)")
+	target := flag.String("url", "", "bucketed URL to hammer (see the package comment for which routes have limiters)")
+	method := flag.String("method", http.MethodGet, "HTTP method to send")
 	count := flag.Int("n", 200, "requests to send")
 	concurrency := flag.Int("c", 10, "requests in flight")
 	auth := flag.String("basic-auth", "", "user:pass for a staging instance behind Basic Auth")
 	flag.Parse()
 
 	if *target == "" {
-		fmt.Fprintln(os.Stderr, "usage: soak -url https://host/s/<id> [-n 200] [-c 10]")
+		fmt.Fprintln(os.Stderr, "usage: soak -url https://host/s/<id>/challenge [-n 200] [-c 10] [-method GET]")
 		os.Exit(2)
 	}
 
@@ -50,7 +64,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for range work {
-				req, err := http.NewRequest(http.MethodGet, *target, nil)
+				req, err := http.NewRequest(*method, *target, nil)
 				if err != nil {
 					mu.Lock()
 					errored++
@@ -96,7 +110,13 @@ func main() {
 
 	switch {
 	case byCode[429] == 0:
-		fmt.Println("\nNo 429s: either the limit is higher than this run, or the limiter is not applying.")
+		// Not "inconclusive": nothing was demonstrated, and a run that
+		// proves nothing while exiting 0 is how a limiter that stopped
+		// applying goes unnoticed. Either -n is below the bucket or the
+		// URL has no limiter behind it — both are the operator's to fix.
+		fmt.Println("\nNo 429s: nothing was proven. Either -n is under the bucket size, " +
+			"or this URL has no limiter (see the package comment for the ones that do).")
+		os.Exit(1)
 	case serverErrors(byCode) > 0:
 		fmt.Printf("\n%d server errors: the limiter refused, but something behind it fell over.\n", serverErrors(byCode))
 		os.Exit(1)
