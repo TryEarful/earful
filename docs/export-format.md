@@ -2,11 +2,11 @@
 
 **Format version 1.**
 
-This document is a contract. A workspace export is what makes "you can
-leave" true rather than reassuring, so the shape below is stable: it
-changes by version bump and a note in this file, never quietly. The
-import tool (the first post-MVP ticket) will be written against exactly
-this.
+Treat this document as the stable description of the format, not as
+notes that drift. A workspace export is what makes "you can leave" true
+rather than reassuring, so the shape below changes by version bump and a
+note in this file, never quietly. The import tool (the first post-MVP
+ticket) will be written against exactly this.
 
 Produce one from **Account → Export everything**. You get a zip:
 
