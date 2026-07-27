@@ -2,7 +2,7 @@
 status: ready-for-agent
 source: grilling session 2026-07-12/15; updated 2026-07-19 from "Voice questionnaires app details 002" — see PLAN.md, CONTEXT.md, docs/adr/0001–0011
 pending: EU AI Act additions (companion doc) — separate pass
-implementation: "Every milestone complete except M9's launch acts: M0–M8, M10, M11 and M12 shipped; v0.1.0 on production since 2026-07-24, with M5–M11 built 2026-07-25 and awaiting a deploy. Open: M9-T3's soak run, M9-T4's remaining drills, M9-T5 (launch). See PLAN.md's Status section for per-ticket progress"
+implementation: "Every milestone complete except M9's launch acts: M0–M8, M10, M11 and M12 shipped, and as of 2026-07-27 M9-T2/T3/T4 are closed too — the alert checklist, the rate-limit soak and the rollback drill. Open: M9-T5 (launch) alone. See PLAN.md's Status section for per-ticket progress"
 ---
 
 # Earful MVP — Specification
@@ -19,13 +19,13 @@ work lands. **Every milestone is complete except the launch itself:**
   (transcript-only, ADR-0004), M6 AI question generation, M7
   results/exports/stats, M8 data lifecycle and trust, M10 Insight
   Summaries, M11 localization and answer translation, M12's private-beta
-  gate, and M9-T7 founder metrics. Every numbered story below carries a
+  gate, and M9's operational half — founder metrics, the full alert set,
+  the security pass and a runbook whose every procedure has now been
+  executed at least once. Every numbered story below carries a
   `[tested]` link.
-- **Open**: M9-T3's rate-limit soak, which requires a deployed instance
-  that may be load-tested (`tools/soak` is written), and M9-T5, the
-  launch itself: the homepage copy fix in the marketing repository, a
-  feedback survey answered by voice on a phone, and the announcement.
-  M12 retires at that point.
+- **Open**: M9-T5 alone — the launch itself: the homepage copy fix in the
+  marketing repository, a feedback survey answered by voice on a phone,
+  and the announcement. M12 retires at that point.
 
 Execution order in practice: M0 → M2 → M3 → M4 → M6-T1/T2 → M1+M9 (cloud)
 → M12 → M5 → M6-T3 → M7 → M8 → M10 → M11 → M9-T5 (launch).
