@@ -42,10 +42,11 @@ variable "folder_id" {
   default     = null
 }
 
+# No default: a committed address is the one every clone of this
+# repository sends its billing alerts to.
 variable "support_email" {
   description = "Where budget alerts land."
   type        = string
-  default     = "support@tryearful.com"
 }
 
 variable "github_repo" {

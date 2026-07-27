@@ -342,24 +342,53 @@ disturb ops, pro or backups:
 |---|---|---|
 | Uptime /healthz | `gcloud sql instances patch earful --activation-policy NEVER` (stg), wait ~5–10 min, then `ALWAYS` | ✓ 2026-07-24, both envs (stg drill + pro's real transient) |
 | 5xx rate | deploy a broken image to stg (`gcloud run services update earful --image <bad>`), curl it, roll back | pending (same channel proven by uptime drill) |
-| p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | ✓ 2026-07-27 — fired for real on stg during the promotion gate, no threshold change needed. **Expect this on staging after most deploys**: the gate runs with `E2E_AI_MODE=real`, and a streamed Vertex generation is seconds long by nature, so p95 crosses 2s for the duration of the run. It is the policy working, not a fault. If it becomes noise, raise the threshold for stg alone rather than widening it in the module — production's 2s is the number that matters |
-| SQL disk/CPU | temporarily lower thresholds, restore | not fired, on purpose. Filling a disk or pegging a database to prove a stock Cloud SQL metric is disproportionate, and lowering the threshold instead would prove only the notification channel — which four separate real alerts have now proven. Revisit if either ever fires and turns out to be misconfigured |
-| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0`; no usage row is needed, since the check is `spent >= budget` and `0 >= 0` | ✓ 2026-07-27 — the whole chain, end to end. Budget to 0, drove one generation from the browser suite, and the endpoint refused; `jsonPayload.message="AI budget breaker tripped — all AI endpoints disabled until tomorrow"` at ERROR with `spent_eur=0.002108, budget_eur=0`; the `ai_breaker_tripped` log metric went to 1 in the next minute, and the mail reached support@ naming `revision_name=earful-00021-6qs` — the zero-budget revision itself. That the metric counted anything is the whole point of the drill: its filter carries a copy of a sentence in `internal/ai/meter.go`, em dash included, and nothing but running it can tell you the two still match. Restored with `tofu apply` |
+| p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | ✓ fired for real on staging during a promotion gate, so no threshold change was needed. **Expect it on staging after most deploys**: the gate runs with `E2E_AI_MODE=real` and a streamed generation is seconds long by nature, so p95 crosses 2s for the length of the run. That is the policy working. If it becomes noise, raise the threshold for staging alone rather than widening it in the module — production's 2s is the number that matters |
+| SQL disk/CPU | temporarily lower thresholds, restore | not fired, on purpose. Filling a disk or pegging a database to prove a stock Cloud SQL metric is disproportionate, and lowering a threshold instead proves only the notification channel, which every other row here has already proven. Revisit if either fires and turns out to be misconfigured |
+| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0`; no usage row is needed, since the check is `spent >= budget` and `0 >= 0` | ✓ walked, whole chain end to end: the endpoint refused, the ERROR line was logged, the `ai_breaker_tripped` metric counted it within a minute, and the notification arrived carrying the revision name — so the labels are enough to triage from. Worth repeating after any edit to the breaker's log line: the metric's filter holds a copy of that sentence, em dash included, and nothing but running it can tell you the two still match. Restore with `tofu apply`, and do it within one UTC day, since the accounting day rolls at midnight |
 | AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | ✓ covered by the breaker drill, deliberately. Both are log-based metrics on the same service, feeding the same channel, differing only in the string they count and the number they compare against — and the breaker's is the one whose string is easy to get wrong. Firing this one too would re-prove the plumbing and nothing else |
 | Retention purge FAILED | run the job against an unreachable database, or delete its invoker binding | pending |
-| Retention purge has not run in 24h | nothing to do: skipping a night fires it | ✓ 2026-07-27 — fired for real, not drilled. Cloud Scheduler attempted neither the 03:17 export nor the 04:07 purge on the 26th or the 27th, leaving zero successful executions against a policy that fires below one per 24h; the mail reached support@. This is the alert doing exactly the job it was written for — the outage was silent in every other respect, and retention had stopped without erroring |
+| Retention purge has not run in 24h | nothing to do: missing a night fires it | ✓ fired for real rather than drilled, during a multi-day provider outage in which the scheduler attempted nothing. Worth knowing why this alert exists in the shape it does: retention stopping is silent — no error, no failed execution, nothing in the app's own logs — so an alert that waits for a failure never fires, and only an alert that watches for *absence* catches it |
 | Budget €50/80/100/200 | Billing → Budgets → send test notification (thresholds themselves verified by `gcloud billing budgets describe`) | config verified 2026-07-24 (€100 @ 50/80/100% + €200 cap); email path proven live by the uptime alerts |
 
-## Backup-drill log
+## What the drills taught
 
-Record each drill here (M9-T1/T6 ACs):
+Every procedure above has been executed at least once, except the
+breach-notification duty and the rebuild-from-scratch path, which cannot
+be rehearsed without the incident. What each one surfaced is below — the
+gotchas are the point, and they are true on any instance. **Evidence
+from a particular run belongs in `docs/runbook.local.md`**, which is
+gitignored; see CONTRIBUTING.md, "What must not be written down".
 
-| Date | Drill | Result |
-|---|---|---|
-| 2026-07-24 | PITR clone restore (pro → `earful-drill`, point-in-time −3 min) | PASS — clone RUNNABLE, schema intact (8 goose records, 18 tables, verified by psql), scratch deleted (needed `--no-deletion-protection` first: clones inherit it) |
-| 2026-07-24 | Export → restore → lock → owner-delete refusal | PASS — workflow wrote `earful-pro-2026-07-24.sql.gz` (dated name from Workflows); import into a scratch `restorecheck` DB restored all 18 tables; `lock_retention=true` applied; owner's `gcloud storage rm` refused with 403 `retentionPolicy` until 2026-08-23 |
-| 2026-07-24 | Kill-DB uptime alert (stg, `--activation-policy NEVER`, ~20 min) | PASS — /health 503, check_passed dropped to 0.0, alert email delivered to support@; bonus: pro's check independently alerted on transient DB latency during the PITR clone (channel proven twice) |
-| 2026-07-25 | Erasure request, walked step by step against a local instance with a real subject (account + workspace + published survey) | PASS — `/admin/erasure` is a **404** to a signed-in non-admin and 200 after `earful admin grant`; the lookup listed the account, 1 workspace, 1 survey and erased nothing; **"Erasure complete — 40 rows removed"**; looking the subject up again returned "Nothing found". The application log carried `"erasure completed","rows":40,"by":<admin id>` and the lookup's query read `email=[REDACTED]` — counts only, no subject named, exactly as the procedure promises. |
-| 2026-07-25 | Retention purge as a Cloud Run job (stg, one-off `earful-purge-drill`, `--dry-run`) | PASS on the second attempt — `purge step expired_magic_links rows=7`, `purge complete rows=7`, exit 0, counts only in the log. The first attempt FAILED at boot: `APP_ENV=staging requires STAGING_BASIC_AUTH`, a serving-only invariant applied to a job that serves nothing. Fixed by `config.LoadJob()`; production was never affected, which is why only a drill could find it. |
-| 2026-07-27 | Rollback (stg, current digest → previous → back) | PASS — `gcloud run services update --image …@sha256:63831d56` put the previous digest on 100% of traffic in **14 s** (revision 00019), `/health` and `/login` both 200 on it, and the check that matters came from behaviour rather than metadata: an asset the newer release had changed was gone from the rolled-back instance and returned on the roll-forward (revision 00020). This closes the last untested procedure in this runbook — M9-T4's actual blocker, which the ticket's own note named. |
-| 2026-07-27 | Catch-up after a two-day provider outage (pro) | The 03:17 export and the 04:07 purge did not run on the 26th or the 27th: production served no requests on the 26th, and Cloud Scheduler logged no attempt for either job after 2026-07-25T03:17Z. Both were run by hand on the 27th — `earful-pro-2026-07-27.sql.gz` written by the workflow, and `earful-purge-d5mxg` exiting 0 with `purge complete rows=0`. **The 07-26 export is not recoverable**: an export is a snapshot of a moment that has passed, so the rolling 30-day window has one missing day in it until 2026-08-25. Nothing was lost — PITR covers the same period — but the window is not unbroken and should not be described as such. |
+- **PITR clone restore.** A clone inherits the source's deletion
+  protection, so deleting the scratch instance afterwards needs
+  `--no-deletion-protection` first. Verify the restore by querying the
+  clone, not by reading its status.
+- **Export → restore → lock → delete refusal.** Once the retention
+  policy is locked, a project owner's delete is refused with a 403
+  naming `retentionPolicy` — which is the guarantee, and is worth
+  confirming by trying it rather than by reading the config. Locking is
+  irreversible; do it deliberately.
+- **Kill-DB uptime alert.** Stopping the database drives `/health` to
+  503 and the uptime check to zero within a couple of minutes. Use
+  staging.
+- **Erasure request.** `/admin/erasure` is a 404 to a signed-in
+  non-admin and only opens after `earful admin grant`. The lookup step
+  erases nothing, so it is safe to run against a real address to see
+  what would go. The application log carries counts only and the query
+  logs the address as `[REDACTED]` — check that, because an erasure log
+  that named its subjects would be its own retention problem.
+- **Retention purge as a Cloud Run job.** The first attempt failed at
+  boot on a serving-only invariant applied to a job that serves nothing
+  (`APP_ENV=staging requires STAGING_BASIC_AUTH`), which is why
+  `config.LoadJob()` exists. Only running it as a job could have found
+  that; running the binary locally cannot.
+- **Rollback.** Fourteen seconds from command to the previous digest
+  serving everything. Check it took by looking at something the bad
+  release changed — a served asset, a page — and not at the digest
+  label.
+- **Missing a scheduled window.** After any outage, the exports for the
+  days that were missed **cannot be recreated**: an export is a snapshot
+  of a moment that has passed. PITR covers the same period, so nothing
+  is lost, but the rolling window has a hole in it until it ages out and
+  should not be described as unbroken. Run the export and the purge by
+  hand once the provider is back.

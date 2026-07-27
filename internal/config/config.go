@@ -37,6 +37,17 @@ type Config struct {
 	EmailSender string
 	// EmailFrom is the From address for smtp and brevo senders.
 	EmailFrom string
+	// HostingRegion describes where the instance runs, in whatever terms
+	// are true of it — a cloud region, a country, a rack. /trust states
+	// it to respondents, and only the operator who deployed the instance
+	// knows the answer, so it is configuration with no default: a trust
+	// page that guesses is worse than one that omits the claim.
+	HostingRegion string
+	// ContactEmail receives questions and data-subject requests, shown on
+	// /trust. No default, for the same reason: an address that reaches
+	// nobody with power over the data is worse for the person asking
+	// than an admission that none is published.
+	ContactEmail string
 	// SMTPAddr is host:port of the relay; SMTPUser/SMTPPass are optional
 	// (mailpit needs none).
 	SMTPAddr string
@@ -166,6 +177,8 @@ func load(serving bool) (Config, error) {
 		BaseURL:            strings.TrimSuffix(getEnv("BASE_URL", "http://localhost:8080"), "/"),
 		EmailSender:        getEnv("EMAIL_SENDER", "console"),
 		EmailFrom:          getEnv("EMAIL_FROM", "earful@localhost"),
+		HostingRegion:      getEnv("HOSTING_REGION", ""),
+		ContactEmail:       getEnv("CONTACT_EMAIL", ""),
 		SMTPAddr:           getEnv("SMTP_ADDR", "localhost:1025"),
 		SMTPUser:           getEnv("SMTP_USER", ""),
 		SMTPPass:           getEnv("SMTP_PASS", ""),

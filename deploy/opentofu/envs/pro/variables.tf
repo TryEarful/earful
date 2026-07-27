@@ -4,7 +4,7 @@ variable "state_bucket" {
 }
 
 variable "custom_domain" {
-  description = "app.tryearful.com — set only AFTER the nameserver cutover."
+  description = "Production hostname; set only AFTER the nameserver cutover."
   type        = string
   default     = ""
 }
@@ -32,9 +32,12 @@ variable "lock_retention" {
   default     = false
 }
 
+# No default: alerts and the /trust contact both come from here, and
+# neither should fall back to an address belonging to whoever published
+# the repository. Set it in this root's tfvars.
 variable "alert_email" {
-  type    = string
-  default = "support@tryearful.com"
+  description = "Where alerts are delivered, and the contact shown on /trust."
+  type        = string
 }
 
 # --- AI (M5, M6, M10, M11) --------------------------------------------
@@ -96,4 +99,18 @@ variable "ai_daily_budget_eur" {
   description = "Global daily AI breaker: every AI endpoint refuses once the day's estimated spend reaches this."
   type        = number
   default     = 2
+}
+
+# The instance's own identity. No defaults: these are facts about one
+# deployment, and a value committed here becomes the value every clone
+# of this repository quietly inherits. Set them in this root's tfvars.
+
+variable "email_from" {
+  description = "From address for outgoing mail."
+  type        = string
+}
+
+variable "hosting_region" {
+  description = "Where this instance runs, as stated on /trust — a cloud region, a country, a rack; whatever is true."
+  type        = string
 }

@@ -62,134 +62,164 @@ func Trust(data TrustData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, ". Earful is open source (AGPL-3.0), so every claim here can be checked against the code that serves it.</p><section class=\"card\"><h2>Your voice is never stored</h2><p>You can answer by speaking. The audio is turned into text and discarded in the same request — it is never written to disk, to a database, to logs, or to any backup, in any environment. What is kept is the transcript you read and edited before submitting.</p><p class=\"muted\">There is no playback feature, because there is nothing to play back. If that ever changed it would be a different product decision, announced here and asked of you first — not something that could happen quietly to audio we had kept in the meantime.</p></section><section class=\"card\"><h2>Anonymous means anonymous</h2><p>A survey's creator chooses at creation whether it is anonymous, and that choice can never be changed afterwards — the database refuses it, not just the application.</p><p>An anonymous response carries no email address, no IP address and no device details. Those columns do not exist anywhere near a response, so no query and no mistake can quietly fill them in. Adding them would take a deliberate change to the database, in public, in an open-source repository.</p><p>Survey creators do see coarse counts about their audience — browser family, device type and country — as totals for the survey, never attached to any response, and hidden entirely for any group smaller than five people. Country is worked out on our own server from an offline database and the IP address is discarded immediately.</p></section><section class=\"card\"><h2>Nothing third-party runs on a survey page</h2><p>Answering a survey loads no analytics, no fonts, no tag managers and no CDN scripts — nothing but this application. The anti-bot check is our own, in-page, and identifies nobody. A test fails the build if any third-party origin appears on a respondent page.</p></section><section class=\"card\"><h2>Where the data lives, and who touches it</h2><p>Hosted in the EU — ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, ". Earful is open source (AGPL-3.0), so every claim here can be checked against the code that serves it.</p><section class=\"card\"><h2>Your voice is never stored</h2><p>You can answer by speaking. The audio is turned into text and discarded in the same request — it is never written to disk, to a database, to logs, or to any backup, in any environment. What is kept is the transcript you read and edited before submitting.</p><p class=\"muted\">There is no playback feature, because there is nothing to play back. If that ever changed it would be a different product decision, announced here and asked of you first — not something that could happen quietly to audio we had kept in the meantime.</p></section><section class=\"card\"><h2>Anonymous means anonymous</h2><p>A survey's creator chooses at creation whether it is anonymous, and that choice can never be changed afterwards — the database refuses it, not just the application.</p><p>An anonymous response carries no email address, no IP address and no device details. Those columns do not exist anywhere near a response, so no query and no mistake can quietly fill them in. Adding them would take a deliberate change to the database, in public, in an open-source repository.</p><p>Survey creators do see coarse counts about their audience — browser family, device type and country — as totals for the survey, never attached to any response, and hidden entirely for any group smaller than five people. Country is worked out on our own server from an offline database and the IP address is discarded immediately.</p></section><section class=\"card\"><h2>Nothing third-party runs on a survey page</h2><p>Answering a survey loads no analytics, no fonts, no tag managers and no CDN scripts — nothing but this application. The anti-bot check is our own, in-page, and identifies nobody. A test fails the build if any third-party origin appears on a respondent page.</p></section><section class=\"card\"><h2>Where the data lives, and who touches it</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Region)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 65, Col: 41}
+			if data.Region != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<p>Hosted in ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var4 string
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Region)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 66, Col: 31}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, ". These are every company involved:</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<p>These are every company involved in running this instance:</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, ". These are every company involved:</p><div class=\"table-scroll\"><table class=\"responses\"><thead><tr><th scope=\"col\">Processor</th><th scope=\"col\">What for</th><th scope=\"col\">What they see</th><th scope=\"col\">Where</th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"table-scroll\"><table class=\"responses\"><thead><tr><th scope=\"col\">Processor</th><th scope=\"col\">What for</th><th scope=\"col\">What they see</th><th scope=\"col\">Where</th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, row := range data.Processors {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<tr><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<tr><td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(row.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 79, Col: 23}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 83, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</td><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(row.Purpose)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 80, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 84, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</td><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(row.Data)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 81, Col: 23}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 85, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(row.Region)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 82, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 86, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</tbody></table></div><p class=\"muted\">Self-hosting Earful removes all of them: it runs against your own Postgres, your own SMTP server and, if you want AI features, your own model.</p></section><section class=\"card\"><h2>What we can't promise</h2><p>Our infrastructure is in the EU, but Google Cloud's parent company is American, and US law reaches American companies wherever their servers are. EU hosting reduces that risk; it does not remove it. We would rather say so than imply a guarantee we cannot give.</p><p>Deleted data is removed from live systems immediately and erased permanently within 30 days. Backups are kept for 30 days and are deliberately immutable — which means an erasure is fully effective within 30 days, not instantly. That is the standard trade against losing everything to ransomware, and we think it is the right one.</p></section><section class=\"card\"><h2>You can leave</h2><p>One button exports everything a workspace holds — every survey, version, question and response — as documented JSON plus CSVs. The format is published and versioned, and Earful itself is AGPL-3.0, so you can run the same software yourself and bring your data with you.</p><p><a href=\"https://github.com/TryEarful/earful\">Source code</a> · <a href=\"https://github.com/TryEarful/earful/blob/main/docs/export-format.md\">Export format</a></p></section><section class=\"card\"><h2>Attribution</h2><p class=\"muted\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</tbody></table></div><p class=\"muted\">Self-hosting Earful removes all of them: it runs against your own Postgres, your own SMTP server and, if you want AI features, your own model.</p></section><section class=\"card\"><h2>What we can't promise</h2><p>Our infrastructure is in the EU, but Google Cloud's parent company is American, and US law reaches American companies wherever their servers are. EU hosting reduces that risk; it does not remove it. We would rather say so than imply a guarantee we cannot give.</p><p>Deleted data is removed from live systems immediately and erased permanently within 30 days. Backups are kept for 30 days and are deliberately immutable — which means an erasure is fully effective within 30 days, not instantly. That is the standard trade against losing everything to ransomware, and we think it is the right one.</p></section><section class=\"card\"><h2>You can leave</h2><p>One button exports everything a workspace holds — every survey, version, question and response — as documented JSON plus CSVs. The format is published and versioned, and Earful itself is AGPL-3.0, so you can run the same software yourself and bring your data with you.</p><p><a href=\"https://github.com/TryEarful/earful\">Source code</a> · <a href=\"https://github.com/TryEarful/earful/blob/main/docs/export-format.md\">Export format</a></p></section><section class=\"card\"><h2>Attribution</h2><p class=\"muted\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.GeoAttribution)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 126, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 130, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " — <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " — <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 templ.SafeURL
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.GeoAttributionURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 126, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 130, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\">db-ip.com</a></p></section><p class=\"muted\">Questions, or a request about your own data: <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\">db-ip.com</a></p></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 templ.SafeURL
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("mailto:" + data.ContactEmail))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 131, Col: 103}
+			if data.ContactEmail != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<p class=\"muted\">Questions, or a request about your own data: <a href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var11 templ.SafeURL
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("mailto:" + data.ContactEmail))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 136, Col: 104}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var12 string
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(data.ContactEmail)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 136, Col: 126}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</a>.</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<p class=\"muted\">This instance has not published a contact address. Ask whoever sent you the survey — they decide what happens to your answers, and they can reach the people running this instance.</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(data.ContactEmail)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/trust.templ`, Line: 131, Col: 125}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</a>.</p></main>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</main>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -62,7 +62,11 @@ templ Trust(data TrustData) {
 
 			<section class="card">
 				<h2>Where the data lives, and who touches it</h2>
-				<p>Hosted in the EU — { data.Region }. These are every company involved:</p>
+				if data.Region != "" {
+					<p>Hosted in { data.Region }. These are every company involved:</p>
+				} else {
+					<p>These are every company involved in running this instance:</p>
+				}
 				<div class="table-scroll">
 					<table class="responses">
 						<thead>
@@ -127,9 +131,16 @@ templ Trust(data TrustData) {
 				</p>
 			</section>
 
-			<p class="muted">
-				Questions, or a request about your own data: <a href={ templ.SafeURL("mailto:" + data.ContactEmail) }>{ data.ContactEmail }</a>.
-			</p>
+			if data.ContactEmail != "" {
+				<p class="muted">
+					Questions, or a request about your own data: <a href={ templ.SafeURL("mailto:" + data.ContactEmail) }>{ data.ContactEmail }</a>.
+				</p>
+			} else {
+				<p class="muted">
+					This instance has not published a contact address. Ask whoever sent you the survey — they
+					decide what happens to your answers, and they can reach the people running this instance.
+				</p>
+			}
 		</main>
 	}
 }

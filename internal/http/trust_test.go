@@ -128,3 +128,49 @@ func TestRespondentDisclosure_TellsRespondentsWhatHappens(t *testing.T) {
 		}
 	})
 }
+
+// TestTrust_StatesOnlyWhatTheOperatorConfigured covers the case every
+// self-hosted instance starts in: nobody has said where it runs or who
+// answers for its data. Neither can be inferred — where an instance is
+// hosted is a property of whoever deployed it — so the page has to drop
+// the claims rather than fill them in. Naming an address that reaches
+// somebody else would send a respondent's erasure request to a party
+// with no relationship to their data.
+func TestTrust_StatesOnlyWhatTheOperatorConfigured(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+
+	page := mustGet(t, &http.Client{}, app.Server.URL+"/trust")
+
+	if bodyContains(page, "Hosted in") {
+		t.Errorf("an unconfigured instance claims a hosting location:\n%s", page)
+	}
+	if !bodyContains(page, "has not published a contact address") {
+		t.Errorf("an unconfigured instance does not admit it has no contact:\n%s", page)
+	}
+	// The specific failure worth pinning: no address belonging to anyone
+	// else may appear on an instance that configured none.
+	if strings.Contains(page, "mailto:") {
+		t.Errorf("an unconfigured instance offers a contact address anyway:\n%s", page)
+	}
+}
+
+// TestTrust_StatesWhatTheOperatorDidConfigure is the other half: once
+// told, the page says so, and says the operator's answer rather than a
+// default belonging to whoever published the software.
+func TestTrust_StatesWhatTheOperatorDidConfigure(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{
+		HostingRegion: "a rack in Utrecht",
+		ContactEmail:  "privacy@example.org",
+	})
+
+	page := mustGet(t, &http.Client{}, app.Server.URL+"/trust")
+
+	if !bodyContains(page, "Hosted in a rack in Utrecht") {
+		t.Errorf("the configured hosting location is not stated:\n%s", page)
+	}
+	if !bodyContains(page, "privacy@example.org") {
+		t.Errorf("the configured contact address is not stated:\n%s", page)
+	}
+}

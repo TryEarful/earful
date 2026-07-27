@@ -132,6 +132,8 @@ see `.env.example` for a copy-pasteable starting point.
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, or `error` |
 | `BASE_URL` | `http://localhost:8080` | Externally-visible origin; sign-in links in emails are built from it |
 | `EMAIL_SENDER` | `console` | `console` (stdout is your inbox), `smtp` (mailpit locally, any relay when self-hosting), or `brevo` (needs `BREVO_API_KEY`). Staging refuses anything but `console` |
+| `HOSTING_REGION` | *(empty)* | Where this instance runs, in whatever terms are true — a cloud region, a country, a rack. Shown on `/trust`; the claim is omitted when unset rather than guessed |
+| `CONTACT_EMAIL` | *(empty)* | Where questions and data-subject requests reach you. Shown on `/trust`; **set this on any instance real people answer surveys on** |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(empty)* | Set both to enable Google login; unset hides it |
 | `GOOGLE_OIDC_ISSUER` | `https://accounts.google.com` | Override only for testing against a fake issuer |
 | `BETA_MODE` | `false` | Invite-code signup + password login, zero emails sent (M12) |

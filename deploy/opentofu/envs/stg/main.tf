@@ -167,7 +167,11 @@ module "app" {
     # real email" is also enforced by the app — APP_ENV=staging refuses
     # to boot with any other sender (internal/config).
     EMAIL_SENDER = "console"
-    EMAIL_FROM   = "hello@mail.tryearful.com"
+    EMAIL_FROM   = var.email_from
+    # See envs/pro: /trust states these, so they are configuration
+    # rather than something the application assumes about its host.
+    HOSTING_REGION = var.hosting_region
+    CONTACT_EMAIL  = var.alert_email
     # Same switch as production, so staging can prove an AI change
     # before production sees it (see envs/pro for the reasoning).
     AI_PROVIDER         = var.ai_provider

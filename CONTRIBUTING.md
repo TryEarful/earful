@@ -52,6 +52,36 @@ Records belong in records: `PLAN.md`'s status log and the drill log in
 [docs/runbook.md](docs/runbook.md) are the places where dates and
 outcomes are written down, factually.
 
+## What must not be written down
+
+Everything in this repository ships to everyone who runs Earful, and
+`docs/runbook.md` in particular is read as *their* operating manual, not
+as a log of ours. Two rules follow.
+
+**Never commit anything instance-specific.** Not because any single item
+is a secret, but because collectively they describe one deployment to
+anyone reading, and none of it means anything to the next operator:
+
+| Never | Instead |
+|---|---|
+| Project ids, bucket names, account or organisation ids | The `<sfx>` placeholder; `earful-pro-<sfx>` |
+| Revision names, job execution ids, image digests | Say which kind of thing, not which one |
+| An operator's alert address or contact | `<your alert address>` |
+| Spend figures, row counts, retention expiry dates | The threshold or window that produced them |
+| Anything from `*.tfvars`, or any credential in any form | Nothing. These are gitignored for a reason |
+
+**A procedure records what it taught, not what one run produced.** "The
+clone inherits deletion protection, so disable it first" saves the next
+person twenty minutes and is true on every instance. "Clone
+`earful-drill` restored at 10:04, 18 tables" is true on exactly one, and
+on that one it is already in the provider's own logs. Keep the first
+kind, drop the second. If you need the raw evidence, keep it outside the
+repository — `docs/runbook.local.md` is gitignored for this.
+
+This applies to generated text as much as to written text: an agent
+pasting a command's real output into a document is the most likely way
+any of the above lands in a commit.
+
 ## Commits
 
 One logical change per commit, with a subject in the imperative under 72

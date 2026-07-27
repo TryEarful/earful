@@ -21,9 +21,17 @@ variable "sql_instance_name" {
   type = string
 }
 
+# Required rather than defaulted. Every alert this module raises is
+# delivered here, so a default would quietly send one operator's pages to
+# whichever address happened to be in the repository when they cloned it.
 variable "alert_email" {
-  type    = string
-  default = "support@tryearful.com"
+  description = "Where every alert from this environment is delivered."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$", var.alert_email))
+    error_message = "alert_email must be an email address."
+  }
 }
 
 variable "enable_purge" {

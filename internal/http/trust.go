@@ -40,18 +40,31 @@ func instanceName(cfg config.Config) string {
 	return "this instance"
 }
 
+// hostingRegion answers where the instance runs, or "" when it has not
+// been told. Where an instance is hosted is a property of the operator
+// who deployed it, not of the software, so there is nothing to infer it
+// from — APP_ENV says how the instance is configured, not what machines
+// it sits on. An empty answer drops the claim from the page instead of
+// stating a location on the operator's behalf.
 func (s *server) hostingRegion() string {
-	if s.cfg.Env == config.EnvProduction || s.cfg.Env == config.EnvStaging {
-		return "Google Cloud, europe-west4 (Netherlands)"
-	}
-	return "wherever this instance is running"
+	return s.cfg.HostingRegion
 }
 
+// contactEmail answers where data-subject requests go, or "" when no
+// address is configured. Naming an unrelated address would route an
+// erasure request to somebody with no relationship to the data and no
+// power to act on it, which is worse for the person asking than an
+// instance admitting it has published no contact.
 func (s *server) contactEmail() string {
-	if s.cfg.EmailFrom != "" {
+	if s.cfg.ContactEmail != "" {
+		return s.cfg.ContactEmail
+	}
+	// EMAIL_FROM's default is a placeholder rather than a monitored
+	// address, so it does not qualify as a contact.
+	if s.cfg.EmailFrom != "" && s.cfg.EmailFrom != "earful@localhost" {
 		return s.cfg.EmailFrom
 	}
-	return "support@tryearful.com"
+	return ""
 }
 
 // processors lists exactly the companies this deployment actually

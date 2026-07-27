@@ -68,6 +68,13 @@ Thumbs.db
 tfplan
 *.tfplan
 
+# Operator-local notes. docs/runbook.md is the procedure and ships to
+# everyone who runs Earful; anything true of one deployment only —
+# resource names, digests, spend, drill evidence — goes here instead.
+# See CONTRIBUTING.md, "What must not be written down".
+docs/runbook.local.md
+docs/*.local.md
+
 # Test output. e2e/.gitignore covers the same names one level down; these
 # catch a run started from the repo root.
 node_modules/

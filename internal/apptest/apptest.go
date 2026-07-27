@@ -63,6 +63,12 @@ type Options struct {
 	// reachable without burning a real budget.
 	AIQuota     int64
 	AIBudgetEUR float64
+	// HostingRegion and ContactEmail are what /trust states about the
+	// instance. Empty by default, which is what an operator who
+	// configures neither gets, and the case worth testing: the page has
+	// to omit a claim it cannot make rather than fill one in.
+	HostingRegion string
+	ContactEmail  string
 }
 
 // App is one booted application instance plus the fakes tests observe
@@ -134,6 +140,8 @@ func New(t *testing.T, opts Options) *App {
 		// Fixed secret so tests can drive the ESP webhook.
 		EmailWebhookSecret:     WebhookSecret,
 		BetaMode:               opts.BetaMode,
+		HostingRegion:          opts.HostingRegion,
+		ContactEmail:           opts.ContactEmail,
 		AIWorkspaceDailyTokens: quota,
 		AIDailyBudgetEUR:       budget,
 		AICostPer1KTokensEUR:   0.001,

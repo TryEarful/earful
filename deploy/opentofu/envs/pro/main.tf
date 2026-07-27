@@ -175,7 +175,13 @@ module "app" {
       APP_ENV      = "production"
       BASE_URL     = local.base_url
       EMAIL_SENDER = var.email_sender
-      EMAIL_FROM   = "hello@mail.tryearful.com"
+      EMAIL_FROM   = var.email_from
+      # /trust states both to respondents. The application ships no
+      # default for either, since only the operator of an instance knows
+      # where it runs or who answers for its data, so each environment
+      # supplies its own.
+      HOSTING_REGION = var.hosting_region
+      CONTACT_EMAIL  = var.alert_email
       # AI is configuration, not code: pointing these at Vertex is all
       # that switches transcription, question generation, insights and
       # translation on. Left at "none" until the models below are

@@ -11,7 +11,7 @@ variable "service_name" {
 }
 
 variable "domain" {
-  description = "e.g. stg.tryearful.com; empty = no mapping yet."
+  description = "Hostname to map to the service; empty = no mapping yet."
   type        = string
   default     = ""
 }
