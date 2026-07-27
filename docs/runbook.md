@@ -25,6 +25,15 @@ The tag pipeline re-deploys staging, re-runs the smoke suite, then ships
 the **same image digest** to production (production never builds). If
 the smoke fails, production is untouched.
 
+**Do not push to `main` while a tag run is waiting to start.** The
+workflow shares one concurrency group, and a run entering a group that
+already has one running and one pending cancels the *pending* one — so a
+routine push lands on the queue and quietly takes the promotion with it.
+The tag stays in git and nothing breaks, but production silently does
+not get the release, and the run that should have shipped it reads as
+"cancelled" rather than as anything alarming. Let the tag run start
+first; `gh run list --workflow=Deploy --limit 3` shows the queue.
+
 Migrations are backward-compatible by policy: the schema lands before
 the new code, and the previous revision keeps serving during the swap —
 never ship a migration the currently-deployed code can't run on.
