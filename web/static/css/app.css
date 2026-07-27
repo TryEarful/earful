@@ -633,6 +633,48 @@ fieldset {
   font-size: 0.9rem;
 }
 
+/* Shown while a transcription is in flight. Indeterminate on purpose:
+   the model reports no progress, so a filling bar would be a number this
+   page invented. This one says "working" and claims nothing else. */
+.voice-progress {
+  display: block;
+  flex-basis: 100%;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.voice-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  border-radius: 3px;
+  background: var(--accent);
+  animation: voice-progress-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes voice-progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+/* Motion is decoration here; the status line carries the same fact in
+   words. A respondent who asked for less of it gets a still bar. */
+@media (prefers-reduced-motion: reduce) {
+  .voice-progress::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+
 .voice-preview-note {
   font-size: 0.9rem;
   margin-top: 0.5rem;

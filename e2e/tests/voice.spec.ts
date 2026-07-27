@@ -81,6 +81,15 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   // Recording starts; the button says how to end it.
   const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
   await expect(stop).toBeVisible();
+
+  // The field itself says something is happening, not only the status
+  // line beside the button — the respondent is looking at the box their
+  // words are about to appear in.
+  await expect(respondent.locator("textarea")).toHaveAttribute(
+    "placeholder",
+    /Recording in progress/
+  );
+
   await respondent.waitForTimeout(1500); // a second of speech to transcribe
   await stop.click();
 
@@ -94,6 +103,15 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   expect(transcript.length).toBeGreaterThan(0);
   await answer.fill(transcript + " — edited before submitting.");
   await expect(answer).toHaveValue(/edited before submitting/);
+
+  // Once the take has settled the field is a plain textarea again: the
+  // recording hint is gone rather than left behind as a stale caption,
+  // and the transcription indicator is hidden. The indicator's visible
+  // moment is deliberately not asserted — it lasts exactly as long as
+  // the provider takes, and a race is not something a promotion gate can
+  // afford.
+  await expect(answer).not.toHaveAttribute("placeholder", /Recording in progress/);
+  await expect(respondent.locator(".voice-progress")).toBeHidden();
 
   await context.close();
 });

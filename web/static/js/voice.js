@@ -25,6 +25,7 @@
   var maxSeconds = parseInt(form.getAttribute("data-voice-max-seconds"), 10) || 120;
   var CONSENT_KEY = "earful-voice-consent";
   var SAMPLE_RATE = 16000;
+  var RECORDING_HINT = "Recording in progress. Your transcription will be shown here.";
 
   // --- local recognition detection (M5-T1) -------------------------------
   //
@@ -96,9 +97,41 @@
     // shown: this control is unusable otherwise.
     status.setAttribute("aria-live", "polite");
 
+    // Transcription reports no progress — the model answers when it
+    // answers — so this bar is indeterminate on purpose. A percentage
+    // here would be invented, and inventing one on the single screen
+    // where this product asks to be trusted is a poor trade for a few
+    // seconds of reassurance. aria-hidden because the status line beside
+    // it already announces "Transcribing…"; a screen reader does not
+    // need the same fact twice.
+    var progress = document.createElement("span");
+    progress.className = "voice-progress";
+    progress.setAttribute("aria-hidden", "true");
+    progress.hidden = true;
+
     wrap.appendChild(button);
     wrap.appendChild(status);
+    wrap.appendChild(progress);
     field.parentNode.insertBefore(wrap, field.nextSibling);
+
+    // While a take is running the field says what is about to land in it.
+    // A browser hides a placeholder as soon as the field has content, so
+    // the first transcribed word clears this without any help from here.
+    var placeholder = field.getAttribute("placeholder");
+    var ui = {
+      recording: function () {
+        field.setAttribute("placeholder", RECORDING_HINT);
+        progress.hidden = true;
+      },
+      transcribing: function () {
+        progress.hidden = false;
+      },
+      settled: function () {
+        if (placeholder === null) field.removeAttribute("placeholder");
+        else field.setAttribute("placeholder", placeholder);
+        progress.hidden = true;
+      },
+    };
 
     var recorder = null;
 
@@ -125,6 +158,7 @@
       recorder = null;
       setLabel("Answer by speaking");
       button.classList.remove("recording");
+      ui.settled();
     }
 
     function stop() {
@@ -144,11 +178,11 @@
       chooseEngine()
         .then(function (engine) {
           if (engine === "local") {
-            return startLocalRecognition(field, say, function done() {
+            return startLocalRecognition(field, say, ui, function done() {
               reset();
             });
           }
-          return startRecording(field, say, function done() {
+          return startRecording(field, say, ui, function done() {
             reset();
           });
         })
@@ -161,6 +195,7 @@
             recorder = handle;
             setLabel("Stop and transcribe");
             button.classList.add("recording");
+            ui.recording();
             say("Listening… speak now.");
           },
           function () {
@@ -284,7 +319,7 @@
   // browser's own model. processLocally is set explicitly, so if the
   // browser cannot honour it the call fails rather than silently routing
   // the audio to a vendor.
-  function startLocalRecognition(field, say, done) {
+  function startLocalRecognition(field, say, ui, done) {
     var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     var recognition = new Recognition();
     recognition.processLocally = true;
@@ -322,6 +357,7 @@
     }
     return Promise.resolve({
       stop: function () {
+        ui.transcribing();
         say("Finishing…");
         recognition.stop();
       },
@@ -349,7 +385,7 @@
     field.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
-  function startRecording(field, say, done) {
+  function startRecording(field, say, ui, done) {
     var spoken = false; // has this take put anything in the field yet?
     return navigator.mediaDevices
       .getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
@@ -423,6 +459,7 @@
           stream.getTracks().forEach(function (track) {
             track.stop();
           });
+          ui.transcribing();
           say("Transcribing…");
         }
 
