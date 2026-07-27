@@ -78,13 +78,26 @@ with its reasoning.
 
 ### Scheduled
 
-6. **Rate-limit soak against staging** (`tools/soak`). The limiter's
-   logic is unit-tested and its per-request cost is trivial, but the
-   AC asks for a load check against a deployed instance. The tool is
-   written and documented. Blocked while no staging instance is
-   available. The soak deliberately does not run against production:
-   saturating the live respondent path to observe it refusing traffic
-   would degrade the service for real respondents.
+6. ~~**Rate-limit soak against staging**~~ — **done 2026-07-27.** 200
+   requests at concurrency 10 against `/s/<id>/challenge` on staging:
+   **120 × 200 then 80 × 429**, no 5xx, slowest response 177 ms, the
+   whole run in 887 ms. 120 is exactly the bucket
+   (`antibot.NewLimiter(120, time.Hour)`), so the limiter did not merely
+   refuse — it refused at precisely the point it promises to, and
+   refused cheaply, which is the property that matters: a limiter that
+   costs more to say no than to say yes is an amplifier.
+
+   Running it found that the tool had been pointed at the wrong URL. The
+   documented command hammered `GET /s/<id>`, which has no limiter at
+   all — the respondent buckets are on the submit path and on the
+   challenge endpoint — so it would have returned 200 requests' worth of
+   200s and exited 0. Fixed, along with the exit code: no 429s is now a
+   failure, because a run that demonstrates nothing while reporting
+   success is how a limiter that stopped applying goes unnoticed.
+
+   The soak deliberately does not run against production: saturating the
+   live respondent path to observe it refusing traffic would degrade the
+   service for real respondents.
 7. **Vertex terms in writing** — no-training, EU processing, abuse-log
    retention for the exact APIs used. Gap list #7; blocks nothing
    technically, and matters before the product is sold.
