@@ -1,12 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import {
-  aiTimeout,
-  createPublishedSurvey,
-  minFillWait,
-  offersInsights,
-  scriptedAI,
-} from "./helpers";
+import { aiTimeout, createPublishedSurvey, minFillWait, offersInsights, scriptedAI, submitTimeout } from "./helpers";
 
 // Results, stats and exports in a real browser (M7).
 
@@ -27,7 +21,9 @@ test("results read back what respondents said, and export cleanly", async ({ pag
     await respondent.getByLabel(choice).check();
     await minFillWait(respondent);
     await respondent.getByRole("button", { name: "Submit answers" }).click();
-    await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible();
+    await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
     await context.close();
   }
 

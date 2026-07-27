@@ -117,13 +117,13 @@ printf '%s' "$BREVO_API_KEY" | gcloud secrets versions add BREVO_API_KEY \
   --project earful-pro-<sfx> --data-file=-
 ```
 
-The current account's domain records are **committed** as
-`mail_dns_records`' default in `bootstrap/variables.tf` (public DNS
-data; a tfvars-only copy would be deleted by a recreated tfvars). For a
-new account: `POST /v3/senders/domains {"name":"mail.tryearful.com"}`
-returns the replacement records (a brevo-code TXT, two DKIM CNAMEs
-under the subdomain, a DMARC TXT) — update the default, apply
-bootstrap, then `PUT /v3/senders/domains/mail.tryearful.com/authenticate`
+The sending domain's records live in `bootstrap.auto.tfvars` as
+`mail_dns_records`, which is a **required** variable: recreate the
+tfvars without it and the plan errors rather than computing an empty map
+and deleting the live records. `POST /v3/senders/domains
+{"name":"mail.<your domain>"}` returns them (a brevo-code TXT, two DKIM
+CNAMEs under the subdomain, a DMARC TXT) — put them in the tfvars, apply
+bootstrap, then `PUT /v3/senders/domains/mail.<your domain>/authenticate`
 until verified and `POST /v3/senders` for hello@mail.tryearful.com.
 Re-apply pro (tfvars carry `email_sender = "brevo"`) → register the
 transactional webhook (`POST /v3/webhooks`, events
@@ -153,21 +153,35 @@ gcloud projects list --filter earful    # suffix = what follows earful-stg-/pro-
 billing_account = "<from billing accounts list>"
 suffix          = "<sfx>"
 org_id          = "<from organizations list>"
+support_email   = "<where budget alerts land>"
+# REQUIRED. Recover from the ESP's domain-authentication API, or read
+# the live zone: `gcloud dns record-sets list --zone <zone>`. Omitting
+# it fails the plan; it does NOT silently delete the records.
+mail_dns_records = [ ... ]
 
 # envs/stg/stg.auto.tfvars
-state_bucket  = "earful-tofu-state-<sfx>"
-custom_domain = "stg.tryearful.com"
+state_bucket   = "earful-tofu-state-<sfx>"
+custom_domain  = "<staging hostname>"
+alert_email    = "<where alerts land>"
+email_from     = "<From address for outgoing mail>"
+hosting_region = "<as stated on /trust>"
 
 # envs/pro/pro.auto.tfvars
 state_bucket   = "earful-tofu-state-<sfx>"
 lock_retention = true   # only ever set after the first restore drill (step 10)
-custom_domain  = "app.tryearful.com"
+custom_domain  = "<production hostname>"
 email_sender   = "brevo" # since step 9; omitting it reverts pro to console
+alert_email    = "<where alerts land>"
+email_from     = "<From address for outgoing mail>"
+hosting_region = "<as stated on /trust>"
 ```
 
 ## Notes
 
-- `*.tfvars` are gitignored on purpose (billing account, suffix);
+- `*.tfvars` are gitignored on purpose: they hold what is true of one
+  deployment — account ids, hostnames, addresses, DNS records — none of
+  which belongs in a repository other people clone (CONTRIBUTING.md,
+  "What must not be written down");
   `.terraform.lock.hcl` files are committed.
 - Cloud SQL keeps a public IP with **zero** authorized networks: the
   only path in is the IAM-gated connector socket. Private-IP-only would

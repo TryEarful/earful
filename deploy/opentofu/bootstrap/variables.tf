@@ -61,39 +61,28 @@ variable "create_budgets" {
   default     = true
 }
 
+# The ESP's sending-domain records (verification code, DKIM selectors,
+# DMARC), as its domain-authentication API returns them.
+#
+# REQUIRED rather than defaulted, for the same reason a default was once
+# tempting: these records are what make outgoing mail authenticate, and
+# a tfvars file recreated without them computes an empty map and DELETES
+# them — silently, because destroying a DNS record raises nothing. A
+# required variable turns that into a plan-time error instead, and keeps
+# one deployment's records out of a repository other people clone.
+#
+# Two shapes worth knowing, because neither matches the vendor's own doc
+# example: authentication returns TWO DKIM CNAMEs, and they sit under
+# the sending subdomain rather than the apex, since that is the domain
+# the ESP signs with. SPF is no longer prescribed — aligned DKIM carries
+# DMARC by itself — but adding it gives a second aligned path when the
+# envelope-from is your own domain.
 variable "mail_dns_records" {
-  description = "Brevo sending-domain records for mail.tryearful.com (verification code, DKIM, DMARC), from Brevo's domain-authentication API. Committed as the default — they are public DNS data, and a tfvars-only copy would be silently dropped (records deleted) if the gitignored tfvars were ever recreated from the README procedure."
+  description = "ESP sending-domain records (verification, DKIM, DMARC) for the mail subdomain."
   type = list(object({
-    name    = string # relative, e.g. "mail" or "brevo._domainkey.mail"
+    name    = string # relative, e.g. "mail" or "brevo1._domainkey.mail"
     type    = string # TXT, CNAME, ...
     ttl     = optional(number, 300)
     rrdatas = list(string)
   }))
-  default = [
-    {
-      # Brevo's auth flow no longer prescribes SPF (aligned DKIM alone
-      # carries DMARC), but its envelope-from is this domain, so the
-      # include upgrades SPF none→pass as a second aligned path.
-      name    = "mail"
-      type    = "TXT"
-      rrdatas = ["\"brevo-code:aaf0cf4968fce229262c911f75f66d5f\"", "\"v=spf1 include:spf.brevo.com ~all\""]
-    },
-    {
-      # Brevo signs DKIM with d=mail.tryearful.com, so verifiers resolve
-      # <selector>._domainkey under the subdomain — not the apex.
-      name    = "brevo1._domainkey.mail"
-      type    = "CNAME"
-      rrdatas = ["b1.mail-tryearful-com.dkim.brevo.com."]
-    },
-    {
-      name    = "brevo2._domainkey.mail"
-      type    = "CNAME"
-      rrdatas = ["b2.mail-tryearful-com.dkim.brevo.com."]
-    },
-    {
-      name    = "_dmarc.mail"
-      type    = "TXT"
-      rrdatas = ["\"v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com\""]
-    },
-  ]
 }

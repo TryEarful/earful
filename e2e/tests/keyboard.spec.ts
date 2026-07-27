@@ -1,6 +1,6 @@
 import { test, expect, Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { fakeMicrophone, minFillWait, offersVoice, scriptedVoice } from "./helpers";
+import { fakeMicrophone, minFillWait, offersVoice, scriptedVoice, submitTimeout } from "./helpers";
 
 // Answering from the keyboard (SPEC.md story 80, M4-T9).
 //
@@ -68,7 +68,9 @@ test("a whole survey can be answered without a single click", async ({ page, bro
 
   await minFillWait(respondent);
   await respondent.keyboard.press("Enter"); // last question: submits
-  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible();
+  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
 
   await context.close();
 });

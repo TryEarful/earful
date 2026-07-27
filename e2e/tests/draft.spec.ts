@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createPublishedSurvey, fakeMicrophone, minFillWait, offersVoice, scriptedVoice } from "./helpers";
+import { createPublishedSurvey, fakeMicrophone, minFillWait, offersVoice, scriptedVoice, submitTimeout } from "./helpers";
 
 // Draft answers surviving a reload (SPEC.md story 79, M4-T8). Without a
 // draft, a respondent who reloads part-way through loses every answer
@@ -33,7 +33,9 @@ test("answers and position survive a reload, and clear on submit", async ({ page
 
   await minFillWait(respondent);
   await respondent.getByRole("button", { name: "Submit answers" }).click();
-  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible();
+  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
 
   // Submission is the point at which the draft has served its purpose. An
   // unsubmitted answer left in storage is readable by the next person to

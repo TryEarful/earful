@@ -229,3 +229,12 @@ export async function createPublishedSurvey(page: Page, title: string): Promise<
 export async function minFillWait(page: Page): Promise<void> {
   await page.waitForTimeout(5000);
 }
+
+// submitTimeout covers a respondent's submission landing. The default
+// 5s expect timeout is really an unintended performance assertion: a
+// submit against a scale-to-zero instance pays for a cold start and a
+// fresh database connection before it writes anything, and against a
+// deployed environment that can exceed five seconds without anything
+// being wrong. The suite gates promotion, so an assertion that means
+// "the submission succeeded" must not fail when it merely took a while.
+export const submitTimeout = 15000;

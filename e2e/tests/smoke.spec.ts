@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { createPublishedSurvey, minFillWait } from "./helpers";
+import { createPublishedSurvey, minFillWait, submitTimeout } from "./helpers";
 
 // All tests run signed in as the shared creator (see auth.setup.ts);
 // respondents get their own fresh, unauthenticated contexts.
@@ -43,7 +43,9 @@ test("core loop: build, publish, answer, count", async ({ page, browser }) => {
 
   await minFillWait(respondent);
   await respondent.getByRole("button", { name: "Submit answers" }).click();
-  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible();
+  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
   await respondentContext.close();
 
   // The creator sees the response counted.
@@ -68,7 +70,9 @@ test("respondent form works with JavaScript disabled", async ({ page, browser })
   await respondent.getByLabel("Weekly").check();
   await minFillWait(respondent);
   await respondent.getByRole("button", { name: "Submit answers" }).click();
-  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible();
+  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
   await noJS.close();
 });
 
