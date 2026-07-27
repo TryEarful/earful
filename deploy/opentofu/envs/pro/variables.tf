@@ -44,16 +44,30 @@ variable "alert_email" {
 # with the AI features absent, which the product handles by not offering
 # them.
 
+# "scripted" is absent from both lists on purpose: it invents content,
+# and the app refuses to boot with it when APP_ENV is production. Naming
+# it here as a rejected value would suggest it were a choice.
+
 variable "ai_provider" {
   description = "Text AI backend: none | openai | vertex."
   type        = string
   default     = "none"
+
+  validation {
+    condition     = contains(["none", "openai", "vertex"], var.ai_provider)
+    error_message = "ai_provider must be one of: none, openai, vertex."
+  }
 }
 
 variable "transcribe_provider" {
   description = "Voice backend: none | vertex | openai | whisper-cli."
   type        = string
   default     = "none"
+
+  validation {
+    condition     = contains(["none", "vertex", "openai", "whisper-cli"], var.transcribe_provider)
+    error_message = "transcribe_provider must be one of: none, vertex, openai, whisper-cli."
+  }
 }
 
 # The ids below are what europe-west4 actually offers, verified against

@@ -178,7 +178,7 @@ them is loud:
 | Alert | Means |
 |---|---|
 | "Retention purge FAILED" | An execution failed after its retry. Data that should be gone is still stored. |
-| "Retention purge has not run in 36h" | Nothing errored — it simply is not running: a paused scheduler, a deleted job, a revoked invoker. `gcloud scheduler jobs describe earful-purge --project earful-pro-<sfx> --location europe-west4` |
+| "Retention purge has not run in 24h" | Nothing errored — it simply is not running: a paused scheduler, a deleted job, a revoked invoker, or the whole project unreachable. `gcloud scheduler jobs describe earful-purge --project earful-pro-<sfx> --location europe-west4` |
 
 Both watch Cloud Run's job metrics rather than the app's log lines, so a
 job that dies before it can log — bad image, OOM, unreachable database —
@@ -321,8 +321,10 @@ disturb ops, pro or backups:
 | 5xx rate | deploy a broken image to stg (`gcloud run services update earful --image <bad>`), curl it, roll back | pending (same channel proven by uptime drill) |
 | p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | pending |
 | SQL disk/CPU | temporarily lower thresholds, restore | pending |
-| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0` + any recorded usage row; the Error line fires the log metric | deferred — no AI endpoint exists to trip it until M5/M6-T3 |
-| AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | deferred with the breaker |
+| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0`; no usage row is needed, since the check is `spent >= budget` and `0 >= 0` | pending |
+| AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | pending with the breaker |
+| Retention purge FAILED | run the job against an unreachable database, or delete its invoker binding | pending |
+| Retention purge has not run in 24h | nothing to do: skipping a night fires it | ✓ 2026-07-27 — the condition was met for real. Cloud Scheduler attempted neither the 03:17 export nor the 04:07 purge on the 26th or the 27th, leaving zero successful executions against a policy that fires below one per 24h. Confirm the mail reached support@ before treating this row as closed |
 | Budget €50/80/100/200 | Billing → Budgets → send test notification (thresholds themselves verified by `gcloud billing budgets describe`) | config verified 2026-07-24 (€100 @ 50/80/100% + €200 cap); email path proven live by the uptime alerts |
 
 ## Backup-drill log
@@ -336,3 +338,4 @@ Record each drill here (M9-T1/T6 ACs):
 | 2026-07-24 | Kill-DB uptime alert (stg, `--activation-policy NEVER`, ~20 min) | PASS — /health 503, check_passed dropped to 0.0, alert email delivered to support@; bonus: pro's check independently alerted on transient DB latency during the PITR clone (channel proven twice) |
 | 2026-07-25 | Erasure request, walked step by step against a local instance with a real subject (account + workspace + published survey) | PASS — `/admin/erasure` is a **404** to a signed-in non-admin and 200 after `earful admin grant`; the lookup listed the account, 1 workspace, 1 survey and erased nothing; **"Erasure complete — 40 rows removed"**; looking the subject up again returned "Nothing found". The application log carried `"erasure completed","rows":40,"by":<admin id>` and the lookup's query read `email=[REDACTED]` — counts only, no subject named, exactly as the procedure promises. |
 | 2026-07-25 | Retention purge as a Cloud Run job (stg, one-off `earful-purge-drill`, `--dry-run`) | PASS on the second attempt — `purge step expired_magic_links rows=7`, `purge complete rows=7`, exit 0, counts only in the log. The first attempt FAILED at boot: `APP_ENV=staging requires STAGING_BASIC_AUTH`, a serving-only invariant applied to a job that serves nothing. Fixed by `config.LoadJob()`; production was never affected, which is why only a drill could find it. |
+| 2026-07-27 | Catch-up after a two-day provider outage (pro) | The 03:17 export and the 04:07 purge did not run on the 26th or the 27th: production served no requests on the 26th, and Cloud Scheduler logged no attempt for either job after 2026-07-25T03:17Z. Both were run by hand on the 27th — `earful-pro-2026-07-27.sql.gz` written by the workflow, and `earful-purge-d5mxg` exiting 0 with `purge complete rows=0`. **The 07-26 export is not recoverable**: an export is a snapshot of a moment that has passed, so the rolling 30-day window has one missing day in it until 2026-08-25. Nothing was lost — PITR covers the same period — but the window is not unbroken and should not be described as such. |

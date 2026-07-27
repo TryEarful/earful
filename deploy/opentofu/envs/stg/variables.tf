@@ -21,16 +21,37 @@ variable "alert_email" {
 # with the AI features absent, which the product handles by not offering
 # them.
 
+# "scripted" is deterministic canned output with no model behind it. The
+# app refuses it in production (it would misrepresent invented content as
+# AI output) and allows it here, where there are no real respondents.
+# Validation because a typo would otherwise reach a startup probe rather
+# than the plan: the app rejects an unknown provider at boot, and a
+# rollout that fails there is a much later and more confusing place to
+# find out than `tofu plan`.
+
 variable "ai_provider" {
-  description = "Text AI backend: none | openai | vertex."
+  description = "Text AI backend: none | openai | vertex | scripted."
   type        = string
   default     = "none"
+
+  validation {
+    condition     = contains(["none", "openai", "vertex", "scripted"], var.ai_provider)
+    error_message = "ai_provider must be one of: none, openai, vertex, scripted."
+  }
 }
 
 variable "transcribe_provider" {
-  description = "Voice backend: none | vertex | openai | whisper-cli."
+  description = "Voice backend: none | vertex | openai | whisper-cli | scripted."
   type        = string
   default     = "none"
+
+  validation {
+    condition = contains(
+      ["none", "vertex", "openai", "whisper-cli", "scripted"],
+      var.transcribe_provider
+    )
+    error_message = "transcribe_provider must be one of: none, vertex, openai, whisper-cli, scripted."
+  }
 }
 
 # The ids below are what europe-west4 actually offers, verified against
