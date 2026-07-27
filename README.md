@@ -134,7 +134,7 @@ see `.env.example` for a copy-pasteable starting point.
 | `EMAIL_SENDER` | `console` | `console` (stdout is your inbox), `smtp` (mailpit locally, any relay when self-hosting), or `brevo` (needs `BREVO_API_KEY`). Staging refuses anything but `console` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(empty)* | Set both to enable Google login; unset hides it |
 | `GOOGLE_OIDC_ISSUER` | `https://accounts.google.com` | Override only for testing against a fake issuer |
-| `BETA_MODE` | `false` | Invite-code signup + password login, zero emails sent (M12; retires at launch) |
+| `BETA_MODE` | `false` | Invite-code signup + password login, zero emails sent (M12) |
 | `STAGING_BASIC_AUTH` | *(empty)* | `user:pass`; required on staging, which is walled behind it |
 
 ### AI

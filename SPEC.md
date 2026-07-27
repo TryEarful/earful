@@ -25,7 +25,7 @@ work lands. **Every milestone is complete except the launch itself:**
   `[tested]` link.
 - **Open**: M9-T5 alone — the launch itself: the homepage copy fix in the
   marketing repository, a feedback survey answered by voice on a phone,
-  and the announcement. M12 retires at that point.
+  and the announcement.
 
 Execution order in practice: M0 → M2 → M3 → M4 → M6-T1/T2 → M1+M9 (cloud)
 → M12 → M5 → M6-T3 → M7 → M8 → M10 → M11 → M9-T5 (launch).
@@ -152,13 +152,19 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 75. As a self-hoster, I want magic-link auth over my own SMTP and optional Google OIDC, so that login works on my infrastructure.
 76. As a self-hoster, I want the workspace export format documented as a stable contract, so that migrating into my instance is a solved problem (import tool: first post-MVP ticket). [tested](internal/http/export_workspace_test.go) — [docs/export-format.md](docs/export-format.md) is the contract; the test decodes a real archive into the documented types
 
-### Private beta (temporary mode, decided 2026-07-24)
+### Private beta (decided 2026-07-24)
 
-The SaaS runs invite-only until launch, and the account loop —
-deliberately — works with zero emails sent: it was designed before any
-email infrastructure existed, and stays email-free even now that live
-Brevo (M4-T6, closed later the same day) can send. Codes are the gate
-AND the credential. This whole section retires at public launch (M9-T5).
+The SaaS is invite-only, and the account loop — deliberately — works with
+zero emails sent: it was designed before any email infrastructure
+existed, and stays email-free even now that live Brevo (M4-T6, closed
+later the same day) can send. Codes are the gate AND the credential.
+
+Turning the gate off is a manual decision with no date on it, and no
+ticket depends on it: `BETA_MODE` is one environment variable, and the
+software works either way. Whenever it happens, `/login` should keep
+offering the password form beside the magic-link one — every account
+created during the beta holds a password and, unless it also has a
+Google identity, nothing else.
 
 77. As the founder, I want account creation gated by one-shot secret invite codes from a list I control — minted by CLI or from an admin page only super admins can even see, labeled, revocable, and marked used the moment they create an account — so that only people I've invited can enter the private beta. [tested](internal/http/beta_test.go)
 78. As a private-beta user, I want to create my account with an invite code and a password, sign in with email+password from then on, and change my email later (re-proving my password), with no email ever sent, so that I can use Earful before the email infrastructure exists. [tested](internal/http/beta_test.go)

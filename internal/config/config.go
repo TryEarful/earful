@@ -103,7 +103,8 @@ type Config struct {
 	GoogleIssuer string
 	// BetaMode gates the private beta (M12): signup requires a one-shot
 	// invite code, login is email+password, and no account-creating path
-	// works without a code — all with zero emails sent. Retires at launch.
+	// works without a code — all with zero emails sent. Off is the
+	// supported state too, and is what staging has always run.
 	BetaMode bool
 	// StagingBasicAuth ("user:pass") walls the whole deployment behind an
 	// HTTP Basic Auth challenge — staging is a test bench, not a public
