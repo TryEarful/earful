@@ -40,6 +40,20 @@ gcloud run services update earful --image europe-west4-docker.pkg.dev/earful-ops
   --project earful-pro-<sfx> --region europe-west4
 ```
 
+Drilled on staging 2026-07-27: **14 seconds** from command to the
+previous digest serving 100% of traffic, and the same again to roll
+forward. Check the rollback actually took by looking at something the
+bad release changed, not at the digest label — a served asset, a page,
+an endpoint. A digest that reads correctly while a stale revision serves
+is precisely the failure this procedure exists to catch.
+
+Deliberately a redeploy and not a traffic shift. `gcloud run services
+update-traffic --to-revisions <old>=100` is faster, but it **pins**
+traffic to that revision: the next deploy then builds and starts a
+revision that quietly receives nothing, and the incident looks like a
+pipeline that stopped working. If you ever do use it, `--to-latest`
+afterwards is not optional.
+
 Migrations are roll-forward only (goose down is not wired); if a
 migration itself is the problem, write a corrective migration and ship
 it through staging.
@@ -319,12 +333,12 @@ disturb ops, pro or backups:
 |---|---|---|
 | Uptime /healthz | `gcloud sql instances patch earful --activation-policy NEVER` (stg), wait ~5–10 min, then `ALWAYS` | ✓ 2026-07-24, both envs (stg drill + pro's real transient) |
 | 5xx rate | deploy a broken image to stg (`gcloud run services update earful --image <bad>`), curl it, roll back | pending (same channel proven by uptime drill) |
-| p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | pending |
-| SQL disk/CPU | temporarily lower thresholds, restore | pending |
-| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0`; no usage row is needed, since the check is `spent >= budget` and `0 >= 0` | pending |
-| AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | pending with the breaker |
+| p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | ✓ 2026-07-27 — fired for real on stg during the promotion gate, no threshold change needed. **Expect this on staging after most deploys**: the gate runs with `E2E_AI_MODE=real`, and a streamed Vertex generation is seconds long by nature, so p95 crosses 2s for the duration of the run. It is the policy working, not a fault. If it becomes noise, raise the threshold for stg alone rather than widening it in the module — production's 2s is the number that matters |
+| SQL disk/CPU | temporarily lower thresholds, restore | not fired, on purpose. Filling a disk or pegging a database to prove a stock Cloud SQL metric is disproportionate, and lowering the threshold instead would prove only the notification channel — which four separate real alerts have now proven. Revisit if either ever fires and turns out to be misconfigured |
+| AI breaker | run stg once with `AI_DAILY_BUDGET_EUR=0`; no usage row is needed, since the check is `spent >= budget` and `0 >= 0` | ✓ 2026-07-27 — the whole chain, end to end. Budget to 0, drove one generation from the browser suite, and the endpoint refused; `jsonPayload.message="AI budget breaker tripped — all AI endpoints disabled until tomorrow"` at ERROR with `spent_eur=0.002108, budget_eur=0`; the `ai_breaker_tripped` log metric went to 1 in the next minute. That the metric counted anything is the whole point of the drill: its filter carries a copy of a sentence in `internal/ai/meter.go`, em dash included, and nothing but running it can tell you the two still match. Restored with `tofu apply` |
+| AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | ✓ covered by the breaker drill, deliberately. Both are log-based metrics on the same service, feeding the same channel, differing only in the string they count and the number they compare against — and the breaker's is the one whose string is easy to get wrong. Firing this one too would re-prove the plumbing and nothing else |
 | Retention purge FAILED | run the job against an unreachable database, or delete its invoker binding | pending |
-| Retention purge has not run in 24h | nothing to do: skipping a night fires it | ✓ 2026-07-27 — the condition was met for real. Cloud Scheduler attempted neither the 03:17 export nor the 04:07 purge on the 26th or the 27th, leaving zero successful executions against a policy that fires below one per 24h. Confirm the mail reached support@ before treating this row as closed |
+| Retention purge has not run in 24h | nothing to do: skipping a night fires it | ✓ 2026-07-27 — fired for real, not drilled. Cloud Scheduler attempted neither the 03:17 export nor the 04:07 purge on the 26th or the 27th, leaving zero successful executions against a policy that fires below one per 24h; the mail reached support@. This is the alert doing exactly the job it was written for — the outage was silent in every other respect, and retention had stopped without erroring |
 | Budget €50/80/100/200 | Billing → Budgets → send test notification (thresholds themselves verified by `gcloud billing budgets describe`) | config verified 2026-07-24 (€100 @ 50/80/100% + €200 cap); email path proven live by the uptime alerts |
 
 ## Backup-drill log
@@ -338,4 +352,5 @@ Record each drill here (M9-T1/T6 ACs):
 | 2026-07-24 | Kill-DB uptime alert (stg, `--activation-policy NEVER`, ~20 min) | PASS — /health 503, check_passed dropped to 0.0, alert email delivered to support@; bonus: pro's check independently alerted on transient DB latency during the PITR clone (channel proven twice) |
 | 2026-07-25 | Erasure request, walked step by step against a local instance with a real subject (account + workspace + published survey) | PASS — `/admin/erasure` is a **404** to a signed-in non-admin and 200 after `earful admin grant`; the lookup listed the account, 1 workspace, 1 survey and erased nothing; **"Erasure complete — 40 rows removed"**; looking the subject up again returned "Nothing found". The application log carried `"erasure completed","rows":40,"by":<admin id>` and the lookup's query read `email=[REDACTED]` — counts only, no subject named, exactly as the procedure promises. |
 | 2026-07-25 | Retention purge as a Cloud Run job (stg, one-off `earful-purge-drill`, `--dry-run`) | PASS on the second attempt — `purge step expired_magic_links rows=7`, `purge complete rows=7`, exit 0, counts only in the log. The first attempt FAILED at boot: `APP_ENV=staging requires STAGING_BASIC_AUTH`, a serving-only invariant applied to a job that serves nothing. Fixed by `config.LoadJob()`; production was never affected, which is why only a drill could find it. |
+| 2026-07-27 | Rollback (stg, current digest → previous → back) | PASS — `gcloud run services update --image …@sha256:63831d56` put the previous digest on 100% of traffic in **14 s** (revision 00019), `/health` and `/login` both 200 on it, and the check that matters came from behaviour rather than metadata: an asset the newer release had changed was gone from the rolled-back instance and returned on the roll-forward (revision 00020). This closes the last untested procedure in this runbook — M9-T4's actual blocker, which the ticket's own note named. |
 | 2026-07-27 | Catch-up after a two-day provider outage (pro) | The 03:17 export and the 04:07 purge did not run on the 26th or the 27th: production served no requests on the 26th, and Cloud Scheduler logged no attempt for either job after 2026-07-25T03:17Z. Both were run by hand on the 27th — `earful-pro-2026-07-27.sql.gz` written by the workflow, and `earful-purge-d5mxg` exiting 0 with `purge complete rows=0`. **The 07-26 export is not recoverable**: an export is a snapshot of a moment that has passed, so the rolling 30-day window has one missing day in it until 2026-08-25. Nothing was lost — PITR covers the same period — but the window is not unbroken and should not be described as such. |
