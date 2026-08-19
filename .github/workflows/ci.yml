@@ -75,9 +75,10 @@ jobs:
           cd deploy/opentofu/modules/backups
           tofu init -backend=false -input=false > /dev/null
           tofu test
-      # The mail records are guarded by prevent_destroy, which cannot
-      # survive deletion of the block it lives in. This is the net under
-      # that case, and it only helps if it runs.
+      # The zone's mail and domain-verification records are guarded by
+      # prevent_destroy, which cannot survive deletion of the block it
+      # lives in. This is the net under that case, and it only helps if
+      # it runs.
       - run: |
           cd deploy/opentofu/bootstrap
           tofu init -backend=false -input=false > /dev/null

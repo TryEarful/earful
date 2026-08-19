@@ -1,14 +1,16 @@
-# The records that keep mail reaching the operator's mailbox, asserted
-# to still be configured.
+# The zone records whose loss nothing else in this repository would
+# report, asserted to still be configured: the ones mail depends on, and
+# the one that holds this domain's claim on GitHub.
 #
 # prevent_destroy on those resources stops a plan that would destroy or
 # replace them, but it cannot survive deletion of the block it lives in:
 # a lifecycle rule is part of the resource it guards, so removing the
 # resource removes the guard in the same edit. That is the failure this
-# file exists to catch, and it is a plausible one — the records belong to
-# a mailbox rather than to the application, so nothing in the product
-# breaks when they go, no uptime check covers an MX lookup, and a deleted
-# DNS record is an error nowhere. Mail simply stops arriving.
+# file exists to catch, and it is a plausible one — these records serve
+# something outside the application, so nothing in the product breaks
+# when they go, no uptime check covers an MX or a TXT lookup, and a
+# deleted DNS record is an error nowhere. Mail simply stops arriving,
+# and the domain simply becomes claimable again.
 #
 # Run from bootstrap:  tofu init -backend=false && tofu test
 # Mock providers — asserts OUR configuration, no cloud calls.
@@ -73,6 +75,19 @@ run "mail_records_are_still_configured" {
   # guard, and a plan that deleted the block along with its guard fails
   # on the assertions above, which is the case with no other net under
   # it.
+}
+
+# Verification is the whole of what stops another GitHub account
+# claiming this domain for its own Pages site, and it is asserted here
+# rather than left to the guard because the site keeps serving either
+# way — there is no symptom to notice.
+run "github_pages_verification_is_still_configured" {
+  command = plan
+
+  assert {
+    condition     = startswith(google_dns_record_set.github_pages_challenge.name, "_github-pages-challenge-")
+    error_message = "the GitHub Pages domain-verification record is gone — the site keeps serving, but the domain becomes claimable by another GitHub account again"
+  }
 }
 
 # The zone is the single point through which certificate issuance, mail

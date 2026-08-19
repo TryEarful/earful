@@ -48,6 +48,34 @@ resource "google_dns_record_set" "www" {
   rrdatas      = ["tryearful.github.io."]
 }
 
+# GitHub only refuses another account's claim on a domain it can see is
+# yours, so this record is what keeps tryearful.com from being pointed
+# at someone else's Pages site. The challenge is issued with a
+# mixed-case owner name; lookups are case-insensitive, so the lowercase
+# record answers it, and lowercase is also how Cloud DNS reads a name
+# back — spelling it that way here keeps the two in agreement.
+
+resource "google_dns_record_set" "github_pages_challenge" {
+  project      = google_project.ops.project_id
+  managed_zone = google_dns_managed_zone.tryearful.name
+  name         = "_github-pages-challenge-tryearful.${google_dns_managed_zone.tryearful.dns_name}"
+  type         = "TXT"
+  ttl          = 3600
+  rrdatas      = ["\"1f2cec1f56fa1be9bbd5125120e099\""]
+
+  # Losing this record leaves the site serving exactly as before, so
+  # nothing would notice: no uptime check covers a TXT lookup, a deleted
+  # DNS record is an error nowhere, and the damage is a claim someone
+  # else is now free to make. This blocks `tofu destroy` and any change
+  # that would replace the record rather than update it. It does NOT
+  # survive deletion of this block — a lifecycle rule is part of the
+  # resource it guards, so removing the resource removes the guard too.
+  # tests/dns_records.tftest.hcl covers that case.
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 # Google Workspace mail
 
 resource "google_dns_record_set" "apex_mx" {
@@ -64,7 +92,7 @@ resource "google_dns_record_set" "apex_mx" {
   # and any change that would replace the record rather than update it.
   # It does NOT survive deletion of this block — a lifecycle rule is part
   # of the resource it guards, so removing the resource removes the
-  # guard too. tests/mail_records.tftest.hcl covers that case.
+  # guard too. tests/dns_records.tftest.hcl covers that case.
   lifecycle {
     prevent_destroy = true
   }
@@ -99,7 +127,7 @@ resource "google_dns_record_set" "apex_txt" {
   # and any change that would replace the record rather than update it.
   # It does NOT survive deletion of this block — a lifecycle rule is part
   # of the resource it guards, so removing the resource removes the
-  # guard too. tests/mail_records.tftest.hcl covers that case.
+  # guard too. tests/dns_records.tftest.hcl covers that case.
   lifecycle {
     prevent_destroy = true
   }
@@ -125,7 +153,7 @@ resource "google_dns_record_set" "google_dkim" {
   # and any change that would replace the record rather than update it.
   # It does NOT survive deletion of this block — a lifecycle rule is part
   # of the resource it guards, so removing the resource removes the
-  # guard too. tests/mail_records.tftest.hcl covers that case.
+  # guard too. tests/dns_records.tftest.hcl covers that case.
   lifecycle {
     prevent_destroy = true
   }

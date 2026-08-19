@@ -96,7 +96,8 @@ GitHub Pages apex/www, Workspace MX/DKIM/TXT — see `bootstrap/dns.tf`):
 for ns in $(cd bootstrap && tofu output -json dns_name_servers | jq -r '.[]'); do
   for q in "tryearful.com A" "tryearful.com AAAA" "tryearful.com MX" \
            "tryearful.com TXT" "www.tryearful.com CNAME" \
-           "google._domainkey.tryearful.com TXT"; do
+           "google._domainkey.tryearful.com TXT" \
+           "_github-pages-challenge-tryearful.tryearful.com TXT"; do
     diff <(dig +short @$ns $q | sort) <(dig +short $q | sort) || echo "MISMATCH: $q @ $ns"
   done
 done
