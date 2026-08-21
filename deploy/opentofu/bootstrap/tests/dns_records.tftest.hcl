@@ -18,6 +18,16 @@
 # Generated mock values are random strings, which some resources here
 # reject on format — a service account id has to look like one. Only the
 # attributes other resources read back need pinning.
+# The quota_ops alias (main.tf) is a SEPARATE provider configuration, and
+# mock_provider only covers the one it names. Left unmocked it falls
+# through to real credentials, so this file passed on a workstation with
+# ADC and failed everywhere else — including CI, which has none. Mocking
+# the alias is what makes the run credential-free, which is the only
+# state in which it is a net rather than a workstation habit.
+mock_provider "google" {
+  alias = "quota_ops"
+}
+
 mock_provider "google" {
   mock_resource "google_service_account" {
     defaults = {
@@ -87,6 +97,45 @@ run "github_pages_verification_is_still_configured" {
   assert {
     condition     = startswith(google_dns_record_set.github_pages_challenge.name, "_github-pages-challenge-")
     error_message = "the GitHub Pages domain-verification record is gone — the site keeps serving, but the domain becomes claimable by another GitHub account again"
+  }
+}
+
+# The other runs pass the records in, which is the from-zero path and
+# leaves the secret unread. This one is the steady-state path: both
+# variables null, so config.tf reads the secret and has to decode it
+# into the same shape. Overriding the data source keeps the run
+# credential-free — nothing here reaches Secret Manager.
+#
+# A CNAME rather than the TXT the other runs use, because override_data
+# takes a literal with no functions available, and a TXT rrdata carries
+# embedded quotes that a heredoc would eat.
+run "records_can_come_from_the_config_secret" {
+  command = plan
+
+  variables {
+    support_email    = null
+    mail_dns_records = null
+  }
+
+  override_data {
+    target = data.google_secret_manager_secret_version_access.bootstrap_config
+    values = {
+      secret_data = "{\"support_email\":\"alerts@example.test\",\"mail_dns_records\":[{\"name\":\"brevo1._domainkey.mail\",\"type\":\"CNAME\",\"rrdatas\":[\"b1.dkim.example.test.\"]}]}"
+    }
+  }
+
+  # ttl is deliberately absent from that JSON: the variable's type
+  # defaults it, jsondecode does not, and a record reaching the record
+  # set without one fails the apply rather than falling back. This
+  # asserts the two paths normalise to the same shape.
+  assert {
+    condition     = google_dns_record_set.mail["brevo1._domainkey.mail-CNAME"].ttl == 300
+    error_message = "a record supplied without a ttl did not pick up the default — the secret and variable paths are not producing the same shape"
+  }
+
+  assert {
+    condition     = google_monitoring_notification_channel.budget_email[0].labels.email_address == "alerts@example.test"
+    error_message = "support_email did not come back from the secret — budget alerts would have no destination"
   }
 }
 

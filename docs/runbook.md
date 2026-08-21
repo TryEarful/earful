@@ -224,8 +224,10 @@ stays up, only AI features pause.
 ## Brevo (production email)
 
 Live since 2026-07-24: pro sends via Brevo from `hello@mail.tryearful.com`
-(domain authenticated — brevo-code TXT, two DKIM CNAMEs, DMARC TXT, all
-committed as `bootstrap/variables.tf`'s `mail_dns_records` default).
+(domain authenticated — brevo-code TXT, two DKIM CNAMEs, DMARC TXT).
+Those records are held in the `bootstrap-config` secret in the pro
+project, not in the repository; read or rotate them with `gcloud secrets
+versions access latest --secret bootstrap-config`, then apply bootstrap.
 Staging never sends real email (boot invariant).
 
 - **Rotate the API key**: mint a new key in Brevo's dashboard, then

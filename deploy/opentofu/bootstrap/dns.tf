@@ -7,6 +7,19 @@ resource "google_dns_managed_zone" "tryearful" {
   description = "tryearful.com — GitHub Pages apex, Workspace mail, Earful app/stg"
 
   depends_on = [google_project_service.apis]
+
+  # The mail records below carry no prevent_destroy of their own, so
+  # whatever supplies them is their only guard. A source that resolves
+  # to nothing computes an empty map, and an empty map destroys them
+  # without raising anything. Unreadable already errors on its own; this
+  # covers readable-but-empty, and sits on the zone because that is the
+  # one resource every record in this file hangs off.
+  lifecycle {
+    precondition {
+      condition     = length(local.mail_dns_records) > 0
+      error_message = "no mail DNS records resolved — check the bootstrap-config secret, or pass mail_dns_records; applying this way would delete the live sending-domain records"
+    }
+  }
 }
 
 # GitHub Pages
@@ -163,7 +176,7 @@ resource "google_dns_record_set" "google_dkim" {
 
 resource "google_dns_record_set" "mail" {
   for_each = {
-    for r in var.mail_dns_records : "${r.name}-${r.type}" => r
+    for r in local.mail_dns_records : "${r.name}-${r.type}" => r
   }
 
   project      = google_project.ops.project_id

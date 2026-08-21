@@ -17,7 +17,7 @@ resource "google_monitoring_notification_channel" "budget_email" {
   type         = "email"
 
   labels = {
-    email_address = var.support_email
+    email_address = local.support_email
   }
 
   depends_on = [google_project_service.apis]

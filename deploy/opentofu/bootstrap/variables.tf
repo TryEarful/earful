@@ -42,11 +42,14 @@ variable "folder_id" {
   default     = null
 }
 
-# No default: a committed address is the one every clone of this
-# repository sends its billing alerts to.
+# Null rather than defaulted: a committed address is the one every clone
+# of this repository sends its billing alerts to. Left null it is read
+# from the bootstrap-config secret (config.tf); set it to skip that read
+# on a from-zero apply, before the project holding the secret exists.
 variable "support_email" {
-  description = "Where budget alerts land."
+  description = "Where budget alerts land. Null reads it from the bootstrap-config secret."
   type        = string
+  default     = null
 }
 
 variable "github_repo" {
@@ -64,12 +67,14 @@ variable "create_budgets" {
 # The ESP's sending-domain records (verification code, DKIM selectors,
 # DMARC), as its domain-authentication API returns them.
 #
-# REQUIRED rather than defaulted, for the same reason a default was once
-# tempting: these records are what make outgoing mail authenticate, and
-# a tfvars file recreated without them computes an empty map and DELETES
-# them — silently, because destroying a DNS record raises nothing. A
-# required variable turns that into a plan-time error instead, and keeps
-# one deployment's records out of a repository other people clone.
+# Null rather than required, because config.tf reads them from the
+# bootstrap-config secret instead; set this to skip that read on a
+# from-zero apply. The hazard that once made it required has not gone
+# away — these records are what make outgoing mail authenticate, and a
+# source that resolves to nothing computes an empty map and DELETES
+# them, silently, because destroying a DNS record raises nothing. It has
+# only moved: an unreadable secret is a plan-time error, and an empty
+# one is caught by the precondition on the zone.
 #
 # Two shapes worth knowing, because neither matches the vendor's own doc
 # example: authentication returns TWO DKIM CNAMEs, and they sit under
@@ -85,4 +90,11 @@ variable "mail_dns_records" {
     ttl     = optional(number, 300)
     rrdatas = list(string)
   }))
+  default = null
+}
+
+variable "config_secret_id" {
+  description = "Secret Manager secret in the pro project holding support_email and mail_dns_records."
+  type        = string
+  default     = "bootstrap-config"
 }

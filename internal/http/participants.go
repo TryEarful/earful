@@ -117,7 +117,10 @@ func (s *server) participantRespondPage(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request) {
-	participant, survey, version, ok := s.loadParticipantSurvey(w, r)
+	// The version this returns is the survey's current one; the submission
+	// is scored against the version actually served to this respondent,
+	// loaded by id from the form below.
+	participant, survey, _, ok := s.loadParticipantSurvey(w, r)
 	if !ok {
 		return
 	}
@@ -136,7 +139,7 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 		s.respondNotFound(w, r)
 		return
 	}
-	version, err = s.surveys.ServedVersionByID(r.Context(), survey.ID, servedID)
+	version, err := s.surveys.ServedVersionByID(r.Context(), survey.ID, servedID)
 	if errors.Is(err, store.ErrNotFound) {
 		s.respondNotFound(w, r)
 		return

@@ -118,12 +118,11 @@ printf '%s' "$BREVO_API_KEY" | gcloud secrets versions add BREVO_API_KEY \
   --project earful-pro-<sfx> --data-file=-
 ```
 
-The sending domain's records live in `bootstrap.auto.tfvars` as
-`mail_dns_records`, which is a **required** variable: recreate the
-tfvars without it and the plan errors rather than computing an empty map
-and deleting the live records. `POST /v3/senders/domains
+The sending domain's records live in the `bootstrap-config` secret (see
+"Where the operator values live" below), not in the tfvars. `POST
+/v3/senders/domains
 {"name":"mail.<your domain>"}` returns them (a brevo-code TXT, two DKIM
-CNAMEs under the subdomain, a DMARC TXT) — put them in the tfvars, apply
+CNAMEs under the subdomain, a DMARC TXT) — add them to the secret, apply
 bootstrap, then `PUT /v3/senders/domains/mail.<your domain>/authenticate`
 until verified and `POST /v3/senders` for hello@mail.tryearful.com.
 Re-apply pro (tfvars carry `email_sender = "brevo"`) → register the
@@ -137,11 +136,14 @@ test-fire, PITR clone restore, first export + restore from it, then and
 only then `-var lock_retention=true` (IRREVERSIBLE) and the
 owner-cannot-delete test.
 
-## Recreating the gitignored `*.tfvars`
+## Where the operator values live
 
-The three tfvars files exist only on the machine that runs tofu; losing
-them costs nothing but a lookup, since every value is recoverable from
-the cloud itself:
+Bootstrap needs five values that are true of one deployment. They are
+split by what can be recovered and what cannot.
+
+**Three stay in the tfvars**, because they are what tofu uses to *create*
+the projects — a value needed to make a project cannot be read from
+inside it. All three are one lookup away:
 
 ```
 gcloud billing accounts list            # billing_account (ID column)
@@ -149,16 +151,43 @@ gcloud organizations list               # org_id
 gcloud projects list --filter earful    # suffix = what follows earful-stg-/pro-
 ```
 
+**Two live in Secret Manager**, in the `bootstrap-config` secret in the
+pro project: `support_email` and `mail_dns_records`. Neither is
+recoverable from anything tofu creates, and the DNS records in
+particular were previously a single copy on one workstation. Read and
+rotate them with:
+
+```
+gcloud secrets versions access latest --secret bootstrap-config \
+  --project earful-pro-<sfx>
+printf '%s' "$JSON" | gcloud secrets versions add bootstrap-config \
+  --project earful-pro-<sfx> --data-file=-
+```
+
+The document is one JSON object; `ttl` is optional per record and
+defaults to 300:
+
+```
+{"support_email": "<where budget alerts land>",
+ "mail_dns_records": [{"name": "mail", "type": "TXT", "rrdatas": ["..."]}]}
+```
+
+This is durability, not secrecy — every one of those DNS records answers
+a `dig` from anywhere, and tofu manages them, so their values are in
+state either way. The secret exists so there is more than one copy.
+
+**Ordering, and the way back in.** The read is skipped whenever
+`support_email` and `mail_dns_records` are both passed as variables.
+That is not a convenience: bootstrap *creates* the project holding the
+secret, so a from-zero apply must supply them inline for run #1, create
+the secret, and drop them afterwards. The same escape hatch applies if
+Secret Manager is ever unreachable — otherwise no secret means no plan.
+
 ```
 # bootstrap/bootstrap.auto.tfvars
 billing_account = "<from billing accounts list>"
 suffix          = "<sfx>"
 org_id          = "<from organizations list>"
-support_email   = "<where budget alerts land>"
-# REQUIRED. Recover from the ESP's domain-authentication API, or read
-# the live zone: `gcloud dns record-sets list --zone <zone>`. Omitting
-# it fails the plan; it does NOT silently delete the records.
-mail_dns_records = [ ... ]
 
 # envs/stg/stg.auto.tfvars
 state_bucket   = "earful-tofu-state-<sfx>"
@@ -180,10 +209,9 @@ hosting_region = "<as stated on /trust>"
 ## Notes
 
 - `*.tfvars` are gitignored on purpose: they hold what is true of one
-  deployment — account ids, hostnames, addresses, DNS records — none of
-  which belongs in a repository other people clone (CONTRIBUTING.md,
-  "What must not be written down");
-  `.terraform.lock.hcl` files are committed.
+  deployment — account ids, hostnames, addresses — none of which belongs
+  in a repository other people clone (CONTRIBUTING.md, "What must not be
+  written down"); `.terraform.lock.hcl` files are committed.
 - Cloud SQL keeps a public IP with **zero** authorized networks: the
   only path in is the IAM-gated connector socket. Private-IP-only would
   add a paid VPC connector for nothing at this size.
