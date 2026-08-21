@@ -184,6 +184,38 @@ comes back over the vendor's schema: authentication issues **two** DKIM
 CNAMEs under the sending subdomain where the documented response shows a
 single `dkim_record`.
 
+Converting the ESP's shape into `mail_dns_records` is where this goes
+wrong quietly. `host_name` is fully qualified and `name` must be
+**relative to the zone** (`mail`, not `mail.<your domain>`); a TXT
+`value` becomes an `rrdatas` entry wrapped in escaped quotes, a CNAME
+gets a trailing dot; `ttl` is optional and defaults to 300. Expect two
+DKIM CNAMEs under the sending subdomain where the documented schema
+shows one.
+
+**The SPF string is not in that response.** The sending subdomain's TXT
+holds *two* rrdatas — the ESP's verification code and an
+`include:` SPF policy that was added on top, because the ESP stopped
+prescribing SPF once aligned DKIM carried DMARC alone. Rebuild from the
+ESP alone and you drop it, leaving DMARC one aligned path instead of
+two, and nothing reports that. Put it back by hand.
+
+**If the zone is still answering, prefer it to either.** Cloud DNS
+returns `rrdatas` already in tofu's form — quoted TXT strings, dotted
+CNAMEs — so the only work is making the name relative:
+
+```
+gcloud dns record-sets list --zone <zone> --project earful-ops-<sfx> \
+  --format json | jq '{
+    support_email: "<where budget alerts land>",
+    mail_dns_records: [ .[]
+      | select(.name | test("(^|\\.)mail\\.<your domain>\\.$"))
+      | {name: (.name | rtrimstr(".<your domain>.")), type, ttl, rrdatas} ]
+  }'
+```
+
+`tofu show -json` is a third source with the same values, for the case
+where state survived but the secret did not.
+
 **If the ESP account is gone or compromised**, `POST /v3/senders/domains`
 creates a new sending domain and returns new records. The old DKIM keys
 die with it, so mail is down until the new records resolve — which makes
