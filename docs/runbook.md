@@ -162,6 +162,12 @@ gcloud secrets versions add bootstrap-config \
 rm cfg.json
 ```
 
+To read it without touching disk at all — checking a value, or
+refreshing the password-manager copy — send it to the clipboard instead:
+`gcloud secrets versions access latest --secret bootstrap-config
+--project earful-pro-<sfx> | pbcopy`. That is the mirror of the
+`pbpaste | gcloud secrets versions add` form used for the API key below.
+
 Adding a version never destroys the previous one, so the old document
 remains the rollback: `gcloud secrets versions list bootstrap-config`
 shows them, and `access <n>` reads any of them back. That is the reason
@@ -216,7 +222,23 @@ The DNS records are the only one with a real recovery question, because
 the `bootstrap-config` secret that normally holds them lived in the pro
 project and went with it. **A copy stored only inside the thing you are
 recovering from is not a backup.** Keep the JSON in a password manager
-too; what follows is what to do when you did not.
+too — straight onto the clipboard, so it is never echoed and never
+written to disk:
+
+```
+gcloud secrets versions access latest --secret bootstrap-config \
+  --project earful-pro-<sfx> | pbcopy
+```
+
+Paste it before copying anything else; nothing clears the clipboard
+afterwards, and a clipboard manager will keep its own copy. Do this again
+after any change — a password-manager entry that predates the current
+version is worse than none, because it will be trusted. What follows is
+what to do when there was no copy.
+
+Redo the same at the far end of a rebuild: the new document is a
+different one, and the entry it replaces describes projects that no
+longer exist.
 
 **If the ESP account survived** — read them back rather than re-creating
 anything:

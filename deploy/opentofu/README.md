@@ -182,7 +182,7 @@ rotate them with:
 
 ```
 gcloud secrets versions access latest --secret bootstrap-config \
-  --project earful-pro-<sfx>
+  --project earful-pro-<sfx>            # add | pbcopy to keep an off-cloud copy
 printf '%s' "$JSON" | gcloud secrets versions add bootstrap-config \
   --project earful-pro-<sfx> --data-file=-
 ```
