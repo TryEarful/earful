@@ -140,6 +140,55 @@ gcloud sql import sql earful-restore \
 Note the asymmetry is intentional: the *export* path can only create
 objects; granting read for a restore is a deliberate, logged, human act.
 
+## Rebuild or rotate `bootstrap-config`
+
+Changing one value, adding a key, or repairing a bad edit — the ordinary
+cases, where the projects are all still there. If they are not, skip to
+the next section, which covers where each value comes back from when
+nothing survived.
+
+**Read, modify, add a version. Never retype the document.** Retyping is
+how the sending subdomain loses its second rrdata or a DKIM record goes
+missing, and neither failure announces itself — the secret stays valid
+JSON, the plan still reads it, and the records are just wrong. Round-trip
+it instead:
+
+```
+gcloud secrets versions access latest --secret bootstrap-config \
+  --project earful-pro-<sfx> > cfg.json
+# edit cfg.json
+gcloud secrets versions add bootstrap-config \
+  --project earful-pro-<sfx> --data-file=cfg.json
+rm cfg.json
+```
+
+Adding a version never destroys the previous one, so the old document
+remains the rollback: `gcloud secrets versions list bootstrap-config`
+shows them, and `access <n>` reads any of them back. That is the reason
+to add rather than edit, and the reason not to destroy the old version
+until the plan below is clean.
+
+**The plan is the acceptance test.** After any change:
+
+```
+cd deploy/opentofu/bootstrap && tofu plan
+```
+
+It must report **no changes**, or exactly the change you intended and
+nothing else. Anything more means the document is wrong — fix the
+secret, not the configuration. A malformed document fails the plan
+outright, and one that decodes to no mail records is refused by the
+zone's precondition rather than silently deleting them; the failure that
+survives both is a document that is well-formed and subtly incorrect,
+which is what this check is for.
+
+**If the document is lost but the zone still answers**, rebuild the
+records from Cloud DNS rather than from the ESP — it returns `rrdatas`
+already in the form the record set wants, and it holds the SPF string
+that the ESP's response omits. The command is in the next section, under
+"Where the five bootstrap values come from"; `support_email` is yours to
+supply and the GitHub organization code is reissued on request.
+
 ## Rebuild from zero (new projects)
 
 The section above restores the *data*. This one restores everything that
@@ -442,6 +491,7 @@ Live since 2026-07-24: pro sends via Brevo from `hello@mail.tryearful.com`
 Those records are held in the `bootstrap-config` secret in the pro
 project, not in the repository; read or rotate them with `gcloud secrets
 versions access latest --secret bootstrap-config`, then apply bootstrap.
+Changing what is in it: "Rebuild or rotate `bootstrap-config`".
 Staging never sends real email (boot invariant).
 
 - **Rotate the API key**: mint a new key in Brevo's dashboard, then
