@@ -173,8 +173,9 @@ gcloud organizations list               # org_id
 gcloud projects list --filter earful    # suffix = what follows earful-stg-/pro-
 ```
 
-**Two live in Secret Manager**, in the `bootstrap-config` secret in the
-pro project: `support_email` and `mail_dns_records`. Neither is
+**Three live in Secret Manager**, in the `bootstrap-config` secret in the
+pro project: `support_email`, `mail_dns_records` and
+`github_org_verification_txt`. Neither is
 recoverable from anything tofu creates, and the DNS records in
 particular were previously a single copy on one workstation. Read and
 rotate them with:
@@ -185,6 +186,14 @@ gcloud secrets versions access latest --secret bootstrap-config \
 printf '%s' "$JSON" | gcloud secrets versions add bootstrap-config \
   --project earful-pro-<sfx> --data-file=-
 ```
+
+The two GitHub verification records in `dns.tf` are deliberately not
+alike. The Pages challenge is committed and guarded — losing it lets
+another account claim the domain for its own Pages site. The
+organization code is neither: GitHub issues it on request, it expires
+within days if unused, and GitHub says the record may be deleted once
+the badge appears. It is kept because re-verifying without it needs a
+new code, and it is allowed to be absent.
 
 The document is one JSON object; `ttl` is optional per record and
 defaults to 300:

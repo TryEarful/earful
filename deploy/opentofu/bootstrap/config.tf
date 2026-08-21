@@ -33,7 +33,7 @@
 # that safe before the project exists.
 
 data "google_secret_manager_secret_version_access" "bootstrap_config" {
-  count = var.support_email == null || var.mail_dns_records == null ? 1 : 0
+  count = var.support_email == null || var.mail_dns_records == null || var.github_org_verification_txt == null ? 1 : 0
 
   project = local.projects.pro.id
   secret  = var.config_secret_id
@@ -60,6 +60,13 @@ locals {
   secret_config = jsondecode(local.config_json)
 
   support_email = coalesce(var.support_email, try(local.secret_config.support_email, null))
+
+  # Null is a legitimate state, not a missing value: GitHub issues this
+  # code on request and it expires in days if unused, so a rebuild is
+  # briefly without one and a secret written before this key existed has
+  # none. The record set below is counted off it rather than erroring, so
+  # absent means no record rather than no plan.
+  github_org_verification_txt = try(coalesce(var.github_org_verification_txt, local.secret_config.github_org_verification_txt), "")
 
   # Both sources are routed through JSON before being picked between,
   # because a conditional's branches must unify to one type and a typed

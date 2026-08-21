@@ -89,6 +89,25 @@ resource "google_dns_record_set" "github_pages_challenge" {
   }
 }
 
+# Organization verification, which is NOT the challenge above. That one
+# is permanent and guarded: losing it lets another account claim this
+# domain for its own Pages site. This one proves the domain to the
+# GitHub organization, its code is issued on request and expires within
+# days if unused, and GitHub says outright that the record may be
+# deleted once the badge appears. So it is kept — re-verifying without
+# it needs a fresh code — but not guarded, and it is allowed to be
+# absent entirely.
+resource "google_dns_record_set" "github_org_verification" {
+  count = local.github_org_verification_txt != "" ? 1 : 0
+
+  project      = google_project.ops.project_id
+  managed_zone = google_dns_managed_zone.tryearful.name
+  name         = "_gh-tryearful-o.${google_dns_managed_zone.tryearful.dns_name}"
+  type         = "TXT"
+  ttl          = 3600
+  rrdatas      = ["\"${local.github_org_verification_txt}\""]
+}
+
 # Google Workspace mail
 
 resource "google_dns_record_set" "apex_mx" {

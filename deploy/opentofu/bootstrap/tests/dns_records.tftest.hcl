@@ -50,6 +50,8 @@ variables {
       rrdatas = ["\"v=spf1 include:spf.example.test ~all\""]
     },
   ]
+
+  github_org_verification_txt = "testverificationcode"
 }
 
 run "mail_records_are_still_configured" {
@@ -113,14 +115,15 @@ run "records_can_come_from_the_config_secret" {
   command = plan
 
   variables {
-    support_email    = null
-    mail_dns_records = null
+    support_email               = null
+    mail_dns_records            = null
+    github_org_verification_txt = null
   }
 
   override_data {
     target = data.google_secret_manager_secret_version_access.bootstrap_config
     values = {
-      secret_data = "{\"support_email\":\"alerts@example.test\",\"mail_dns_records\":[{\"name\":\"brevo1._domainkey.mail\",\"type\":\"CNAME\",\"rrdatas\":[\"b1.dkim.example.test.\"]}]}"
+      secret_data = "{\"support_email\":\"alerts@example.test\",\"github_org_verification_txt\":\"fromsecret\",\"mail_dns_records\":[{\"name\":\"brevo1._domainkey.mail\",\"type\":\"CNAME\",\"rrdatas\":[\"b1.dkim.example.test.\"]}]}"
     }
   }
 
@@ -136,6 +139,35 @@ run "records_can_come_from_the_config_secret" {
   assert {
     condition     = google_monitoring_notification_channel.budget_email[0].labels.email_address == "alerts@example.test"
     error_message = "support_email did not come back from the secret — budget alerts would have no destination"
+  }
+
+  assert {
+    condition     = google_dns_record_set.github_org_verification[0].rrdatas[0] == "\"fromsecret\""
+    error_message = "the GitHub org verification code did not come back from the secret — the organisation quietly stops being verified"
+  }
+}
+
+# Absent everywhere is legitimate, not an error: the code is issued on
+# request and expires within days, so a rebuild spends a while without
+# one. What must not happen is a failed plan, or a record published
+# carrying an empty value.
+run "org_verification_absent_is_a_clean_no_op" {
+  command = plan
+
+  variables {
+    github_org_verification_txt = null
+  }
+
+  override_data {
+    target = data.google_secret_manager_secret_version_access.bootstrap_config
+    values = {
+      secret_data = "{}"
+    }
+  }
+
+  assert {
+    condition     = length(google_dns_record_set.github_org_verification) == 0
+    error_message = "no verification code should mean no record at all, not a record published with an empty value"
   }
 }
 

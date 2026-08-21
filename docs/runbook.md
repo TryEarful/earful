@@ -161,6 +161,7 @@ the one you keep unless you fully delete the old projects first.
 | `suffix` | You choose a **new** one. Every state-bucket and project id derives from it, and GCS names are globally unique, so the old ones block reuse until deleted (30-day soft delete). |
 | `support_email` | You know it. It is where the budget alerts should land. |
 | `mail_dns_records` | The ESP — see below. |
+| `github_org_verification_txt` | Request a fresh code from GitHub (Organization settings → Verified domains). The old one cannot be recovered and does not need to be: codes expire within days and are reissued on demand. |
 
 The DNS records are the only one with a real recovery question, because
 the `bootstrap-config` secret that normally holds them lived in the pro
@@ -267,6 +268,7 @@ Each step exists to unblock the next; none of them can be skipped.
    ```
    {
      "support_email": "<where budget alerts land>",
+     "github_org_verification_txt": "<GitHub org verification code>",
      "mail_dns_records": [
        {
          "name": "mail",
@@ -309,6 +311,9 @@ Each step exists to unblock the next; none of them can be skipped.
    - `ttl` may be omitted and defaults to 300, but write it — a record
      that arrives without one from a hand-built file is the shape the
      record set rejects.
+   - `github_org_verification_txt` may be omitted entirely. It is the
+     only optional key: absent means the record is simply not created,
+     which is the right state while waiting on a fresh code.
 
 5. **Delete the two values from the tfvars and re-plan.** The plan must
    say **"No changes"**. That is the whole proof: it means the secret is

@@ -93,6 +93,18 @@ variable "mail_dns_records" {
   default = null
 }
 
+# GitHub's organization domain verification, which is a different record
+# from the Pages challenge in dns.tf and behaves differently: the code is
+# issued on request and expires within days if unused, and GitHub states
+# the record may be deleted once the verified badge appears. Kept anyway
+# — it costs nothing and re-verification does not then need a new code —
+# but that is why it carries no prevent_destroy and why null is allowed.
+variable "github_org_verification_txt" {
+  description = "GitHub organization domain-verification code. Null reads it from the bootstrap-config secret; absent everywhere means no record."
+  type        = string
+  default     = null
+}
+
 variable "config_secret_id" {
   description = "Secret Manager secret in the pro project holding support_email and mail_dns_records."
   type        = string
