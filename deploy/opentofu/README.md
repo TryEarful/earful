@@ -49,7 +49,10 @@ alerts by hand.
 **2. Migrate bootstrap's own state** into the bucket it just made:
 uncomment `bootstrap/backend.tf`, then
 `tofu init -migrate-state -backend-config="bucket=earful-tofu-state-<sfx>"`
-and delete the local `terraform.tfstate*`.
+and delete the local `terraform.tfstate*`. Note the file ships
+**uncommented**, naming a bucket that does not exist before step 1 — so a
+genuine from-zero run has to comment the block out first, or `tofu init`
+refuses. See `docs/runbook.md`, "Rebuild from zero".
 
 **3. Seed image** (once; the pipeline owns every later image):
 
@@ -131,6 +134,25 @@ hardBounce/spam/invalid/blocked/unsubscribed — subscription names are
 camelCase; the delivered payloads use snake_case slugs) at the
 `email_webhook_path` output → send a real message and check DMARC.
 
+For a domain that is *already* authenticated, `GET
+/v3/senders/domains/mail.<your domain>` returns the same records under
+`dns_records` — the read that recovers them when the secret is gone, and
+the only reason total loss does not mean re-creating the sending domain.
+
+**Google sign-in** (optional; the button stays hidden while
+`google_client_id` is empty). Mint an OAuth client in the pro project's
+console with the app's callback as the redirect URI, put the id in
+`envs/pro`'s tfvars, and give the pre-provisioned shell its value:
+
+```
+printf '%s' "$GOOGLE_CLIENT_SECRET" | gcloud secrets versions add GOOGLE_CLIENT_SECRET \
+  --project earful-pro-<sfx> --data-file=-
+```
+
+Order matters the same way Brevo's does: the revision mounts the secret
+and will not start if it has no version, which is why `google_client_id`
+gates the mount.
+
 **10. Drills** — see `docs/runbook.md`: DB-kill uptime alert, budget
 test-fire, PITR clone restore, first export + restore from it, then and
 only then `-var lock_retention=true` (IRREVERSIBLE) and the
@@ -175,6 +197,10 @@ defaults to 300:
 This is durability, not secrecy — every one of those DNS records answers
 a `dig` from anywhere, and tofu manages them, so their values are in
 state either way. The secret exists so there is more than one copy.
+
+**Total loss.** If the projects themselves are gone, the secret went with
+them — `docs/runbook.md`, "Rebuild from zero (new projects)", covers where
+each value comes back from and in what order.
 
 **Ordering, and the way back in.** The read is skipped whenever
 `support_email` and `mail_dns_records` are both passed as variables.

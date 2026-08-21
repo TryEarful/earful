@@ -140,6 +140,140 @@ gcloud sql import sql earful-restore \
 Note the asymmetry is intentional: the *export* path can only create
 objects; granting read for a restore is a deliberate, logged, human act.
 
+## Rebuild from zero (new projects)
+
+The section above restores the *data*. This one restores everything that
+configures it, for the case where the projects themselves are gone or can
+no longer be trusted. It has never been executed — see "What the drills
+taught" — so treat the order as reasoned rather than proven, and expect
+to find at least one thing this does not mention.
+
+Read it before you need it. One step near the start is not reversible
+cheaply: bucket names are globally unique, so the `<sfx>` you choose is
+the one you keep unless you fully delete the old projects first.
+
+### Where the five bootstrap values come from
+
+| Value | Source when nothing local survived |
+|---|---|
+| `billing_account` | `gcloud billing accounts list` |
+| `org_id` | `gcloud organizations list` |
+| `suffix` | You choose a **new** one. Every state-bucket and project id derives from it, and GCS names are globally unique, so the old ones block reuse until deleted (30-day soft delete). |
+| `support_email` | You know it. It is where the budget alerts should land. |
+| `mail_dns_records` | The ESP — see below. |
+
+The DNS records are the only one with a real recovery question, because
+the `bootstrap-config` secret that normally holds them lived in the pro
+project and went with it. **A copy stored only inside the thing you are
+recovering from is not a backup.** Keep the JSON in a password manager
+too; what follows is what to do when you did not.
+
+**If the ESP account survived** — read them back rather than re-creating
+anything:
+
+```
+curl -H "api-key: $BREVO_API_KEY" \
+  https://api.brevo.com/v3/senders/domains/mail.<your domain>
+```
+
+`dns_records` comes back with `brevo_code`, the DKIM record(s) and
+`dmarc_record`, each carrying `host_name`, `type` and `value` — which is
+exactly the shape `mail_dns_records` wants. The records are unchanged, so
+the rebuilt zone reproduces the old one and mail keeps working. Trust what
+comes back over the vendor's schema: authentication issues **two** DKIM
+CNAMEs under the sending subdomain where the documented response shows a
+single `dkim_record`.
+
+**If the ESP account is gone or compromised**, `POST /v3/senders/domains`
+creates a new sending domain and returns new records. The old DKIM keys
+die with it, so mail is down until the new records resolve — which makes
+this the branch to avoid if the account can be recovered instead.
+
+### Order of operations
+
+Each step exists to unblock the next; none of them can be skipped.
+
+1. **Comment out the `terraform` block in `bootstrap/backend.tf`.** It
+   ships live, pointing at a state bucket that does not exist yet, and
+   `tofu init` will refuse. The README's step 2 says to *uncomment* it,
+   which is right for the second run and backwards for this one.
+
+2. **Apply bootstrap with the two values in the tfvars**, on local state:
+
+   ```
+   cd deploy/opentofu/bootstrap
+   tofu init
+   tofu apply     # billing_account, suffix, org_id, support_email, mail_dns_records
+   ```
+
+   Supplying them inline is not a convenience. This root *creates* the
+   project that holds the secret, so on the first apply there is nothing
+   to read, and a data source is evaluated whether or not anything
+   consumes it. `config.tf` gates the read on both variables being unset
+   for exactly this reason.
+
+3. **Migrate the state** into the bucket step 2 just created: uncomment
+   `backend.tf`, `tofu init -migrate-state -backend-config="bucket=earful-tofu-state-<sfx>"`,
+   delete the local `terraform.tfstate*`. If the migration half-lands, the
+   recovery is re-importing the bootstrap resources rather than re-applying
+   over them.
+
+4. **Create the secret**, now that the pro project exists and has the API
+   enabled:
+
+   ```
+   gcloud secrets create bootstrap-config --project earful-pro-<sfx> \
+     --replication-policy automatic
+   printf '%s' "$JSON" | gcloud secrets versions add bootstrap-config \
+     --project earful-pro-<sfx> --data-file=-
+   ```
+
+   One JSON object, `ttl` optional per record and defaulting to 300:
+
+   ```
+   {"support_email": "<where budget alerts land>",
+    "mail_dns_records": [{"name": "mail", "type": "TXT", "rrdatas": ["..."]}]}
+   ```
+
+5. **Delete the two values from the tfvars and re-plan.** The plan must
+   say **"No changes"**. That is the whole proof: it means the secret is
+   readable, decodes, and produces records identical to the ones already
+   applied. A diff here means the JSON is wrong — fix the secret, not the
+   tfvars. Until this plan is clean, do not delete your inline copy.
+
+   The zone carries a precondition that refuses to apply with zero mail
+   records, so a secret that reads but decodes to nothing fails loudly
+   instead of destroying the sending domain's records.
+
+Then rejoin `deploy/opentofu/README.md` at step 3 (seed image) and
+continue through the env stacks, pipeline and cutover.
+
+### What changes on a rebuild without telling you
+
+Each of these is a live outage that presents as something else.
+
+- **`EMAIL_WEBHOOK_SECRET` regenerates.** It is a `random_password`, so
+  the ESP webhook path changes. Re-register the webhook at the new
+  `email_webhook_path` output or bounces stop being recorded — silently,
+  since a webhook nobody calls raises nothing.
+- **Google sign-in disappears rather than breaking.** The OAuth client and
+  its redirect URI live in the *old* project's console. Mint a new client,
+  set `google_client_id` in the pro tfvars and populate the
+  `GOOGLE_CLIENT_SECRET` shell; an empty `google_client_id` just hides the
+  button, so nothing will look wrong.
+- **`lock_retention` starts at `false` again.** The new backups bucket has
+  no locked window until the export→restore drill re-runs and you set it
+  deliberately. The old locked bucket cannot be shortened, only abandoned
+  (ADR-0008).
+- **The nameservers are new.** Repoint the registrar's delegation. README
+  step 8's pre-cutover `dig` gate cannot help here — it diffs the new zone
+  against the old one, and the old one is gone. You are cutting over
+  without that net; check the records against the zone you just applied
+  instead.
+- **The GitHub Pages domain verification may need re-issuing.** The
+  challenge TXT is committed in `dns.tf`, so it comes back with the repo,
+  but confirm the value GitHub expects still matches.
+
 ## Erasure request (GDPR)
 
 **Deadline: 24 hours.** The ordinary route (delete → 30-day purge) is
@@ -356,7 +490,8 @@ disturb ops, pro or backups:
 
 Every procedure above has been executed at least once, except the
 breach-notification duty and the rebuild-from-scratch path, which cannot
-be rehearsed without the incident. What each one surfaced is below — the
+be rehearsed without the incident — written down, but never run end to
+end, and worth reading as such. What each one surfaced is below — the
 gotchas are the point, and they are true on any instance. **Evidence
 from a particular run belongs in `docs/runbook.local.md`**, which is
 gitignored; see CONTRIBUTING.md, "What must not be written down".
@@ -388,6 +523,14 @@ gitignored; see CONTRIBUTING.md, "What must not be written down".
   serving everything. Check it took by looking at something the bad
   release changed — a served asset, a page — and not at the digest
   label.
+- **The from-zero escape hatch, partially.** The whole rebuild cannot be
+  rehearsed, but its load-bearing claim can: pass `support_email` and
+  `mail_dns_records` as variables and bootstrap never contacts Secret
+  Manager at all. Prove it by planning with `-var
+  config_secret_id=<a secret that exists nowhere>` — a clean plan means
+  the gate holds, and a first apply into empty projects will not stall on
+  a secret that cannot exist yet. Cheap enough to re-run whenever
+  `config.tf` changes.
 - **Missing a scheduled window.** After any outage, the exports for the
   days that were missed **cannot be recreated**: an export is a snapshot
   of a moment that has passed. PITR covers the same period, so nothing
