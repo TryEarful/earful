@@ -260,12 +260,55 @@ Each step exists to unblock the next; none of them can be skipped.
      --project earful-pro-<sfx> --data-file=-
    ```
 
-   One JSON object, `ttl` optional per record and defaulting to 300:
+   One JSON object. A complete example, with the deployment-specific
+   parts as placeholders — the shape is the point, and every detail in it
+   is load-bearing:
 
    ```
-   {"support_email": "<where budget alerts land>",
-    "mail_dns_records": [{"name": "mail", "type": "TXT", "rrdatas": ["..."]}]}
+   {
+     "support_email": "<where budget alerts land>",
+     "mail_dns_records": [
+       {
+         "name": "mail",
+         "type": "TXT",
+         "ttl": 300,
+         "rrdatas": [
+           "\"brevo-code:<verification code>\"",
+           "\"v=spf1 include:spf.brevo.com ~all\""
+         ]
+       },
+       {
+         "name": "brevo1._domainkey.mail",
+         "type": "CNAME",
+         "ttl": 300,
+         "rrdatas": ["<selector 1 target>."]
+       },
+       {
+         "name": "brevo2._domainkey.mail",
+         "type": "CNAME",
+         "ttl": 300,
+         "rrdatas": ["<selector 2 target>."]
+       },
+       {
+         "name": "_dmarc.mail",
+         "type": "TXT",
+         "ttl": 300,
+         "rrdatas": ["\"v=DMARC1; p=none; rua=mailto:<aggregate report address>\""]
+       }
+     ]
+   }
    ```
+
+   Four things in there are easy to get wrong and fail quietly:
+
+   - `name` is **relative to the zone** — `mail`, never `mail.<your domain>`.
+   - TXT `rrdatas` entries carry their own quotes, so the JSON escapes
+     them; CNAME targets end in a dot.
+   - The first record has **two** rrdatas. Only the verification code
+     comes from the ESP; the SPF policy is the one you add back by hand.
+   - `ttl` may be omitted and defaults to 300, but write it — a record
+     that arrives without one from a hand-built file is the shape the
+     record set rejects.
 
 5. **Delete the two values from the tfvars and re-plan.** The plan must
    say **"No changes"**. That is the whole proof: it means the secret is
