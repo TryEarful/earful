@@ -633,6 +633,34 @@ fieldset {
   font-size: 0.9rem;
 }
 
+/* What the microphone is hearing, and which microphone. The browser
+   chooses the input without saying so, and a wrong choice — a paired
+   headset, a meeting app's virtual device — otherwise shows up only as
+   an empty transcript. The bars are aria-hidden; the device name is text
+   and the status line announces it. */
+.voice-monitor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-basis: 100%;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.voice-spectrum {
+  flex: none;
+  width: 10rem;
+  height: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--surface);
+}
+
+.voice-input {
+  overflow-wrap: anywhere;
+}
+
 /* Shown while a transcription is in flight. Indeterminate on purpose:
    the model reports no progress, so a filling bar would be a number this
    page invented. This one says "working" and claims nothing else. */

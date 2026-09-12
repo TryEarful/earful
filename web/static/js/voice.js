@@ -109,8 +109,31 @@
     progress.setAttribute("aria-hidden", "true");
     progress.hidden = true;
 
+    // What the microphone is hearing, and which microphone. The browser
+    // picks the input device and says nothing about it: a headset left
+    // paired, or a meeting app's virtual device, is chosen as readily as
+    // the built-in microphone, and the only sign of a wrong choice is a
+    // transcript that comes back empty. A live spectrum and the device's
+    // name make it visible while there is still time to fix it.
+    var monitor = document.createElement("span");
+    monitor.className = "voice-monitor";
+    monitor.hidden = true;
+
+    var spectrum = document.createElement("canvas");
+    spectrum.className = "voice-spectrum";
+    // The status line announces the device name; the bars only repeat
+    // what a sighted respondent can already hear.
+    spectrum.setAttribute("aria-hidden", "true");
+
+    var input = document.createElement("span");
+    input.className = "voice-input";
+
+    monitor.appendChild(spectrum);
+    monitor.appendChild(input);
+
     wrap.appendChild(button);
     wrap.appendChild(status);
+    wrap.appendChild(monitor);
     wrap.appendChild(progress);
     field.parentNode.insertBefore(wrap, field.nextSibling);
 
@@ -118,20 +141,42 @@
     // A browser hides a placeholder as soon as the field has content, so
     // the first transcribed word clears this without any help from here.
     var placeholder = field.getAttribute("placeholder");
+    var meter = null;
     var ui = {
-      recording: function () {
+      recording: function (handle) {
         field.setAttribute("placeholder", RECORDING_HINT);
         progress.hidden = true;
+        if (!handle.monitor) return;
+        var device = handle.monitor.device;
+        input.textContent = device ? "Input: " + device : "";
+        // Unhidden before the meter starts, so the canvas has a size to
+        // read; a hidden element measures zero by zero.
+        monitor.hidden = false;
+        meter = startMeter(handle.monitor.context, handle.monitor.stream, spectrum, function quiet() {
+          say(
+            "Nothing is coming through" +
+              (device ? " " + device : "") +
+              " — check which microphone your browser is using, or type your answer."
+          );
+        });
       },
       transcribing: function () {
+        stopMeter();
         progress.hidden = false;
       },
       settled: function () {
         if (placeholder === null) field.removeAttribute("placeholder");
         else field.setAttribute("placeholder", placeholder);
+        stopMeter();
         progress.hidden = true;
       },
     };
+
+    function stopMeter() {
+      if (meter) meter.stop();
+      meter = null;
+      monitor.hidden = true;
+    }
 
     var recorder = null;
 
@@ -195,8 +240,9 @@
             recorder = handle;
             setLabel("Stop and transcribe");
             button.classList.add("recording");
-            ui.recording();
-            say("Listening… speak now.");
+            ui.recording(handle);
+            var device = handle.monitor && handle.monitor.device;
+            say(device ? "Listening on " + device + "… speak now." : "Listening… speak now.");
           },
           function () {
             reset();
@@ -328,6 +374,8 @@
     recognition.interimResults = false;
 
     var failed = false;
+    var ended = false;
+    var monitor = null;
 
     recognition.onresult = function (event) {
       for (var i = event.resultIndex; i < event.results.length; i++) {
@@ -343,6 +391,8 @@
       say("Couldn't recognise that — please type your answer.");
     };
     recognition.onend = function () {
+      ended = true;
+      closeMonitor(monitor);
       if (!failed) {
         say("Transcribed on your device — edit it if it isn't quite right.");
         field.focus();
@@ -355,13 +405,53 @@
     } catch (err) {
       return Promise.reject(err);
     }
-    return Promise.resolve({
-      stop: function () {
-        ui.transcribing();
-        say("Finishing…");
-        recognition.stop();
-      },
+    // The recogniser opens the microphone itself and never says which
+    // one. A second, monitor-only capture of the same default device
+    // feeds the spectrum; if it cannot be opened, recognition runs
+    // without the picture rather than not at all.
+    return openMonitor().then(function (opened) {
+      if (ended) {
+        closeMonitor(opened);
+        opened = null;
+      }
+      monitor = opened;
+      return {
+        monitor: monitor,
+        stop: function () {
+          ui.transcribing();
+          say("Finishing…");
+          recognition.stop();
+        },
+      };
     });
+  }
+
+  function openMonitor() {
+    return navigator.mediaDevices.getUserMedia({ audio: true }).then(
+      function (stream) {
+        var context = new (window.AudioContext || window.webkitAudioContext)();
+        return { context: context, stream: stream, device: deviceName(stream) };
+      },
+      function () {
+        return null;
+      }
+    );
+  }
+
+  function closeMonitor(monitor) {
+    if (!monitor) return;
+    monitor.stream.getTracks().forEach(function (track) {
+      track.stop();
+    });
+    if (monitor.context.state !== "closed") monitor.context.close();
+  }
+
+  // deviceName is the label the browser gives the capture track: the
+  // device's own name once permission is granted, empty on browsers that
+  // withhold it.
+  function deviceName(stream) {
+    var tracks = stream.getAudioTracks();
+    return tracks.length ? tracks[0].label || "" : "";
   }
 
   // --- capture -----------------------------------------------------------
@@ -464,7 +554,10 @@
         }
 
         return pump(context, stream, socket).then(function () {
-          return { stop: finish };
+          return {
+            stop: finish,
+            monitor: { context: context, stream: stream, device: deviceName(stream) },
+          };
         });
       });
   }
@@ -511,6 +604,121 @@
       source.connect(node);
       node.connect(context.destination);
     }
+  }
+
+  // --- the live picture --------------------------------------------------
+
+  // startMeter draws the input's spectrum onto the canvas until stopped
+  // and hands every frame's level to the quiet watcher. The analyser is a
+  // second tap on the stream, in parallel with the capture graph, so it
+  // cannot change a sample of what is transcribed.
+  function startMeter(context, stream, canvas, onQuiet) {
+    var analyser = context.createAnalyser();
+    // 1024 points is 64 ms at 16 kHz: fine enough to look alive, and it
+    // leaves enough bins under 4 kHz to fill the bars whatever rate the
+    // context runs at (the monitor-only context uses the device's own).
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.6;
+    context.createMediaStreamSource(stream).connect(analyser);
+
+    var bins = new Uint8Array(analyser.frequencyBinCount);
+    var wave = new Uint8Array(analyser.fftSize);
+    // Speech lives below 4 kHz; bins above it would be a flat strip of
+    // nothing taking up half the picture.
+    var usable = Math.max(1, Math.round((4000 / (context.sampleRate / 2)) * bins.length));
+    var bars = Math.min(32, usable);
+    var perBar = Math.floor(usable / bars);
+
+    // A coarser meter under reduced motion, not a frozen one: this is a
+    // live level, the thing the respondent is watching for, not
+    // decoration.
+    var reduced =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var frameGap = reduced ? 125 : 0;
+
+    var scale = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(canvas.clientWidth * scale));
+    canvas.height = Math.max(1, Math.round(canvas.clientHeight * scale));
+    var paint = canvas.getContext("2d");
+    var colour = getComputedStyle(canvas).getPropertyValue("--accent").trim() || "#6d4aff";
+    var gap = Math.max(1, Math.round(scale));
+    var barWidth = (canvas.width - gap * (bars - 1)) / bars;
+
+    var watch = quietWatch();
+    var stopped = false;
+    var last = -Infinity;
+    var frame = 0;
+
+    function draw(now) {
+      if (stopped) return;
+      frame = window.requestAnimationFrame(draw);
+      if (now - last < frameGap) return;
+      last = now;
+
+      analyser.getByteTimeDomainData(wave);
+      var peak = 0;
+      for (var i = 0; i < wave.length; i++) {
+        var amplitude = Math.abs(wave[i] - 128) / 128;
+        if (amplitude > peak) peak = amplitude;
+      }
+      if (watch.sample(peak, now)) onQuiet();
+
+      analyser.getByteFrequencyData(bins);
+      paint.clearRect(0, 0, canvas.width, canvas.height);
+      paint.fillStyle = colour;
+      for (var b = 0; b < bars; b++) {
+        var sum = 0;
+        for (var k = 0; k < perBar; k++) sum += bins[b * perBar + k];
+        var level = sum / perBar / 255;
+        var height = Math.max(gap, level * canvas.height);
+        paint.fillRect(b * (barWidth + gap), canvas.height - height, barWidth, height);
+      }
+    }
+    frame = window.requestAnimationFrame(draw);
+
+    return {
+      stop: function () {
+        stopped = true;
+        window.cancelAnimationFrame(frame);
+        analyser.disconnect();
+      },
+    };
+  }
+
+  // quietWatch decides when a take has been silent for long enough that
+  // the respondent should be told, instead of finding out from an empty
+  // transcript. sample(peak, now) is called once per drawn frame with
+  // that frame's peak amplitude (0 is digital silence, 1 is full scale)
+  // and the frame's timestamp in milliseconds; it returns true when the
+  // warning is due. The caller announces the warning every time it
+  // returns true.
+  //
+  // A live microphone in a quiet room still shows a small noise floor;
+  // a muted, unplugged or wrong device sits at exactly zero. The floor
+  // is well under the threshold here, so the warning means "this input
+  // is dead", not "you are speaking softly". Three seconds is long
+  // enough for a respondent to gather their thoughts before speaking,
+  // and the timer restarts whenever sound returns, so a pause mid-answer
+  // passes unremarked. The warning fires once per take: the status line
+  // would otherwise repeat it on every frame.
+  function quietWatch() {
+    var THRESHOLD = 0.02;
+    var PATIENCE = 3000;
+    var quietSince = null;
+    var warned = false;
+    return {
+      sample: function (peak, now) {
+        if (peak > THRESHOLD) {
+          quietSince = null;
+          return false;
+        }
+        if (quietSince === null) quietSince = now;
+        if (warned || now - quietSince < PATIENCE) return false;
+        warned = true;
+        return true;
+      },
+    };
   }
 
   // Exposed so docs/voice-support.md's matrix can be filled in from real

@@ -107,6 +107,13 @@ textarea the server rendered is the whole interface (story 38).
   session (`VOICE_MAX_SECONDS_PER_RESPONSE`), per survey per day
   (`VOICE_SURVEY_DAILY_SECONDS`), plus the workspace token quota and the
   global € breaker. Every one of them degrades to typing.
+- While a take is in progress the page shows a live spectrum of the
+  input and the name of the device it comes from, on both paths. The
+  browser chooses the input device silently, so a paired headset or a
+  meeting app's virtual device can be capturing instead of the built-in
+  microphone; the picture and the name make that visible before the
+  transcript comes back empty. On the local path this is a second,
+  monitor-only capture of the default device, opened best-effort.
 - Audio never reaches disk, logs or the database. `internal/voice` is the
   only package that holds the bytes, and a build-time test fails if it
   ever gains a way to write them anywhere.

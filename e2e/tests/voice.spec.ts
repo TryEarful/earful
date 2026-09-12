@@ -90,6 +90,12 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
     /Recording in progress/
   );
 
+  // While recording, the page shows what the microphone is hearing and
+  // which microphone it is: the browser picks the input silently, and a
+  // wrong pick otherwise surfaces only as an empty transcript.
+  await expect(respondent.locator(".voice-monitor")).toBeVisible();
+  await expect(respondent.locator(".voice-spectrum")).toBeVisible();
+
   await respondent.waitForTimeout(1500); // a second of speech to transcribe
   await stop.click();
 
@@ -112,6 +118,7 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   // afford.
   await expect(answer).not.toHaveAttribute("placeholder", /Recording in progress/);
   await expect(respondent.locator(".voice-progress")).toBeHidden();
+  await expect(respondent.locator(".voice-monitor")).toBeHidden();
 
   await context.close();
 });
