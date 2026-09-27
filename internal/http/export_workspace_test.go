@@ -169,6 +169,19 @@ func TestWorkspaceExport_ContainsEverythingTheWorkspaceHolds(t *testing.T) {
 	if first.Text == second.Text {
 		t.Error("the rewording did not survive the export")
 	}
+	// The dated flow counters travel (format version 2): a submission is
+	// a completion on the day it happened, with no way back to the
+	// response.
+	var datedCompletion bool
+	for _, stat := range anonymous.StatsDaily {
+		if stat.Metric == "completion" && len(stat.Day) == len("2006-01-02") && stat.Count > 0 {
+			datedCompletion = true
+		}
+	}
+	if !datedCompletion {
+		t.Errorf("no dated completion counter in the export: %+v", anonymous.StatsDaily)
+	}
+
 	// The rating scale's bounds travel too, so a reader knows what a 7
 	// meant.
 	if anonymous.Versions[0].Questions[1].ScaleMax != 7 {

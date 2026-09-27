@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 1.**
+**Format version 2.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -24,7 +24,7 @@ spreadsheets and contain nothing the JSON doesn't.
 
 ```jsonc
 {
-  "format_version": 1,
+  "format_version": 2,
   "exported_at": "2026-07-25T14:03:11Z",
   "workspace": { "id": "uuid", "name": "sam's workspace" },
   "surveys": [
@@ -81,11 +81,30 @@ spreadsheets and contain nothing the JSON doesn't.
       "stats": [                           // unlinked counters, ADR-0009
         { "metric": "start", "count": 58 },
         { "metric": "browser", "bucket": "Chrome", "count": 31 }
+      ],
+
+      "stats_daily": [                     // dated flow counters, ADR-0012
+        { "metric": "start", "day": "2026-07-03", "count": 4 },
+        { "metric": "completion", "day": "2026-07-03", "count": 2 },
+        { "metric": "reached", "bucket": "<identity_id>", "day": "2026-07-03", "count": 2 }
       ]
     }
   ]
 }
 ```
+
+### Counters
+
+`stats` holds undated totals. `stats_daily` holds the same kind of
+count with a UTC `day`, for the three flow metrics only: `start` (the
+survey page was opened), `completion` (a response was submitted) and
+`reached` (the last question a submitted response answered, `bucket`
+being its `identity_id`). Browser, device and country are never dated,
+so they appear in `stats` only. A survey that existed before per-day
+counting began has its earlier opens and submissions in `stats` and
+its later ones in `stats_daily`; the two are added, never overlapping.
+The `reached` rows in `stats` are keyed by question position, an older
+shape kept as it was; the dated rows are keyed by identity.
 
 ### Answer values
 
@@ -144,4 +163,5 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 2 | `stats_daily` added: per-day opened, submitted and reached counters (ADR-0012). Everything in version 1 is unchanged. |
 | 1 | First published format (M7-T3). |

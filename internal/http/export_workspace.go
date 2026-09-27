@@ -199,6 +199,16 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 				Metric: stat.Metric, Bucket: stat.Bucket, Count: stat.Count,
 			})
 		}
+		daily, err := s.surveys.AllDailyStats(ctx, survey.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, stat := range daily {
+			exported.StatsDaily = append(exported.StatsDaily, export.DailyStat{
+				Metric: stat.Metric, Bucket: stat.Bucket,
+				Day: stat.Day.Format(rangeInputLayout), Count: stat.Count,
+			})
+		}
 
 		// The stored Insight Summary, if there is one, travels with its
 		// label attached (story 53 and M10-T2).

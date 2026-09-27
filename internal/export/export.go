@@ -24,7 +24,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 1
+const FormatVersion = 2
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {
@@ -52,6 +52,9 @@ type Survey struct {
 	Participants []Participant `json:"participants,omitempty"`
 	Responses    []Response    `json:"responses"`
 	Stats        []Stat        `json:"stats,omitempty"`
+	// StatsDaily are the dated flow counters (ADR-0012): the same kind
+	// of thing as Stats, with a day. Format version 2.
+	StatsDaily []DailyStat `json:"stats_daily,omitempty"`
 	// Insights are AI readings of the answers, exported with the label
 	// they carry in the product: a model and a time, never presented as
 	// data (story 53).
@@ -128,6 +131,15 @@ type Answer struct {
 type Stat struct {
 	Metric string `json:"metric"`
 	Bucket string `json:"bucket,omitempty"`
+	Count  int    `json:"count"`
+}
+
+// DailyStat is one dated survey-level counter (ADR-0012). Only the flow
+// metrics carry a day; the audience metrics in Stats never do.
+type DailyStat struct {
+	Metric string `json:"metric"`
+	Bucket string `json:"bucket,omitempty"`
+	Day    string `json:"day"`
 	Count  int    `json:"count"`
 }
 
