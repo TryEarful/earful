@@ -33,6 +33,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | M10 — Cross-respondent insights | [x] done | 2/2 |
 | M11 — Localization & translation | [x] done | 3/3 |
 | M12 — Private beta gate | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted); turning it off is a manual decision with no date on it |
+| Issue #2 — Stats over time | [x] done | 1/1 · post-MVP, added 2026-09-27 |
 
 ### Status log
 
@@ -73,6 +74,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0009 | Audience stats exist only as unlinked survey-level aggregates (browser family, device class, country via in-process GeoIP); n<5 suppression; amends 0003 |
 | 0010 | Workspace export archives live in Postgres, not object storage: one code path for SaaS and self-hosting, at the cost of a size cap |
 | 0011 | EU residency outranks model recency: every AI call stays pinned to europe-west4, so Gemini 3.x (global-only) is not used |
+| 0012 | Flow counters (opened, submitted, where answers stop) carry a UTC day in a second counter table; audience counters never do, because a date range plus suppression still leaks by subtraction; amends 0009 |
 
 ## MVP scope
 
@@ -304,6 +306,18 @@ it also has a Google identity, nothing else.
 
 - [x] **M12-T1 Invite codes gate creation; passwords sign in.** Goal (design refined 2026-07-24, superseding the earlier code-as-credential sketch): `beta_codes` table (SHA-256 hashes, label, single-use `used_at`/`used_by`, `revoked_at`) — codes are one-shot signup keys ONLY, marked used in the same transaction that creates the account; thereafter users sign in with **email+password** (bcrypt, min 8 chars, uniform "invalid email or password" for every failure incl. timing-equalized unknown emails, both per-IP and per-email limiters); `/account` gains a password-gated immediate email change (unverified until Brevo; uniqueness enforced); a super-admin surface at `/admin/beta-codes` (mint with once-only plaintext display, revoke, out-of-band password reset that revokes sessions) answers **404** to non-admins; `users.is_super_admin` is granted exclusively by `earful admin grant <email>` (CLI, direct DB access — the bootstrap path together with `earful beta-codes add|list|revoke`); `BETA_MODE=true` also **closes the side doors** — magic-link request 404s and Google sign-in refuses to CREATE accounts (existing accounts keep Google login), or the code gate would be decorative. AC (all [tested](internal/http/beta_test.go)): valid code ⇒ account+workspace+session with a provably empty outbox; a code creates exactly one account even under a concurrent race (atomic consume); used/revoked/garbage codes get one uniform message; password login failure modes indistinguishable and rate-limited; email change happy/wrong-password/duplicate paths + old email stops working; non-admins 404 on /admin; minted plaintext appears once and never in the list; admin reset kills sessions and the temp password works; `BETA_MODE=false` leaves the entire magic-link/Google world untouched (the M2 suite is the regression proof) and /signup does not exist. Deps: M2
   _Note (2026-07-24): staging deliberately keeps `BETA_MODE=false` — its console-sender magic links power the deploy smoke gate; production runs `true`. The wiring bug the side-door test caught on first run (SetBetaMode existed but was never called) is exactly why that test exists._
+
+### Issue #2 — Stats over time (added 2026-09-27)
+
+The first post-MVP ticket, from the GitHub issue "Results and export view
+in dashboard": a Typeform-style Insights page — big-picture figures, a
+trend chart, a question-by-question table — over a date range. M7 had
+already shipped the figures as undated totals; what was missing was the
+time dimension, and adding one is a privacy decision before it is a
+schema one (ADR-0012).
+
+- [x] **S1 Stats page.** Goal: `/surveys/{id}/stats` beside the results page, with a date range (presets and two date inputs, all-time by default), Big picture (opened, submissions, completion rate, median time to complete with its sample size), a Trends chart of opened or submissions per day, a Question by question table of where answers stop keyed by Question Identity, and the ADR-0009 audience totals stated as undated. A per-range stats CSV; the workspace export gains `stats_daily` (format version 2). AC: a range narrower than the survey's life sums dated rows only and says where the undated counts went; counters from before migration 00016 appear in all-time totals with a note; inserting a question ahead of another in a later version leaves the earlier "stopped here" counts on the right row; the schema guard covers the new table; the export round-trips. Deps: M7-T4
+  _Note (2026-09-27): the chart is hand-written SVG from a same-origin script over numbers the page already holds in a JSON block, with the same numbers as a table for a browser without scripts — no library, no endpoint, no CSP change. The Views/Starts split and the per-question Views column in the issue's mockup are not built: both need respondent pages to report behaviour before submit, which M7-T4 declined and ADR-0012 records declining again. The device filter is not built either, for the subtraction reason in the ADR. Two things the tests caught: a pointer into a growing slice (the zero-filled day list) that went stale on reallocation, and the unchallenged-submit limiter quietly dropping a test's sixth response, which the old test never noticed because it counted responses from the table rather than from the counter._
 
 ## Appendix A — Data model (key columns)
 
