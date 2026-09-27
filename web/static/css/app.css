@@ -958,3 +958,148 @@ fieldset {
     padding: 1rem;
   }
 }
+
+/* --- stats page (issue #2) ----------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.tabs a {
+  padding: 0.4rem 0;
+  text-decoration: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a[aria-current="page"] {
+  color: inherit;
+  border-bottom-color: var(--accent);
+}
+
+.range-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.range-form .field {
+  margin: 0;
+}
+
+.range-presets {
+  display: flex;
+  gap: 0.25rem;
+  flex-basis: 100%;
+}
+
+.range-presets a {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.range-presets a[aria-current="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+
+.stat-grid .stat-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.trend-controls select {
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: Canvas;
+  color: inherit;
+}
+
+.trend-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.trend-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.trend-tick {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.trend-area {
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trend-dot {
+  fill: Canvas;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.trend details {
+  margin-top: 0.75rem;
+}
+
+.trend summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+table.stops td.num,
+table.stops th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+table.stops .required {
+  color: var(--danger);
+  margin-right: 0.25rem;
+}
+
+.sort-button {
+  all: unset;
+  cursor: pointer;
+  font-weight: inherit;
+}
+
+.sort-button::after {
+  content: " ↕";
+  color: var(--muted);
+}
+
+th[aria-sort="ascending"] .sort-button::after {
+  content: " ↑";
+  color: inherit;
+}
+
+th[aria-sort="descending"] .sort-button::after {
+  content: " ↓";
+  color: inherit;
+}

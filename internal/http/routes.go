@@ -96,6 +96,10 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// Results and exports (M7). Both read the same fold-by-identity view.
 	get("/surveys/{surveyID}/results", s.surveyResults)
 	get("/surveys/{surveyID}/results.csv", s.resultsCSV)
+	// Stats over time (issue #2, ADR-0012): dated flow counters, never
+	// joined to a response.
+	get("/surveys/{surveyID}/stats", s.surveyStatsPage)
+	get("/surveys/{surveyID}/stats.csv", s.surveyStatsCSV)
 	post("/surveys/{surveyID}/responses/{responseID}/delete", s.responseDelete)
 	// Insight Summaries (M10). The POST is the whole feature; the socket
 	// streams the same run as it is written.

@@ -88,7 +88,6 @@ type SurveyResultsData struct {
 	Survey        SurveyView
 	ResponseCount int
 	Questions     []QuestionResultsView
-	Stats         SurveyStatsView
 	Insight       InsightView
 	Notice        string
 	// CanTranslate offers on-demand answer translation; TranslateLang is
@@ -109,23 +108,6 @@ type ResponseRowView struct {
 	VersionLabel string
 	Participant  string
 	Cells        []string
-}
-
-// SurveyStatsView is ADR-0009's blessed list and nothing else: how many
-// people opened the survey, how many finished, how long it took them,
-// where answers stop, and three coarse facts about the audience — each
-// suppressed below five observations.
-type SurveyStatsView struct {
-	Starts          int
-	Completions     int
-	CompletionRate  string
-	AverageDuration string
-	LastAnswered    []CountView
-	Browsers        []CountView
-	Devices         []CountView
-	Countries       []CountView
-	HasAudience     bool
-	SuppressionNote string
 }
 
 // QuestionResultsView is one question's results, folded across versions
@@ -343,4 +325,70 @@ type MetricTotal struct {
 type MetricPoint struct {
 	Day   string
 	Value string
+}
+
+// --- stats page (issue #2, ADR-0012) -------------------------------------
+
+// SurveyStatsData is the stats page, fully formatted. Everything with a
+// date honours Range; the audience section is undated by design.
+type SurveyStatsData struct {
+	Survey SurveyView
+	Range  StatsRangeView
+	CSVURL string
+
+	// Big picture.
+	Opened         string
+	Submissions    string
+	CompletionRate string
+	TimeToComplete string
+	TimedNote      string
+	// LumpNote explains counts from before per-day tracking, when any.
+	LumpNote string
+
+	// Trend is every day in range, zero-filled, for the chart script;
+	// TrendRows is only the days with something on them, for the table
+	// a browser without scripts reads.
+	Trend     []TrendPoint
+	TrendRows []TrendPoint
+
+	// Questions is where answers stop, one row per Question Identity in
+	// current order.
+	Questions []QuestionStopView
+	StopsNote string
+
+	// Audience: ADR-0009's three coarse facts, suppressed below five.
+	Browsers        []CountView
+	Devices         []CountView
+	Countries       []CountView
+	HasAudience     bool
+	SuppressionNote string
+}
+
+// StatsRangeView is the range control's state.
+type StatsRangeView struct {
+	FromInput string
+	ToInput   string
+	MinInput  string
+	MaxInput  string
+	Label     string
+	Preset    string
+	AllTime   bool
+}
+
+// TrendPoint is one day on the chart.
+type TrendPoint struct {
+	Day         string `json:"day"`
+	Label       string `json:"label"`
+	Opened      int    `json:"opened"`
+	Submissions int    `json:"submissions"`
+}
+
+// QuestionStopView is one row of the question-by-question table.
+type QuestionStopView struct {
+	Text      string
+	TypeLabel string
+	Required  bool
+	Stopped   int
+	Percent   int
+	Share     string
 }

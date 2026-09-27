@@ -36,13 +36,6 @@ test("results read back what respondents said, and export cleanly", async ({ pag
   await expect(transcripts.filter({ hasText: "Setup took a while" })).toBeVisible();
   await expect(transcripts.filter({ hasText: "Loved it" })).toBeVisible();
 
-  // Stats are present and honest about what they mean.
-  await expect(page.getByText("How this survey is going")).toBeVisible();
-  await expect(page.getByText(/counts times the survey page was loaded/)).toBeVisible();
-
-  // Small samples show no audience buckets at all (ADR-0009, n < 5).
-  await expect(page.getByRole("heading", { name: "Audience" })).toHaveCount(0);
-
   // The results page is as accessible as the rest.
   const scan = await new AxeBuilder({ page }).analyze();
   expect(scan.violations).toEqual([]);
@@ -55,6 +48,24 @@ test("results read back what respondents said, and export cleanly", async ({ pag
   const csv = (await new Response(stream as any).text()) as string;
   expect(csv).toContain("response_id,version,submitted_at,duration_secs");
   expect(csv).toContain("Loved it");
+
+  // The stats page: the figures, honest about what "opened" means, and
+  // the chart stats.js draws over the numbers the page already holds.
+  await page.getByRole("link", { name: "Stats", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Big picture" })).toBeVisible();
+  await expect(page.getByText(/counts times the survey page was loaded/)).toBeVisible();
+  await expect(page.locator(".trend-svg")).toBeVisible();
+  await expect(page.locator(".trend-svg .trend-dot")).toHaveCount(1);
+  await expect(page.getByRole("combobox", { name: "Series" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: /What would make surveys less painful/ })).toBeVisible();
+
+  // Small samples show no audience buckets at all (ADR-0009, n < 5), and
+  // the section says the audience totals carry no dates.
+  await expect(page.locator("h3", { hasText: "Browser" })).toHaveCount(0);
+  await expect(page.getByText(/these three counts keep no dates/)).toBeVisible();
+
+  const statsScan = await new AxeBuilder({ page }).analyze();
+  expect(statsScan.violations).toEqual([]);
 });
 
 test("an insight summary streams in and is labelled as AI output", async ({ page, browser }) => {

@@ -223,7 +223,8 @@ func TestResults_CrossWorkspaceDenied(t *testing.T) {
 	app.AddQuestion(t, owner, id, "long_text", "Secret question", nil)
 	app.Publish(t, owner, id)
 
-	for _, path := range []string{"/surveys/" + id + "/results", "/surveys/" + id + "/results.csv"} {
+	for _, path := range []string{"/surveys/" + id + "/results", "/surveys/" + id + "/results.csv",
+		"/surveys/" + id + "/stats", "/surveys/" + id + "/stats.csv"} {
 		resp, err := stranger.Get(app.Server.URL + path)
 		if err != nil {
 			t.Fatalf("GET %s: %v", path, err)

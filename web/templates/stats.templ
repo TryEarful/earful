@@ -1,0 +1,214 @@
+package templates
+
+import (
+	"strconv"
+
+	"github.com/TryEarful/earful/web/static"
+)
+
+// SurveyStats is the creator's read of how a survey is going over time
+// (issue #2, ADR-0012): opened, submitted, completion rate and time to
+// complete for a date range, a chart of the same, and the question where
+// answers stop. The audience section keeps no dates on purpose and says
+// so — see ADR-0012 for the subtraction attack a dated audience count
+// would allow.
+//
+// The page renders complete without JavaScript: the chart's numbers are
+// a table until stats.js draws them, and the table stays reachable
+// afterwards.
+templ SurveyStats(email string, csrf string, data SurveyStatsData) {
+	@Layout(data.Survey.Title + " — stats — Earful") {
+		@AuthedHeader(email, csrf)
+		<main class="stats-page">
+			<nav class="breadcrumb" aria-label="Breadcrumb">
+				<a href="/surveys">Surveys</a> /
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> /
+				Stats
+			</nav>
+			<div class="title-row">
+				<h1>Stats</h1>
+				@StatusChip(data.Survey.Status)
+			</div>
+			<nav class="tabs" aria-label="Survey views">
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>Answers</a>
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") } aria-current="page">Stats</a>
+			</nav>
+
+			@rangeControl(data)
+
+			<section class="card">
+				<h2>Big picture</h2>
+				<dl class="stat-grid">
+					<div>
+						<dt>Opened</dt>
+						<dd>{ data.Opened }</dd>
+					</div>
+					<div>
+						<dt>Submissions</dt>
+						<dd>{ data.Submissions }</dd>
+					</div>
+					if data.CompletionRate != "" {
+						<div>
+							<dt>Completion rate</dt>
+							<dd>{ data.CompletionRate }</dd>
+						</div>
+					}
+					if data.TimeToComplete != "" {
+						<div>
+							<dt>Time to complete</dt>
+							<dd>{ data.TimeToComplete }</dd>
+							<dd class="stat-sub">{ data.TimedNote }</dd>
+						</div>
+					}
+				</dl>
+				<p class="muted">
+					"Opened" counts times the survey page was loaded, so it is an upper bound on people.
+					Days are counted in UTC. Nothing here is linked to any individual response.
+				</p>
+				if data.LumpNote != "" {
+					<p class="muted">{ data.LumpNote }</p>
+				}
+			</section>
+
+			<section class="card trend" id="trend">
+				<div class="title-row">
+					<h2>Trends</h2>
+					<div class="trend-controls"></div>
+				</div>
+				<p class="muted">Per day, { data.Range.Label }.</p>
+				<div class="trend-chart" role="img" aria-label="Opened and submissions per day; the table below holds the same numbers"></div>
+				<div class="trend-table">
+					if len(data.TrendRows) == 0 {
+						<p class="muted">Nothing in this range yet.</p>
+					} else {
+						<div class="table-scroll">
+							<table class="responses">
+								<thead>
+									<tr>
+										<th scope="col">Day</th>
+										<th scope="col">Opened</th>
+										<th scope="col">Submissions</th>
+									</tr>
+								</thead>
+								<tbody>
+									for _, point := range data.TrendRows {
+										<tr>
+											<td>{ point.Day }</td>
+											<td>{ strconv.Itoa(point.Opened) }</td>
+											<td>{ strconv.Itoa(point.Submissions) }</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+				</div>
+				@templ.JSONScript("trend-data", data.Trend)
+			</section>
+
+			<section class="card" id="questions">
+				<h2>Question by question</h2>
+				<p class="muted">
+					The last question each submitted response answered — useful for spotting a question
+					people give up on. Respondents who left without submitting are not counted, because
+					survey pages report nothing until the answers are sent.
+				</p>
+				if len(data.Questions) == 0 {
+					<p class="muted">No published questions yet.</p>
+				} else {
+					<div class="table-scroll">
+						<table class="responses stops" data-sortable>
+							<thead>
+								<tr>
+									<th scope="col" data-sort="text">Question</th>
+									<th scope="col" data-sort="number" class="num">Stopped here</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, row := range data.Questions {
+									<tr>
+										<td>
+											<span class="chip chip-small">{ row.TypeLabel }</span>
+											if row.Required {
+												<span class="required" title="Required">*</span>
+											}
+											{ row.Text }
+										</td>
+										<td class="num" data-value={ strconv.Itoa(row.Stopped) }>
+											{ strconv.Itoa(row.Stopped) } <span class="muted">({ row.Share })</span>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				if data.StopsNote != "" {
+					<p class="muted">{ data.StopsNote }</p>
+				}
+			</section>
+
+			<section class="card stats">
+				<h2>Audience</h2>
+				<p class="muted">
+					Totals for the whole life of the survey: these three counts keep no dates, so no
+					date range can narrow them to a day, and a day on a small survey is a person.
+				</p>
+				if data.HasAudience {
+					@statBuckets("Browser", data.Browsers)
+					@statBuckets("Device", data.Devices)
+					@statBuckets("Country", data.Countries)
+					<p class="muted">{ data.SuppressionNote }</p>
+				} else {
+					<p class="muted">{ data.SuppressionNote } Nothing to show yet.</p>
+				}
+			</section>
+		</main>
+		<script src={ static.AssetURL("js/stats.js") } defer></script>
+	}
+}
+
+// rangeControl is a GET form, so a range is a URL: bookmarkable, and the
+// CSV link downloads exactly what the page shows.
+templ rangeControl(data SurveyStatsData) {
+	<form method="get" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") } class="range-form">
+		<nav class="range-presets" aria-label="Range presets">
+			@rangePreset(data, "7d", "Last 7 days")
+			@rangePreset(data, "30d", "Last 30 days")
+			@rangePreset(data, "all", "All time")
+		</nav>
+		<label class="field">
+			<span>From</span>
+			<input type="date" name="from" value={ data.Range.FromInput } max={ data.Range.MaxInput } required/>
+		</label>
+		<label class="field">
+			<span>To</span>
+			<input type="date" name="to" value={ data.Range.ToInput } max={ data.Range.MaxInput } required/>
+		</label>
+		<button type="submit" class="secondary">Apply</button>
+		<a class="button secondary" href={ templ.SafeURL(data.CSVURL) }>Download CSV</a>
+	</form>
+}
+
+templ rangePreset(data SurveyStatsData, preset string, label string) {
+	if data.Range.Preset == preset {
+		<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats?range=" + preset) } aria-current="true">{ label }</a>
+	} else {
+		<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats?range=" + preset) }>{ label }</a>
+	}
+}
+
+templ statBuckets(title string, rows []CountView) {
+	if len(rows) > 0 {
+		<h3>{ title }</h3>
+		<ul class="distribution">
+			for _, row := range rows {
+				<li>
+					<span class="bar-label">{ row.Label }</span>
+					<span class="bar" aria-hidden="true"><span class="bar-fill" style={ barWidth(row.Percent) }></span></span>
+					<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
+				</li>
+			}
+		</ul>
+	}
+}
