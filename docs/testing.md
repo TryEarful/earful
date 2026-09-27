@@ -49,7 +49,7 @@ through the `bodyContains` helper, which unescapes first.
 ## Why docker-compose Postgres, not testcontainers-go
 
 Tests get their database from `TEST_DATABASE_URL` (falling back to
-`DATABASE_URL`), pointed at the same Postgres service `deploy/compose.yaml`
+`DATABASE_URL`), pointed at the same Postgres service `docker-compose.yaml`
 already defines for local dev. We deliberately did not add
 testcontainers-go or any other Go test-dependency for this:
 
@@ -59,7 +59,7 @@ testcontainers-go or any other Go test-dependency for this:
    Appendix D) — reusing the same Postgres service for dev and tests means
    there's exactly one way to run Postgres locally, not two.
 3. CI needs nothing extra: `make check`/`make test` run the identical
-   `docker compose -f deploy/compose.yaml up -d --wait postgres` a
+   `docker compose up -d --wait postgres` a
    developer runs locally — no separate provisioning path to keep in sync.
 
 `internal/apptest.NewDB` **skips** (not fails) the calling test when no
@@ -258,20 +258,20 @@ the steps are documented here so anyone can re-run them by hand:
 **M0 placeholder page** (re-run after any change to `web/templates/home.templ`
 or `internal/http/routes.go`):
 
-1. `docker compose up --build -d`
+1. `docker compose --profile app up --build -d`
 2. `mcp__playwright__browser_navigate` to `http://localhost:8080/`
 3. `mcp__playwright__browser_snapshot` — confirm the accessibility tree
    shows an `h1` "Earful" and the tagline paragraph
 4. `mcp__playwright__browser_console_messages` (level: error) — confirm no
    unexpected errors (a `favicon.ico` 404 is expected and harmless; no
    favicon is in scope for M0)
-5. `docker compose down`
+5. `docker compose --profile app down`
 
 **M2 sign-in and account flow** (re-run after any change to
 `web/templates/auth.templ`, `web/templates/app.templ`, or the auth
 handlers):
 
-1. `docker compose up --build -d`, then wait for `docker compose ps` to
+1. `docker compose --profile app up --build -d`, then wait for `docker compose --profile app ps` to
    report the app **healthy** (the container probes its own `/healthz`)
 2. Navigate to `http://localhost:8080/login` — snapshot should show the
    email form, and **no** "Continue with Google" unless
@@ -280,7 +280,7 @@ handlers):
 4. Read the link from the app's stdout (the console sender is the local
    inbox):
    ```sh
-   docker compose logs app | grep -o 'http://localhost:8080/auth/magic/verify?token=[A-Za-z0-9_-]*' | tail -1
+   docker compose --profile app logs app | grep -o 'http://localhost:8080/auth/magic/verify?token=[A-Za-z0-9_-]*' | tail -1
    ```
 5. Navigate to that link → **"Confirm sign-in"** page. The GET must not
    sign you in; only the button does (email-scanner protection)
@@ -290,14 +290,14 @@ handlers):
 8. Navigate to `/dashboard` → redirected to `/login` (session revoked)
 9. Confirm the log never leaked the credential:
    ```sh
-   docker compose logs app | grep 'magic/verify'   # token must read %5BREDACTED%5D
+   docker compose --profile app logs app | grep 'magic/verify'   # token must read %5BREDACTED%5D
    ```
-10. `docker compose down`
+10. `docker compose --profile app down`
 
 **M3 survey building** (re-run after changes to `web/templates/surveys.templ`
 or the survey handlers):
 
-1. `docker compose up --build -d`; sign in via the M2 steps above
+1. `docker compose --profile app up --build -d`; sign in via the M2 steps above
 2. **Create**: `/surveys/new` → title, leave "Anonymous survey" selected →
    *Create survey*. Lands on the editor with a **Draft** chip
 3. **Add questions**: add a *Long text* question, then a *Single choice*
@@ -320,14 +320,14 @@ or the survey handlers):
    ```
    (this check caught a header overflow that affected every signed-in page)
 9. Console errors: none expected beyond the `favicon.ico` 404
-10. `docker compose down`
+10. `docker compose --profile app down`
 
 **M5–M11 surfaces** (re-run after changes to voice, generation, results,
 insights or localization templates). These are the pages the automated
 suite exercises functionally; a browser pass is for the things a test
 cannot see — layout, wording, whether the labelling reads as honest:
 
-1. `docker compose up --build -d` (the stack runs `AI_PROVIDER=scripted`,
+1. `docker compose --profile app up --build -d` (the stack runs `AI_PROVIDER=scripted`,
    so every AI surface is live without a model); sign in via the M2 steps
 2. **Drafting**: on a new survey, the *Draft questions with AI* panel →
    type a purpose → *Draft questions*. Output appears **while** it runs
@@ -358,7 +358,7 @@ cannot see — layout, wording, whether the labelling reads as honest:
    ```
 9. Console errors: none. A CSP violation here is a real defect — the
    respondent pages allow no inline handlers and no third-party origins
-10. `docker compose down`
+10. `docker compose --profile app down`
 
 ## Fakes at the true external boundaries
 

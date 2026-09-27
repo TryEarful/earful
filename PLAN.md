@@ -112,7 +112,7 @@ web/templates/         .templ files
 web/static/            css/, js/ (vanilla; altcha widget vendored)
 db/migrations/         goose
 db/queries/            sqlc
-deploy/compose.yaml    local dev (app + postgres + ollama optional)
+docker-compose.yaml    local dev + self-hosting (postgres + mailpit; app and ollama behind profiles)
 deploy/opentofu/       modules/ + envs/stg + envs/pro; state in GCS
 docs/adr/              ADRs; CONTEXT.md at root
 ```
@@ -400,7 +400,7 @@ docker compose is the contract: app + Postgres; optional ollama/llamafile profil
 
 ## Appendix E — Local development
 
-`docker compose up` → app :8080, Postgres, mailpit (or console sender) for emails, ollama profile for AI. `earful purge --dry-run` runnable by hand (the same binary prod schedules). Seed command creates demo workspace/survey. `make check` = vet + staticcheck + govulncheck + templ + sqlc verify + tests. No cloud account needed for full core-loop development.
+`docker compose up` → Postgres + mailpit for an app run from source (`make dev`); `docker compose --profile app up` → the same plus the containerised app on :8080; ollama profile for AI. `earful purge --dry-run` runnable by hand (the same binary prod schedules). Seed command creates demo workspace/survey. `make check` = vet + staticcheck + govulncheck + templ + sqlc verify + tests. No cloud account needed for full core-loop development.
 
 ## Appendix F — Technology choices (minimal-dependency Go)
 

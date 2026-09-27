@@ -77,7 +77,7 @@ textarea the server rendered is the whole interface (story 38).
 
 ## Manual check, per browser
 
-1. `AI_PROVIDER=scripted TRANSCRIBE_PROVIDER=scripted docker compose up`
+1. `AI_PROVIDER=scripted TRANSCRIBE_PROVIDER=scripted docker compose --profile app up`
    (or point `TRANSCRIBE_PROVIDER` at a real whisper-cli model).
 2. Open a published survey's share link with a long-text question.
 3. **Consent**: the first click on *Answer by speaking* shows the consent

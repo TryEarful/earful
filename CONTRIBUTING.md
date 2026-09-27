@@ -3,7 +3,7 @@
 ## Getting set up
 
 ```sh
-docker compose up --build   # full stack: app, Postgres, mail catcher
+docker compose --profile app up --build   # full stack: app, Postgres, mail catcher
 make check                  # what CI runs: vet, staticcheck, govulncheck, drift, tests
 make e2e-smoke              # Playwright + axe, three viewport widths
 ```

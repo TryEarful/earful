@@ -1,9 +1,16 @@
-name: earful # pinned so `docker compose up` (root include shim) and
-             # `docker compose -f deploy/compose.yaml ...` (Makefile
-             # targets) always resolve to the same project/stack --
-             # otherwise Compose derives the project name from the
-             # invoking directory and the two paths silently create two
-             # competing stacks that fight over the same host ports.
+name: earful # pinned so the stack keeps one identity whatever the checkout
+             # directory is called -- otherwise Compose derives the project
+             # name from that directory, and a second checkout (a git
+             # worktree, say) silently creates a competing stack that
+             # fights over the same host ports.
+
+# Local development and self-hosting only; staging and production are
+# provisioned from deploy/opentofu and never read this file.
+#
+# `docker compose up` starts the supporting services (Postgres, mailpit) for
+# an app run from source with `make dev`. The containerised app is opt-in:
+# `docker compose --profile app up --build` adds migrate + app, which is the
+# self-hosting stack and what the e2e suite drives.
 
 services:
   postgres:
@@ -16,7 +23,7 @@ services:
       - "5433:5432" # host 5433 avoids colliding with a locally-installed Postgres on 5432
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+      - ./docker-compose-postgres-init.sql:/docker-entrypoint-initdb.d/01-create-test-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U earful -d earful"]
       interval: 2s
@@ -24,8 +31,9 @@ services:
       retries: 30
 
   migrate:
+    profiles: ["app"]
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     command: ["migrate"]
     environment:
@@ -36,8 +44,9 @@ services:
         condition: service_healthy
 
   app:
+    profiles: ["app"]
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     command: ["serve"]
     ports:

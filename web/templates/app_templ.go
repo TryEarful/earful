@@ -399,7 +399,7 @@ func workspaceExport(csrf string, export ExportView) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</button></form><p class=\"muted\">Earful is AGPL-3.0 and self-hostable: <code>docker compose up</code> gives you the same application this export came from.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</button></form><p class=\"muted\">Earful is AGPL-3.0 and self-hostable: <code>docker compose --profile app up</code> gives you the same application this export came from.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

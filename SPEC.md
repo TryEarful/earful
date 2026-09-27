@@ -147,7 +147,7 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 
 ### Self-hosting
 
-73. As a self-hoster, I want `docker compose up` to give me the full core loop (app + Postgres + local email catcher), so that adoption takes minutes.
+73. As a self-hoster, I want `docker compose --profile app up` to give me the full core loop (app + Postgres + local email catcher), so that adoption takes minutes.
 74. As a self-hoster, I want AI features to work against ollama/llamafile via configuration or degrade gracefully when absent, so that no Google dependency is required. [tested](internal/ai/ai_test.go) — streaming verified against a real llamafile (opt-in integration test); unconfigured capabilities answer ErrUnsupported and the product treats them as absent features
 75. As a self-hoster, I want magic-link auth over my own SMTP and optional Google OIDC, so that login works on my infrastructure.
 76. As a self-hoster, I want the workspace export format documented as a stable contract, so that migrating into my instance is a solved problem (import tool: first post-MVP ticket). [tested](internal/http/export_workspace_test.go) — [docs/export-format.md](docs/export-format.md) is the contract; the test decodes a real archive into the documented types

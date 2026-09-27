@@ -2,6 +2,7 @@
 .claude
 docs
 deploy
+docker-compose*
 bin
 *.md
 .env

@@ -27,12 +27,17 @@ product spec these tickets implement.
 ## Quickstart (docker compose)
 
 ```sh
-docker compose up --build
+docker compose --profile app up --build
 ```
 
 Fresh clone to running app in one command: Postgres starts, migrations run
 once via a one-shot `migrate` service, then the app serves on
 [localhost:8080](http://localhost:8080).
+
+The `app` profile is what puts the app itself in a container. Without it,
+`docker compose up` starts only the supporting services — Postgres and the
+mail catcher — for an app run from source (see
+[Local development](#local-development-from-source)).
 
 AI features work out of the box: the compose stack runs the `scripted`
 provider, which produces deterministic canned output for generation,
@@ -42,8 +47,8 @@ Vertex for the real thing (see [Configuration](#ai)), or add
 `--profile ollama` to start Ollama alongside.
 
 ```sh
-docker compose down       # stop
-docker compose down -v    # stop and wipe the Postgres volume
+docker compose --profile app down       # stop
+docker compose --profile app down -v    # stop and wipe the Postgres volume
 ```
 
 ### Signing in locally
@@ -57,15 +62,26 @@ in**, and you land on your dashboard with a personal workspace created.
 a confirmation page, so link-prefetching email scanners can't burn your
 single-use token.)
 
-Running without compose (`make dev`)? The default sender is `console`,
-which prints emails to stdout instead — grep the sign-in link from there.
+Running from source (`make dev`)? Sign-in is the same magic link — there
+is no local password and nothing to configure. Enter any email address on
+[localhost:8080/login](http://localhost:8080/login); the account is
+created on first sign-in. Where the link arrives depends on the sender:
+
+```sh
+make dev                     # EMAIL_SENDER=console (default): the link is printed to
+                             # this terminal -- look for /auth/magic/verify?token=...
+EMAIL_SENDER=smtp make dev   # delivered to mailpit instead: http://localhost:8025
+```
+
+`STAGING_BASIC_AUTH` is not part of signing in and does nothing in local
+development; see [The staging wall](#the-staging-wall).
 
 Google login is optional. To enable it locally, create an OAuth client
 with redirect URI `http://localhost:8080/auth/google/callback` and set
 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in your environment before
-`docker compose up`; without them the login page shows email sign-in only.
+`docker compose --profile app up`; without them the login page shows email sign-in only.
 
-## Local development without Docker
+## Local development from source
 
 ```sh
 make tools   # installs pinned templ/goose/staticcheck/govulncheck; checks for sqlc
@@ -73,10 +89,11 @@ make dev     # go run ./cmd/earful serve, on :8080
 ```
 
 `make dev` needs a database (from M2 onward `serve` refuses to start
-without one). Start just Postgres and point `DATABASE_URL` at it:
+without one). Start the supporting services and point `DATABASE_URL` at
+the compose Postgres:
 
 ```sh
-docker compose -f deploy/compose.yaml up -d postgres
+docker compose up -d --wait   # Postgres on :5433, mailpit on :8025 -- no image build
 export DATABASE_URL='postgres://earful:earful@localhost:5433/earful?sslmode=disable'
 make migrate && make dev
 ```
@@ -115,7 +132,9 @@ install, so you shouldn't need to think about it.
 | `make purge` | Run `earful purge --dry-run` (retention, reported not applied) |
 | `make geoip` | Rebuild the embedded country table from a DB-IP CSV |
 | `make generate-check` | Fail if committed templ output is stale (used by `make check`) |
-| `make compose-up` / `make compose-down` | `docker compose` against `deploy/compose.yaml` |
+| `make compose-up` | Start the supporting services (Postgres, mailpit) from `docker-compose.yaml` |
+| `make compose-up-app` | Build and run the whole stack in containers, app included |
+| `make compose-down` | Stop everything and wipe the Postgres volume |
 | `make docker-build` | Build the production image locally |
 
 ## Configuration
@@ -137,7 +156,29 @@ see `.env.example` for a copy-pasteable starting point.
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(empty)* | Set both to enable Google login; unset hides it |
 | `GOOGLE_OIDC_ISSUER` | `https://accounts.google.com` | Override only for testing against a fake issuer |
 | `BETA_MODE` | `false` | Invite-code signup + password login, zero emails sent (M12) |
-| `STAGING_BASIC_AUTH` | *(empty)* | `user:pass`; required on staging, which is walled behind it |
+| `STAGING_BASIC_AUTH` | *(empty)* | `user:pass`, e.g. `earful:local-wall`. Only read when `APP_ENV=staging`, where it is required; see [The staging wall](#the-staging-wall) |
+
+### The staging wall
+
+Staging is a test bench, not a public site, so the whole deployment sits
+behind an HTTP Basic Auth prompt — every route except the `/healthz` and
+`/health` probes. `STAGING_BASIC_AUTH` holds that credential as
+`user:pass` (split at the first colon, so the password may contain
+colons). It is a wall in front of the application, not an account in it:
+once through, you still sign in with a magic link like anywhere else.
+
+The wall is active only when `APP_ENV=staging`, which refuses to boot
+without it. In `development` and `production` the variable is ignored, so
+local development never needs it. To see the wall on a laptop anyway:
+
+```sh
+APP_ENV=staging STAGING_BASIC_AUTH='earful:local-wall' make dev
+```
+
+The browser then asks for user `earful`, password `local-wall` before
+showing any page. Staging also insists on `EMAIL_SENDER=console` (the
+default) and marks cookies `Secure`, so use a browser that accepts
+`Secure` cookies on `http://localhost` (Chrome and Firefox do).
 
 ### AI
 

@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke migrate purge geoip compose-up compose-down docker-build
+.PHONY: tools generate generate-check dev build check test e2e-smoke migrate purge geoip compose-up compose-up-app compose-down docker-build
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -86,7 +86,7 @@ generate-check:
 	fi
 
 test: tools
-	docker compose -f deploy/compose.yaml up -d --wait postgres
+	docker compose up -d --wait postgres
 	TEST_DATABASE_URL=$(TEST_DATABASE_URL) go test ./...
 
 migrate:
@@ -99,15 +99,22 @@ purge:
 # restart resets in-memory rate limiters, so repeated local runs don't
 # inherit a spent magic-link budget from earlier manual testing.
 e2e-smoke:
-	docker compose -f deploy/compose.yaml up -d --build --wait app mailpit
-	docker compose -f deploy/compose.yaml restart app
+	docker compose --profile app up -d --build --wait app mailpit
+	docker compose --profile app restart app
 	cd e2e && npm install && npx playwright install chromium && npx playwright test
 
+# Supporting services only (Postgres, mailpit), for an app run with `make dev`.
 compose-up:
-	docker compose -f deploy/compose.yaml up --build
+	docker compose up -d --wait
 
+# The whole stack in containers, app included: the self-hosting path.
+compose-up-app:
+	docker compose --profile app up --build
+
+# --profile app so the app and migrate containers are removed as well; down
+# only touches services whose profile is enabled.
 compose-down:
-	docker compose -f deploy/compose.yaml down -v
+	docker compose --profile app down -v
 
 docker-build:
 	docker build -t earful:local .

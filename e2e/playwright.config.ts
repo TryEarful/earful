@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// The suite drives the real compose stack: app on :8080, mailpit (the
-// local inbox) on :8025. `make e2e-smoke` brings both up first.
+// The suite drives the real compose stack with the `app` profile enabled:
+// app on :8080, mailpit (the local inbox) on :8025. `make e2e-smoke` brings
+// both up first.
 //
 // A setup project signs in once and saves storage state; the three width
 // projects — phone, tablet, desktop, per M4-T1's acceptance criteria —
