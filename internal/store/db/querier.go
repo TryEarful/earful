@@ -106,8 +106,14 @@ type Querier interface {
 	// no longer an aggregate, and TestAggregatesCannotBeLinkedToResponses
 	// fails the build if one appears.
 	IncrementSurveyStat(ctx context.Context, arg IncrementSurveyStatParams) error
+	// Daily flow counters (ADR-0012). Same rule: survey_stats_daily alone,
+	// never joined to anything a respondent wrote. The scan test matches on
+	// the "survey_stats" prefix, so it guards this table without being told.
+	IncrementSurveyStatDaily(ctx context.Context, arg IncrementSurveyStatDailyParams) error
 	LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (LatestExportJobRow, error)
 	LatestInsightRun(ctx context.Context, surveyID uuid.UUID) (InsightRun, error)
+	// Every dated row a survey has, for the workspace export.
+	ListAllSurveyStatsDaily(ctx context.Context, surveyID uuid.UUID) ([]ListAllSurveyStatsDailyRow, error)
 	// Every translation for a survey's answers in one language, so the
 	// results page can show them beside the originals without N queries.
 	ListAnswerTranslations(ctx context.Context, arg ListAnswerTranslationsParams) ([]ListAnswerTranslationsRow, error)
@@ -131,10 +137,16 @@ type Querier interface {
 	// worded when each response was collected.
 	ListQuestionsAcrossVersions(ctx context.Context, surveyID uuid.UUID) ([]ListQuestionsAcrossVersionsRow, error)
 	ListQuestionsForVersion(ctx context.Context, versionID uuid.UUID) ([]Question, error)
+	// The durations of responses submitted in a window, for the stats page's
+	// time-to-complete figure (ADR-0009 allows exactly this one per-response
+	// field). Sorted so the caller can take a median without re-sorting.
+	ListResponseDurations(ctx context.Context, arg ListResponseDurationsParams) ([]*int32, error)
 	// The response rows themselves, so a table can show one row per response
 	// including responses that answered nothing.
 	ListResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListResponsesForSurveyRow, error)
 	ListSurveyStats(ctx context.Context, surveyID uuid.UUID) ([]ListSurveyStatsRow, error)
+	// Rows for one survey between two days inclusive.
+	ListSurveyStatsDaily(ctx context.Context, arg ListSurveyStatsDailyParams) ([]ListSurveyStatsDailyRow, error)
 	ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]ListSurveysForWorkspaceRow, error)
 	ListVersionLanguages(ctx context.Context, versionID uuid.UUID) ([]string, error)
 	ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error)
@@ -144,7 +156,9 @@ type Querier interface {
 	MarkParticipantSubmitted(ctx context.Context, arg MarkParticipantSubmittedParams) error
 	MetricAICostByDay(ctx context.Context, day time.Time) ([]MetricAICostByDayRow, error)
 	// Starts and completions across every survey, from the unlinked
-	// counters (ADR-0009) — never from anything joined to a response.
+	// counters (ADR-0009) — never from anything joined to a response. The
+	// undated totals and the per-day rows (ADR-0012) are added together:
+	// a survey's opens live in one table or the other, never both.
 	MetricCompletionRates(ctx context.Context) (MetricCompletionRatesRow, error)
 	MetricResponsesByDay(ctx context.Context, submittedAt time.Time) ([]MetricResponsesByDayRow, error)
 	MetricSignupsByDay(ctx context.Context, createdAt time.Time) ([]MetricSignupsByDayRow, error)

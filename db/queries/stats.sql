@@ -18,3 +18,25 @@ ORDER BY metric, count DESC, bucket;
 
 -- name: DeleteSurveyStats :exec
 DELETE FROM survey_stats WHERE survey_id = $1;
+
+-- Daily flow counters (ADR-0012). Same rule: survey_stats_daily alone,
+-- never joined to anything a respondent wrote. The scan test matches on
+-- the "survey_stats" prefix, so it guards this table without being told.
+
+-- name: IncrementSurveyStatDaily :exec
+INSERT INTO survey_stats_daily (survey_id, metric, bucket, day, count)
+VALUES ($1, $2, $3, $4, 1)
+ON CONFLICT (survey_id, metric, bucket, day)
+DO UPDATE SET count = survey_stats_daily.count + 1;
+
+-- name: ListSurveyStatsDaily :many
+-- Rows for one survey between two days inclusive.
+SELECT metric, bucket, day, count FROM survey_stats_daily
+WHERE survey_id = $1 AND day >= sqlc.arg(from_day) AND day <= sqlc.arg(to_day)
+ORDER BY day, metric, bucket;
+
+-- name: ListAllSurveyStatsDaily :many
+-- Every dated row a survey has, for the workspace export.
+SELECT metric, bucket, day, count FROM survey_stats_daily
+WHERE survey_id = $1
+ORDER BY day, metric, bucket;

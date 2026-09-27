@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -45,6 +46,73 @@ func (q *Queries) IncrementSurveyStat(ctx context.Context, arg IncrementSurveySt
 	return err
 }
 
+const incrementSurveyStatDaily = `-- name: IncrementSurveyStatDaily :exec
+
+INSERT INTO survey_stats_daily (survey_id, metric, bucket, day, count)
+VALUES ($1, $2, $3, $4, 1)
+ON CONFLICT (survey_id, metric, bucket, day)
+DO UPDATE SET count = survey_stats_daily.count + 1
+`
+
+type IncrementSurveyStatDailyParams struct {
+	SurveyID uuid.UUID `json:"survey_id"`
+	Metric   string    `json:"metric"`
+	Bucket   string    `json:"bucket"`
+	Day      time.Time `json:"day"`
+}
+
+// Daily flow counters (ADR-0012). Same rule: survey_stats_daily alone,
+// never joined to anything a respondent wrote. The scan test matches on
+// the "survey_stats" prefix, so it guards this table without being told.
+func (q *Queries) IncrementSurveyStatDaily(ctx context.Context, arg IncrementSurveyStatDailyParams) error {
+	_, err := q.db.Exec(ctx, incrementSurveyStatDaily,
+		arg.SurveyID,
+		arg.Metric,
+		arg.Bucket,
+		arg.Day,
+	)
+	return err
+}
+
+const listAllSurveyStatsDaily = `-- name: ListAllSurveyStatsDaily :many
+SELECT metric, bucket, day, count FROM survey_stats_daily
+WHERE survey_id = $1
+ORDER BY day, metric, bucket
+`
+
+type ListAllSurveyStatsDailyRow struct {
+	Metric string    `json:"metric"`
+	Bucket string    `json:"bucket"`
+	Day    time.Time `json:"day"`
+	Count  int64     `json:"count"`
+}
+
+// Every dated row a survey has, for the workspace export.
+func (q *Queries) ListAllSurveyStatsDaily(ctx context.Context, surveyID uuid.UUID) ([]ListAllSurveyStatsDailyRow, error) {
+	rows, err := q.db.Query(ctx, listAllSurveyStatsDaily, surveyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAllSurveyStatsDailyRow
+	for rows.Next() {
+		var i ListAllSurveyStatsDailyRow
+		if err := rows.Scan(
+			&i.Metric,
+			&i.Bucket,
+			&i.Day,
+			&i.Count,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSurveyStats = `-- name: ListSurveyStats :many
 SELECT metric, bucket, count FROM survey_stats
 WHERE survey_id = $1
@@ -67,6 +135,51 @@ func (q *Queries) ListSurveyStats(ctx context.Context, surveyID uuid.UUID) ([]Li
 	for rows.Next() {
 		var i ListSurveyStatsRow
 		if err := rows.Scan(&i.Metric, &i.Bucket, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSurveyStatsDaily = `-- name: ListSurveyStatsDaily :many
+SELECT metric, bucket, day, count FROM survey_stats_daily
+WHERE survey_id = $1 AND day >= $2 AND day <= $3
+ORDER BY day, metric, bucket
+`
+
+type ListSurveyStatsDailyParams struct {
+	SurveyID uuid.UUID `json:"survey_id"`
+	FromDay  time.Time `json:"from_day"`
+	ToDay    time.Time `json:"to_day"`
+}
+
+type ListSurveyStatsDailyRow struct {
+	Metric string    `json:"metric"`
+	Bucket string    `json:"bucket"`
+	Day    time.Time `json:"day"`
+	Count  int64     `json:"count"`
+}
+
+// Rows for one survey between two days inclusive.
+func (q *Queries) ListSurveyStatsDaily(ctx context.Context, arg ListSurveyStatsDailyParams) ([]ListSurveyStatsDailyRow, error) {
+	rows, err := q.db.Query(ctx, listSurveyStatsDaily, arg.SurveyID, arg.FromDay, arg.ToDay)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSurveyStatsDailyRow
+	for rows.Next() {
+		var i ListSurveyStatsDailyRow
+		if err := rows.Scan(
+			&i.Metric,
+			&i.Bucket,
+			&i.Day,
+			&i.Count,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

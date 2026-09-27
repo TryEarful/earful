@@ -187,6 +187,15 @@ type SurveyStat struct {
 	Count    int64     `json:"count"`
 }
 
+// Unlinked per-day survey flow counters (ADR-0012). No join path to responses exists or may be added.
+type SurveyStatsDaily struct {
+	SurveyID uuid.UUID `json:"survey_id"`
+	Metric   string    `json:"metric"`
+	Bucket   string    `json:"bucket"`
+	Day      time.Time `json:"day"`
+	Count    int64     `json:"count"`
+}
+
 type SurveyVersion struct {
 	ID          uuid.UUID     `json:"id"`
 	SurveyID    uuid.UUID     `json:"survey_id"`

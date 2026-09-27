@@ -33,8 +33,11 @@ GROUP BY day ORDER BY day;
 
 -- name: MetricCompletionRates :one
 -- Starts and completions across every survey, from the unlinked
--- counters (ADR-0009) — never from anything joined to a response.
+-- counters (ADR-0009) — never from anything joined to a response. The
+-- undated totals and the per-day rows (ADR-0012) are added together:
+-- a survey's opens live in one table or the other, never both.
 SELECT
-    coalesce(sum(count) FILTER (WHERE metric = 'start'), 0)::bigint      AS starts,
-    coalesce(sum(count) FILTER (WHERE metric = 'completion'), 0)::bigint AS completions
-FROM survey_stats;
+    (coalesce((SELECT sum(count) FROM survey_stats WHERE metric = 'start'), 0)
+     + coalesce((SELECT sum(count) FROM survey_stats_daily WHERE metric = 'start'), 0))::bigint AS starts,
+    (coalesce((SELECT sum(count) FROM survey_stats WHERE metric = 'completion'), 0)
+     + coalesce((SELECT sum(count) FROM survey_stats_daily WHERE metric = 'completion'), 0))::bigint AS completions;

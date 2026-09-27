@@ -244,7 +244,7 @@ check today's behaviour. They are worth knowing before you trip one:
 | Guard | Where | Rule |
 |---|---|---|
 | Metered AI | `internal/http/ai_meter_guard_test.go` | Every `ai.Provider` call has an `aiMeter.Check` in the same function. It has caught two real gaps — a wired-up-but-unchecked call, and a translation batch checking quota once for twenty calls. |
-| Aggregate unlinkability | `internal/http/stats_test.go` | No query mentions `survey_stats` together with `responses`/`answers`, and the table holds no FK to either (ADR-0009). |
+| Aggregate unlinkability | `internal/http/stats_test.go` | No query mentions `survey_stats` or `survey_stats_daily` together with `responses`/`answers`, and neither table holds an FK to either (ADR-0009, ADR-0012). The scan matches on the `survey_stats` prefix, so a third counter table named that way is guarded on arrival. |
 | Audio non-persistence | `internal/voice/voice_test.go` | The one package holding audio has no way to write it anywhere (ADR-0004). |
 | No third-party origins | `internal/http/respond_test.go` | Respondent pages reference only first-party URLs (ADR-0006). |
 | Immutability | `internal/store/immutability_test.go` | Published versions, questions, revisions, localizations and insight runs refuse UPDATE/DELETE in raw SQL — the deliberate exception to the HTTP-only seam. |

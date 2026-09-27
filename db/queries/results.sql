@@ -41,3 +41,13 @@ JOIN survey_versions v ON v.id = r.version_id
 LEFT JOIN participants p ON p.id = r.participant_id
 WHERE r.survey_id = $1 AND r.deleted_at IS NULL
 ORDER BY r.submitted_at;
+
+-- name: ListResponseDurations :many
+-- The durations of responses submitted in a window, for the stats page's
+-- time-to-complete figure (ADR-0009 allows exactly this one per-response
+-- field). Sorted so the caller can take a median without re-sorting.
+SELECT duration_secs
+FROM responses
+WHERE survey_id = $1 AND deleted_at IS NULL AND duration_secs IS NOT NULL
+  AND submitted_at >= sqlc.arg(since) AND submitted_at < sqlc.arg(until)
+ORDER BY duration_secs;

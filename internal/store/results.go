@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/internal/store/db"
 )
 
 // Results is a survey's answers, folded by Question Identity across every
@@ -44,6 +45,7 @@ type QuestionResults struct {
 	Text     string
 	Wordings []Wording
 	Options  []string
+	Required bool
 	ScaleMin int
 	ScaleMax int
 	// FirstVersion/LastVersion bound the question's life: a question
@@ -91,42 +93,9 @@ func (s *Surveys) SurveyResults(ctx context.Context, surveyID uuid.UUID) (Result
 		return Results{}, fmt.Errorf("store: list responses: %w", err)
 	}
 
-	byIdentity := map[string]*QuestionResults{}
-	var order []string
-	for _, row := range questionRows {
-		identity := row.QuestionIdentityID.String()
-		question, seen := byIdentity[identity]
-		if !seen {
-			question = &QuestionResults{
-				IdentityID:   identity,
-				FirstVersion: int(row.VersionNumber),
-			}
-			byIdentity[identity] = question
-			order = append(order, identity)
-		}
-		var options []string
-		if len(row.Options) > 0 {
-			if err := json.Unmarshal(row.Options, &options); err != nil {
-				return Results{}, fmt.Errorf("store: decode options: %w", err)
-			}
-		}
-		// Later versions win for the current shape; the earlier wordings
-		// stay in Wordings.
-		question.Type = domain.QuestionType(row.Type)
-		question.Text = row.Text
-		question.Options = options
-		question.LastVersion = int(row.VersionNumber)
-		if row.ScaleMin != nil {
-			question.ScaleMin = int(*row.ScaleMin)
-		}
-		if row.ScaleMax != nil {
-			question.ScaleMax = int(*row.ScaleMax)
-		}
-		if len(question.Wordings) == 0 || question.Wordings[len(question.Wordings)-1].Text != row.Text {
-			question.Wordings = append(question.Wordings, Wording{
-				VersionNumber: int(row.VersionNumber), Text: row.Text,
-			})
-		}
+	byIdentity, order, err := foldQuestions(questionRows)
+	if err != nil {
+		return Results{}, err
 	}
 
 	answersByResponse := map[uuid.UUID]map[string]domain.AnswerValue{}
@@ -171,6 +140,88 @@ func (s *Surveys) SurveyResults(ctx context.Context, surveyID uuid.UUID) (Result
 		})
 	}
 	return results, nil
+}
+
+// SurveyQuestions is the fold's question half on its own: every Question
+// Identity the survey has ever had, in first-seen order, with its current
+// wording. The stats page reads this instead of SurveyResults because it
+// needs the questions and not the answers.
+func (s *Surveys) SurveyQuestions(ctx context.Context, surveyID uuid.UUID) ([]QuestionResults, error) {
+	questionRows, err := s.q.ListQuestionsAcrossVersions(ctx, surveyID)
+	if err != nil {
+		return nil, fmt.Errorf("store: list questions across versions: %w", err)
+	}
+	byIdentity, order, err := foldQuestions(questionRows)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]QuestionResults, 0, len(order))
+	for _, identity := range order {
+		out = append(out, *byIdentity[identity])
+	}
+	return out, nil
+}
+
+// foldQuestions groups every version's questions by identity: later
+// versions win for the current shape, earlier wordings stay in Wordings.
+func foldQuestions(questionRows []db.ListQuestionsAcrossVersionsRow) (map[string]*QuestionResults, []string, error) {
+	byIdentity := map[string]*QuestionResults{}
+	var order []string
+	for _, row := range questionRows {
+		identity := row.QuestionIdentityID.String()
+		question, seen := byIdentity[identity]
+		if !seen {
+			question = &QuestionResults{
+				IdentityID:   identity,
+				FirstVersion: int(row.VersionNumber),
+			}
+			byIdentity[identity] = question
+			order = append(order, identity)
+		}
+		var options []string
+		if len(row.Options) > 0 {
+			if err := json.Unmarshal(row.Options, &options); err != nil {
+				return nil, nil, fmt.Errorf("store: decode options: %w", err)
+			}
+		}
+		// Later versions win for the current shape; the earlier wordings
+		// stay in Wordings.
+		question.Type = domain.QuestionType(row.Type)
+		question.Text = row.Text
+		question.Options = options
+		question.Required = row.Required
+		question.LastVersion = int(row.VersionNumber)
+		if row.ScaleMin != nil {
+			question.ScaleMin = int(*row.ScaleMin)
+		}
+		if row.ScaleMax != nil {
+			question.ScaleMax = int(*row.ScaleMax)
+		}
+		if len(question.Wordings) == 0 || question.Wordings[len(question.Wordings)-1].Text != row.Text {
+			question.Wordings = append(question.Wordings, Wording{
+				VersionNumber: int(row.VersionNumber), Text: row.Text,
+			})
+		}
+	}
+	return byIdentity, order, nil
+}
+
+// ResponseDurations lists the durations of responses submitted in
+// [since, until), ascending, for the median time to complete.
+func (s *Surveys) ResponseDurations(ctx context.Context, surveyID uuid.UUID, since, until time.Time) ([]int, error) {
+	rows, err := s.q.ListResponseDurations(ctx, db.ListResponseDurationsParams{
+		SurveyID: surveyID, Since: since, Until: until,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("store: list response durations: %w", err)
+	}
+	out := make([]int, 0, len(rows))
+	for _, row := range rows {
+		if row != nil {
+			out = append(out, int(*row))
+		}
+	}
+	return out, nil
 }
 
 func intPtr(v *int32) *int {

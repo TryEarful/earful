@@ -121,6 +121,7 @@ func TestPurge_ErasesSoftDeletedSurveysAfterThirtyDays(t *testing.T) {
 		{"drafts", `SELECT count(*) FROM survey_drafts WHERE survey_id = $1`},
 		{"identities", `SELECT count(*) FROM question_identities WHERE survey_id = $1`},
 		{"stats", `SELECT count(*) FROM survey_stats WHERE survey_id = $1`},
+		{"daily stats", `SELECT count(*) FROM survey_stats_daily WHERE survey_id = $1`},
 	} {
 		if n := countRows(t, pool, check.query, id); n != 0 {
 			t.Errorf("%s survived the purge (%d rows) — the survey is only half erased", check.what, n)

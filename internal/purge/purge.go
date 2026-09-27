@@ -172,6 +172,8 @@ DELETE FROM survey_drafts WHERE survey_id IN (SELECT id FROM doomed)`},
 DELETE FROM participants WHERE survey_id IN (SELECT id FROM doomed)`},
 		{name: "stats_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM survey_stats WHERE survey_id IN (SELECT id FROM doomed)`},
+		{name: "daily_stats_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
+DELETE FROM survey_stats_daily WHERE survey_id IN (SELECT id FROM doomed)`},
 		{name: "ai_usage_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM ai_usage WHERE survey_id IN (SELECT id FROM doomed)`},
 		{name: "doomed_surveys", args: []any{cutoff}, sql: doomed + `

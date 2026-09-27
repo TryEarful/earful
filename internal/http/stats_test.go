@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -24,28 +25,38 @@ func TestStats_CountAndSuppress(t *testing.T) {
 	app.AddQuestion(t, creator, id, "short_text", "Second question", nil)
 	app.Publish(t, creator, id)
 
-	// Six respondents finish; one answers only the first question.
+	// Six respondents finish; one answers only the first question. The
+	// unchallenged-submit limiter allows five an hour from one network,
+	// so the sixth arrives an hour later.
 	for i := 0; i < 5; i++ {
 		answerSurvey(t, app, id, map[int]string{0: "one", 1: "two"})
 	}
+	app.Clock.Advance(time.Hour)
 	answerSurvey(t, app, id, map[int]string{0: "only the first"})
 
-	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
+	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/stats")
 
-	if !bodyContains(page, "How this survey is going") {
-		t.Fatalf("no stats panel:\n%s", page)
+	if !bodyContains(page, "Big picture") {
+		t.Fatalf("no stats page:\n%s", page)
 	}
 	if !bodyContains(page, "Completion rate") {
 		t.Errorf("completion rate missing:\n%s", page)
 	}
-	// Five responses stopped at question 2, one at question 1: the second
-	// bucket is above the suppression threshold, the first is not — and
-	// "where answers stop" is labelled as exactly that, not as drop-off.
-	if !bodyContains(page, "Where answers stop") {
+	if got := extractStat(t, page, "Submissions"); got != 6 {
+		t.Errorf("submissions = %d, want 6", got)
+	}
+	// Five responses stopped at question 2, one at question 1. The flow
+	// counts are never suppressed — they say nothing about a person —
+	// and "where answers stop" is labelled as exactly that, not as
+	// drop-off.
+	if !bodyContains(page, "Question by question") {
 		t.Errorf("last-answered breakdown missing:\n%s", page)
 	}
-	if !bodyContains(page, "Question 2: Second question") {
-		t.Errorf("last-answered bucket missing its question:\n%s", page)
+	if got := extractStopped(t, page, "Second question"); got != 5 {
+		t.Errorf("stopped at second question = %d, want 5", got)
+	}
+	if got := extractStopped(t, page, "First question"); got != 1 {
+		t.Errorf("stopped at first question = %d, want 1", got)
 	}
 
 	// The audience section only appears once a bucket clears five: with
@@ -70,13 +81,15 @@ func TestStats_SuppressBelowFive(t *testing.T) {
 		answerSurvey(t, app, id, map[int]string{0: "answer"})
 	}
 
-	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
-	if bodyContains(page, "Audience") {
-		t.Errorf("audience buckets shown with only four responses:\n%s", page)
+	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/stats")
+	for _, bucket := range []string{"<h3>Browser</h3>", "<h3>Device</h3>", "<h3>Country</h3>"} {
+		if bodyContains(page, bucket) {
+			t.Errorf("audience bucket %s shown with only four responses:\n%s", bucket, page)
+		}
 	}
 	// The counts that are not about a person are still shown.
-	if !bodyContains(page, "4 responses") {
-		t.Errorf("response count missing:\n%s", page)
+	if got := extractStat(t, page, "Submissions"); got != 4 {
+		t.Errorf("submissions = %d, want 4", got)
 	}
 }
 
@@ -112,14 +125,12 @@ func TestStats_NoIdentifyingDataIsStored(t *testing.T) {
 
 	// Neither the user agent nor the address appears anywhere a creator
 	// can read — not in results, not in the export.
-	results := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
-	csv := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results.csv")
-	for _, forbidden := range []string{"81.169.145.68", "AppleWebKit", "iPhone", "Mozilla"} {
-		if strings.Contains(results, forbidden) {
-			t.Errorf("results leaked %q", forbidden)
-		}
-		if strings.Contains(csv, forbidden) {
-			t.Errorf("export leaked %q", forbidden)
+	for _, path := range []string{"/results", "/results.csv", "/stats", "/stats.csv"} {
+		body := mustGet(t, creator, app.Server.URL+"/surveys/"+id+path)
+		for _, forbidden := range []string{"81.169.145.68", "AppleWebKit", "iPhone", "Mozilla"} {
+			if strings.Contains(body, forbidden) {
+				t.Errorf("%s leaked %q", path, forbidden)
+			}
 		}
 	}
 }
@@ -172,22 +183,29 @@ func TestAggregatesCannotBeLinkedToResponses(t *testing.T) {
 
 // TestAggregatesHaveNoForeignKeyToResponses checks the same rule where it
 // is actually enforced: the schema. A counter with an FK to a response is
-// not an aggregate, whatever the queries say today.
+// not an aggregate, whatever the queries say today. Both counter tables
+// are held to it: the undated totals (00011) and the dated flow
+// counters (00016, ADR-0012).
 func TestAggregatesHaveNoForeignKeyToResponses(t *testing.T) {
 	t.Parallel()
-	migration, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", "00011_survey_stats.sql"))
-	if err != nil {
-		t.Fatalf("read migration: %v", err)
-	}
-	text := strings.ToLower(string(migration))
-	// The only reference survey_stats may hold is to the survey itself.
-	for _, forbidden := range []string{"references responses", "references answers", "references participants"} {
-		if strings.Contains(text, forbidden) {
-			t.Errorf("survey_stats gained %q — ADR-0009 forbids any join path to a response", forbidden)
+	for _, name := range []string{"00011_survey_stats.sql", "00016_survey_stats_daily.sql"} {
+		migration, err := os.ReadFile(filepath.Join("..", "..", "db", "migrations", name))
+		if err != nil {
+			t.Fatalf("read migration: %v", err)
 		}
-	}
-	if !strings.Contains(text, "references surveys") {
-		t.Error("survey_stats should reference the survey it counts")
+		text := strings.ToLower(string(migration))
+		// The only reference a counter table may hold is to the survey
+		// itself — not to a response, and not to a question identity
+		// either, which is why the dated bucket is plain text.
+		for _, forbidden := range []string{"references responses", "references answers",
+			"references participants", "references question_identities"} {
+			if strings.Contains(text, forbidden) {
+				t.Errorf("%s gained %q — ADR-0009 forbids any join path to a response", name, forbidden)
+			}
+		}
+		if !strings.Contains(text, "references surveys") {
+			t.Errorf("%s should reference the survey it counts", name)
+		}
 	}
 }
 
@@ -206,25 +224,35 @@ func TestStats_StartsAreRateLimited(t *testing.T) {
 		mustGet(t, crawler, app.Server.URL+"/s/"+id)
 	}
 
-	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
+	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/stats")
 	// The limiter allows ten an hour from one network; the exact number
 	// matters less than "far fewer than forty".
-	if opened := extractOpened(t, page); opened > 15 {
+	if opened := extractStat(t, page, "Opened"); opened > 15 {
 		t.Errorf("40 page loads from one network counted as %d starts", opened)
 	}
 }
 
-var openedRe = regexp.MustCompile(`(?s)<dt>Opened</dt>\s*<dd>(\d+)</dd>`)
-
-func extractOpened(t *testing.T, page string) int {
+// extractStat reads one Big picture figure off the stats page.
+func extractStat(t *testing.T, page, label string) int {
 	t.Helper()
-	m := openedRe.FindStringSubmatch(page)
+	re := regexp.MustCompile(`(?s)<dt>` + regexp.QuoteMeta(label) + `</dt>\s*<dd>(\d+)`)
+	m := re.FindStringSubmatch(page)
 	if m == nil {
-		t.Fatalf("no opened count on the page:\n%s", page)
+		t.Fatalf("no %s figure on the page:\n%s", label, page)
 	}
-	var n int
-	for _, c := range m[1] {
-		n = n*10 + int(c-'0')
+	n, _ := strconv.Atoi(m[1])
+	return n
+}
+
+// extractStopped reads a question's "stopped here" count off the
+// question-by-question table.
+func extractStopped(t *testing.T, page, question string) int {
+	t.Helper()
+	re := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(question) + `\s*</td>\s*<td[^>]*data-value="(\d+)"`)
+	m := re.FindStringSubmatch(page)
+	if m == nil {
+		t.Fatalf("no stopped-here count for %q on the page:\n%s", question, page)
 	}
+	n, _ := strconv.Atoi(m[1])
 	return n
 }

@@ -129,6 +129,43 @@ func (q *Queries) ListQuestionsAcrossVersions(ctx context.Context, surveyID uuid
 	return items, nil
 }
 
+const listResponseDurations = `-- name: ListResponseDurations :many
+SELECT duration_secs
+FROM responses
+WHERE survey_id = $1 AND deleted_at IS NULL AND duration_secs IS NOT NULL
+  AND submitted_at >= $2 AND submitted_at < $3
+ORDER BY duration_secs
+`
+
+type ListResponseDurationsParams struct {
+	SurveyID uuid.UUID `json:"survey_id"`
+	Since    time.Time `json:"since"`
+	Until    time.Time `json:"until"`
+}
+
+// The durations of responses submitted in a window, for the stats page's
+// time-to-complete figure (ADR-0009 allows exactly this one per-response
+// field). Sorted so the caller can take a median without re-sorting.
+func (q *Queries) ListResponseDurations(ctx context.Context, arg ListResponseDurationsParams) ([]*int32, error) {
+	rows, err := q.db.Query(ctx, listResponseDurations, arg.SurveyID, arg.Since, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*int32
+	for rows.Next() {
+		var duration_secs *int32
+		if err := rows.Scan(&duration_secs); err != nil {
+			return nil, err
+		}
+		items = append(items, duration_secs)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listResponsesForSurvey = `-- name: ListResponsesForSurvey :many
 SELECT r.id, v.number AS version_number, r.submitted_at, r.duration_secs,
        p.email AS participant_email

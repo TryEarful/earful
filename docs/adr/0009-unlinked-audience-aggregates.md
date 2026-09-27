@@ -1,5 +1,7 @@
 # Audience stats exist only as unlinked aggregates
 
+Status: accepted — amended by ADR-0012 (dated flow counters; 2026-09-27)
+
 Amends ADR-0003. Creators get survey-level statistics — starts, completions, completion rate, drop-off per question position, average duration — and audience aggregates: browser family, device class, and country. These live exclusively in counter tables with no join path to responses; country is derived at request time from an embedded GeoIP database resolved in-process (no lookup service, no new processor) and the IP is discarded immediately. Responses additionally carry a duration in seconds. The UI suppresses any aggregate bucket with fewer than 5 observations so small anonymous samples cannot be singled out.
 
 ## Considered Options

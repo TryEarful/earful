@@ -19,7 +19,7 @@ of the product's own objects.
 | **Published surveys** | Surveys with at least one Survey Version. | The real activation metric: a draft nobody published helped nobody. |
 | **Responses** | Responses not soft-deleted, across every survey. | The product's actual output. |
 | **Participants invited** | Participant rows, i.e. addresses imported into invited surveys. | Not "emails sent": sending is drip-capped and may lag. |
-| **Completion rate** | `completion ÷ start` summed over the unlinked survey counters. | See the caveats below — it is an underestimate. |
+| **Completion rate** | `completion ÷ start` summed over the unlinked survey counters, the undated totals and the per-day rows together (ADR-0009, ADR-0012). | See the caveats below — it is an underestimate. |
 
 ## Series (last 30 days)
 
