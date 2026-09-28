@@ -405,8 +405,11 @@ resembles probing rather than use.
 # format and to the model actually existing where we call it.
 # VERTEX_TEST_AUDIO adds the voice half; drop it to test text only.
 VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=gemini-3.8-flash \
-  VERTEX_TEST_AUDIO=testdata/jfk.wav \
+  VERTEX_TEST_AUDIO="$PWD/testdata/jfk.wav" \
   go test ./internal/ai/ -run Vertex_Integration -v
+# The audio path is absolute because go test runs inside the package
+# directory. Last run 2026-09-28 against staging at "eu" with
+# gemini-3.8-flash: generation and transcription both green.
 
 # whisper.cpp, against a real model (M5)
 WHISPER_TEST_MODEL=$HOME/models/ggml-base.bin WHISPER_TEST_AUDIO=testdata/jfk.wav \
