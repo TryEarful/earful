@@ -129,7 +129,79 @@ func TestVertex_TranscribeSendsAudioInlineWithLanguageHint(t *testing.T) {
 	if prompt, _ := parts[1].(map[string]any)["text"].(string); !strings.Contains(prompt, "Dutch") {
 		t.Errorf("language hint missing from prompt: %q", prompt)
 	}
+	// Transcription asks for the least thinking the model allows: the
+	// words should start arriving without a reasoning preamble.
+	thinking, _ := (*calls)[0].body["generationConfig"].(map[string]any)["thinkingConfig"].(map[string]any)
+	if thinking["thinkingLevel"] != "LOW" {
+		t.Errorf("transcribe thinkingLevel = %v, want LOW", thinking["thinkingLevel"])
+	}
 }
+
+func TestVertex_OnlyTranscriptionLowersThinking(t *testing.T) {
+	t.Parallel()
+	srv, calls := fakeVertex(t, textFrame("ok"))
+	provider := &ai.Vertex{
+		Project: "earful-stg", Location: "eu",
+		Models:   ai.ModelSet{Default: "flash-model"},
+		Endpoint: srv.URL, Client: srv.Client(),
+	}
+	stream, err := provider.Generate(context.Background(), ai.GenerateRequest{Prompt: "ten questions"})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if _, err := ai.Collect(stream); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if _, set := (*calls)[0].body["generationConfig"]; set {
+		t.Errorf("generation sent a generationConfig %v; only transcription overrides thinking", (*calls)[0].body["generationConfig"])
+	}
+}
+
+// TestVertex_MultiRegionHost pins the host shape for the jurisdictional
+// multi-regions (ADR-0013): "eu" is not a region prefix but its own host,
+// and a request built the regional way would resolve to nothing.
+func TestVertex_MultiRegionHost(t *testing.T) {
+	t.Parallel()
+	cases := []struct{ location, wantHost string }{
+		{"eu", "https://aiplatform.eu.rep.googleapis.com"},
+		{"us", "https://aiplatform.us.rep.googleapis.com"},
+		{"europe-west4", "https://europe-west4-aiplatform.googleapis.com"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.location, func(t *testing.T) {
+			t.Parallel()
+			// A transport that answers every request itself, so the URL the
+			// client dials can be observed without touching the network.
+			var dialed string
+			client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+				dialed = r.URL.String()
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+					Body:       http.NoBody,
+				}, nil
+			})}
+			provider := &ai.Vertex{
+				Project: "earful-pro", Location: tc.location,
+				Models: ai.ModelSet{Default: "flash-model"}, Client: client,
+			}
+			stream, err := provider.Generate(context.Background(), ai.GenerateRequest{Prompt: "hi"})
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			stream.Close()
+			want := tc.wantHost + "/v1/projects/earful-pro/locations/" + tc.location +
+				"/publishers/google/models/flash-model:streamGenerateContent?alt=sse"
+			if dialed != want {
+				t.Errorf("dialed %q\nwant   %q", dialed, want)
+			}
+		})
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func TestVertex_SurfacesErrors(t *testing.T) {
 	t.Parallel()
@@ -195,7 +267,7 @@ func TestVertex_Integration(t *testing.T) {
 	}
 	location := os.Getenv("VERTEX_TEST_LOCATION")
 	if location == "" {
-		location = "europe-west4"
+		location = "eu" // the EU multi-region, where production runs (ADR-0013)
 	}
 	provider := &ai.Vertex{
 		Project:  project,

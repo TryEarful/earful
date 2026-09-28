@@ -29,14 +29,17 @@ import (
 // service account on Cloud Run, `gcloud auth application-default login`
 // on a developer machine. No key files, no secrets in config.
 //
-// ADR-0004 pins transcription to europe-west4; Location is configuration
-// so that pin is visible in the environment rather than buried here.
+// ADR-0004 and ADR-0013 pin every call to EU processing; Location is
+// configuration so that pin is visible in the environment rather than
+// buried here. It is either a single region ("europe-west4") or one of
+// the jurisdictional multi-regions ("eu", "us"), which live on a
+// differently shaped host — see host.
 type Vertex struct {
 	Project  string
 	Location string
 	Models   ModelSet
 	// Endpoint overrides the API host (tests point it at a stub server).
-	// Empty means the regional Vertex host for Location.
+	// Empty means the Vertex host that serves Location.
 	Endpoint string
 	// Client, when set, is used as-is; otherwise an ADC-authenticated
 	// client is built on first use.
@@ -73,11 +76,28 @@ func (v *Vertex) httpClient(ctx context.Context) (*http.Client, error) {
 	return v.Client, nil
 }
 
+// host returns the API host for Location. Vertex has three host shapes:
+// a single region is a subdomain prefix (europe-west4-aiplatform...),
+// the jurisdictional multi-regions "eu" and "us" are served from
+// aiplatform.<loc>.rep.googleapis.com, and the global endpoint (never
+// used here, ADR-0011) is the bare aiplatform.googleapis.com. A
+// multi-region name on the regional shape would resolve to nothing, so
+// the distinction is made here rather than left to configuration.
 func (v *Vertex) host() string {
 	if v.Endpoint != "" {
 		return strings.TrimSuffix(v.Endpoint, "/")
 	}
+	if isMultiRegion(v.Location) {
+		return "https://aiplatform." + v.Location + ".rep.googleapis.com"
+	}
 	return "https://" + v.Location + "-aiplatform.googleapis.com"
+}
+
+// isMultiRegion reports whether a Vertex location is one of the
+// jurisdictional multi-regions, whose endpoint guarantees ML processing
+// inside that jurisdiction (for "eu": EU member states only).
+func isMultiRegion(location string) bool {
+	return location == "eu" || location == "us"
 }
 
 func (v *Vertex) Generate(ctx context.Context, req GenerateRequest) (Stream, error) {
@@ -141,6 +161,16 @@ func (v *Vertex) stream(ctx context.Context, op Op, system string, parts []verte
 	if system != "" {
 		body["systemInstruction"] = map[string]any{
 			"parts": []vertexPart{{Text: system}},
+		}
+	}
+	if op == OpTranscribe {
+		// Gemini 3.x reasons before it answers unless told otherwise. A
+		// transcript needs none of that: it is the model's ears, not its
+		// judgement, and the respondent is watching the words arrive.
+		// LOW is the floor the Flash tier accepts; the other operations
+		// keep the model's default, where a moment's thought helps.
+		body["generationConfig"] = map[string]any{
+			"thinkingConfig": map[string]any{"thinkingLevel": "LOW"},
 		}
 	}
 	payload, err := json.Marshal(body)

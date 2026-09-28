@@ -190,7 +190,9 @@ module "app" {
       AI_PROVIDER         = var.ai_provider
       TRANSCRIBE_PROVIDER = var.transcribe_provider
       VERTEX_PROJECT      = local.project
-      VERTEX_LOCATION     = local.region
+      # Not local.region: the service runs in one region, AI calls go to
+      # the EU multi-region (ADR-0013). The two are separate decisions.
+      VERTEX_LOCATION     = var.ai_location
       AI_MODEL            = var.ai_model
       AI_MODEL_ANALYZE    = var.ai_model_analyze
       AI_DAILY_BUDGET_EUR = tostring(var.ai_daily_budget_eur)

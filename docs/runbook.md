@@ -495,6 +495,41 @@ still pages. **The job's image is moved to each promoted digest by
 retention silently runs whatever image existed the day the job was
 created.
 
+## AI retention hardening (ADR-0013)
+
+Vertex keeps nothing from an AI call at rest by default: the training
+restriction covers every managed model, and abuse-monitoring logs exist
+only when a safety classifier flags a prompt (90 days, in the project's
+region, opt-out by form). The one per-call retention is a 24-hour
+**in-memory** cache that Google documents as residency-bound and
+compatible with zero data retention. Neither of the steps below is
+required for the promises `/trust` makes; both are cheap and match
+ADR-0004's spirit, so do them once per project and record the date here.
+
+**1. Switch off the in-memory cache.** The setting is project-wide
+("applies to all Google Cloud regions"), so any regional host works:
+
+```sh
+P=earful-pro-aeir   # then again with earful-stg-aeir
+H=https://europe-west4-aiplatform.googleapis.com
+curl -X PATCH -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
+  -H "Content-Type: application/json" $H/v1/projects/$P/cacheConfig \
+  -d "{\"name\": \"projects/$P/cacheConfig\", \"disableCache\": true}"
+# Verify: the GET must now include "disableCache": true.
+curl -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
+  $H/v1/projects/$P/cacheConfig
+```
+
+Re-enable with `"disableCache": false` if latency ever matters more than
+the belt-and-braces.
+
+**2. File the abuse-logging opt-out.** Google's abuse-monitoring page
+("Customer opt-out") links the exception form; file it for both projects.
+Until approved, the documented behaviour stands: logging only on a
+classifier flag, never for training, in the EU multi-region.
+
+Status: cache disable and opt-out not yet done as of 2026-09-28.
+
 ## AI breaker trip (alert: "AI budget breaker TRIPPED")
 
 The global daily € budget is spent; all AI endpoints refuse until the

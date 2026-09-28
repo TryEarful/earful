@@ -37,6 +37,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 
 ### Status log
 
+- 2026-09-28 — **AI moves to Vertex's EU multi-region on Gemini 3.8 Flash (ADR-0013); not yet deployed.** Prompted by a question about a better transcription model, and answered by a deadline: `gemini-2.5-flash` and `gemini-2.5-pro` retire on 2026-10-20, and no 3.x model is offered at europe-west4. Reading Google's residency, zero-data-retention and abuse-monitoring pages settled three things: the no-training and retention terms are platform-wide, so any Gemini keeps them; the per-model ML-processing table never listed the Netherlands for any Gemini, so the promise that actually held was "inside the EU", which is exactly what the `eu` multi-region endpoint documents; and only the Flash tier of 3.x has EU processing, so Insight Summaries now share the model with everything else. The client learned the multi-region host shape (`aiplatform.eu.rep.googleapis.com`; a multi-region name on the regional shape resolves to nothing), transcription asks for the lowest thinking level so words stream without a preamble, Terraform gained `ai_location` so the AI endpoint is no longer the Cloud Run region, and `/trust` renders the location as the guarantee it is. Real-time transcription over the Live API was researched (`gemini-3.8-live` exists at `eu`) and declined for now. Before 2026-10-20: integration test against staging with the new id, apply, a person on a microphone, tag to production; then the runbook's retention hardening.
 - 2026-09-28 — **Results and stats bars drew at full width in every browser.** The distribution bars on the results page and the stats page carried their width as an inline `style` attribute, which the Content-Security-Policy (`style-src 'self'`, ADR-0006) blocks exactly as it blocks a `<style>` element, so every bar filled its track regardless of the count. Found while producing the feature-tour deck, where the screenshots made it visible. The width now travels as the `width` attribute of an SVG rect, which is markup rather than a stylesheet and needs no CSP exception; a results-page test pins the attribute and rejects the inline form.
 - 2026-08-21 — **Bootstrap's operator values moved to Secret Manager, and the tofu test started running.** `support_email` and `mail_dns_records` now come from a `bootstrap-config` secret in the pro project rather than from the gitignored tfvars, which held the only copy of the sending-domain records on one workstation; the three values that create the projects stay in the tfvars, since a value needed to make a project cannot be read from inside it. The read is skipped whenever both are passed as variables — the from-zero path, because bootstrap creates the project holding the secret, and the way back in if Secret Manager is unreachable. Superseding the 2026-07-24 entry below, which recorded the records as a committed variable default; that default was removed on 2026-07-27 and the values have been tfvars-only since. Three things the work itself surfaced: the bootstrap `tofu test` had never passed in CI since the day it was added — `mock_provider` covers only the provider configuration it names, so the `quota_ops` alias fell through to real credentials and passed on a workstation with ADC while failing everywhere else; a data source that depends on a resource defers its read to apply, and the record set keys its `for_each` off these records, which a plan cannot do with unknown keys, so the project is named from locals as `main.tf` already does for the same alias; and the required-variable guard against silently deleting the sending-domain records had to be rebuilt as a precondition, since an unreadable secret errors on its own but a readable empty one does not.
 
@@ -67,14 +68,15 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0001 | Responses pin to immutable Survey Versions; no copy-forward; results aggregate by Question Identity |
 | 0002 | Workspaces own surveys from day 1; personal workspace auto-created |
 | 0003 | Anonymity is strong (no email/IP/UA near responses) and immutable at creation |
-| 0004 | Voice is transcript-only; audio never stored; local-first, else Vertex Gemini @ europe-west4 |
+| 0004 | Voice is transcript-only; audio never stored; local-first, else Vertex Gemini processed in the EU (endpoint per 0013) |
 | 0005 | Email via EU ESP (Brevo) behind a two-method interface |
 | 0006 | No third-party scripts on respondent pages; ALTCHA in-app |
 | 0007 | Cloud Run over GKE for the SaaS MVP; K8s later is a redeploy, not a rewrite |
 | 0008 | Daily Cloud SQL exports to a retention-locked immutable bucket; rolling 30-day window via lifecycle rules, not cron delete permissions |
 | 0009 | Audience stats exist only as unlinked survey-level aggregates (browser family, device class, country via in-process GeoIP); n<5 suppression; amends 0003 |
 | 0010 | Workspace export archives live in Postgres, not object storage: one code path for SaaS and self-hosting, at the cost of a size cap |
-| 0011 | EU residency outranks model recency: every AI call stays pinned to europe-west4, so Gemini 3.x (global-only) is not used |
+| 0011 | EU residency outranks model recency: every AI call is processed in the EU, never at Vertex's global location |
+| 0013 | The EU pin is Vertex's `eu` multi-region endpoint (documented ML processing in EU member states), not a single region; Gemini 3.8 Flash on it; amends 0011 |
 | 0012 | Flow counters (opened, submitted, where answers stop) carry a UTC day in a second counter table; audience counters never do, because a date range plus suppression still leaks by subtraction; amends 0009 |
 
 ## MVP scope
@@ -85,13 +87,13 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 
 ## Architecture overview
 
-One Go binary, three subcommands: `earful serve` (HTTP + WebSocket server), `earful purge` (the 30-day cleanup, run manually in dev, Cloud Scheduler → Cloud Run job in stg/pro), `earful migrate` (goose migrations, also run on deploy). Server-rendered HTML via templ; plain CSS and vanilla JS with progressive enhancement — every form works without JS; JS adds one-question-at-a-time flow, voice, and streaming. WebSockets stream LLM output token-by-token (client auto-reconnects; Cloud Run caps connections at 60 min). Postgres via pgx + sqlc; no ORM. AI calls go through an internal `ai` package with two implementations: Vertex AI (Gemini Flash/Pro, pinned europe-west4) for stg/pro, and an OpenAI-compatible/ollama/llamafile client for local dev. Model IDs (`gemini-3.5-flash`, `gemini-3.5-pro`) are config, not code — verify current IDs at build time.
+One Go binary, three subcommands: `earful serve` (HTTP + WebSocket server), `earful purge` (the 30-day cleanup, run manually in dev, Cloud Scheduler → Cloud Run job in stg/pro), `earful migrate` (goose migrations, also run on deploy). Server-rendered HTML via templ; plain CSS and vanilla JS with progressive enhancement — every form works without JS; JS adds one-question-at-a-time flow, voice, and streaming. WebSockets stream LLM output token-by-token (client auto-reconnects; Cloud Run caps connections at 60 min). Postgres via pgx + sqlc; no ORM. AI calls go through an internal `ai` package with two implementations: Vertex AI (Gemini Flash, pinned to the EU multi-region) for stg/pro, and an OpenAI-compatible/ollama/llamafile client for local dev. Model IDs (`gemini-3.8-flash` for every operation as of 2026-09-28; the location is Vertex's `eu` multi-region, ADR-0013) are config, not code — verify current IDs and their EU processing entry at build time.
 
 ```
 Browser ── HTTPS ──> Cloud Run (earful serve) ──> Cloud SQL Postgres
    │                     │        │
    │ WS (stream)         │        └──> Brevo (SMTP/API): magic links, invites
-   │                     └──> Vertex AI Gemini @ europe-west4 (transcribe, generate)
+   │                     └──> Vertex AI Gemini @ eu multi-region (transcribe, generate)
    └── mic ──> local SpeechRecognition only if verifiably local; else audio streams
                through serve → Vertex; audio discarded, transcript returned
 ```
@@ -363,7 +365,7 @@ Roles: for **respondent data**, the customer (workspace) is controller and Earfu
 | # | Processor | Purpose | Data | Region | Notes |
 |---|---|---|---|---|---|
 | 1 | Google Cloud (Cloud Run, Cloud SQL, GCS, Secret Manager, Logging) | Hosting | All service data | europe-west4 | Google Cloud DPA + SCCs; US parent → CLOUD Act residual risk (see gaps) |
-| 2 | Google Vertex AI (Gemini Flash/Pro; later Nano Banana 2) | Transcription fallback, generation; later translation/insights/images | Audio in transit (never at rest), prompts, transcripts | europe-west4 pinned | Verify in writing: no-training terms, abuse-log retention, EU residency guarantee |
+| 2 | Google Vertex AI (Gemini 3.8 Flash; later Nano Banana 2) | Transcription fallback, generation, translation, insights; later images | Audio in transit (never at rest), prompts, transcripts | EU multi-region (`eu`): ML processing in EU member states | Terms verified 2026-09-28 against Google's zero-data-retention, abuse-monitoring and data-residency pages (ADR-0013); written confirmation still worth obtaining |
 | 3 | Brevo (FR) | Magic links, invites, bounces | User + participant emails | EU | DPA; suppression list holds emails |
 | 4 | Google Identity (OIDC) | Login | Email, Google subject ID | — | Only when user chooses Google login |
 | — | Browser speech vendors (Google/Apple) | *Avoided by design* | — | — | Non-local browser recognition is never invoked (ADR-0004); keep note in policy in case this changes |
@@ -378,7 +380,7 @@ GitHub hosts code only — no service data. Audience aggregates (ADR-0009) use a
 4. **Erasure workflow** — M8-T3 fast-path; document that anonymous responses are unerasable *because they contain no personal data* (feature, not bug — state it).
 5. **Backup retention vs erasure** — purged data survives in PITR (7 days) and in the immutable daily exports (30 days, undeletable by design — ADR-0008); document in policy that erasure is fully effective after ≤30 days (standard, defensible practice).
 6. **Records of Processing (RoPA)** — internal doc, one page per processing activity.
-7. **Vertex AI terms verification** — written confirmation of no-training + EU processing + abuse-logging retention for the exact APIs used; revisit zero-retention config; CMEK later.
+7. **Vertex AI terms verification** — documentation read on 2026-09-28 and recorded in ADR-0013: the training restriction covers every managed model; abuse logging is classifier-triggered, 90 days, in the customer's region, opt-out by form; the only per-call retention is a 24-hour in-memory cache, disabled per project. Still open: written confirmation from Google, the cache switched off on stg/pro, the abuse-logging opt-out filed (runbook); CMEK later.
 8. **CLOUD Act honesty** — EU region ≠ immunity from US parent jurisdiction. Mitigations: CMEK w/ external keys (later), sovereign-cloud options (expensive). Until then: state residual risk plainly on /trust; it is more credible than pretending.
 9. **Breach runbook** — 72-hour notification duty (M9-T4 includes it); define who notifies whom.
 10. **Retention schedule** — responses: life of survey; abuse_log ≤30d; draft revisions (pick: 90d?); Cloud Logging 30d; magic links minutes; Brevo logs per their retention.

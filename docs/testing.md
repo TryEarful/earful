@@ -396,13 +396,15 @@ transcription, and sending generated audio to a hosted speech API
 resembles probing rather than use.
 
 ```sh
-# Vertex, against the real API with your own ADC (M6-T1). Last run
-# 2026-07-25 against the staging project with gemini-2.5-flash (and
-# gemini-2.5-pro for the analyze tier): generation and transcription
-# both green. Those ids are the best europe-west4 offers; 3.x is
-# global-only and deliberately unused (ADR-0011). VERTEX_TEST_AUDIO adds
-# the voice half; drop it to test text only.
-VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=gemini-2.5-flash \
+# Vertex, against the real API with your own ADC (M6-T1). The location
+# defaults to "eu", the multi-region production uses (ADR-0013); set
+# VERTEX_TEST_LOCATION to try a single region. The model must have ML
+# processing at that location on Google's data-residency table, and the
+# global endpoint is never used (ADR-0011). Run this against any new id
+# before pointing production at it — it is the only witness to the wire
+# format and to the model actually existing where we call it.
+# VERTEX_TEST_AUDIO adds the voice half; drop it to test text only.
+VERTEX_TEST_PROJECT=earful-stg-xxxx VERTEX_TEST_MODEL=gemini-3.8-flash \
   VERTEX_TEST_AUDIO=testdata/jfk.wav \
   go test ./internal/ai/ -run Vertex_Integration -v
 

@@ -13,4 +13,4 @@ Respondents may answer text questions by speaking. Audio is transcribed and imme
 - No replay/playback features can ever be promised; summaries and analysis operate on transcripts.
 - tryearful.com copy must change: "keep every recording under your control" → "your voice is never stored".
 - Non-local browser recognition is treated as unavailable; the server fallback path must therefore be production-grade from day 1, and its cost bot-protected.
-- Vertex AI (europe-west4), not the consumer Gemini API, is the only server-side model path.
+- Vertex AI (europe-west4), not the consumer Gemini API, is the only server-side model path. *ADR-0013 (2026-09-28) moved the pin to Vertex's `eu` multi-region endpoint; the EU-only promise is unchanged.*

@@ -78,8 +78,10 @@ type Config struct {
 	AIModelTranslate  string
 	AIModelTranscribe string
 	// VertexProject/VertexLocation address the Vertex AI endpoint.
-	// ADR-0004 pins voice to europe-west4; the location is configuration
-	// so the pin is visible in the environment, not buried in code.
+	// ADR-0004 and ADR-0013 keep every call inside the EU: the default is
+	// Vertex's "eu" multi-region, whose endpoint guarantees processing in
+	// EU member states. The location is configuration so the pin is
+	// visible in the environment, not buried in code.
 	VertexProject  string
 	VertexLocation string
 	// TranscribeProvider selects the voice backend: "none",
@@ -193,7 +195,7 @@ func load(serving bool) (Config, error) {
 		AIModelTranslate:   getEnv("AI_MODEL_TRANSLATE", ""),
 		AIModelTranscribe:  getEnv("AI_MODEL_TRANSCRIBE", ""),
 		VertexProject:      getEnv("VERTEX_PROJECT", ""),
-		VertexLocation:     getEnv("VERTEX_LOCATION", "europe-west4"),
+		VertexLocation:     getEnv("VERTEX_LOCATION", "eu"),
 		TranscribeProvider: getEnv("TRANSCRIBE_PROVIDER", "none"),
 		WhisperBin:         getEnv("WHISPER_BIN", "whisper-cli"),
 		WhisperModel:       getEnv("WHISPER_MODEL", ""),

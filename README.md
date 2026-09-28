@@ -19,7 +19,7 @@ versions, get an AI Insight Summary, translate what people wrote, and
 export everything you hold. Localization, retention purging, a GDPR
 erasure fast-path and a public trust page are all in.
 
-All of it runs on production, with AI on Vertex in europe-west4. What
+All of it runs on production, with AI on Vertex's EU multi-region. What
 remains is the launch itself (M9-T5). See [PLAN.md](PLAN.md) for
 per-ticket status and current blockers, and [SPEC.md](SPEC.md) for the
 product spec these tickets implement.
@@ -198,7 +198,7 @@ report themselves absent and the features degrade (Appendix D).
 | `AI_MODEL` | *(empty)* | Default model for every operation |
 | `AI_MODEL_GENERATE` / `_ANALYZE` / `_TRANSLATE` / `_TRANSCRIBE` | *(empty)* | Per-operation override — this is how insights run on a stronger tier than question generation |
 | `VERTEX_PROJECT` | *(empty)* | Required by the `vertex` provider; credentials come from Application Default Credentials, never a key file |
-| `VERTEX_LOCATION` | `europe-west4` | ADR-0004 pins voice here, and ADR-0011 keeps every other call here too — even when a newer model family is available only at Vertex's `global` location |
+| `VERTEX_LOCATION` | `eu` | Vertex's EU multi-region, whose endpoint guarantees processing inside EU member states (ADR-0013). A single region such as `europe-west4` also works; `global` is never used (ADR-0011). The multi-regions live on their own host (`aiplatform.eu.rep.googleapis.com`), which the client derives from this value |
 | `TRANSCRIBE_PROVIDER` | `none` | `none`, `whisper-cli`, `openai`, `vertex`, or `scripted`; voice is selected separately from text because they routinely come from different places |
 | `WHISPER_BIN` / `WHISPER_MODEL` | `whisper-cli` / *(empty)* | whisper.cpp binary and `ggml-*.bin` model path |
 | `AI_DAILY_BUDGET_EUR` | `3` | Global daily breaker: every AI endpoint refuses once the day's estimated spend reaches it |

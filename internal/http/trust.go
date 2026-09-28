@@ -67,6 +67,20 @@ func (s *server) contactEmail() string {
 	return ""
 }
 
+// vertexLocationLabel renders a Vertex location for a reader of /trust.
+// The jurisdictional multi-regions are a promise about a boundary, not
+// a place, and "eu" on its own reads like an abbreviation rather than
+// the guarantee it is: ML processing inside EU member states only.
+func vertexLocationLabel(location string) string {
+	switch location {
+	case "eu":
+		return "EU (Google Cloud multi-region: processed only in EU member states)"
+	case "us":
+		return "United States (Google Cloud multi-region)"
+	}
+	return location
+}
+
 // processors lists exactly the companies this deployment actually
 // involves.
 func (s *server) processors() []templates.ProcessorView {
@@ -94,10 +108,10 @@ func (s *server) processors() []templates.ProcessorView {
 			Name:    "Google Vertex AI",
 			Purpose: "Transcribing spoken answers, drafting questions, summaries and translations",
 			Data:    "Audio in transit (never stored), question and answer text",
-			// The configured region, not a claim: ADR-0011 keeps every
-			// call pinned here, and this cell would change if that ever
-			// stopped being true.
-			Region: s.cfg.VertexLocation,
+			// The configured location, not a claim: ADR-0011 and ADR-0013
+			// keep every call pinned here, and this cell would change if
+			// that ever stopped being true.
+			Region: vertexLocationLabel(s.cfg.VertexLocation),
 		})
 	case "openai":
 		out = append(out, templates.ProcessorView{

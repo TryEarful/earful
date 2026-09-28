@@ -30,6 +30,10 @@ west3, west4, west9, north1, southwest1 and central2. So Earful runs
 
 ## Consequences
 
+- **Amended by ADR-0013 (2026-09-28):** the pin is now Vertex's `eu`
+  multi-region endpoint rather than the europe-west4 region, and the
+  models are Gemini 3.8 Flash. The principle here is unchanged; the
+  concrete region and model ids below are historical.
 - Model quality is a lagging indicator of what the platform offers, and
   that is accepted. The models in question are competent at the four
   things Earful asks of them: drafting questions, transcribing speech,

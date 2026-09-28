@@ -73,21 +73,37 @@ variable "transcribe_provider" {
   }
 }
 
-# The ids below are what europe-west4 actually offers, verified against
-# the live publisher list on 2026-07-25 and exercised end to end by
-# internal/ai's integration test. Gemini 3.x is deliberately NOT used:
-# it resolves only at Vertex's `global` location, and the EU pin outranks
-# model recency (ADR-0011). Upgrade when 3.x reaches an EU region.
-variable "ai_model" {
-  description = "Default model for every AI operation. Must be available in var.region (ADR-0011)."
+# Where AI calls are processed, independently of where the service runs.
+# "eu" is Vertex's jurisdictional multi-region: its endpoint guarantees
+# ML processing inside EU member states, which is the promise /trust
+# makes (ADR-0013). The global endpoint is never used (ADR-0011).
+variable "ai_location" {
+  description = "Vertex location for every AI call: the eu multi-region, or a single EU region. Never global (ADR-0011, ADR-0013)."
   type        = string
-  default     = "gemini-2.5-flash"
+  default     = "eu"
+
+  validation {
+    condition     = var.ai_location != "global" && var.ai_location != ""
+    error_message = "ai_location must be the eu multi-region or a single EU region, never global."
+  }
+}
+
+# The ids below have documented ML processing in var.ai_location on
+# Google's per-model data-residency table, checked on 2026-09-28, and are
+# exercised end to end by internal/ai's integration test. The 2.5 family
+# retires on 2026-10-20. Only the Flash tier of Gemini 3.x has EU
+# processing, so Insight Summaries run on the same model as everything
+# else; a stronger EU-resident tier is a tfvars change when one appears.
+variable "ai_model" {
+  description = "Default model for every AI operation. Must have ML processing in var.ai_location (ADR-0013)."
+  type        = string
+  default     = "gemini-3.8-flash"
 }
 
 variable "ai_model_analyze" {
-  description = "Model for Insight Summaries, which want a stronger tier than question drafting. Empty falls back to ai_model."
+  description = "Model for Insight Summaries, when a stronger tier than question drafting exists in var.ai_location. Empty falls back to ai_model."
   type        = string
-  default     = "gemini-2.5-pro"
+  default     = "gemini-3.8-flash"
 }
 
 # Set here rather than left on the application default, because the first
