@@ -205,7 +205,7 @@ templ statBuckets(title string, rows []CountView) {
 			for _, row := range rows {
 				<li>
 					<span class="bar-label">{ row.Label }</span>
-					<span class="bar" aria-hidden="true"><span class="bar-fill" style={ barWidth(row.Percent) }></span></span>
+					<svg class="bar" aria-hidden="true" focusable="false"><rect class="bar-fill" width={ barWidth(row.Percent) } height="100%"></rect></svg>
 					<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
 				</li>
 			}

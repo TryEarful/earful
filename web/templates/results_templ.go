@@ -869,20 +869,20 @@ func questionResults(q QuestionResultsView) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</span> <span class=\"bar\" aria-hidden=\"true\"><span class=\"bar-fill\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</span> <svg class=\"bar\" aria-hidden=\"true\" focusable=\"false\"><rect class=\"bar-fill\" width=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var45 string
-				templ_7745c5c3_Var45, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(barWidth(row.Percent))
+				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.ResolveAttributeValue(barWidth(row.Percent))
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/results.templ`, Line: 211, Col: 59}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var45)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\"></span></span> <span class=\"bar-count\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\" height=\"100%\"></rect></svg> <span class=\"bar-count\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1038,14 +1038,18 @@ func questionResults(q QuestionResultsView) templ.Component {
 	})
 }
 
-// barWidth is the one piece of inline style on any page: a percentage
-// that is data, not design. The CSP forbids inline <style> and inline
-// event handlers; a style attribute carrying a computed width is neither.
+// barWidth is the width attribute of a distribution bar's SVG rect. The
+// percentage is data, and the CSP (style-src 'self', no 'unsafe-inline')
+// governs style attributes exactly as it governs <style> elements, so an
+// inline style would be dropped and every bar would fill its track. An
+// SVG presentation attribute is markup rather than a stylesheet and needs
+// no CSP exception; the percentage resolves against the svg's own box
+// because the element carries no viewBox.
 func barWidth(percent int) string {
 	if percent < 2 && percent > 0 {
 		percent = 2 // keep a non-zero result visible
 	}
-	return "width:" + strconv.Itoa(percent) + "%"
+	return strconv.Itoa(percent) + "%"
 }
 
 func answerCountLabel(n int) string {

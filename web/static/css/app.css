@@ -786,8 +786,11 @@ fieldset {
   margin: 0.35rem 0;
 }
 
+/* The bar is an inline SVG whose rect carries its width as an attribute;
+   an svg element defaults to 300px wide, hence the explicit width. */
 .bar {
   display: block;
+  width: 100%;
   background: color-mix(in srgb, CanvasText 10%, Canvas);
   border-radius: 0.25rem;
   height: 0.85rem;
@@ -795,9 +798,7 @@ fieldset {
 }
 
 .bar-fill {
-  display: block;
-  height: 100%;
-  background: var(--accent);
+  fill: var(--accent);
 }
 
 .bar-count {

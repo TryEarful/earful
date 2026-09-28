@@ -121,6 +121,15 @@ func TestResults_DistributionsPerType(t *testing.T) {
 	if !bodyContains(page, "67%") {
 		t.Errorf("yes/no distribution missing:\n%s", page)
 	}
+	// The bar's width travels as an SVG attribute. The CSP forbids inline
+	// styles, so a style attribute here would be dropped by the browser and
+	// every bar would render full width; this pins the markup that works.
+	if !bodyContains(page, `class="bar-fill" width="67%"`) {
+		t.Errorf("bar width attribute missing:\n%s", page)
+	}
+	if bodyContains(page, `style="width`) {
+		t.Errorf("bar width rendered as an inline style, which the CSP blocks:\n%s", page)
+	}
 }
 
 // TestResults_CSVIsSafeToOpen is M7-T2: one row per response, the version
