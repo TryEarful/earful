@@ -84,18 +84,26 @@ textarea the server rendered is the whole interface (story 38).
    dialog and it says the voice is never stored. Decline → nothing
    happens, typing still works. Accept → the browser's own microphone
    prompt appears.
-4. **Recording**: the button becomes *Stop and transcribe* with a live
-   dot; the status line announces "Listening…".
+4. **Recording**: the button becomes *Stop and transcribe*, solid red with
+   a pulsing dot, and the textarea gets a red outline; the status line
+   announces "Listening…". With reduced motion on, the dot is still.
 5. **Transcript**: stopping streams text into the textarea, word by word,
    and the status line ends with "edit it if it isn't quite right".
-6. **Edit and submit**: change a word, submit, confirm the stored answer
+6. **Hold to talk**: with the caret in the textarea, hold Space: the
+   button reads *Release Space to transcribe* and the take ends when the
+   key comes up. A quick tap of Space still types a space.
+7. **Reset**: press Esc once (the status line asks for a second), then
+   again: the textarea empties, and a reload does not bring the answer
+   back. Do the same while holding Space: the take is dropped and nothing
+   is transcribed. The *Reset* button does the same on click.
+8. **Edit and submit**: change a word, submit, confirm the stored answer
    is the edited text.
-7. **Cap**: keep talking past `VOICE_MAX_SECONDS_PER_ANSWER`; the take
+9. **Cap**: keep talking past `VOICE_MAX_SECONDS_PER_ANSWER`; the take
    ends by itself and still transcribes what was said.
-8. **Refusal**: with `AI_WORKSPACE_DAILY_TOKENS=1`, the status line reads
+10. **Refusal**: with `AI_WORKSPACE_DAILY_TOKENS=1`, the status line reads
    "Voice isn't available right now — please type your answer" and
    typing still submits.
-9. **Screen reader**: the status line is `aria-live="polite"`; the button
+11. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.
 
 ## Notes

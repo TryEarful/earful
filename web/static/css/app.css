@@ -611,13 +611,18 @@ fieldset {
   margin-top: 0.5rem;
 }
 
+/* Idle is an outlined button with a microphone; live is a solid red one
+   with a pulsing dot in the microphone's place. The two must not be
+   mistaken for each other at a glance, because the difference is
+   whether the microphone is open. */
 .voice-button.recording {
   border-color: var(--danger);
-  color: var(--danger);
+  background: var(--danger);
+  color: var(--accent-contrast);
 }
 
 /* A dot that reads as "live" without relying on colour alone — the
-   button label changes too. */
+   button label changes too, and the field beside it lights up. */
 .voice-button.recording::before {
   content: "";
   display: inline-block;
@@ -625,7 +630,40 @@ fieldset {
   height: 0.6rem;
   margin-right: 0.4rem;
   border-radius: 50%;
-  background: var(--danger);
+  background: currentColor;
+  animation: voice-pulse 1.1s ease-in-out infinite;
+}
+
+.voice-button.recording .voice-icon {
+  display: none;
+}
+
+@keyframes voice-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Line icons on the mic and reset buttons, drawn in the button's own
+   colour so they follow every state the button takes. */
+.voice-icon {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.4rem;
+  vertical-align: -0.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The box the words are landing in is live too: on a long answer the
+   button can be scrolled out of view while the microphone is open. */
+textarea.voice-live,
+input.voice-live {
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
 }
 
 .voice-status {
@@ -694,12 +732,17 @@ fieldset {
 }
 
 /* Motion is decoration here; the status line carries the same fact in
-   words. A respondent who asked for less of it gets a still bar. */
+   words. A respondent who asked for less of it gets a still bar and a
+   still dot. */
 @media (prefers-reduced-motion: reduce) {
   .voice-progress::after {
     animation: none;
     width: 100%;
     opacity: 0.5;
+  }
+
+  .voice-button.recording::before {
+    animation: none;
   }
 }
 

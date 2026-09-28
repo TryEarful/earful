@@ -1,4 +1,4 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect, Browser, Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { fakeMicrophone, minFillWait, offersVoice, scriptedVoice, submitTimeout } from "./helpers";
 
@@ -168,14 +168,11 @@ test("hints are visual only, and the page stays axe-clean", async ({ page, brows
   await context.close();
 });
 
-test("shift+space starts and stops recording", async ({ page, browser }) => {
-  test.skip(
-    !scriptedVoice,
-    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
-  );
-
+// A survey whose questions both take voice: a long-text one and a
+// short-text one, built through the UI.
+async function spokenSurvey(page: Page, title: string): Promise<string> {
   await page.goto("/surveys/new");
-  await page.getByLabel("Title").fill(`E2E keys voice ${Date.now()}`);
+  await page.getByLabel("Title").fill(title);
   await page.getByRole("button", { name: "Create survey" }).click();
   const add = page.locator('form[action$="/questions"]');
   await add.locator('select[name="type"]').selectOption("long_text");
@@ -186,6 +183,34 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
   await add.getByRole("button", { name: "Add question" }).click();
   await page.getByRole("button", { name: "Publish version 1" }).click();
   const share = await page.locator(".share-link a").getAttribute("href");
+  if (!share) throw new Error("no share link after publishing");
+  return share;
+}
+
+// A respondent with a fake microphone who has already agreed to the
+// consent dialog. The key tests need consent out of the way: a held key
+// cannot survive a dialog that takes focus, and the dialog is not what
+// they are about.
+async function consentedRespondent(browser: Browser, share: string) {
+  const context = await browser.newContext({
+    storageState: undefined,
+    permissions: ["microphone"],
+  });
+  await fakeMicrophone(context);
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+  await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
+  await respondent.reload();
+  return { context, respondent };
+}
+
+test("shift+space starts and stops recording", async ({ page, browser }) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+
+  const share = await spokenSurvey(page, `E2E keys voice ${Date.now()}`);
 
   const context = await browser.newContext({
     storageState: undefined,
@@ -193,7 +218,7 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
   });
   await fakeMicrophone(context);
   const respondent = await context.newPage();
-  await respondent.goto(share!);
+  await respondent.goto(share);
 
   const offered = await offersVoice(respondent);
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
@@ -210,6 +235,115 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
     timeout: 15000,
   });
   await expect(respondent.locator("textarea")).not.toBeEmpty();
+
+  await context.close();
+});
+
+// Push-to-talk: the key is claimed on the way down and decided on the
+// way up. A tap types the space it always did; a hold records until the
+// key comes up. Both halves are asserted, because the second is only
+// acceptable if the first still holds — "typing is never swallowed by
+// the key layer" applies to this key most of all.
+test("holding space records, releasing it transcribes, and a tap still types", async ({
+  page,
+  browser,
+}) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+
+  const share = await spokenSurvey(page, `E2E keys hold ${Date.now()}`);
+  const { context, respondent } = await consentedRespondent(browser, share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  const answer = respondent.locator("textarea");
+  const row = respondent.locator(".voice").first();
+  await expect(row).toHaveAttribute("data-state", "idle");
+
+  await answer.click();
+  await respondent.keyboard.type("Plan b");
+  await expect(answer).toHaveValue("Plan b");
+
+  await respondent.keyboard.down(" ");
+  await expect(respondent.getByRole("button", { name: "Release Space to transcribe" })).toBeVisible();
+  await expect(row).toHaveAttribute("data-state", "recording");
+  await expect(answer).toHaveClass(/voice-live/);
+  await expect(answer).toHaveValue("Plan b"); // the held key typed nothing
+
+  await respondent.waitForTimeout(1200);
+  await respondent.keyboard.up(" ");
+  await expect(respondent.locator(".voice-status").first()).toHaveText(/Transcribed/, {
+    timeout: 15000,
+  });
+  // The transcript joins what was typed, with the space that separates
+  // sentences rather than glued on.
+  await expect(answer).toHaveValue(/^Plan b\s+\S/);
+  await expect(row).toHaveAttribute("data-state", "idle");
+  await expect(answer).not.toHaveClass(/voice-live/);
+  await expect(respondent.getByRole("button", { name: "Answer by speaking" })).toBeVisible();
+
+  // The reset button is named by its text alone; its icon is decoration.
+  await expect(respondent.getByRole("button", { name: "Reset", exact: true })).toHaveCount(1);
+  await expect(respondent.locator(".voice-reset svg").first()).toHaveAttribute("aria-hidden", "true");
+  const scan = await new AxeBuilder({ page: respondent }).analyze();
+  expect(scan.violations).toEqual([]);
+
+  await context.close();
+});
+
+// Reset means "start this answer over": the field, its draft, and any
+// take that is still live — which is thrown away, not transcribed.
+test("esc twice clears the answer, its draft, and a live take", async ({ page, browser }) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+
+  const share = await spokenSurvey(page, `E2E keys reset ${Date.now()}`);
+  const { context, respondent } = await consentedRespondent(browser, share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  const answer = respondent.locator("textarea");
+  const status = respondent.locator(".voice-status").first();
+
+  // One Esc only arms, and says so; the answer is untouched.
+  await answer.click();
+  await respondent.keyboard.type("Wrong answer");
+  await respondent.keyboard.press("Escape");
+  await expect(status).toHaveText(/Press Esc again/);
+  await expect(answer).toHaveValue("Wrong answer");
+  await respondent.keyboard.press("Escape");
+  await expect(answer).toHaveValue("");
+  await expect(status).toHaveText(/Cleared/);
+
+  // The draft heard about it, so nothing comes back after a reload.
+  await respondent.reload();
+  await expect(respondent.locator("textarea")).toHaveValue("");
+
+  // Mid-take: the microphone closes, nothing is transcribed, and the
+  // release of the held key types nothing either.
+  await answer.click();
+  await respondent.keyboard.down(" ");
+  await expect(respondent.getByRole("button", { name: "Release Space to transcribe" })).toBeVisible();
+  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Escape");
+  await expect(respondent.getByRole("button", { name: "Answer by speaking" })).toBeVisible();
+  await expect(status).toHaveText(/Cleared/);
+  await respondent.keyboard.up(" ");
+  await respondent.waitForTimeout(1000); // long enough for a stray transcript to have landed
+  await expect(answer).toHaveValue("");
+  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
+
+  // The button does the same as the keys.
+  await respondent.keyboard.type("x");
+  await expect(answer).toHaveValue("x");
+  await respondent.getByRole("button", { name: "Reset", exact: true }).click();
+  await expect(answer).toHaveValue("");
 
   await context.close();
 });

@@ -137,9 +137,11 @@
     }
 
     // Shift+Space starts and stops recording. It is the only shortcut
-    // that overrides typing, since in a text field it would otherwise
-    // insert a space; plain Space still does, and voice is offered only
-    // on text questions.
+    // here that overrides typing, since in a text field it would
+    // otherwise insert a space. Plain Space belongs to voice.js, which
+    // types a space on a tap and records while the key is held; it is
+    // wired there, not here, so that it works on a one-question survey
+    // too, where this layer never attaches.
     if (event.shiftKey && event.key === " ") {
       var mic = questions[current].querySelector(".voice-button");
       if (mic) {

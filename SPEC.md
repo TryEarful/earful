@@ -218,7 +218,9 @@ letters for choices, digits for scales — rather than inventing one:
 | Single / multiple choice, dropdown | `A` `B` `C` … | Select, or toggle for multiple choice |
 | Rating & NPS | `0`–`9`, buffered so `1` `0` means ten | Pick that point |
 | Yes / No | `Y` `N` | Pick |
+| Text question offering voice | `Space`, held | Record while held; transcribe on release |
 | Text question offering voice | `⇧Space` | Start, then stop recording |
+| Text question offering voice, or while recording | `Esc` `Esc` | Clear the answer; a live take is dropped, not transcribed |
 | Not in a text field | `↵` / `⇧↵` | Next / Back |
 | In a textarea | `↵`, `⇧↵` | Newline, untouched |
 | In a textarea | `⌘↵` / `Ctrl↵` | Next |

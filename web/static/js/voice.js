@@ -26,6 +26,16 @@
   var CONSENT_KEY = "earful-voice-consent";
   var SAMPLE_RATE = 16000;
   var RECORDING_HINT = "Recording in progress. Your transcription will be shown here.";
+  var HOLD_MS = 250; // a Space press longer than this is a hold, not a tap
+  var ESC_WINDOW_MS = 700; // two Esc presses this close together clear the answer
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var MIC_ICON = [
+    "M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z",
+    "M6 11a6 6 0 0 0 12 0",
+    "M12 17v4",
+    "M9 21h6",
+  ];
+  var TRASH_ICON = ["M4 7h16", "M9 7V4h6v3", "M6 7l1 14h10l1-14", "M10 11v6", "M14 11v6"];
 
   // --- local recognition detection (M5-T1) -------------------------------
   //
@@ -60,36 +70,50 @@
 
   var localRecognition = detectLocalRecognition(window);
 
+  var mics = [];
   Array.prototype.slice
     .call(form.querySelectorAll('.respond-question[data-voice="1"]'))
     .forEach(function (question) {
       var field = question.querySelector("textarea, input[type=text]");
-      if (field) attachMic(question, field);
+      if (field) mics.push(attachMic(question, field));
     });
+  if (mics.length) attachKeys(mics);
 
   function attachMic(question, field) {
     var wrap = document.createElement("div");
     wrap.className = "voice";
+    // idle, recording or transcribing: one attribute the stylesheet and
+    // the browser suite can both read, instead of inferring the state
+    // from which pieces happen to be hidden.
+    wrap.setAttribute("data-state", "idle");
 
     var button = document.createElement("button");
     button.type = "button";
     button.className = "voice-button secondary";
+    button.appendChild(icon(MIC_ICON));
     // The label is its own text node so the key hint beside it survives
     // every label change; setting button.textContent would delete it.
     var label = document.createTextNode("Answer by speaking");
     button.appendChild(label);
-    // Shift+Space toggles recording (story 80); respond.js owns the key,
-    // this is only the label for it. aria-hidden so the button is named
-    // "Answer by speaking", not "Answer by speaking ⇧Space".
-    var micHint = document.createElement("span");
-    micHint.className = "key-hint";
-    micHint.setAttribute("aria-hidden", "true");
-    micHint.textContent = "⇧Space";
-    button.appendChild(micHint);
+    // Holding Space records for as long as it is held (attachKeys);
+    // Shift+Space, which respond.js owns, still starts and stops a take.
+    // The hint is aria-hidden so the button is named "Answer by
+    // speaking", not "Answer by speaking Hold Space".
+    button.appendChild(keyHint("Hold Space"));
 
     function setLabel(text) {
       label.nodeValue = text;
     }
+
+    // Starting over. Two presses of Esc do the same, so a respondent who
+    // dictated the wrong thing is one gesture from a blank field rather
+    // than a paragraph of deleting.
+    var resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "voice-reset secondary";
+    resetButton.appendChild(icon(TRASH_ICON));
+    resetButton.appendChild(document.createTextNode("Reset"));
+    resetButton.appendChild(keyHint("Esc Esc"));
 
     var status = document.createElement("span");
     status.className = "voice-status";
@@ -132,6 +156,7 @@
     monitor.appendChild(input);
 
     wrap.appendChild(button);
+    wrap.appendChild(resetButton);
     wrap.appendChild(status);
     wrap.appendChild(monitor);
     wrap.appendChild(progress);
@@ -144,6 +169,11 @@
     var meter = null;
     var ui = {
       recording: function (handle) {
+        wrap.setAttribute("data-state", "recording");
+        // The box the words land in lights up too: on a long answer the
+        // button can be scrolled out of view while the microphone is
+        // still open.
+        field.classList.add("voice-live");
         field.setAttribute("placeholder", RECORDING_HINT);
         progress.hidden = true;
         if (!handle.monitor) return;
@@ -161,10 +191,14 @@
         });
       },
       transcribing: function () {
+        wrap.setAttribute("data-state", "transcribing");
+        field.classList.remove("voice-live");
         stopMeter();
         progress.hidden = false;
       },
       settled: function () {
+        wrap.setAttribute("data-state", "idle");
+        field.classList.remove("voice-live");
         if (placeholder === null) field.removeAttribute("placeholder");
         else field.setAttribute("placeholder", placeholder);
         stopMeter();
@@ -178,22 +212,26 @@
       monitor.hidden = true;
     }
 
-    var recorder = null;
+    var recorder = null; // the live take, once the microphone is open
+    var starting = null; // a start() still opening the microphone
 
     button.addEventListener("click", function () {
       if (recorder) {
         stop();
         return;
       }
+      if (starting) return;
       askConsent(function () {
         // The consent dialog took focus and is now gone. Put it back on
         // the field the words are about to land in, so the respondent
         // can edit as they speak and the keyboard shortcuts keep working
         // instead of talking to <body>.
         field.focus();
-        start();
+        start("toggle");
       });
     });
+
+    resetButton.addEventListener("click", clear);
 
     function say(message) {
       status.textContent = message || "";
@@ -215,7 +253,51 @@
       current.stop();
     }
 
-    function start() {
+    // hold and release are the two ends of a held Space. A take begun
+    // this way ends when the key comes up; one begun by a click or
+    // Shift+Space is a toggle and pays the key no attention.
+    function hold() {
+      if (recorder || starting) return;
+      // Consent is asked at most once per browser, and never answered by
+      // a key release: if the dialog has to appear, the hold is over by
+      // the time it is accepted, and the take then runs as a toggle.
+      var immediate = true;
+      askConsent(function () {
+        field.focus();
+        start(immediate ? "hold" : "toggle");
+      });
+      immediate = false;
+    }
+
+    function release() {
+      if (starting) {
+        // Released before the microphone even opened. There is nothing
+        // worth transcribing, and a take left running with nobody
+        // holding the key would be worse than none.
+        starting.cancelled = "released";
+        return;
+      }
+      if (recorder && recorder.mode === "hold") stop();
+    }
+
+    // clear empties the answer and, if a take is live, throws it away
+    // untranscribed: Reset means "start this answer over".
+    function clear() {
+      if (starting) starting.cancelled = "cleared";
+      if (recorder) {
+        var live = recorder;
+        recorder = null;
+        live.abort();
+      }
+      writeAnswer(field, "");
+      reset();
+      say("Cleared — type or speak your answer again.");
+      field.focus();
+    }
+
+    function start(mode) {
+      var pending = { cancelled: null };
+      starting = pending;
       say("Starting…");
       // On-device first, when the browser can prove it (ADR-0004): the
       // respondent's voice then never leaves their machine at all.
@@ -233,22 +315,216 @@
         })
         .then(
           function (handle) {
+            starting = null;
             if (!handle) {
               reset();
               return;
             }
+            if (pending.cancelled) {
+              handle.abort();
+              reset();
+              if (pending.cancelled === "released") {
+                say("Hold Space while you speak, and release it when you are done.");
+              }
+              return;
+            }
+            handle.mode = mode;
             recorder = handle;
-            setLabel("Stop and transcribe");
+            setLabel(mode === "hold" ? "Release Space to transcribe" : "Stop and transcribe");
             button.classList.add("recording");
             ui.recording(handle);
             var device = handle.monitor && handle.monitor.device;
             say(device ? "Listening on " + device + "… speak now." : "Listening… speak now.");
           },
           function () {
+            starting = null;
             reset();
             say("Microphone unavailable — please type your answer.");
           }
         );
+    }
+
+    return {
+      question: question,
+      field: field,
+      wrap: wrap,
+      hold: hold,
+      release: release,
+      clear: clear,
+      say: say,
+      isRecording: function () {
+        return recorder !== null;
+      },
+    };
+  }
+
+  // --- icons -------------------------------------------------------------
+  //
+  // Two line icons, drawn here because there is no icon set to draw
+  // from. Decorative only: each button's text is its name, so the
+  // picture is hidden from assistive technology, as the chart bars are.
+  function icon(paths) {
+    var svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("class", "voice-icon");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    paths.forEach(function (d) {
+      var path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+    });
+    return svg;
+  }
+
+  // As in respond.js and the template: the hint is aria-hidden, so it
+  // never joins the button's accessible name.
+  function keyHint(text) {
+    var hint = document.createElement("span");
+    hint.className = "key-hint";
+    hint.setAttribute("aria-hidden", "true");
+    hint.textContent = text;
+    return hint;
+  }
+
+  // --- keys: hold Space, Esc Esc (story 80) ------------------------------
+  //
+  // respond.js's key layer exists only on a paged survey; a one-question
+  // survey gets no shortcuts from it at all. Push-to-talk and the reset
+  // gesture belong to the mic, so they are wired here, wherever the mic
+  // is. Shift+Space stays with respond.js as the start/stop toggle.
+  //
+  // Plain Space is the hard case: inside the answer field it types a
+  // space, and the caret is in that field almost always (respond.js
+  // focuses it on every question, and the mic hands focus back to it).
+  // So the key is claimed on the way down and decided on the way up: a
+  // press shorter than HOLD_MS was a tap and types the space it would
+  // have typed; a longer one was a hold and recorded meanwhile. The
+  // costs are that a held key no longer auto-repeats spaces, and that a
+  // tapped space lands on release rather than on press.
+  function attachKeys(mics) {
+    var press = null; // the Space press in flight: { mic, target, timer, held }
+    var armed = null; // after a first Esc: { mic, timer }
+
+    // micFor finds the mic a key event is about: the one whose question
+    // holds the focused element, or — with focus on <body>, which is
+    // where the consent dialog leaves it — the only voice question in
+    // view. On a paged survey that is always exactly one.
+    function micFor(target) {
+      if (target === document.body) {
+        var visible = mics.filter(function (mic) {
+          return !mic.question.hidden;
+        });
+        return visible.length === 1 ? visible[0] : null;
+      }
+      for (var i = 0; i < mics.length; i++) {
+        if (mics[i].question.contains(target)) return mics[i];
+      }
+      return null;
+    }
+
+    function isVoiceControl(mic, target) {
+      return target.tagName === "BUTTON" && mic.wrap.contains(target);
+    }
+
+    function insideConsent(target) {
+      return typeof target.closest === "function" && target.closest(".voice-consent") !== null;
+    }
+
+    document.addEventListener("keydown", function (event) {
+      if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      var target = event.target;
+      if (!target || insideConsent(target)) return;
+      if (event.key === " ") onSpaceDown(event, target);
+      else if (event.key === "Escape") onEscape(event, target);
+    });
+
+    document.addEventListener("keyup", function (event) {
+      if (event.key !== " " || !press) return;
+      // Cancelling the keyup is what stops a focused button from firing
+      // its own click on release; a tap clicks it deliberately below.
+      event.preventDefault();
+      endPress(false);
+    });
+
+    // A take must not stay open because the respondent switched windows
+    // with the key still down: the keyup would go to the other window.
+    window.addEventListener("blur", function () {
+      if (press) endPress(true);
+    });
+
+    function onSpaceDown(event, target) {
+      if (press) {
+        // Auto-repeat while held. Typing nothing is the whole point.
+        event.preventDefault();
+        return;
+      }
+      var mic = micFor(target);
+      if (!mic) return;
+      if (target !== mic.field && target !== document.body && !isVoiceControl(mic, target)) return;
+      event.preventDefault();
+      press = { mic: mic, target: target, held: false, timer: 0 };
+      press.timer = window.setTimeout(function () {
+        press.held = true;
+        mic.hold();
+      }, HOLD_MS);
+    }
+
+    function endPress(cancelled) {
+      var current = press;
+      press = null;
+      window.clearTimeout(current.timer);
+      if (current.held) {
+        current.mic.release();
+        return;
+      }
+      if (cancelled) return;
+      if (current.target === current.mic.field) insertSpace(current.mic.field);
+      else if (current.target.tagName === "BUTTON") current.target.click();
+    }
+
+    // The space a tap would have typed, put where the caret is. The
+    // input event is dispatched for the same reason writeAnswer does it:
+    // the draft only hears about changes that announce themselves.
+    function insertSpace(field) {
+      var start = field.selectionStart;
+      var end = field.selectionEnd;
+      if (typeof start === "number" && typeof field.setRangeText === "function") {
+        field.setRangeText(" ", start, end, "end");
+      } else {
+        field.value += " ";
+      }
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    // Esc twice clears the answer. It applies to the field and the voice
+    // controls, and to a live take wherever focus happens to be — while
+    // recording, the take is what the respondent is interacting with.
+    // One Esc arms and says so; the second inside the window clears.
+    function onEscape(event, target) {
+      var mic = null;
+      for (var i = 0; i < mics.length; i++) {
+        if (mics[i].isRecording()) mic = mics[i];
+      }
+      if (!mic) {
+        mic = micFor(target);
+        if (!mic || (target !== mic.field && !isVoiceControl(mic, target))) return;
+      }
+      event.preventDefault();
+      if (armed && armed.mic === mic) {
+        disarm();
+        mic.clear();
+        return;
+      }
+      disarm();
+      armed = { mic: mic, timer: window.setTimeout(disarm, ESC_WINDOW_MS) };
+      mic.say("Press Esc again to clear this answer.");
+    }
+
+    function disarm() {
+      if (!armed) return;
+      window.clearTimeout(armed.timer);
+      armed = null;
     }
   }
 
@@ -375,9 +651,11 @@
 
     var failed = false;
     var ended = false;
+    var aborted = false;
     var monitor = null;
 
     recognition.onresult = function (event) {
+      if (aborted) return;
       for (var i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           // Each final result is a whole utterance, not a fragment, so
@@ -387,13 +665,14 @@
       }
     };
     recognition.onerror = function () {
+      if (aborted) return;
       failed = true;
       say("Couldn't recognise that — please type your answer.");
     };
     recognition.onend = function () {
       ended = true;
       closeMonitor(monitor);
-      if (!failed) {
+      if (!failed && !aborted) {
         say("Transcribed on your device — edit it if it isn't quite right.");
         field.focus();
       }
@@ -421,6 +700,11 @@
           ui.transcribing();
           say("Finishing…");
           recognition.stop();
+        },
+        // Reset mid-take: whatever was said is dropped, not transcribed.
+        abort: function () {
+          aborted = true;
+          recognition.abort();
         },
       };
     });
@@ -477,6 +761,7 @@
 
   function startRecording(field, say, ui, done) {
     var spoken = false; // has this take put anything in the field yet?
+    var discarded = false; // reset mid-take: ignore whatever still arrives
     return navigator.mediaDevices
       .getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
       .then(function (stream) {
@@ -496,6 +781,7 @@
           },
           onStatus: say,
           onChunk: function (text) {
+            if (discarded) return;
             // The transcript lands in the textarea as it arrives, so the
             // respondent reads and edits their own words before
             // submitting (story 36).
@@ -513,15 +799,18 @@
             writeAnswer(field, field.value + text);
           },
           onDone: function () {
+            if (discarded) return;
             say("Transcribed — edit it if it isn't quite right.");
             field.focus();
             cleanup();
           },
           onError: function (message) {
+            if (discarded) return;
             say(message || "Voice isn't available right now — please type your answer.");
             cleanup();
           },
           onGone: function () {
+            if (discarded) return;
             say("Connection lost — please type your answer.");
             cleanup();
           },
@@ -553,9 +842,20 @@
           say("Transcribing…");
         }
 
+        // abort is Reset mid-take: the socket is closed without a stop,
+        // so the server transcribes nothing, and anything it had already
+        // sent back is ignored rather than landing in a cleared field.
+        function abort() {
+          discarded = true;
+          window.clearTimeout(stopTimer);
+          socket.close();
+          cleanup();
+        }
+
         return pump(context, stream, socket).then(function () {
           return {
             stop: finish,
+            abort: abort,
             monitor: { context: context, stream: stream, device: deviceName(stream) },
           };
         });
