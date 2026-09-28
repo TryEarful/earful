@@ -104,7 +104,10 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
 //
 // Everything downstream of getUserMedia — PCM conversion, the socket, the
 // transcript, the caps — is the code under test and is untouched. Only
-// the browser's own device enumeration is bypassed.
+// the browser's own device enumeration is bypassed: the page sees two
+// named inputs, and every getUserMedia call's constraints are kept in
+// window.__earfulMicRequests so a test can check which one was asked
+// for.
 // noMicrophone gives a context a capture device that always refuses,
 // the way a browser does when permission is denied or no device exists.
 export async function noMicrophone(context: BrowserContext): Promise<void> {
@@ -115,28 +118,40 @@ export async function noMicrophone(context: BrowserContext): Promise<void> {
   });
 }
 
+export const FAKE_INPUTS = [
+  { deviceId: "default", kind: "audioinput", label: "Built-in Microphone", groupId: "g1" },
+  { deviceId: "usb-1", kind: "audioinput", label: "USB Headset", groupId: "g2" },
+];
+
 export async function fakeMicrophone(context: BrowserContext): Promise<void> {
   const wav = readFileSync(path.join(__dirname, "..", "..", "testdata", "jfk.wav")).toString(
     "base64"
   );
-  await context.addInitScript((encoded: string) => {
-    const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
-    navigator.mediaDevices.getUserMedia = async () => {
-      // An AudioContext created without a user gesture starts suspended
-      // and a suspended graph produces nothing; this always runs inside
-      // the consent click, which is a gesture.
-      const audio = new AudioContext();
-      await audio.resume();
-      const buffer = await audio.decodeAudioData(bytes.buffer.slice(0) as ArrayBuffer);
-      const source = audio.createBufferSource();
-      const sink = audio.createMediaStreamDestination();
-      source.buffer = buffer;
-      source.loop = true; // outlast any recording length the tests use
-      source.connect(sink);
-      source.start();
-      return sink.stream;
-    };
-  }, wav);
+  await context.addInitScript(
+    ({ encoded, inputs }: { encoded: string; inputs: typeof FAKE_INPUTS }) => {
+      const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+      (window as any).__earfulMicRequests = [];
+      navigator.mediaDevices.enumerateDevices = async () =>
+        inputs.map((input) => ({ ...input, toJSON: () => input })) as MediaDeviceInfo[];
+      navigator.mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+        (window as any).__earfulMicRequests.push(constraints ?? null);
+        // An AudioContext created without a user gesture starts suspended
+        // and a suspended graph produces nothing; this always runs inside
+        // the consent click, which is a gesture.
+        const audio = new AudioContext();
+        await audio.resume();
+        const buffer = await audio.decodeAudioData(bytes.buffer.slice(0) as ArrayBuffer);
+        const source = audio.createBufferSource();
+        const sink = audio.createMediaStreamDestination();
+        source.buffer = buffer;
+        source.loop = true; // outlast any recording length the tests use
+        source.connect(sink);
+        source.start();
+        return sink.stream;
+      };
+    },
+    { encoded: wav, inputs: FAKE_INPUTS }
+  );
 }
 
 // --- What this instance offers -------------------------------------

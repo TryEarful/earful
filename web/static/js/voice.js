@@ -24,6 +24,7 @@
 
   var maxSeconds = parseInt(form.getAttribute("data-voice-max-seconds"), 10) || 120;
   var CONSENT_KEY = "earful-voice-consent";
+  var DEVICE_KEY = "earful-voice-device";
   var SAMPLE_RATE = 16000;
   var RECORDING_HINT = "Recording in progress. Your transcription will be shown here.";
   var HOLD_MS = 250; // a Space press longer than this is a hold, not a tap
@@ -155,9 +156,24 @@
     monitor.appendChild(spectrum);
     monitor.appendChild(input);
 
+    // Which microphone, as a choice rather than a fact. The browser
+    // picks the input silently, and the only sign of a wrong pick is a
+    // flat meter and an empty transcript; here the pick is changeable.
+    // The browser reveals device names only once permission has been
+    // granted, so the picker stays hidden until the first take opens
+    // the microphone and fills it in.
+    var picker = document.createElement("label");
+    picker.className = "voice-picker";
+    picker.hidden = true;
+    picker.appendChild(document.createTextNode("Microphone "));
+    var select = document.createElement("select");
+    select.className = "voice-device";
+    picker.appendChild(select);
+
     wrap.appendChild(button);
     wrap.appendChild(resetButton);
     wrap.appendChild(status);
+    wrap.appendChild(picker);
     wrap.appendChild(monitor);
     wrap.appendChild(progress);
     field.parentNode.insertBefore(wrap, field.nextSibling);
@@ -178,7 +194,8 @@
         progress.hidden = true;
         if (!handle.monitor) return;
         var device = handle.monitor.device;
-        input.textContent = device ? "Input: " + device : "";
+        var listed = showInputs(handle.inputs || [], handle.monitor.deviceId);
+        input.textContent = device && !listed ? "Input: " + device : "";
         // Unhidden before the meter starts, so the canvas has a size to
         // read; a hidden element measures zero by zero.
         monitor.hidden = false;
@@ -250,11 +267,74 @@
     // claiming Space and Esc so typing is exactly what it always was.
     // A reload is the way back once permission is granted or a device
     // is plugged in.
+    // showInputs fills the picker with the microphones the browser will
+    // let this page use and marks the one in use. It returns whether
+    // there was anything to show: a browser that withholds names, or a
+    // machine with no listed input, leaves the picker hidden and the
+    // "Input:" line beside the meter does what it did before.
+    function showInputs(devices, currentId) {
+      if (!devices.length) {
+        picker.hidden = true;
+        return false;
+      }
+      while (select.firstChild) select.removeChild(select.firstChild);
+      devices.forEach(function (device) {
+        var option = document.createElement("option");
+        option.value = device.deviceId;
+        option.textContent = device.label;
+        select.appendChild(option);
+      });
+      // The track says which device it is on browsers that report it;
+      // otherwise the remembered choice, then the browser's own default.
+      var candidates = [currentId, preferredDevice(), "default", devices[0].deviceId];
+      for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i] && hasOption(candidates[i])) {
+          select.value = candidates[i];
+          break;
+        }
+      }
+      picker.hidden = false;
+      return true;
+    }
+
+    function hasOption(value) {
+      for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === value) return true;
+      }
+      return false;
+    }
+
+    // A new choice applies to the next take: the capture graph is built
+    // around one stream, and swapping it mid-take would mean two takes
+    // sharing one transcript. So a live take is stopped — what was said
+    // is transcribed — and the respondent is told to speak again.
+    select.addEventListener("change", function () {
+      rememberDevice(select.value);
+      var name = select.options[select.selectedIndex].textContent;
+      if (recorder) {
+        stop();
+        say("Switched to " + name + " — speak again to use it.");
+        return;
+      }
+      say("Microphone: " + name + ".");
+    });
+
+    // A headset plugged in or pulled out after the list was made.
+    if (typeof navigator.mediaDevices.addEventListener === "function") {
+      navigator.mediaDevices.addEventListener("devicechange", function () {
+        if (picker.hidden) return;
+        listInputs().then(function (devices) {
+          showInputs(devices, select.value);
+        });
+      });
+    }
+
     var disabled = false;
     function disable(message) {
       disabled = true;
       button.disabled = true;
       resetButton.disabled = true;
+      select.disabled = true;
       wrap.setAttribute("data-state", "unavailable");
       ui.fail(message);
     }
@@ -554,6 +634,70 @@
     }
   }
 
+  // --- choosing a microphone ---------------------------------------------
+  //
+  // The choice is remembered per browser, like consent. A device id is
+  // an opaque, per-origin token the browser mints; it names nothing
+  // outside this page and is sent nowhere.
+  function preferredDevice() {
+    try {
+      return window.localStorage.getItem(DEVICE_KEY) || "";
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function rememberDevice(id) {
+    try {
+      if (id) window.localStorage.setItem(DEVICE_KEY, id);
+      else window.localStorage.removeItem(DEVICE_KEY);
+    } catch (err) {
+      // Harmless: the browser's default is used next time.
+    }
+  }
+
+  // openMicrophone opens the chosen input when there is one, and falls
+  // back to the browser's default when that device is gone: a headset
+  // left at the office must not become "microphone unavailable". The
+  // stale choice is forgotten so the fallback does not repeat.
+  function openMicrophone() {
+    var base = { channelCount: 1, echoCancellation: true, noiseSuppression: true };
+    var wanted = preferredDevice();
+    if (!wanted) return navigator.mediaDevices.getUserMedia({ audio: base });
+    var exact = { deviceId: { exact: wanted } };
+    for (var key in base) exact[key] = base[key];
+    return navigator.mediaDevices.getUserMedia({ audio: exact }).catch(function () {
+      rememberDevice("");
+      return navigator.mediaDevices.getUserMedia({ audio: base });
+    });
+  }
+
+  // listInputs names the microphones this page may use. Names are only
+  // revealed once permission has been granted, so it is asked with a
+  // stream already open; anything the browser withholds is left out.
+  function listInputs() {
+    if (typeof navigator.mediaDevices.enumerateDevices !== "function") return Promise.resolve([]);
+    return navigator.mediaDevices.enumerateDevices().then(
+      function (devices) {
+        return devices.filter(function (device) {
+          return device.kind === "audioinput" && device.label;
+        });
+      },
+      function () {
+        return [];
+      }
+    );
+  }
+
+  // currentDeviceId is the id of the device a stream is on, where the
+  // browser reports it (Chrome and Firefox do; the fake device in the
+  // browser suite does not).
+  function currentDeviceId(stream) {
+    var tracks = stream.getAudioTracks();
+    if (!tracks.length || typeof tracks[0].getSettings !== "function") return "";
+    return tracks[0].getSettings().deviceId || "";
+  }
+
   // --- consent (M5-T3 / M8-T5) -------------------------------------------
   //
   // Asked once per browser, before the first getUserMedia call, and it
@@ -788,9 +932,7 @@
   function startRecording(field, say, ui, done) {
     var spoken = false; // has this take put anything in the field yet?
     var discarded = false; // reset mid-take: ignore whatever still arrives
-    return navigator.mediaDevices
-      .getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
-      .then(function (stream) {
+    return openMicrophone().then(function (stream) {
         var context = new (window.AudioContext || window.webkitAudioContext)({
           sampleRate: SAMPLE_RATE,
         });
@@ -878,11 +1020,21 @@
           cleanup();
         }
 
-        return pump(context, stream, socket).then(function () {
+        // The device list is fetched alongside the capture graph, not
+        // before it: names are only available once this stream is open.
+        // On-device recognition (startLocalRecognition) opens its own
+        // input and cannot be pointed at a device, so it lists none.
+        return Promise.all([pump(context, stream, socket), listInputs()]).then(function (results) {
           return {
             stop: finish,
             abort: abort,
-            monitor: { context: context, stream: stream, device: deviceName(stream) },
+            inputs: results[1],
+            monitor: {
+              context: context,
+              stream: stream,
+              device: deviceName(stream),
+              deviceId: currentDeviceId(stream),
+            },
           };
         });
       });

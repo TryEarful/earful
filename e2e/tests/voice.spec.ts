@@ -208,3 +208,76 @@ test("without a microphone the voice controls are disabled and the error is boxe
 
   await context.close();
 });
+
+// The browser picks the input silently. Once a take has opened the
+// microphone, the page lists the inputs it may use, marks the one in
+// use, and lets the respondent change it — for the next take, since a
+// stream cannot be swapped under a running capture graph. The choice is
+// remembered per browser.
+test("the microphone can be changed from a dropdown, and the choice sticks", async ({
+  page,
+  browser,
+}) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+
+  const share = await createPublishedSurvey(page, `E2E voice device ${Date.now()}`);
+
+  const context = await browser.newContext({
+    storageState: undefined,
+    permissions: ["microphone"],
+  });
+  await fakeMicrophone(context);
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
+  await respondent.reload();
+
+  const mic = respondent.getByRole("button", { name: "Answer by speaking" });
+  const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
+  const picker = respondent.getByLabel("Microphone");
+  const status = respondent.locator(".voice-status").first();
+  const lastRequest = () =>
+    respondent.evaluate(() => {
+      const requests = (window as any).__earfulMicRequests;
+      return requests[requests.length - 1];
+    });
+
+  // Hidden until a take reveals the device names; then the browser's
+  // default is the one marked, and the first request asked for no
+  // device in particular.
+  await expect(picker).toBeHidden();
+  await mic.click();
+  await expect(stop).toBeVisible();
+  await expect(picker).toBeVisible();
+  await expect(picker).toHaveValue("default");
+  expect((await lastRequest()).audio.deviceId).toBeUndefined();
+
+  // Changing mid-take ends the take; the next take is on the new device.
+  await picker.selectOption("usb-1");
+  await expect(mic).toBeVisible();
+  await expect(status).toHaveText(/Transcribed/, { timeout: aiTimeout });
+
+  await mic.click();
+  await expect(stop).toBeVisible();
+  expect((await lastRequest()).audio.deviceId).toEqual({ exact: "usb-1" });
+  await expect(picker).toHaveValue("usb-1");
+  await stop.click();
+  await expect(status).toHaveText(/Transcribed/, { timeout: aiTimeout });
+
+  // Remembered across a reload, and still a plain <select> with a name.
+  await respondent.reload();
+  await respondent.getByRole("button", { name: "Answer by speaking" }).click();
+  await expect(respondent.getByLabel("Microphone")).toHaveValue("usb-1");
+  expect((await lastRequest()).audio.deviceId).toEqual({ exact: "usb-1" });
+  const scan = await new AxeBuilder({ page: respondent }).analyze();
+  expect(scan.violations).toEqual([]);
+
+  await context.close();
+});

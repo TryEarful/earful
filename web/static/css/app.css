@@ -690,6 +690,27 @@ input.voice-live {
   cursor: not-allowed;
 }
 
+/* Which microphone, as a choice. On its own row, since a device name
+   can be as long as "External Microphone (USB Audio Device) (0d8c:0014)"
+   and must not squeeze the buttons. */
+.voice-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-basis: 100%;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.voice-device {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 24rem;
+  padding: 0.3rem 0.5rem;
+  color: CanvasText;
+}
+
 /* What the microphone is hearing, and which microphone. The browser
    chooses the input without saying so, and a wrong choice — a paired
    headset, a meeting app's virtual device — otherwise shows up only as

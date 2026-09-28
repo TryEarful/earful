@@ -103,18 +103,29 @@ textarea the server rendered is the whole interface (story 38).
 10. **Refusal**: with `AI_WORKSPACE_DAILY_TOKENS=1`, the status line reads
    "Voice isn't available right now — please type your answer", boxed in
    red, and typing still submits.
-11. **No microphone**: deny the browser's microphone prompt (or unplug the
+11. **Choosing a microphone**: once a take has started, a *Microphone*
+   dropdown lists the inputs and marks the one in use. Pick another
+   while recording: the take ends and transcribes, and the next take uses
+   the new device (check the meter moves). Reload: the choice is kept.
+   Unplug the chosen device and record again: the browser's default is
+   used and the choice is forgotten, not "microphone unavailable".
+12. **No microphone**: deny the browser's microphone prompt (or unplug the
    device). Both buttons grey out, the boxed error reads "Microphone
    unavailable", Space types a space and Esc Esc does nothing; typing
    still submits. A reload offers the mic again.
-12. **Screen reader**: the status line is `aria-live="polite"`; the button
+13. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.
 
 ## Notes
 
 - The consent answer is remembered in `localStorage` per browser. It is
   not a tracking identifier and not sent anywhere; blocking storage just
-  means being asked each time.
+  means being asked each time. The chosen microphone is kept the same
+  way: a device id is an opaque token the browser mints per origin, and
+  it is sent nowhere.
+- On-device recognition, where a browser offers it, opens its own input
+  and cannot be pointed at a device, so the dropdown does not appear on
+  that path.
 - Quotas: per answer (`VOICE_MAX_SECONDS_PER_ANSWER`), per response
   session (`VOICE_MAX_SECONDS_PER_RESPONSE`), per survey per day
   (`VOICE_SURVEY_DAILY_SECONDS`), plus the workspace token quota and the
