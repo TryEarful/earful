@@ -289,12 +289,21 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 	</li>
 }
 
+// An answer is never an address, a card or a login, but a password
+// manager cannot tell: a text field named q_… next to a question gets
+// offered saved logins, on top of whatever the respondent is typing.
+// autocomplete="off" is the standard way to say so; the vendor
+// attributes are for the managers that ignore the standard one.
 templ answerControl(q domain.Question, data RespondData) {
 	switch q.Type {
 		case domain.LongText:
 			<textarea
 				name={ "q_" + q.IdentityID }
 				rows="5"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
 				aria-labelledby={ "qt-" + q.IdentityID }
 				if data.Errors[q.IdentityID] != "" {
 					aria-describedby={ "err-" + q.IdentityID }
@@ -305,6 +314,10 @@ templ answerControl(q domain.Question, data RespondData) {
 				type="text"
 				name={ "q_" + q.IdentityID }
 				value={ data.Answers[q.IdentityID].Text }
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
 				aria-labelledby={ "qt-" + q.IdentityID }
 				if data.Errors[q.IdentityID] != "" {
 					aria-describedby={ "err-" + q.IdentityID }
