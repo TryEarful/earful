@@ -25,6 +25,19 @@ The tag pipeline re-deploys staging, re-runs the smoke suite, then ships
 the **same image digest** to production (production never builds). If
 the smoke fails, production is untouched.
 
+**The pipeline moves only the image; OpenTofu owns the environment.**
+A release whose code expects a new environment value (a model id, the
+Vertex location, a budget) is only complete once both have landed, and
+the pipeline cannot land the second half. Apply first, then tag: run
+`make release-check` before pushing the tag; it refuses while stg or
+pro has an unapplied plan. This failure mode is quiet, because a
+revision starts fine on the old environment and only the affected
+feature breaks. When the old binary cannot run on the new environment
+either, as with the multi-region host in ADR-0013, the gap between
+apply and promotion is downtime for that feature: keep it to minutes,
+and prefer client code that tolerates both sides, which is what the
+Vertex client's model-keyed request tuning is for.
+
 **Do not push to `main` while a tag run is waiting to start.** The
 workflow shares one concurrency group, and a run entering a group that
 already has one running and one pending cancels the *pending* one — so a

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -163,15 +165,8 @@ func (v *Vertex) stream(ctx context.Context, op Op, system string, parts []verte
 			"parts": []vertexPart{{Text: system}},
 		}
 	}
-	if op == OpTranscribe {
-		// Gemini 3.x reasons before it answers unless told otherwise. A
-		// transcript needs none of that: it is the model's ears, not its
-		// judgement, and the respondent is watching the words arrive.
-		// LOW is the floor the Flash tier accepts; the other operations
-		// keep the model's default, where a moment's thought helps.
-		body["generationConfig"] = map[string]any{
-			"thinkingConfig": map[string]any{"thinkingLevel": "LOW"},
-		}
+	if cfg := generationConfig(op, model); cfg != nil {
+		body["generationConfig"] = cfg
 	}
 	payload, err := json.Marshal(body)
 	if err != nil {
@@ -202,6 +197,58 @@ func (v *Vertex) stream(ctx context.Context, op Op, system string, parts []verte
 		return nil, fmt.Errorf("ai: vertex %s request: status %d: %s", op, resp.StatusCode, detail)
 	}
 	return newSSEStream(resp.Body, decodeVertexEvent), nil
+}
+
+// generationConfig returns the request tuning for op on model, or nil
+// when the model's family is not known to accept any. The plain request
+// is always the fallback: a model id this table does not recognise gets
+// the model's own defaults, never a parameter it might reject. Vertex
+// answers an unknown field with 400 and no transcript, so a parameter
+// that helps one family breaks voice outright on the next; a model
+// switch therefore has to be a tfvars change and nothing else, and the
+// only way to tune a new model is a row here, never a bare `if op ==`.
+//
+// Transcription asks for the least thinking the model allows: a
+// transcript is the model's ears, not its judgement, and the respondent
+// is watching the words arrive. Gemini 3.x reasons before it answers
+// unless told otherwise, and takes thinkingLevel (LOW is the floor the
+// Flash tier accepts). Gemini 2.5 has a different knob, thinkingBudget,
+// and rejects thinkingLevel; it retires on 2026-10-20 and its default
+// behaviour transcribed well enough, so it gets no row. The dedicated
+// speech and live models (gemini-3.5-transcribe, gemini-3.8-live) are
+// not documented to take thinking config, and the tier suffix keeps
+// them out of the 3.x row. The other operations keep every model's
+// default, where a moment's thought helps.
+func generationConfig(op Op, model string) map[string]any {
+	if op != OpTranscribe {
+		return nil
+	}
+	if family := geminiFamily(model); family.major >= 3 {
+		return map[string]any{
+			"thinkingConfig": map[string]any{"thinkingLevel": "LOW"},
+		}
+	}
+	return nil
+}
+
+// geminiFamilyPattern recognises the general-purpose Gemini tiers,
+// "gemini-<major>.<minor>-flash" and "-pro" with any suffix after the
+// tier (-lite, -preview). Dedicated models carry another tier word and
+// deliberately do not match.
+var geminiFamilyPattern = regexp.MustCompile(`^gemini-(\d+)\.(\d+)-(flash|pro)(-|$)`)
+
+type geminiVersion struct{ major, minor int }
+
+// geminiFamily reads the generation out of a general-purpose Gemini model
+// id; the zero value means "not one of those".
+func geminiFamily(model string) geminiVersion {
+	m := geminiFamilyPattern.FindStringSubmatch(model)
+	if m == nil {
+		return geminiVersion{}
+	}
+	major, _ := strconv.Atoi(m[1])
+	minor, _ := strconv.Atoi(m[2])
+	return geminiVersion{major: major, minor: minor}
 }
 
 // decodeVertexEvent reads one streamGenerateContent frame. Vertex ends a

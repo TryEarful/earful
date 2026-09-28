@@ -95,8 +95,8 @@ func TestVertex_TranscribeSendsAudioInlineWithLanguageHint(t *testing.T) {
 	t.Parallel()
 	srv, calls := fakeVertex(t, textFrame("hallo daar"))
 	provider := &ai.Vertex{
-		Project: "earful-stg", Location: "europe-west4",
-		Models:   ai.ModelSet{Default: "flash-model"},
+		Project: "earful-stg", Location: "eu",
+		Models:   ai.ModelSet{Default: "gemini-3.8-flash"},
 		Endpoint: srv.URL, Client: srv.Client(),
 	}
 
@@ -131,9 +131,72 @@ func TestVertex_TranscribeSendsAudioInlineWithLanguageHint(t *testing.T) {
 	}
 	// Transcription asks for the least thinking the model allows: the
 	// words should start arriving without a reasoning preamble.
-	thinking, _ := (*calls)[0].body["generationConfig"].(map[string]any)["thinkingConfig"].(map[string]any)
-	if thinking["thinkingLevel"] != "LOW" {
-		t.Errorf("transcribe thinkingLevel = %v, want LOW", thinking["thinkingLevel"])
+	if level, ok := thinkingLevel((*calls)[0].body); !ok || level != "LOW" {
+		t.Errorf("transcribe thinkingLevel = %q (sent %v), want LOW", level, ok)
+	}
+}
+
+// thinkingLevel digs generationConfig.thinkingConfig.thinkingLevel out of
+// a recorded request body; ok is false when the request carried no
+// generationConfig at all.
+func thinkingLevel(body map[string]any) (string, bool) {
+	cfg, ok := body["generationConfig"].(map[string]any)
+	if !ok {
+		return "", false
+	}
+	thinking, _ := cfg["thinkingConfig"].(map[string]any)
+	level, _ := thinking["thinkingLevel"].(string)
+	return level, true
+}
+
+// TestVertex_ThinkingFollowsTheModel pins the rule that request tuning
+// is derived from the model id, never from the operation alone: a
+// parameter goes out only to a family known to accept it, and every
+// other id gets the plain request. Gemini 2.5 rejects thinkingLevel with
+// a 400 and no transcript, so the plain request is what keeps a model
+// switch in configuration from taking voice down.
+func TestVertex_ThinkingFollowsTheModel(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		model     string
+		wantLevel string // "" means no generationConfig at all
+	}{
+		{"gemini-3.8-flash", "LOW"},
+		{"gemini-3.8-pro", "LOW"},
+		{"gemini-3.5-flash-lite", "LOW"},
+		{"gemini-2.5-flash", ""},
+		{"gemini-2.5-pro", ""},
+		{"gemini-3.5-transcribe", ""},
+		{"gemini-3.8-live", ""},
+		{"flash-model", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.model, func(t *testing.T) {
+			t.Parallel()
+			srv, calls := fakeVertex(t, textFrame("ok"))
+			provider := &ai.Vertex{
+				Project: "earful-stg", Location: "eu",
+				Models:   ai.ModelSet{Default: tc.model},
+				Endpoint: srv.URL, Client: srv.Client(),
+			}
+			stream, err := provider.Transcribe(context.Background(), ai.TranscribeRequest{
+				Audio: strings.NewReader("RIFFfake-wav-bytes"), MIMEType: "audio/wav",
+			})
+			if err != nil {
+				t.Fatalf("Transcribe: %v", err)
+			}
+			if _, err := ai.Collect(stream); err != nil {
+				t.Fatalf("Collect: %v", err)
+			}
+			level, sent := thinkingLevel((*calls)[0].body)
+			switch {
+			case tc.wantLevel == "" && sent:
+				t.Errorf("%s was sent generationConfig %v; this family is not known to accept it",
+					tc.model, (*calls)[0].body["generationConfig"])
+			case tc.wantLevel != "" && (!sent || level != tc.wantLevel):
+				t.Errorf("%s thinkingLevel = %q (sent %v), want %q", tc.model, level, sent, tc.wantLevel)
+			}
+		})
 	}
 }
 

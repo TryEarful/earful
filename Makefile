@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip compose-up compose-up-app compose-down docker-build
+.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip compose-up compose-up-app compose-down docker-build release-check
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -131,3 +131,21 @@ compose-down:
 
 docker-build:
 	docker build -t earful:local .
+
+# The pipeline moves only the image; OpenTofu owns the environment. A
+# release whose code expects a new environment value (a model id, the
+# Vertex location, a budget) is only complete once both have landed, so
+# this refuses to let a tag go out while either env still has an
+# unapplied plan. Exit code 2 from -detailed-exitcode means "changes
+# pending"; 1 is an error (usually an env that was never `tofu init`ed,
+# see deploy/opentofu/README.md).
+release-check:
+	@for env in stg pro; do \
+		echo "release-check: tofu plan envs/$$env"; \
+		(cd deploy/opentofu/envs/$$env && tofu plan -detailed-exitcode -input=false -lock=false >/dev/null); \
+		case $$? in \
+			0) echo "release-check: envs/$$env is applied" ;; \
+			2) echo "release-check: unapplied tofu changes in envs/$$env; apply before tagging" >&2; exit 1 ;; \
+			*) echo "release-check: tofu plan failed in envs/$$env" >&2; exit 1 ;; \
+		esac; \
+	done

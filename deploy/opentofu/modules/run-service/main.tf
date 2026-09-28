@@ -92,12 +92,18 @@ resource "google_cloud_run_v2_service" "app" {
     }
   }
 
+  # The service-level scaling block is never set here (instance bounds
+  # live on the template above), yet the API reports it with defaults, so
+  # without this entry every plan proposes removing it. A perpetual diff
+  # would hide real drift from `make release-check`, whose whole job is to
+  # tell an applied environment from one that is not.
   lifecycle {
     ignore_changes = [
       template[0].containers[0].image,
       template[0].revision,
       template[0].labels,
       template[0].annotations,
+      scaling,
       client,
       client_version,
       labels,

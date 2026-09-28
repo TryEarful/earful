@@ -75,7 +75,15 @@ abuse-monitoring pages, read on 2026-09-28:
   in Terraform (`ai_location`).
 - Transcription asks the model for its lowest thinking level so the
   transcript streams without a reasoning preamble; the other operations
-  keep the default.
+  keep the default. The client derives that from the model id, not from
+  the operation: `thinkingLevel` goes out only to a Gemini 3.x Flash or
+  Pro id, and any other id gets the plain request, because Gemini 2.5
+  rejects the field with a 400 and no transcript. A model change is
+  therefore a tfvars change and nothing else.
+- The rollout order is apply, then tag. The pipeline moves only the
+  image, so a binary that expects the new location or model must not
+  reach production before the environment does; `make release-check`
+  refuses the tag while either env has an unapplied plan.
 - Insight Summaries run on the same Flash model as everything else until an
   EU-resident stronger tier exists. That is a tfvars change.
 - **Upgrade trigger**: the day `gemini-3.5-transcribe`'s model card lists
