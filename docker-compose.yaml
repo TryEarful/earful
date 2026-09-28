@@ -69,6 +69,10 @@ services:
       # Google login is optional; set both to enable it (see README).
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      # Shown on /trust; unset, the page omits the claim rather than
+      # guessing (see .env.example).
+      HOSTING_REGION: "${HOSTING_REGION:-}"
+      CONTACT_EMAIL: "${CONTACT_EMAIL:-}"
       # AI defaults to the scripted provider: deterministic canned
       # streams, so voice, question generation and insights can be tried
       # (and browser-tested) on a laptop with no model running. It is
