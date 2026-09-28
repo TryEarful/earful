@@ -105,6 +105,16 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
 // Everything downstream of getUserMedia — PCM conversion, the socket, the
 // transcript, the caps — is the code under test and is untouched. Only
 // the browser's own device enumeration is bypassed.
+// noMicrophone gives a context a capture device that always refuses,
+// the way a browser does when permission is denied or no device exists.
+export async function noMicrophone(context: BrowserContext): Promise<void> {
+  await context.addInitScript(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      throw new DOMException("Permission denied", "NotAllowedError");
+    };
+  });
+}
+
 export async function fakeMicrophone(context: BrowserContext): Promise<void> {
   const wav = readFileSync(path.join(__dirname, "..", "..", "testdata", "jfk.wav")).toString(
     "base64"

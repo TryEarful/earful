@@ -196,6 +196,12 @@
         stopMeter();
         progress.hidden = false;
       },
+      // fail is the status line for something that went wrong: the same
+      // line, boxed and bordered, so it is not read as a progress update.
+      fail: function (message) {
+        status.textContent = message;
+        status.classList.add("voice-error");
+      },
       settled: function () {
         wrap.setAttribute("data-state", "idle");
         field.classList.remove("voice-live");
@@ -234,7 +240,23 @@
     resetButton.addEventListener("click", clear);
 
     function say(message) {
+      status.classList.remove("voice-error");
       status.textContent = message || "";
+    }
+
+    // A microphone that cannot be opened — permission refused, no
+    // device, an insecure page — greys out both controls rather than
+    // inviting a second attempt at the same failure, and the keys stop
+    // claiming Space and Esc so typing is exactly what it always was.
+    // A reload is the way back once permission is granted or a device
+    // is plugged in.
+    var disabled = false;
+    function disable(message) {
+      disabled = true;
+      button.disabled = true;
+      resetButton.disabled = true;
+      wrap.setAttribute("data-state", "unavailable");
+      ui.fail(message);
     }
 
     function reset() {
@@ -339,7 +361,7 @@
           function () {
             starting = null;
             reset();
-            say("Microphone unavailable — please type your answer.");
+            disable("Microphone unavailable — please type your answer.");
           }
         );
     }
@@ -354,6 +376,9 @@
       say: say,
       isRecording: function () {
         return recorder !== null;
+      },
+      isDisabled: function () {
+        return disabled;
       },
     };
   }
@@ -460,7 +485,7 @@
         return;
       }
       var mic = micFor(target);
-      if (!mic) return;
+      if (!mic || mic.isDisabled()) return;
       if (target !== mic.field && target !== document.body && !isVoiceControl(mic, target)) return;
       event.preventDefault();
       press = { mic: mic, target: target, held: false, timer: 0 };
@@ -510,6 +535,7 @@
         mic = micFor(target);
         if (!mic || (target !== mic.field && !isVoiceControl(mic, target))) return;
       }
+      if (mic.isDisabled()) return;
       event.preventDefault();
       if (armed && armed.mic === mic) {
         disarm();
@@ -667,7 +693,7 @@
     recognition.onerror = function () {
       if (aborted) return;
       failed = true;
-      say("Couldn't recognise that — please type your answer.");
+      ui.fail("Couldn't recognise that — please type your answer.");
     };
     recognition.onend = function () {
       ended = true;
@@ -806,12 +832,12 @@
           },
           onError: function (message) {
             if (discarded) return;
-            say(message || "Voice isn't available right now — please type your answer.");
+            ui.fail(message || "Voice isn't available right now — please type your answer.");
             cleanup();
           },
           onGone: function () {
             if (discarded) return;
-            say("Connection lost — please type your answer.");
+            ui.fail("Connection lost — please type your answer.");
             cleanup();
           },
         });

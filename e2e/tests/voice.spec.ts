@@ -4,6 +4,7 @@ import {
   aiTimeout,
   createPublishedSurvey,
   fakeMicrophone,
+  noMicrophone,
   offersVoice,
   scriptedVoice,
 } from "./helpers";
@@ -158,4 +159,52 @@ test("local recognition is only claimed when the browser proves it", async ({ pa
   expect(results.classic.reason).toBe("no-locality-guarantee");
   expect(results.webkitClassic.available).toBe(false);
   expect(results.onDevice.available).toBe(true);
+});
+
+// A microphone that cannot be opened is the commonest failure a
+// respondent will meet — permission refused, no device — and the answer
+// to it is typing. The controls grey out and the message is boxed as an
+// error, and nothing about the keyboard changes: Space types a space.
+test("without a microphone the voice controls are disabled and the error is boxed", async ({
+  page,
+  browser,
+}) => {
+  const share = await createPublishedSurvey(page, `E2E voice nomic ${Date.now()}`);
+
+  const context = await browser.newContext({ storageState: undefined });
+  await noMicrophone(context);
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
+  await respondent.reload();
+
+  const mic = respondent.getByRole("button", { name: "Answer by speaking" });
+  const reset = respondent.getByRole("button", { name: "Reset", exact: true });
+  const status = respondent.locator(".voice-status").first();
+  await mic.click();
+
+  await expect(status).toHaveText(/Microphone unavailable/);
+  await expect(status).toHaveClass(/voice-error/);
+  await expect(mic).toBeDisabled();
+  await expect(reset).toBeDisabled();
+  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "unavailable");
+
+  // Typing is untouched: a tap of Space is the browser's own space, and
+  // Esc twice clears nothing, because the keys no longer claim them.
+  const answer = respondent.locator("textarea");
+  await answer.click();
+  await respondent.keyboard.type("typed instead, then");
+  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Escape");
+  await expect(answer).toHaveValue("typed instead, then");
+  await expect(status).toHaveText(/Microphone unavailable/);
+
+  const scan = await new AxeBuilder({ page: respondent }).analyze();
+  expect(scan.violations).toEqual([]);
+
+  await context.close();
 });

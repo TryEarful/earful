@@ -671,6 +671,25 @@ input.voice-live {
   font-size: 0.9rem;
 }
 
+/* Something went wrong: the same status line, boxed like a .notice and
+   bordered in the danger colour, on its own row under the buttons. */
+.voice-status.voice-error {
+  flex-basis: 100%;
+  color: inherit;
+  border: 1px solid var(--danger);
+  border-left: 4px solid var(--danger);
+  border-radius: 0.375rem;
+  padding: 0.6rem 0.8rem;
+}
+
+/* The microphone could not be opened: both controls stay visible, so the
+   respondent can see what would have been offered, and greyed, so they
+   do not invite another try at the same failure. */
+.voice button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* What the microphone is hearing, and which microphone. The browser
    chooses the input without saying so, and a wrong choice — a paired
    headset, a meeting app's virtual device — otherwise shows up only as

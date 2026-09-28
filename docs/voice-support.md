@@ -101,9 +101,13 @@ textarea the server rendered is the whole interface (story 38).
 9. **Cap**: keep talking past `VOICE_MAX_SECONDS_PER_ANSWER`; the take
    ends by itself and still transcribes what was said.
 10. **Refusal**: with `AI_WORKSPACE_DAILY_TOKENS=1`, the status line reads
-   "Voice isn't available right now — please type your answer" and
-   typing still submits.
-11. **Screen reader**: the status line is `aria-live="polite"`; the button
+   "Voice isn't available right now — please type your answer", boxed in
+   red, and typing still submits.
+11. **No microphone**: deny the browser's microphone prompt (or unplug the
+   device). Both buttons grey out, the boxed error reads "Microphone
+   unavailable", Space types a space and Esc Esc does nothing; typing
+   still submits. A reload offers the mic again.
+12. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.
 
 ## Notes
