@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke migrate purge geoip compose-up compose-up-app compose-down docker-build
+.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip compose-up compose-up-app compose-down docker-build
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -102,6 +102,19 @@ e2e-smoke:
 	docker compose --profile app up -d --build --wait app mailpit
 	docker compose --profile app restart app
 	cd e2e && npm install && npx playwright install chromium && npx playwright test
+
+# The feature-tour deck (tools/featuretour): a PDF walkthrough of the
+# product built from screenshots of this compose stack. The image is
+# rebuilt here so the deck shows the working tree; the tool itself only
+# recreates the app container with the AI environment it needs.
+featuretour:
+	docker compose --profile app up -d --build --wait app mailpit
+	cd tools/featuretour && deno task run
+
+# Rebuild only the PDF from the screenshots of the last run, for edits
+# to tools/featuretour/content/deck.md.
+featuretour-deck:
+	cd tools/featuretour && deno task deck
 
 # Supporting services only (Postgres, mailpit), for an app run with `make dev`.
 compose-up:

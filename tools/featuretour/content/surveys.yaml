@@ -1,0 +1,412 @@
+# The three stories the deck tells. Each one is an account, a survey, and
+# the answers a month of respondents gave it.
+#
+# questions: what the model "drafts" (in this order) and what the seed
+#   stage answers. Keys name questions in state.json and in deck.md
+#   screenshot ids (result-<story>-<key>, respond-<story>-<key>).
+# answers: weights pick one value per response by relative weight; pool
+#   supplies open-text answers in shuffled order; pick is how many options
+#   a multiple-choice response ticks; skip_rate leaves the question blank
+#   for that share of responses (never on a required question).
+# stats: audience buckets are drawn per response by weight; opened_per_response
+#   is how many page opens each submission stands for.
+
+stories:
+    restaurant:
+        email: owner@boccalupa.example
+        workspace: Bocca Lupa
+        title: Bocca Lupa — How was your evening?
+        anonymity: anonymous
+        prompt: >-
+            Guest feedback for Bocca Lupa, a small Italian neighbourhood restaurant:
+            the food, the service, how people found us, and what they would add to the menu.
+        prompt_keyword: restaurant
+        created_days_ago: 31
+        spread_days: 30
+        languages: [es]
+        respondent_answer: The cacio e pepe was the best I've had outside Rome, and Marco remembered our table from last time.
+        questions:
+            - key: enjoy
+              type: long_text
+              text: What did you enjoy most about your visit tonight?
+              required: true
+              answers:
+                  pool:
+                      - The cacio e pepe was the best I've had outside Rome.
+                      - Marco remembered our names from last month. That kind of thing keeps us coming back.
+                      - The pappardelle with wild boar ragù. Rich, generous, perfect on a cold night.
+                      - Loud, cramped, but honestly the food made up for it.
+                      - The tiramisù. We ordered a second one to take home.
+                      - Being seated at the counter and watching the pasta being cut by hand.
+                      - The wine list is short and every bottle on it is good. No filler.
+                      - Our waiter walked us through the specials like he actually cared about them.
+                      - The burrata starter with the grilled peaches. Simple and exactly right.
+                      - The bread. Please never change the bread.
+                      - The whole room felt like a neighbourhood place, not a tourist trap.
+                      - Il tiramisù è spettacolare, torneremo sicuramente.
+                      - La pasta estaba perfecta y Marco fue muy atento con nosotros.
+                      - Un poco de ruido, pero la comida lo compensa.
+                      - Ottimo vino, ottima atmosfera.
+                      - El ambiente es acogedor y los precios justos.
+                      - The risotto was creamy without being heavy, which is rare.
+                      - The kids' portion of gnocchi was a proper meal, not an afterthought.
+                      - Sunday lunch with the family. Nobody looked at their phone once.
+                      - The olive oil. I asked where it was from and they brought out the tin to show me.
+                      - The grilled octopus special. Please make it permanent.
+                      - The staff were patient with my terrible Italian.
+                      - Great value for the quality of the food.
+                      - The lemon sorbet at the end was the perfect ending.
+            - key: food
+              type: rating_scale
+              text: How would you rate the food?
+              scale: [1, 5]
+              required: true
+              answers:
+                  weights: { "3": 10, "4": 40, "5": 50 }
+            - key: service
+              type: rating_scale
+              text: How was the service?
+              scale: [1, 5]
+              answers:
+                  weights: { "2": 6, "3": 20, "4": 38, "5": 36 }
+                  skip_rate: 0.1
+            - key: heard
+              type: single_choice
+              text: How did you hear about us?
+              options: [
+                  A friend told me,
+                  Walked past,
+                  Instagram,
+                  Google Maps,
+                  I've been coming for years,
+              ]
+              answers:
+                  weights: {
+                      A friend told me: 34,
+                      Walked past: 18,
+                      Instagram: 20,
+                      Google Maps: 14,
+                      I've been coming for years: 14,
+                  }
+                  skip_rate: 0.08
+            - key: menu
+              type: multiple_choice
+              text: What would you like to see on the menu?
+              options: [
+                  More vegetarian dishes,
+                  A tasting menu,
+                  Weekend brunch,
+                  Natural wines,
+                  Gluten-free pasta,
+              ]
+              answers:
+                  pick: [1, 3]
+                  weights: {
+                      More vegetarian dishes: 55,
+                      A tasting menu: 22,
+                      Weekend brunch: 28,
+                      Natural wines: 42,
+                      Gluten-free pasta: 20,
+                  }
+                  skip_rate: 0.2
+            - key: day
+              type: dropdown
+              text: Which day did you visit?
+              options: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+              answers:
+                  weights: {
+                      Monday: 6,
+                      Tuesday: 8,
+                      Wednesday: 9,
+                      Thursday: 11,
+                      Friday: 16,
+                      Saturday: 20,
+                      Sunday: 12,
+                  }
+                  skip_rate: 0.15
+            - key: back
+              type: yes_no
+              text: Would you come back?
+              required: true
+              answers:
+                  weights: { yes: 91, no: 9 }
+            - key: nps
+              type: nps
+              text: How likely are you to recommend us to a friend?
+              required: true
+              answers:
+                  weights: {
+                      "0": 1,
+                      "1": 1,
+                      "2": 1,
+                      "3": 2,
+                      "4": 2,
+                      "5": 3,
+                      "6": 5,
+                      "7": 8,
+                      "8": 14,
+                      "9": 22,
+                      "10": 24,
+                  }
+            - key: better
+              type: short_text
+              text: One thing we could do better?
+              answers:
+                  skip_rate: 0.2
+                  pool:
+                      - Faster with the bill on Fridays.
+                      - Take reservations for parties of two.
+                      - A vegetarian main course.
+                      - It gets really loud after nine.
+                      - More natural wines by the glass.
+                      - A shorter wait for a table on Saturdays.
+                      - Más opciones sin gluten, por favor.
+                      - Il servizio è stato lento il sabato sera.
+                      - Vorrei un piatto vegetariano vero, non un contorno.
+                      - Nothing, honestly.
+                      - Turn the music down a notch.
+                      - Weekend brunch would be lovely.
+                      - A second drink offered before the mains arrive.
+                      - Card payments at the table.
+        responses: 64
+        stats:
+            opened_per_response: 1.9
+            browser: { Safari: 38, Chrome: 44, Firefox: 10, Edge: 5, Samsung Internet: 3 }
+            device: { Phone: 72, Desktop: 20, Tablet: 8 }
+            country: { ES: 24, IT: 16, GB: 12, DE: 6, FR: 4, US: 2 }
+
+    coffee:
+        email: hello@kettleandcrow.example
+        workspace: Kettle & Crow Coffee
+        title: Kettle & Crow Coffee — Meet our subscribers
+        anonymity: invited
+        prompt: >-
+            Understand our online coffee subscribers: how they brew, which roast they
+            prefer, why they subscribed, and what they would change about delivery.
+        prompt_keyword: coffee
+        created_days_ago: 11
+        spread_days: 9
+        participants:
+            - ada@example.org
+            - grace@example.org
+            - linus@example.org
+            - margaret@example.org
+            - tim@example.org
+            - radia@example.org
+            - dennis@example.org
+            - barbara@example.org
+        # One invitation stays unanswered so the deck can show a fresh personal link.
+        submitted:
+            - ada@example.org
+            - grace@example.org
+            - linus@example.org
+            - margaret@example.org
+            - tim@example.org
+            - radia@example.org
+            - dennis@example.org
+        respondent_answer: The Ethiopian natural tasted like blueberries and I was not prepared for that at 7am.
+        questions:
+            - key: brew
+              type: single_choice
+              text: How do you usually brew at home?
+              options: [
+                  Espresso machine,
+                  Pour-over,
+                  French press,
+                  AeroPress,
+                  Moka pot,
+                  Drip machine,
+              ]
+              required: true
+              answers:
+                  weights: {
+                      Espresso machine: 30,
+                      Pour-over: 26,
+                      French press: 12,
+                      AeroPress: 14,
+                      Moka pot: 10,
+                      Drip machine: 8,
+                  }
+            - key: roast
+              type: single_choice
+              text: Which roast do you reach for most?
+              options: [Light, Medium, Dark, Depends on the bean]
+              required: true
+              answers:
+                  weights: { Light: 30, Medium: 38, Dark: 14, Depends on the bean: 18 }
+            - key: why
+              type: multiple_choice
+              text: Why did you subscribe?
+              options: [To discover new origins, Convenience, Price, Freshness, It was a gift]
+              answers:
+                  pick: [1, 3]
+                  weights: {
+                      To discover new origins: 62,
+                      Convenience: 45,
+                      Price: 15,
+                      Freshness: 50,
+                      It was a gift: 12,
+                  }
+            - key: fresh
+              type: rating_scale
+              text: How fresh does the coffee arrive?
+              scale: [1, 5]
+              required: true
+              answers:
+                  weights: { "3": 8, "4": 32, "5": 60 }
+            - key: cup
+              type: long_text
+              text: Tell us about your best cup from us so far.
+              answers:
+                  skip_rate: 0.15
+                  pool:
+                      - The Ethiopian natural tasted like blueberries and I was not prepared for that at 7am.
+                      - The Colombian washed lot in June. Clean, sweet, tasted like a red apple.
+                      - The Kenyan you sent in August. Blackcurrant. I bought a second bag before it sold out.
+                      - Honestly the house espresso blend. It just works every single morning.
+                      - The Guatemalan as a pour-over on a Sunday with nothing else to do.
+                      - The decaf, of all things. It is the first decaf that tastes like coffee.
+                      - The roast date is on the bag. That is why I stayed.
+                      - The Brazilian pulped natural in the Moka pot. Chocolate and nuts, perfect with milk.
+            - key: grind
+              type: yes_no
+              text: Would you like to choose the grind size per delivery?
+              answers:
+                  weights: { yes: 70, no: 30 }
+            - key: nps
+              type: nps
+              text: How likely are you to recommend Kettle & Crow to a friend?
+              required: true
+              answers:
+                  weights: { "5": 1, "6": 1, "7": 2, "8": 3, "9": 4, "10": 4 }
+            - key: change
+              type: short_text
+              text: If you could change one thing about delivery, what would it be?
+              answers:
+                  skip_rate: 0.25
+                  pool:
+                      - It arrived on a Tuesday, then a Friday, then a Monday. Just tell me the day.
+                      - Let me pick the grind for my Moka pot instead of getting a bag ground for pour-over.
+                      - A smaller box. It does not fit through the letterbox and gets left in the rain.
+                      - Skip a month without emailing support.
+                      - Compostable packaging.
+                      - Ship on Mondays so it arrives by the weekend.
+                      - I got this as a gift and I would have picked a darker roast.
+        responses: 7
+        stats:
+            opened_per_response: 1.3
+            browser: { Chrome: 6, Safari: 2 }
+            device: { Desktop: 5, Phone: 3 }
+            country: { GB: 5, DE: 2, NL: 1 }
+
+    earful:
+        email: team@tryearful.com
+        workspace: Earful
+        title: Earful — How is it going for you?
+        anonymity: anonymous
+        super_admin: true
+        prompt: >-
+            Product satisfaction for Earful, a voice-first survey tool: how happy creators
+            are, which features they use, whether spoken answers felt natural, and what is missing.
+        prompt_keyword: earful
+        created_days_ago: 22
+        spread_days: 21
+        respondent_answer: My customers just talk. I get paragraphs where I used to get three words.
+        questions:
+            - key: sat
+              type: rating_scale
+              text: How satisfied are you with Earful overall?
+              scale: [1, 10]
+              required: true
+              answers:
+                  weights: { "4": 1, "5": 2, "6": 3, "7": 6, "8": 9, "9": 10, "10": 6 }
+            - key: feat
+              type: multiple_choice
+              text: Which features have you used?
+              options: [
+                  Voice answers,
+                  AI-drafted questions,
+                  Insight Summary,
+                  Translations,
+                  Workspace export,
+                  Email invitations,
+              ]
+              answers:
+                  pick: [1, 4]
+                  weights: {
+                      Voice answers: 80,
+                      AI-drafted questions: 60,
+                      Insight Summary: 55,
+                      Translations: 30,
+                      Workspace export: 35,
+                      Email invitations: 40,
+                  }
+            - key: pick
+              type: long_text
+              text: What made you pick Earful over another survey tool?
+              required: true
+              answers:
+                  pool:
+                      - My customers just talk. I get paragraphs where I used to get three words.
+                      - It is the only tool where I can honestly tell people the recording does not exist.
+                      - Self-hostable and open source. Our data protection officer signed it off in an afternoon.
+                      - The AI drafted a decent first set of questions in ten seconds and I edited from there.
+                      - Anonymous means anonymous here. No IP, no fingerprint. That mattered for a staff survey.
+                      - We run surveys in four languages and the translation review flow is exactly what we needed.
+                      - The respondent page is quiet. No trackers, no cookie banner, nothing to explain.
+                      - I can export everything any time. I have been burned by tools that hold data hostage.
+                      - Voice. Older customers in our shop will talk to a phone but will not type on one.
+                      - Honestly the price, and then the voice answers won me over.
+                      - A friend recommended it for our restaurant feedback cards and it replaced them in a week.
+                      - Immutable versions. I can reword a question and still see the old answers where they belong.
+                      - It felt like a tool built by people who had actually run a survey before.
+            - key: often
+              type: single_choice
+              text: How often do you run a survey?
+              options: [Weekly, Monthly, A few times a year, This was my first]
+              answers:
+                  weights: {
+                      Weekly: 18,
+                      Monthly: 34,
+                      A few times a year: 30,
+                      This was my first: 18,
+                  }
+                  skip_rate: 0.1
+            - key: natural
+              type: yes_no
+              text: Did spoken answers feel natural to your respondents?
+              answers:
+                  weights: { yes: 82, no: 18 }
+                  skip_rate: 0.15
+            - key: missing
+              type: long_text
+              text: What is missing?
+              answers:
+                  skip_rate: 0.2
+                  pool:
+                      - I need to skip questions based on an earlier answer.
+                      - A share link for results so I stop screenshotting the page.
+                      - A spreadsheet integration, even just a webhook on submit.
+                      - Branching logic.
+                      - A date question type.
+                      - Team members in a workspace with different roles.
+                      - Nothing yet, still exploring.
+                      - A way to embed the survey in our own site.
+                      - Reminders for invited participants who have not answered.
+                      - An image question, for menu photos.
+                      - Conditional questions, that is the big one.
+                      - Themes or a logo on the respondent page.
+            - key: nps
+              type: nps
+              text: How likely are you to recommend Earful to a colleague?
+              required: true
+              answers:
+                  weights: { "4": 1, "5": 2, "6": 2, "7": 10, "8": 12, "9": 6, "10": 8 }
+        reword:
+            nps: How likely are you to recommend Earful to a friend or colleague?
+        responses_by_version: { "1": 18, "2": 23 }
+        stats:
+            opened_per_response: 1.8
+            browser: { Safari: 30, Chrome: 48, Firefox: 14, Edge: 8 }
+            device: { Desktop: 60, Phone: 32, Tablet: 8 }
+            country: { DE: 12, GB: 9, NL: 6, ES: 5, US: 5, FR: 4 }

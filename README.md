@@ -109,6 +109,7 @@ See `.env.example` for the full set.
 | sqlc | 1.31.1 | install via `brew install sqlc` (macOS) or a [prebuilt binary](https://docs.sqlc.dev/en/stable/overview/install.html) — **do not** `go install` it; its cgo-heavy embedded Postgres parser can fail to build |
 | goose | v3.24.1 | via `make tools` |
 | staticcheck, govulncheck | latest | via `make tools`; deliberately float to latest rather than a pin — see the comment in `Makefile` |
+| Deno | 2.x | only for `tools/featuretour`, the feature-tour deck generator; not needed to build, test or run Earful |
 
 `make tools` installs everything except sqlc into your Go bin directory
 (wherever `go install` already resolves it — respects an existing `GOBIN`,
@@ -128,6 +129,8 @@ install, so you shouldn't need to think about it.
 | `make check` | Full CI-equivalent check: vet, staticcheck, govulncheck, templ/sqlc drift, tests |
 | `make test` | Bring up compose Postgres, run `go test ./...` |
 | `make e2e-smoke` | Playwright + axe suite against the compose stack, at phone/tablet/desktop widths |
+| `make featuretour` | Build the feature-tour PDF from screenshots of the compose stack (see `tools/featuretour/README.md`) |
+| `make featuretour-deck` | Rebuild only the PDF from the last run's screenshots |
 | `make migrate` | Run `earful migrate` against `DATABASE_URL` |
 | `make purge` | Run `earful purge --dry-run` (retention, reported not applied) |
 | `make geoip` | Rebuild the embedded country table from a DB-IP CSV |
@@ -235,6 +238,7 @@ Short version: `make test` or `make check`.
 - [docs/metrics.md](docs/metrics.md) — founder-metric definitions and their caveats
 - [docs/security-review.md](docs/security-review.md) — findings triage and the standing guards
 - [docs/runbook.md](docs/runbook.md) — operator procedures
+- [tools/featuretour/README.md](tools/featuretour/README.md) — the feature-tour deck generator: screenshots and a PDF from a local stack
 
 ## License
 

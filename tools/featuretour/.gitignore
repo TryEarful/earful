@@ -1,0 +1,4 @@
+# Everything a run produces: state, screenshots, saved sessions, the PDF.
+out/
+# Deno materialises npm dependencies here (nodeModulesDir: auto).
+node_modules/
