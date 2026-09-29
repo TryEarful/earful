@@ -36,14 +36,14 @@ func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 
 	closeAt, err := parseCloseDate(r.PostFormValue("close_at"))
 	if err != nil {
-		s.renderNewSurvey(w, r, err.Error())
+		s.renderNewSurvey(w, r, sayError(r, err))
 		return
 	}
 	survey, err := s.surveys.Create(r.Context(), info.WorkspaceID, info.UserID,
 		r.PostFormValue("title"), r.PostFormValue("anonymity") == "anonymous", closeAt)
 	if err != nil {
 		if isUserError(err) {
-			s.renderNewSurvey(w, r, err.Error())
+			s.renderNewSurvey(w, r, sayError(r, err))
 			return
 		}
 		s.internalError(w, r, "create survey", err)
@@ -126,12 +126,12 @@ func (s *server) surveySettings(w http.ResponseWriter, r *http.Request) {
 	}
 	closeAt, err := parseCloseDate(r.PostFormValue("close_at"))
 	if err != nil {
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	}
 	if err := s.surveys.UpdateSettings(r.Context(), info.WorkspaceID, survey.ID, r.PostFormValue("title"), closeAt); err != nil {
 		if isUserError(err) {
-			s.renderSurveyPage(w, r, err.Error(), "")
+			s.renderSurveyPage(w, r, sayError(r, err), "")
 			return
 		}
 		s.internalError(w, r, "update survey settings", err)
@@ -152,7 +152,7 @@ func (s *server) questionAdd(w http.ResponseWriter, r *http.Request) {
 	q := questionFromForm(r)
 	q.IdentityID = uuid.NewString() // a new question starts a new identity
 	if err := draft.Add(q); err != nil {
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -168,7 +168,7 @@ func (s *server) questionUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := draft.Replace(r.PathValue("questionID"), questionFromForm(r)); err != nil {
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -181,7 +181,7 @@ func (s *server) questionDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := draft.Remove(r.PathValue("questionID")); err != nil {
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -198,7 +198,7 @@ func (s *server) questionMove(w http.ResponseWriter, r *http.Request) {
 		delta = -1
 	}
 	if err := draft.Move(r.PathValue("questionID"), delta); err != nil {
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -216,7 +216,7 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 		s.renderSurveyPage(w, r, "", say(r, "editor.notice.unchanged"))
 		return
 	case isUserError(err):
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	case err != nil:
 		s.internalError(w, r, "publish survey", err)
@@ -345,32 +345,6 @@ func (s *server) internalError(w http.ResponseWriter, r *http.Request, what stri
 	s.logger.Error(what+" failed", "error", err)
 	render(w, r, http.StatusInternalServerError, templates.ErrorPage(
 		say(r, "error.generic.title"), say(r, "error.generic.body")))
-}
-
-// isUserError distinguishes validation problems — which belong inline on
-// the form — from infrastructure failures.
-func isUserError(err error) bool {
-	if err == nil {
-		return false
-	}
-	for _, sentinel := range []error{
-		domain.ErrEmptyQuestionText, domain.ErrUnknownType, domain.ErrTooFewOptions,
-		domain.ErrEmptyOption, domain.ErrDuplicateOption, domain.ErrBadScale,
-		domain.ErrDraftEmpty, domain.ErrDraftTooLong, domain.ErrQuestionUnknown,
-		domain.ErrEmptyTitle,
-		// M11: a publish blocked by an unreviewed translation is the
-		// creator being told something, not the server failing.
-		domain.ErrUnreviewedTrans, domain.ErrUnknownLanguage,
-		domain.ErrLanguageInvalid, domain.ErrLanguageExists, domain.ErrTooManyLanguages,
-	} {
-		if errors.Is(err, sentinel) {
-			return true
-		}
-	}
-	// Length and per-question wrapping errors are formatted, not
-	// sentinels; they still come from domain validation.
-	msg := err.Error()
-	return strings.HasPrefix(msg, "keep the ") || strings.HasPrefix(msg, "question ")
 }
 
 func questionFromForm(r *http.Request) domain.Question {

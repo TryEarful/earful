@@ -76,7 +76,7 @@ const maxAnswerTextLen = 10_000
 // phrased as help, never as diagnostics.
 var (
 	ErrRequiredAnswer = errors.New("this question needs an answer")
-	ErrAnswerTooLong  = fmt.Errorf("please keep the answer under %d characters", maxAnswerTextLen)
+	ErrAnswerTooLong  = error(LimitError{Kind: LimitAnswerText, Limit: maxAnswerTextLen})
 	ErrNotAnOption    = errors.New("choose one of the options offered")
 	ErrOutOfRange     = errors.New("choose a value on the scale")
 )
@@ -146,7 +146,10 @@ type Submission struct {
 type AnswerError struct {
 	IdentityID string
 	Position   int
-	Message    string
+	// Err is the problem, and Message is Err in English. Whoever shows
+	// the problem to a respondent words it from Err.
+	Err     error
+	Message string
 }
 
 // Validate checks a whole submission against the questions as served.
@@ -160,6 +163,7 @@ func (s Submission) Validate(questions []Question) []AnswerError {
 			problems = append(problems, AnswerError{
 				IdentityID: q.IdentityID,
 				Position:   i + 1,
+				Err:        err,
 				Message:    err.Error(),
 			})
 		}

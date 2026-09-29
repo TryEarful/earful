@@ -43,9 +43,10 @@ func (p Participant) Status() string {
 
 // maxImportBatch bounds one paste/upload. Bigger audiences import in
 // batches; the cap keeps the request small and the dedupe cheap.
-const maxImportBatch = 1000
+// MaxImportBatch is how many addresses one import may bring.
+const MaxImportBatch = 1000
 
-var ErrImportTooLarge = fmt.Errorf("store: import at most %d addresses at a time", maxImportBatch)
+var ErrImportTooLarge = fmt.Errorf("store: import at most %d addresses at a time", MaxImportBatch)
 
 // ImportParticipants parses pasted text or CSV content into addresses and
 // inserts the new ones. Duplicates — within the paste or against earlier
@@ -53,7 +54,7 @@ var ErrImportTooLarge = fmt.Errorf("store: import at most %d addresses at a time
 // added and how many entries were skipped as unparseable.
 func (s *Surveys) ImportParticipants(ctx context.Context, surveyID uuid.UUID, raw string) (added, invalid int, err error) {
 	addresses := splitAddresses(raw)
-	if len(addresses) > maxImportBatch {
+	if len(addresses) > MaxImportBatch {
 		return 0, 0, ErrImportTooLarge
 	}
 

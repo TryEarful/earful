@@ -55,7 +55,7 @@ func (s *server) localizationAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	lang := r.PostFormValue("lang")
 	if err := draft.AddLanguage(lang); err != nil {
-		s.renderLocalizations(w, r, err.Error(), "")
+		s.renderLocalizations(w, r, sayError(r, err), "")
 		return
 	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
@@ -72,7 +72,7 @@ func (s *server) localizationRemove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := draft.RemoveLanguage(r.PathValue("lang")); err != nil {
-		s.renderLocalizations(w, r, err.Error(), "")
+		s.renderLocalizations(w, r, sayError(r, err), "")
 		return
 	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
@@ -184,7 +184,7 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 			options = question.Options
 		}
 		if err := draft.SetTranslation(lang, question.IdentityID, text, options, true); err != nil {
-			s.renderLocalizations(w, r, err.Error(), "")
+			s.renderLocalizations(w, r, sayError(r, err), "")
 			return
 		}
 		saved++

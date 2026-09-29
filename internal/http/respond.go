@@ -47,10 +47,18 @@ func (s *server) renderRespondPage(
 	submission domain.Submission, problems []domain.AnswerError, notice string,
 	pc ...*participantContext,
 ) {
+	// A problem is worded here, for this respondent, and not where it
+	// was found.
 	errs := make(map[string]string, len(problems))
-	for _, p := range problems {
+	worded := make([]domain.AnswerError, len(problems))
+	for i, p := range problems {
+		if p.Err != nil {
+			p.Message = sayError(r, p.Err)
+		}
+		worded[i] = p
 		errs[p.IdentityID] = p.Message
 	}
+	problems = worded
 	status := http.StatusOK
 	if len(problems) > 0 {
 		status = http.StatusUnprocessableEntity

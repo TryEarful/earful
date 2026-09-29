@@ -5,7 +5,6 @@ package domain
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -186,7 +185,7 @@ var (
 	ErrTooFewOptions     = errors.New("list at least two options")
 	ErrEmptyOption       = errors.New("remove the blank option")
 	ErrDuplicateOption   = errors.New("two options are identical")
-	ErrBadScale          = fmt.Errorf("the scale must start at 0 or 1 and end no higher than %d", ratingScaleMaxCap)
+	ErrBadScale          = error(LimitError{Kind: LimitScale, Limit: ratingScaleMaxCap})
 )
 
 // maxQuestionTextLen keeps a question readable and bounds the row; a
@@ -204,7 +203,7 @@ func (q Question) Validate() error {
 		return ErrEmptyQuestionText
 	}
 	if len([]rune(q.Text)) > maxQuestionTextLen {
-		return fmt.Errorf("keep the question under %d characters", maxQuestionTextLen)
+		return LimitError{Kind: LimitQuestionText, Limit: maxQuestionTextLen}
 	}
 	if q.Type.NeedsOptions() {
 		if len(q.Options) < 2 {

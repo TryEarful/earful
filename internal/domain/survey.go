@@ -26,7 +26,7 @@ const maxQuestionsPerSurvey = 100
 
 var (
 	ErrDraftEmpty      = errors.New("add at least one question before publishing")
-	ErrDraftTooLong    = fmt.Errorf("a survey can hold at most %d questions", maxQuestionsPerSurvey)
+	ErrDraftTooLong    = error(LimitError{Kind: LimitQuestions, Limit: maxQuestionsPerSurvey})
 	ErrQuestionUnknown = errors.New("that question is not part of this draft")
 )
 
@@ -140,7 +140,7 @@ func (d Draft) ValidateForPublish() error {
 	}
 	for i, q := range d.Questions {
 		if err := q.Validate(); err != nil {
-			return fmt.Errorf("question %d: %w", i+1, err)
+			return QuestionError{Position: i + 1, Err: err}
 		}
 	}
 	return nil
@@ -197,7 +197,7 @@ func ValidateTitle(title string) error {
 		return ErrEmptyTitle
 	}
 	if len([]rune(trimmed)) > maxTitleLen {
-		return fmt.Errorf("keep the title under %d characters", maxTitleLen)
+		return LimitError{Kind: LimitTitle, Limit: maxTitleLen}
 	}
 	return nil
 }

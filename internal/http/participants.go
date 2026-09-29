@@ -51,7 +51,7 @@ func (s *server) participantsImport(w http.ResponseWriter, r *http.Request) {
 
 	added, invalid, err := s.surveys.ImportParticipants(r.Context(), survey.ID, raw)
 	if errors.Is(err, store.ErrImportTooLarge) {
-		s.renderSurveyPage(w, r, err.Error(), "")
+		s.renderSurveyPage(w, r, sayError(r, err), "")
 		return
 	}
 	if err != nil {

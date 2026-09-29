@@ -999,3 +999,40 @@ unavailable = "Voice isn't available right now — please type your answer."
 
 [voice.status]
 transcribing = "Transcribing…"
+
+
+# ── What is wrong with an answer, a question or a survey ───────────────
+
+[answer.error]
+required = "this question needs an answer"
+long = "please keep the answer under {{.Limit}} characters"
+option = "choose one of the options offered"
+range = "choose a value on the scale"
+
+[question.error]
+empty = "give the question some text"
+kind = "choose a question type"
+options = "list at least two options"
+blank = "remove the blank option"
+duplicate = "two options are identical"
+scale = "the scale must start at 0 or 1 and end no higher than {{.Limit}}"
+long = "keep the question under {{.Limit}} characters"
+numbered = "question {{.Position}}: {{.Problem}}"
+
+[survey.error]
+empty = "add at least one question before publishing"
+long = "a survey can hold at most {{.Limit}} questions"
+question = "that question is not part of this draft"
+untitled = "give the survey a title"
+title = "keep the title under {{.Limit}} characters"
+
+[language.error]
+unknown = "that language is not part of this survey"
+invalid = 'use a language code like "nl" or "pt-BR"'
+exists = "that language is already on this survey"
+unreviewed = "review every translation before publishing, or remove the language"
+limit = "a survey can carry at most {{.Limit}} languages"
+
+[editor.refused]
+# The "store:" has always been shown.
+import = "store: import at most {{.Limit}} addresses at a time"

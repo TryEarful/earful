@@ -122,6 +122,13 @@ func isIDType(expr ast.Expr) bool {
 		return isIDType(e.Value) || isIDType(e.Key)
 	case *ast.ArrayType:
 		return isIDType(e.Elt)
+	case *ast.StructType:
+		// A table of things and the messages that go with them.
+		for _, field := range e.Fields.List {
+			if isIDType(field.Type) {
+				return true
+			}
+		}
 	}
 	return false
 }

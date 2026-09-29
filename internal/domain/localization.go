@@ -44,7 +44,7 @@ var (
 	ErrLanguageInvalid  = errors.New("use a language code like \"nl\" or \"pt-BR\"")
 	ErrLanguageExists   = errors.New("that language is already on this survey")
 	ErrUnreviewedTrans  = errors.New("review every translation before publishing, or remove the language")
-	ErrTooManyLanguages = errors.New("a survey can carry at most 10 languages")
+	ErrTooManyLanguages = error(LimitError{Kind: LimitLanguages, Limit: maxLanguagesPerSurvey})
 )
 
 const maxLanguagesPerSurvey = 10

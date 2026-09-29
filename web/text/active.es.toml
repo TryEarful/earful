@@ -1797,3 +1797,98 @@ other = "La voz no está disponible en este momento: escriba su respuesta, por f
 [voice.status.transcribing]
 hash = "sha1-1e7571c09293010f29979fdc98af457394bb3f99"
 other = "Transcribiendo…"
+
+
+# ── Lo que falla en una respuesta, una pregunta o una encuesta ─────────
+
+[answer.error.required]
+hash = "sha1-95306d93228011150fb7e3c86d0cf1d0e34d33cd"
+other = "esta pregunta necesita una respuesta"
+
+[answer.error.long]
+hash = "sha1-1fbc59905c48ab13653abb72f3efddf87be4c74d"
+other = "por favor, que la respuesta no pase de {{.Limit}} caracteres"
+
+[answer.error.option]
+hash = "sha1-41e6abf17e900a7198996b2ae014c160381784af"
+other = "elija una de las opciones que se ofrecen"
+
+[answer.error.range]
+hash = "sha1-be6d5887a3203eff08ac0376702ee70cfc854ca4"
+other = "elija un valor de la escala"
+
+[question.error.empty]
+hash = "sha1-67e2b8571d7b7a76b7add0a6201cfdd90f2c587d"
+other = "escriba el texto de la pregunta"
+
+[question.error.kind]
+hash = "sha1-71cd4aece010bd347657d4f292ca1c8a8838aa30"
+other = "elija un tipo de pregunta"
+
+[question.error.options]
+hash = "sha1-dde047fc1685a95c0d855ee5665835960f0ba8dc"
+other = "indique al menos dos opciones"
+
+[question.error.blank]
+hash = "sha1-906003f7bc2c0845c98676f272a2fa0c2b6f65e8"
+other = "quite la opción en blanco"
+
+[question.error.duplicate]
+hash = "sha1-2242adb5152a549248bf6437211e1e4c4b61a104"
+other = "hay dos opciones idénticas"
+
+[question.error.scale]
+hash = "sha1-a341f198564edfa71d55145e01a652600fc356ab"
+other = "la escala debe empezar en 0 o en 1 y no terminar por encima de {{.Limit}}"
+
+[question.error.long]
+hash = "sha1-b4742a5c54fd34b752c7c58e60b1d0885b9b127a"
+other = "que la pregunta no pase de {{.Limit}} caracteres"
+
+[question.error.numbered]
+hash = "sha1-a7e7fda0fde299a66bb5b86df2a2950c4c78597b"
+other = "pregunta {{.Position}}: {{.Problem}}"
+
+[survey.error.empty]
+hash = "sha1-faf70ce7428995820316505c8d38bef8ab6863bb"
+other = "añada al menos una pregunta antes de publicar"
+
+[survey.error.long]
+hash = "sha1-e8546116241cc5fe37393f770cc367d83df6c509"
+other = "una encuesta admite como máximo {{.Limit}} preguntas"
+
+[survey.error.question]
+hash = "sha1-fa0b56d16900e1ad9f18e3fa8b072ff4e8b30155"
+other = "esa pregunta no forma parte de este borrador"
+
+[survey.error.untitled]
+hash = "sha1-db7f9cb9bcf39e656e9ea4c4ca329f37a1102e80"
+other = "póngale un título a la encuesta"
+
+[survey.error.title]
+hash = "sha1-334933b14dffff2c4029536baf8065f3f4cb56ef"
+other = "que el título no pase de {{.Limit}} caracteres"
+
+[language.error.unknown]
+hash = "sha1-41a6ca6fa53892a6c9c2ddeef7c671c05668256d"
+other = "ese idioma no forma parte de esta encuesta"
+
+[language.error.invalid]
+hash = "sha1-f4980c0128b3daceaf0419651470e6289590e810"
+other = "use un código de idioma como «nl» o «pt-BR»"
+
+[language.error.exists]
+hash = "sha1-1e7c6e59050505e4ff878ba20fa2e327fecc9fcf"
+other = "ese idioma ya está en esta encuesta"
+
+[language.error.unreviewed]
+hash = "sha1-c4963650cb879c53b9d787554e17a93f85bfcdf8"
+other = "revise todas las traducciones antes de publicar, o quite el idioma"
+
+[language.error.limit]
+hash = "sha1-02f2aaff4cb303dec49349fc9e22727ed93121a4"
+other = "una encuesta admite como máximo {{.Limit}} idiomas"
+
+[editor.refused.import]
+hash = "sha1-ec24e3beddd70786574fe0e7f0111f967e6a8d52"
+other = "importe como máximo {{.Limit}} direcciones cada vez"
