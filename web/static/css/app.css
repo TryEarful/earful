@@ -601,6 +601,97 @@ fieldset {
   overflow: hidden;
 }
 
+/* --- earlier versions of an answer (story 81) ------------------------ */
+
+/* A small link under the answer, there only once there is something to
+   look at. */
+.versions {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+}
+
+.versions-link {
+  font-size: inherit;
+  color: var(--muted);
+}
+
+.versions-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 35%);
+  z-index: 9;
+}
+
+.versions-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  width: min(36rem, calc(100% - 2rem));
+  height: fit-content;
+  max-height: calc(100% - 2rem);
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 25%);
+  z-index: 10;
+}
+
+.versions-dialog h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+/* The list scrolls, not the dialog, so the title and Close stay put;
+   its buttons make it reachable from the keyboard. */
+.versions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 0;
+  margin: 0 0 1rem;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.versions-item {
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: Canvas;
+}
+
+.versions-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.versions-meta button {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.versions-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.versions-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* --- voice answering (M5) ------------------------------------------- */
 
 /* One card under the answer field, top to bottom: its name and the
@@ -637,13 +728,16 @@ fieldset {
   color: var(--muted);
 }
 
+/* Set like the title it sits across from, so the head of the card reads
+   as one line of small capitals rather than a label and a button. */
 .voice-toggle {
-  padding: 0.2rem 0.4rem;
-  line-height: 1;
-}
-
-.voice-toggle .voice-icon {
-  margin-right: 0;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .voice-body {

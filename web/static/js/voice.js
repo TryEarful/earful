@@ -39,8 +39,6 @@
   var ESC_WINDOW_MS = 6000;
   var ARMED_MESSAGE = "Press ESC again to clear this answer.";
   var COLLAPSE_KEY = "earful-voice-collapsed";
-  var MINUS_ICON = ["M5 12h14"];
-  var PLUS_ICON = ["M5 12h14", "M12 5v14"];
   var SVG_NS = "http://www.w3.org/2000/svg";
   var MIC_ICON = [
     "M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z",
@@ -118,10 +116,10 @@
     toggle.type = "button";
     toggle.className = "voice-toggle secondary";
     toggle.setAttribute("aria-controls", uid + "-body");
-    var minus = icon(MINUS_ICON);
-    var plus = icon(PLUS_ICON);
-    toggle.appendChild(minus);
-    toggle.appendChild(plus);
+    // A word rather than a glyph: a minus sign beside a title says
+    // "remove" as readily as it says "put away".
+    var toggleLabel = document.createTextNode("Hide");
+    toggle.appendChild(toggleLabel);
     head.appendChild(title);
     head.appendChild(toggle);
     var body = document.createElement("div");
@@ -537,14 +535,8 @@
       body.hidden = on;
       wrap.classList.toggle("collapsed", on);
       toggle.setAttribute("aria-expanded", on ? "false" : "true");
-      toggle.setAttribute("aria-label", on ? "Expand dictation" : "Collapse dictation");
-      if (on) {
-        minus.setAttribute("hidden", "");
-        plus.removeAttribute("hidden");
-      } else {
-        plus.setAttribute("hidden", "");
-        minus.removeAttribute("hidden");
-      }
+      toggleLabel.nodeValue = on ? "Show" : "Hide";
+      toggle.setAttribute("aria-label", on ? "Show dictation" : "Hide dictation");
     }
     // Not wanting dictation is a fact about the respondent, not about
     // one question, so every card on the page follows and the choice is
@@ -776,8 +768,11 @@
       return target.tagName === "BUTTON" && mic.wrap.contains(target);
     }
 
+    // Any dialog, not only the consent one: a dialog has its own Esc
+    // and its own buttons, and a key pressed inside it is about the
+    // dialog, whatever is recording behind it.
     function insideConsent(target) {
-      return typeof target.closest === "function" && target.closest(".voice-consent") !== null;
+      return typeof target.closest === "function" && target.closest('[role="dialog"]') !== null;
     }
 
     document.addEventListener("keydown", function (event) {

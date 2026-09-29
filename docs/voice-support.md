@@ -122,14 +122,19 @@ textarea the server rendered is the whole interface (story 38).
    before the take. Esc twice does the same and clears the answer too.
    (With the scripted provider the moment is brief; a real model gives
    time to try it.)
-13. **Putting it away**: the minus in the card's corner collapses every
+13. **Putting it away**: *Hide* in the card's corner collapses every
    *Dictation* card on the page to its title. Space and Esc are then
-   ordinary keys. A reload keeps it collapsed; the plus brings it back.
-14. **No microphone**: deny the browser's microphone prompt (or unplug the
+   ordinary keys. A reload keeps it hidden; *Show* brings it back.
+14. **Previous versions**: type or dictate, wait five seconds, and a
+   small *Previous versions* link appears under the answer. Reset the
+   answer, open the link: the text Reset removed is the newest entry,
+   with the time beside it. *Restore* puts it back. The browser's
+   network panel shows no request for any of this.
+15. **No microphone**: deny the browser's microphone prompt (or unplug the
    device). Both buttons grey out, the boxed error reads "Microphone
    unavailable", Space types a space and ESC twice does nothing; typing
    still submits. A reload offers the mic again.
-15. **Screen reader**: the status line is `aria-live="polite"`; the button
+16. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.
 
 ## Notes

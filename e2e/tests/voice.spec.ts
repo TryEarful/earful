@@ -413,10 +413,10 @@ test("the dictation card is named and can be put away", async ({ page, browser }
   await expect(card).toBeVisible();
   await expect(dictate).toBeVisible();
 
-  await respondent.getByRole("button", { name: "Collapse dictation" }).first().click();
+  await respondent.getByRole("button", { name: "Hide dictation" }).first().click();
   await expect(dictate).toBeHidden();
   await expect(card).toBeVisible(); // the name and the way back remain
-  const expand = respondent.getByRole("button", { name: "Expand dictation" }).first();
+  const expand = respondent.getByRole("button", { name: "Show dictation" }).first();
   await expect(expand).toHaveAttribute("aria-expanded", "false");
 
   const answer = respondent.locator("textarea");
@@ -431,7 +431,7 @@ test("the dictation card is named and can be put away", async ({ page, browser }
 
   await respondent.reload();
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeHidden();
-  await respondent.getByRole("button", { name: "Expand dictation" }).first().click();
+  await respondent.getByRole("button", { name: "Show dictation" }).first().click();
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
 
   await context.close();
