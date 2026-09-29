@@ -1,8 +1,8 @@
 package http
 
 import (
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -94,7 +94,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	lang := domain.NormalizeLang(r.PathValue("lang"))
 	pending := draft.Pending(lang)
 	if len(pending) == 0 {
-		s.renderLocalizations(w, r, "", "Nothing left to translate in "+domain.LanguageName(lang)+".")
+		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": domain.LanguageName(lang)}))
 		return
 	}
 
@@ -125,8 +125,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderLocalizations(w, r, "",
-		"Drafted "+plural(len(translated), "translation", "translations")+
-			" in "+domain.LanguageName(lang)+". Read each one and save it to mark it reviewed.")
+		sayN(r, "languages.notice.drafted", len(translated), uitext.Args{"Language": domain.LanguageName(lang)}))
 }
 
 // translateQuestions runs one model call per question, re-checking the
@@ -195,10 +194,9 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notice := "Saved and marked reviewed: " + plural(saved, "translation", "translations") +
-		" in " + domain.LanguageName(lang) + "."
+	notice := sayN(r, "languages.notice.saved", saved, uitext.Args{"Language": domain.LanguageName(lang)})
 	if remaining := len(draft.Pending(lang)); remaining > 0 {
-		notice += " " + plural(remaining, "question", "questions") + " still to review."
+		notice += " " + sayN(r, "languages.notice.remaining", remaining)
 	}
 	s.renderLocalizations(w, r, "", notice)
 }
@@ -261,13 +259,6 @@ func splitLines(raw string) []string {
 		}
 	}
 	return out
-}
-
-func plural(n int, one, many string) string {
-	if n == 1 {
-		return "1 " + one
-	}
-	return strconv.Itoa(n) + " " + many
 }
 
 // --- the respondent's side (M11-T1, story 25) ----------------------------
@@ -370,7 +361,7 @@ func viewLanguageChoices(version store.ServedVersion, r *http.Request) []templat
 
 	choices := []templates.LanguageChoice{{
 		Code:     "",
-		Name:     "Original",
+		Name:     say(r, "respond.language.original"),
 		Selected: version.Lang == "",
 	}}
 	for _, lang := range version.Languages {
@@ -448,13 +439,8 @@ func (s *server) answersTranslate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notice := "Translated " + plural(translated, "answer", "answers") + " into " + domain.LanguageName(lang) + "."
-	if err != nil {
-		notice += " The rest stopped early: " + aiRefusalMessage(text(r), err)
-	}
 	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"/results?lang="+lang+"&notice=translated",
 		http.StatusSeeOther)
-	_ = notice
 }
 
 // translateAnswers walks every text answer that has no cached

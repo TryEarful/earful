@@ -1742,3 +1742,58 @@ other = "Algo salió mal al preparar la exportación. Inténtelo de nuevo, o esc
 [export.failed.large]
 hash = "sha1-e18d8db9ac1b936659ebfe6be4dd36c9bab32db4"
 other = "Este espacio de trabajo es demasiado grande para exportarlo en un solo archivo. Exporte las encuestas una a una como CSV, o pida una copia a soporte."
+
+
+# ── Los idiomas de una encuesta: avisos ────────────────────────────────
+
+[languages.notice.nothing]
+hash = "sha1-3e50a16242c5b5cfe83877a0f72aa678f976ee6f"
+other = "No queda nada por traducir al {{.Language}}."
+
+[languages.notice.drafted]
+hash = "sha1-205d22e06c6ed3280f58d0fa124311dcbf9d5bd6"
+one = "Se redactó 1 traducción al {{.Language}}. Léala y guárdela para marcarla como revisada."
+many = "Se redactaron {{.Count}} traducciones al {{.Language}}. Lea cada una y guárdela para marcarla como revisada."
+other = "Se redactaron {{.Count}} traducciones al {{.Language}}. Lea cada una y guárdela para marcarla como revisada."
+
+[languages.notice.saved]
+hash = "sha1-4d91bb182e59a2510417f3ef23676fcfe9fb8fcb"
+one = "Guardada y marcada como revisada: 1 traducción al {{.Language}}."
+many = "Guardadas y marcadas como revisadas: {{.Count}} traducciones al {{.Language}}."
+other = "Guardadas y marcadas como revisadas: {{.Count}} traducciones al {{.Language}}."
+
+[languages.notice.remaining]
+hash = "sha1-a492417f144b45e6ba65e947a35c660829e0ab87"
+one = "Queda 1 pregunta por revisar."
+many = "Quedan {{.Count}} preguntas por revisar."
+other = "Quedan {{.Count}} preguntas por revisar."
+
+
+# ── Responder: elegir un idioma ────────────────────────────────────────
+
+[respond.language.original]
+hash = "sha1-c0a8060f3b1102da85ef318544468f24221e6515"
+other = "Original"
+
+
+# ── Dictado: lo que dice el servidor ───────────────────────────────────
+
+[voice.error.stale]
+hash = "sha1-dd59a993299502ea560653c7809cf029d7dc6100"
+other = "Esta página lleva un rato abierta. Recárguela para volver a usar la voz."
+
+[voice.error.reload]
+hash = "sha1-e43456fbe841d28166150e0e792aff3fe4c1d0b3"
+other = "Recargue la página para usar la voz."
+
+[voice.error.silence]
+hash = "sha1-5b3f7ef1d5ddae35cd947b30758dd893e25f8971"
+other = "No he oído nada. Inténtelo de nuevo, o escriba su respuesta."
+
+[voice.error.unavailable]
+hash = "sha1-90ac49172a4971eb740d043095adc660b9117649"
+other = "La voz no está disponible en este momento: escriba su respuesta, por favor."
+
+[voice.status.transcribing]
+hash = "sha1-1e7571c09293010f29979fdc98af457394bb3f99"
+other = "Transcribiendo…"

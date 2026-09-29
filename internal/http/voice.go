@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"errors"
+	"github.com/TryEarful/earful/internal/uitext"
 	"io"
 	"net/http"
 	"strings"
@@ -100,11 +101,11 @@ func (s *server) serveVoice(w http.ResponseWriter, r *http.Request, survey store
 	}
 	defer conn.Close()
 
-	s.runVoiceSession(conn, survey)
+	s.runVoiceSession(conn, text(r), survey)
 }
 
 // runVoiceSession is the protocol loop: start → audio → stop → transcript.
-func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
+func (s *server) runVoiceSession(conn *ws.Conn, l uitext.Localizer, survey store.PublicSurvey) {
 	buf := voice.NewBuffer(s.voiceAnswerSeconds())
 	// Whatever happens — a clean stop, a dropped connection, a panic
 	// unwinding the handler — the audio does not outlive this function.
@@ -133,7 +134,7 @@ func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
 			if err := buf.Append(msg.Data); err != nil {
 				// The cap is reached: transcribe what has arrived rather than
 				// throwing away what the respondent already said.
-				s.finishVoiceTake(conn, survey, buf, session, language)
+				s.finishVoiceTake(conn, l, survey, buf, session, language)
 				return
 			}
 			continue
@@ -141,7 +142,7 @@ func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
 
 		switch msg.Control.Action {
 		case "start":
-			if !s.voiceSessionAllowed(conn, survey, msg.Control) {
+			if !s.voiceSessionAllowed(conn, l, survey, msg.Control) {
 				return
 			}
 			session = msg.Control.Param("nonce")
@@ -152,7 +153,7 @@ func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
 			if !started {
 				return
 			}
-			s.finishVoiceTake(conn, survey, buf, session, language)
+			s.finishVoiceTake(conn, l, survey, buf, session, language)
 			return
 		default:
 			return
@@ -164,13 +165,13 @@ func (s *server) runVoiceSession(conn *ws.Conn, survey store.PublicSurvey) {
 // signed render timestamp proves this socket belongs to a served page.
 // A per-answer minimum fill time makes no sense here (speaking starts
 // immediately), so the token is checked for authenticity and age only.
-func (s *server) voiceSessionAllowed(conn *ws.Conn, survey store.PublicSurvey, control ws.Control) bool {
+func (s *server) voiceSessionAllowed(conn *ws.Conn, l uitext.Localizer, survey store.PublicSurvey, control ws.Control) bool {
 	if err := s.formTokens.Check(survey.ID.String(), control.Param("token"), 0); err != nil {
 		if errors.Is(err, antibot.ErrFormTokenInvalid) {
-			_ = conn.Fail("stale", "This page has been open a while. Reload it to use voice again.")
+			_ = conn.Fail("stale", l.T("voice.error.stale"))
 			return false
 		}
-		_ = conn.Fail("stale", "Reload the page to use voice.")
+		_ = conn.Fail("stale", l.T("voice.error.reload"))
 		return false
 	}
 	return true
@@ -182,37 +183,37 @@ func (s *server) voiceSessionAllowed(conn *ws.Conn, survey store.PublicSurvey, c
 // aiMeter.Check in the same function (TestAIProviderCallsAreMetered), and
 // that is exactly right here: transcription is the only respondent-facing
 // operation that spends money, so the breaker has to see it.
-func (s *server) finishVoiceTake(conn *ws.Conn, survey store.PublicSurvey, buf *voice.Buffer,
+func (s *server) finishVoiceTake(conn *ws.Conn, l uitext.Localizer, survey store.PublicSurvey, buf *voice.Buffer,
 	session, language string) {
 	ctx := conn.Context()
 	seconds := buf.Seconds()
 	if seconds == 0 {
-		_ = conn.Fail("empty", "I didn't hear anything. Try again, or type your answer.")
+		_ = conn.Fail("empty", l.T("voice.error.silence"))
 		return
 	}
 
 	// Per-response budget: one respondent cannot spend a survey's whole
 	// allowance on their own answers.
 	if session != "" && s.voiceBudget.Remaining(session) < seconds {
-		_ = conn.Fail("quota", voiceFallbackMessage)
+		_ = conn.Fail("quota", l.T(voiceFallback))
 		return
 	}
 	// Per-survey daily seconds, then the workspace quota and the global
 	// breaker. All three refuse the same way: voice stops, typing stays.
 	if left, err := s.aiMeter.VoiceSecondsLeft(ctx, survey.ID); err != nil {
 		s.logger.Error("voice allowance lookup failed", "error", err)
-		_ = conn.Fail("unavailable", voiceFallbackMessage)
+		_ = conn.Fail("unavailable", l.T(voiceFallback))
 		return
 	} else if left < seconds {
-		_ = conn.Fail("quota", voiceFallbackMessage)
+		_ = conn.Fail("quota", l.T(voiceFallback))
 		return
 	}
 	if err := s.aiMeter.Check(ctx, survey.WorkspaceID); err != nil {
-		_ = conn.Fail("quota", voiceFallbackMessage)
+		_ = conn.Fail("quota", l.T(voiceFallback))
 		return
 	}
 
-	_ = conn.Status("Transcribing…")
+	_ = conn.Status(l.T("voice.status.transcribing"))
 	stream, err := s.ai.Transcribe(ctx, ai.TranscribeRequest{
 		Audio:    bytes.NewReader(buf.WAV()),
 		MIMEType: "audio/wav",
@@ -220,7 +221,7 @@ func (s *server) finishVoiceTake(conn *ws.Conn, survey store.PublicSurvey, buf *
 	})
 	if err != nil {
 		s.logger.Error("transcription failed", "error", err)
-		_ = conn.Fail("unavailable", voiceFallbackMessage)
+		_ = conn.Fail("unavailable", l.T(voiceFallback))
 		return
 	}
 	counted := ai.Counted(stream)
@@ -261,7 +262,7 @@ func (s *server) finishVoiceTake(conn *ws.Conn, survey store.PublicSurvey, buf *
 			}
 			s.logger.Error("transcription stream failed", "error", err)
 			if transcript.Len() == 0 {
-				_ = conn.Fail("unavailable", voiceFallbackMessage)
+				_ = conn.Fail("unavailable", l.T(voiceFallback))
 				return
 			}
 			// Partial transcript already delivered: let the respondent
@@ -276,9 +277,9 @@ func (s *server) finishVoiceTake(conn *ws.Conn, survey store.PublicSurvey, buf *
 // isStreamEnd distinguishes "the model finished" from "the stream broke".
 func isStreamEnd(err error) bool { return errors.Is(err, io.EOF) }
 
-// voiceFallbackMessage is story 39: exceeding a quota must read as a
-// small inconvenience with an obvious way forward, not as a failure.
-const voiceFallbackMessage = "Voice isn't available right now — please type your answer."
+// voiceFallback is story 39: exceeding a quota must read as a small
+// inconvenience with an obvious way forward, not as a failure.
+const voiceFallback uitext.ID = "voice.error.unavailable"
 
 func (s *server) voiceAnswerSeconds() int {
 	if s.cfg.VoiceMaxSecondsPerAnswer > 0 {

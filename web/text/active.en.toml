@@ -963,3 +963,39 @@ body = "This download link has expired or doesn't belong to your workspace. Star
 [export.failed]
 generic = "Something went wrong building the export. Try again, or ask support."
 large = "This workspace is too large to export in one archive. Export individual surveys as CSV, or ask support for a copy."
+
+
+# ── A survey's languages: notices ──────────────────────────────────────
+
+[languages.notice]
+nothing = "Nothing left to translate in {{.Language}}."
+
+[languages.notice.drafted]
+one = "Drafted 1 translation in {{.Language}}. Read each one and save it to mark it reviewed."
+other = "Drafted {{.Count}} translations in {{.Language}}. Read each one and save it to mark it reviewed."
+
+[languages.notice.saved]
+one = "Saved and marked reviewed: 1 translation in {{.Language}}."
+other = "Saved and marked reviewed: {{.Count}} translations in {{.Language}}."
+
+[languages.notice.remaining]
+one = "1 question still to review."
+other = "{{.Count}} questions still to review."
+
+
+# ── Answering: choosing a language ─────────────────────────────────────
+
+[respond.language]
+original = "Original"
+
+
+# ── Dictation: what the server says ────────────────────────────────────
+
+[voice.error]
+stale = "This page has been open a while. Reload it to use voice again."
+reload = "Reload the page to use voice."
+silence = "I didn't hear anything. Try again, or type your answer."
+unavailable = "Voice isn't available right now — please type your answer."
+
+[voice.status]
+transcribing = "Transcribing…"
