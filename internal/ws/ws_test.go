@@ -196,3 +196,41 @@ func TestConn_SurvivesKeepaliveWhileStreaming(t *testing.T) {
 		t.Errorf("first frame = %s, want the answer chunk", first)
 	}
 }
+
+// TestConn_ClosesWithAHandshakeAfterTheLastFrame: the frames a handler
+// sends last are the ones that say how the conversation ended, and they
+// are only certain to arrive when the connection closes with a
+// handshake. A connection torn down instead can lose them in transit,
+// and a client that sees an unexplained close asks again.
+func TestConn_ClosesWithAHandshakeAfterTheLastFrame(t *testing.T) {
+	t.Parallel()
+	srv := serve(t, ws.Options{}, func(conn *ws.Conn) {
+		if _, err := conn.Receive(); err != nil {
+			t.Errorf("receive: %v", err)
+			return
+		}
+		_ = conn.Chunk("the answer")
+		_ = conn.Status("Added 5 questions")
+		_ = conn.Done()
+	})
+
+	client := dial(t, srv, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := client.Write(ctx, websocket.MessageText, []byte(`{"action":"generate"}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	for _, want := range []string{"the answer", "Added 5 questions", `"done"`} {
+		_, frame, err := client.Read(ctx)
+		if err != nil {
+			t.Fatalf("reading the frame carrying %q: %v", want, err)
+		}
+		if !strings.Contains(string(frame), want) {
+			t.Errorf("frame = %s, want it to carry %q", frame, want)
+		}
+	}
+	_, _, err := client.Read(ctx)
+	if status := websocket.CloseStatus(err); status != websocket.StatusNormalClosure {
+		t.Errorf("the connection ended with %v (close status %d), want a normal closure", err, status)
+	}
+}

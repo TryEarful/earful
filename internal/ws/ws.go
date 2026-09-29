@@ -163,10 +163,17 @@ func Accept(w http.ResponseWriter, r *http.Request, opts Options) (*Conn, error)
 // reader every ping sent during a long answer goes unanswered as far as
 // the server can tell, and keepalive ends a healthy connection in the
 // middle of the stream it exists to protect.
+//
+// The read is deliberately not bound to the connection's context. The
+// library answers a cancelled read by tearing the connection down, with
+// no closing handshake, and Close cancels that context on its way out:
+// the last frames a handler sent could then be lost in transit. Closing
+// the connection is what ends this read, which Close and the lifetime
+// cap both do.
 func (c *Conn) read() {
 	defer close(c.inbox)
 	for {
-		typ, data, err := c.conn.Read(c.ctx)
+		typ, data, err := c.conn.Read(context.Background())
 		select {
 		case c.inbox <- received{typ: typ, data: data, err: err}:
 		case <-c.ctx.Done():
