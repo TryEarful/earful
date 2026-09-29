@@ -165,12 +165,12 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, antibot.ErrFormTooFast):
 		s.logAbuse(r, "too_fast")
 		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
-			"That was quick! Take a moment to review your answers, then submit again.")
+			say(r, "respond.notice.quick"))
 		return
 	case err != nil:
 		s.logAbuse(r, "bad_form_token")
 		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
-			"This form had been open a while. Your answers are still here — review and submit again.")
+			say(r, "respond.notice.stale"))
 		return
 	}
 
@@ -188,8 +188,8 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 		if err := s.challenges.Verify(payload); err != nil {
 			s.logAbuse(r, "bad_challenge")
 			render(w, r, http.StatusForbidden, templates.RespondUnavailable(survey.Title,
-				"Couldn't verify your submission",
-				"The anti-abuse check didn't pass. Reload the page and try again."))
+				say(r, "respond.refused.check.title"),
+				say(r, "respond.refused.check.body")))
 			return
 		}
 		if !s.limitChallenged.Allow(limiterKey) {
@@ -249,8 +249,8 @@ func (s *server) respondChallenge(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) respondRateLimited(w http.ResponseWriter, r *http.Request, survey store.PublicSurvey) {
 	render(w, r, http.StatusTooManyRequests, templates.RespondUnavailable(survey.Title,
-		"Too many submissions",
-		"This survey has received a lot of submissions from your network just now. Wait a while and try again."))
+		say(r, "respond.refused.limited.title"),
+		say(r, "respond.refused.limited.body")))
 }
 
 // setAnsweredCookie marks this browser as having answered, so a revisit
@@ -375,8 +375,8 @@ func (s *server) respondUnavailable(w http.ResponseWriter, r *http.Request, surv
 	case domain.StatusClosed:
 		render(w, r, http.StatusGone, templates.RespondUnavailable(
 			survey.Title,
-			"This survey is closed",
-			"It's no longer accepting responses. If you think it should still be open, contact whoever sent you the link."))
+			say(r, "respond.refused.closed.title"),
+			say(r, "respond.refused.closed.body")))
 	default:
 		// Never published: from outside, indistinguishable from a link
 		// that was never valid.
@@ -389,15 +389,15 @@ func (s *server) respondUnavailable(w http.ResponseWriter, r *http.Request, surv
 func (s *server) respondInviteOnly(w http.ResponseWriter, r *http.Request, survey store.PublicSurvey) {
 	render(w, r, http.StatusForbidden, templates.RespondUnavailable(
 		survey.Title,
-		"This survey is invite-only",
-		"Answers are collected through personal invitation links. If you were invited, use the link from your email; otherwise ask whoever runs the survey for an invitation."))
+		say(r, "respond.refused.invited.title"),
+		say(r, "respond.refused.invited.body")))
 }
 
 func (s *server) respondNotFound(w http.ResponseWriter, r *http.Request) {
 	render(w, r, http.StatusNotFound, templates.RespondUnavailable(
 		"",
-		"Survey not found",
-		"This link doesn't lead to a survey. Check that you copied all of it, or ask whoever sent it for a fresh link."))
+		say(r, "respond.refused.missing.title"),
+		say(r, "respond.refused.missing.body")))
 }
 
 // parseSubmission reads answers out of the form in the shape each

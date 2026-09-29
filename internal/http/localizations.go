@@ -99,7 +99,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.aiMeter.Check(r.Context(), info.WorkspaceID); err != nil {
-		s.renderLocalizations(w, r, aiRefusalMessage(err), "")
+		s.renderLocalizations(w, r, aiRefusalMessage(text(r), err), "")
 		return
 	}
 
@@ -107,7 +107,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	s.recordTranslationUsage(r, info.WorkspaceID, survey.ID, chars)
 	if err != nil && len(translated) == 0 {
 		s.logger.Error("localization drafting failed", "error", err)
-		s.renderLocalizations(w, r, aiRefusalMessage(err), "")
+		s.renderLocalizations(w, r, aiRefusalMessage(text(r), err), "")
 		return
 	}
 
@@ -444,13 +444,13 @@ func (s *server) answersTranslate(w http.ResponseWriter, r *http.Request) {
 	translated, chars, err := s.translateAnswers(r, info.WorkspaceID, survey.ID, results, existing, lang)
 	s.recordTranslationUsage(r, info.WorkspaceID, survey.ID, chars)
 	if err != nil && translated == 0 {
-		s.renderResults(w, r, survey, results, aiRefusalMessage(err))
+		s.renderResults(w, r, survey, results, aiRefusalMessage(text(r), err))
 		return
 	}
 
 	notice := "Translated " + plural(translated, "answer", "answers") + " into " + domain.LanguageName(lang) + "."
 	if err != nil {
-		notice += " The rest stopped early: " + aiRefusalMessage(err)
+		notice += " The rest stopped early: " + aiRefusalMessage(text(r), err)
 	}
 	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"/results?lang="+lang+"&notice=translated",
 		http.StatusSeeOther)
@@ -508,5 +508,5 @@ func (s *server) translateModelName() string {
 			return candidate
 		}
 	}
-	return "an unnamed model"
+	return unnamedModel
 }

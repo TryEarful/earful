@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/google/uuid"
 
@@ -59,12 +58,9 @@ func (s *server) participantsImport(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "import participants", err)
 		return
 	}
-	notice := "Added " + strconv.Itoa(added) + " participants."
-	if added == 1 {
-		notice = "Added 1 participant."
-	}
+	notice := sayN(r, "editor.notice.added", added)
 	if invalid > 0 {
-		notice += " Skipped " + strconv.Itoa(invalid) + " entries that didn't look like email addresses."
+		notice += " " + sayN(r, "editor.notice.skipped", invalid)
 	}
 	s.renderSurveyPage(w, r, "", notice)
 }
@@ -81,7 +77,7 @@ func (s *server) participantsSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if survey.StatusAt(s.clock.Now()) != domain.StatusOpen {
-		s.renderSurveyPage(w, r, "Publish the survey (and keep it open) before sending invites — the links would lead to a dead page.", "")
+		s.renderSurveyPage(w, r, say(r, "editor.error.unpublished"), "")
 		return
 	}
 
@@ -90,15 +86,12 @@ func (s *server) participantsSend(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "send invites", err)
 		return
 	}
-	notice := "Sent " + strconv.Itoa(result.Sent) + " invites."
-	if result.Sent == 1 {
-		notice = "Sent 1 invite."
-	}
+	notice := sayN(r, "editor.notice.sent", result.Sent)
 	if result.Failed > 0 {
-		notice += " " + strconv.Itoa(result.Failed) + " failed and will be retried."
+		notice += " " + sayN(r, "editor.notice.failed", result.Failed)
 	}
 	if result.Remaining > 0 {
-		notice += " " + strconv.Itoa(result.Remaining) + " are waiting on the hourly sending cap and will go out on the next run."
+		notice += " " + sayN(r, "editor.notice.waiting", result.Remaining)
 	}
 	s.renderSurveyPage(w, r, "", notice)
 }
@@ -158,12 +151,12 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 	case errors.Is(err, antibot.ErrFormTooFast):
 		s.logAbuse(r, "too_fast")
 		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
-			"That was quick! Take a moment to review your answers, then submit again.", asParticipant)
+			say(r, "respond.notice.quick"), asParticipant)
 		return
 	case err != nil:
 		s.logAbuse(r, "bad_form_token")
 		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
-			"This form had been open a while. Your answers are still here — review and submit again.", asParticipant)
+			say(r, "respond.notice.stale"), asParticipant)
 		return
 	}
 

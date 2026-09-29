@@ -12,6 +12,17 @@ func say(r *http.Request, id uitext.ID, args ...uitext.Args) string {
 	return uitext.From(r.Context()).T(id, args...)
 }
 
+// sayN renders the form of a message that suits count.
+func sayN(r *http.Request, id uitext.ID, count int, args ...uitext.Args) string {
+	return uitext.From(r.Context()).N(id, count, args...)
+}
+
+// text is the wording a request is answered in, for a function that
+// words several things or is handed what it needs rather than a request.
+func text(r *http.Request) uitext.Localizer {
+	return uitext.From(r.Context())
+}
+
 // interfaceLanguage is the language a request is answered in.
 func interfaceLanguage(r *http.Request) string {
 	return uitext.From(r.Context()).Lang()

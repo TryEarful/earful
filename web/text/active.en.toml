@@ -776,3 +776,111 @@ revoked = "revoked"
 [editor.notice]
 unchanged = "Nothing to publish — the draft matches the version that's already live."
 published = "Published version {{.Version}}. Respondents now see this version."
+
+
+# ── Answering: notices and refusals ────────────────────────────────────
+
+[respond.notice]
+quick = "That was quick! Take a moment to review your answers, then submit again."
+stale = "This form had been open a while. Your answers are still here — review and submit again."
+
+[respond.refused.check]
+title = "Couldn't verify your submission"
+body = "The anti-abuse check didn't pass. Reload the page and try again."
+
+[respond.refused.limited]
+title = "Too many submissions"
+body = "This survey has received a lot of submissions from your network just now. Wait a while and try again."
+
+[respond.refused.closed]
+title = "This survey is closed"
+body = "It's no longer accepting responses. If you think it should still be open, contact whoever sent you the link."
+
+[respond.refused.invited]
+title = "This survey is invite-only"
+body = "Answers are collected through personal invitation links. If you were invited, use the link from your email; otherwise ask whoever runs the survey for an invitation."
+
+[respond.refused.missing]
+title = "Survey not found"
+body = "This link doesn't lead to a survey. Check that you copied all of it, or ask whoever sent it for a fresh link."
+
+
+# ── The survey editor: participants ────────────────────────────────────
+
+[editor.notice.added]
+one = "Added 1 participant."
+other = "Added {{.Count}} participants."
+
+# English has always used the one wording for every number.
+[editor.notice.skipped]
+one = "Skipped {{.Count}} entries that didn't look like email addresses."
+other = "Skipped {{.Count}} entries that didn't look like email addresses."
+
+[editor.notice.sent]
+one = "Sent 1 invite."
+other = "Sent {{.Count}} invites."
+
+# English has always used the one wording for every number.
+[editor.notice.failed]
+one = "{{.Count}} failed and will be retried."
+other = "{{.Count}} failed and will be retried."
+
+# English has always used the one wording for every number.
+[editor.notice.waiting]
+one = "{{.Count}} are waiting on the hourly sending cap and will go out on the next run."
+other = "{{.Count}} are waiting on the hourly sending cap and will go out on the next run."
+
+[editor.error]
+unpublished = "Publish the survey (and keep it open) before sending invites — the links would lead to a dead page."
+
+
+# ── Drafting questions with AI, and AI refused ─────────────────────────
+
+[generate.error]
+empty = "Describe what you want to ask about, and I'll draft some questions."
+empty_first = "Describe what you want to ask about first."
+silent = "The model didn't answer. Try again in a moment."
+save = "I drafted those but couldn't save them. Reload and try again."
+
+[generate.notice]
+nothing = "The model didn't return any usable questions. Try describing your goal differently."
+added_some = "Added {{.Added}} questions to your draft; {{.Skipped}} were skipped because they weren't valid questions."
+
+# English has always used the one wording for every number.
+[generate.notice.unusable]
+one = "None of the {{.Count}} drafted questions were usable. Try describing your goal differently."
+other = "None of the {{.Count}} drafted questions were usable. Try describing your goal differently."
+
+[generate.notice.added]
+one = "Added 1 question to your draft — edit it like any other."
+other = "Added {{.Count}} questions to your draft — edit them like any others."
+
+[ai.refused]
+quota = "This workspace has used its AI allowance for today. It resets tomorrow — everything else keeps working."
+paused = "AI features are paused for today while we keep costs in check. They'll be back tomorrow."
+absent = "AI isn't configured on this instance, so questions have to be written by hand."
+silent = "The AI service didn't respond. Try again in a moment."
+
+[ai.model]
+unnamed = "an unnamed model"
+
+
+# ── The Insight Summary: refusals and notes ────────────────────────────
+
+[results.insight.error]
+incomplete = "The analysis didn't complete. Try again in a moment."
+unreadable = "Couldn't read the responses just now."
+empty = "There are no responses to analyse yet."
+
+# English has always used the one wording for every number.
+[results.insight.stale.arrived]
+one = "{{.Count}} responses have arrived since this was written."
+other = "{{.Count}} responses have arrived since this was written."
+
+[results.insight.stale]
+changed = "The responses have changed since this was written."
+
+# How many responses a summary was written from. English has always used the one wording for every number.
+[results.insight.read]
+one = "{{.Count}} responses"
+other = "{{.Count}} responses"

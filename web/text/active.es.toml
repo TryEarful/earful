@@ -1425,3 +1425,181 @@ other = "No hay nada que publicar: el borrador coincide con la versión ya publi
 [editor.notice.published]
 hash = "sha1-84065ea23b0268b6f060c21a2cb010bb32443c64"
 other = "Se publicó la versión {{.Version}}. Quienes respondan verán ahora esta versión."
+
+
+# ── Responder: avisos y rechazos ───────────────────────────────────────
+
+[respond.notice.quick]
+hash = "sha1-9bcc1a5f0e76a19aff9020fc8dbe719fffa79e73"
+other = "¡Qué rapidez! Tómese un momento para revisar sus respuestas y vuelva a enviarlas."
+
+[respond.notice.stale]
+hash = "sha1-4876f53ffbf58bcb8bb583bdb9686be11cd343c6"
+other = "Este formulario llevaba un rato abierto. Sus respuestas siguen aquí: revíselas y vuelva a enviarlas."
+
+[respond.refused.check.title]
+hash = "sha1-cfe6ab941325c9770fc5bf5d51b83e20a4df167e"
+other = "No se pudo verificar su envío"
+
+[respond.refused.check.body]
+hash = "sha1-b3ebbedbae95b0da189b40037f1b74a7055aa601"
+other = "No se superó la comprobación contra abusos. Recargue la página e inténtelo de nuevo."
+
+[respond.refused.limited.title]
+hash = "sha1-da9b0fff179f6fc15d3c0eb97034dbe36c416071"
+other = "Demasiados envíos"
+
+[respond.refused.limited.body]
+hash = "sha1-a1cf604c494a188d953eea7c0fa6e9ecd4f8bd47"
+other = "Esta encuesta acaba de recibir muchos envíos desde su red. Espere un rato e inténtelo de nuevo."
+
+[respond.refused.closed.title]
+hash = "sha1-cb78bd14d4d37f0aea7a5b51c0c5b9d5745d4cc4"
+other = "Esta encuesta está cerrada"
+
+[respond.refused.closed.body]
+hash = "sha1-79d71ce21f3c2e8a88dcca0bcee14d92f53633e1"
+other = "Ya no acepta respuestas. Si cree que debería seguir abierta, escriba a quien le envió el enlace."
+
+[respond.refused.invited.title]
+hash = "sha1-6596a86733f2c337051c4c91275937a71f245b91"
+other = "Esta encuesta es solo por invitación"
+
+[respond.refused.invited.body]
+hash = "sha1-1d96ba7f53d899698512999a21f07dc3d12d409f"
+other = "Las respuestas se recogen mediante enlaces personales de invitación. Si le invitaron, use el enlace de su correo; si no, pida una invitación a quien organiza la encuesta."
+
+[respond.refused.missing.title]
+hash = "sha1-fd601ec01fe3c175a5a0ce3bcf1f579a19327a66"
+other = "No se encontró la encuesta"
+
+[respond.refused.missing.body]
+hash = "sha1-43cf342810125ab5f595142b57357b8484f863f0"
+other = "Este enlace no lleva a ninguna encuesta. Compruebe que lo copió entero, o pida un enlace nuevo a quien se lo envió."
+
+
+# ── El editor de encuestas: participantes ──────────────────────────────
+
+[editor.notice.added]
+hash = "sha1-238ab2ee5a0824c324b2c43848fec565a7fd3beb"
+one = "Se añadió 1 participante."
+many = "Se añadieron {{.Count}} participantes."
+other = "Se añadieron {{.Count}} participantes."
+
+[editor.notice.skipped]
+hash = "sha1-d4b3591f5e248bfc9c7e8a91454c370d536996b3"
+one = "Se omitió {{.Count}} entrada que no parecía un correo electrónico."
+many = "Se omitieron {{.Count}} entradas que no parecían correos electrónicos."
+other = "Se omitieron {{.Count}} entradas que no parecían correos electrónicos."
+
+[editor.notice.sent]
+hash = "sha1-bad40fe2c725af48a7bf0e3adf0c1926e2af1df1"
+one = "Se envió 1 invitación."
+many = "Se enviaron {{.Count}} invitaciones."
+other = "Se enviaron {{.Count}} invitaciones."
+
+[editor.notice.failed]
+hash = "sha1-0acdb94a4ee009ea96f5ef6f1f2ceffaf0e572a4"
+one = "{{.Count}} falló y se volverá a intentar."
+many = "{{.Count}} fallaron y se volverán a intentar."
+other = "{{.Count}} fallaron y se volverán a intentar."
+
+[editor.notice.waiting]
+hash = "sha1-86f4a310370f3a68300d32e9e05c3b9cf1f5b84c"
+one = "{{.Count}} espera por el límite de envíos por hora y saldrá en la próxima tanda."
+many = "{{.Count}} esperan por el límite de envíos por hora y saldrán en la próxima tanda."
+other = "{{.Count}} esperan por el límite de envíos por hora y saldrán en la próxima tanda."
+
+[editor.error.unpublished]
+hash = "sha1-484c43706229d876f64c0171e893a5f040103572"
+other = "Publique la encuesta (y manténgala abierta) antes de enviar invitaciones: los enlaces llevarían a una página sin salida."
+
+
+# ── Redactar preguntas con IA, y la IA rechazada ───────────────────────
+
+[generate.error.empty]
+hash = "sha1-d9eb67cf0c036bfecab6d63abff6d09f70525397"
+other = "Describa sobre qué quiere preguntar y redactaré algunas preguntas."
+
+[generate.error.empty_first]
+hash = "sha1-2c6fa31943b88963e3465ae4301dc0d7f8704a50"
+other = "Describa primero sobre qué quiere preguntar."
+
+[generate.error.silent]
+hash = "sha1-2fb2ea9583230c27681e2e813654ba210819bcf6"
+other = "El modelo no respondió. Inténtelo de nuevo en un momento."
+
+[generate.error.save]
+hash = "sha1-a4565e12098a7ce0e305547c988a2bfd432a5c4a"
+other = "Las redacté pero no pude guardarlas. Recargue la página e inténtelo de nuevo."
+
+[generate.notice.nothing]
+hash = "sha1-e5de30a9423023dd6c493fc4c6f3d2cb13ff8dbb"
+other = "El modelo no devolvió ninguna pregunta utilizable. Pruebe a describir su objetivo de otra manera."
+
+[generate.notice.unusable]
+hash = "sha1-688a04c0ef89f095bd2fc0f8c799129ba0d3df09"
+one = "La única pregunta redactada no era utilizable. Pruebe a describir su objetivo de otra manera."
+many = "Ninguna de las {{.Count}} preguntas redactadas era utilizable. Pruebe a describir su objetivo de otra manera."
+other = "Ninguna de las {{.Count}} preguntas redactadas era utilizable. Pruebe a describir su objetivo de otra manera."
+
+[generate.notice.added]
+hash = "sha1-3f9e4d84a6402ab6b36882418708848385df3456"
+one = "Se añadió 1 pregunta a su borrador: edítela como cualquier otra."
+many = "Se añadieron {{.Count}} preguntas a su borrador: edítelas como cualquier otra."
+other = "Se añadieron {{.Count}} preguntas a su borrador: edítelas como cualquier otra."
+
+[generate.notice.added_some]
+hash = "sha1-3031abbc2c1b840e45e44a6f02d4770ec188dbf3"
+other = "Se añadieron a su borrador {{.Added}} preguntas; se omitieron {{.Skipped}} porque no eran preguntas válidas."
+
+[ai.refused.quota]
+hash = "sha1-cb21c1e9f144b86f30f29382838dfee2ef2a3098"
+other = "Este espacio de trabajo ha agotado su cuota de IA de hoy. Se renueva mañana; todo lo demás sigue funcionando."
+
+[ai.refused.paused]
+hash = "sha1-24fc35f434727cf56be19e8ec0f63cd7c9104443"
+other = "Las funciones de IA están en pausa por hoy mientras mantenemos los costes bajo control. Volverán mañana."
+
+[ai.refused.absent]
+hash = "sha1-41ac78b6e9a81274619ed387bb43f34a38f3bd23"
+other = "La IA no está configurada en esta instalación, así que las preguntas hay que escribirlas a mano."
+
+[ai.refused.silent]
+hash = "sha1-b82d54e4d49659873f0322ada23fc61174dd3012"
+other = "El servicio de IA no respondió. Inténtelo de nuevo en un momento."
+
+[ai.model.unnamed]
+hash = "sha1-60df4dcb80e4b36b796b2ddc3d178f2895a7253a"
+other = "un modelo sin nombre"
+
+
+# ── El resumen de hallazgos: rechazos y notas ──────────────────────────
+
+[results.insight.error.incomplete]
+hash = "sha1-22a6296c31b226c888b24e08296ef7c869b562db"
+other = "El análisis no se completó. Inténtelo de nuevo en un momento."
+
+[results.insight.error.unreadable]
+hash = "sha1-ca5193c83c83c2eae62b668c0bcdb7acc381820b"
+other = "No se pudieron leer los envíos en este momento."
+
+[results.insight.error.empty]
+hash = "sha1-776d53b17aa90192baba0d9a2c706278aea94a3a"
+other = "Todavía no hay envíos que analizar."
+
+[results.insight.stale.arrived]
+hash = "sha1-6f4a876df6ff6440ab484bcaca56968c0141216d"
+one = "Ha llegado {{.Count}} envío desde que se escribió esto."
+many = "Han llegado {{.Count}} envíos desde que se escribió esto."
+other = "Han llegado {{.Count}} envíos desde que se escribió esto."
+
+[results.insight.stale.changed]
+hash = "sha1-7d2f385f429117565ca675c381028246afc4b9ba"
+other = "Los envíos han cambiado desde que se escribió esto."
+
+[results.insight.read]
+hash = "sha1-251efcf8ad06aa4671a86255988978111469f5c5"
+one = "{{.Count}} envío"
+many = "{{.Count}} envíos"
+other = "{{.Count}} envíos"

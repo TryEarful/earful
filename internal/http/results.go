@@ -61,7 +61,7 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 	}
 	insight := templates.InsightView{Available: s.canAnalyze()}
 	if run, err := s.surveys.LatestInsightRun(r.Context(), survey.ID); err == nil {
-		insight = viewInsight(run, results, s.canAnalyze())
+		insight = viewInsight(text(r), run, results, s.canAnalyze())
 	}
 	render(w, r, http.StatusOK, templates.SurveyResults(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyResultsData{

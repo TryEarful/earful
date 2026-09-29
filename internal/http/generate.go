@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strings"
 
@@ -64,12 +65,12 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	prompt := strings.TrimSpace(r.PostFormValue("prompt"))
 	if prompt == "" {
-		s.renderSurveyPage(w, r, "Describe what you want to ask about, and I'll draft some questions.", "")
+		s.renderSurveyPage(w, r, say(r, "generate.error.empty"), "")
 		return
 	}
 
 	if err := s.aiMeter.Check(r.Context(), info.WorkspaceID); err != nil {
-		s.renderSurveyPage(w, r, aiRefusalMessage(err), "")
+		s.renderSurveyPage(w, r, aiRefusalMessage(text(r), err), "")
 		return
 	}
 	stream, err := s.ai.Generate(r.Context(), ai.GenerateRequest{
@@ -77,7 +78,7 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 		Prompt: prompt,
 	})
 	if err != nil {
-		s.renderSurveyPage(w, r, aiRefusalMessage(err), "")
+		s.renderSurveyPage(w, r, aiRefusalMessage(text(r), err), "")
 		return
 	}
 	counted := ai.Counted(stream)
@@ -85,7 +86,7 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 	s.recordGeneration(r.Context(), info.WorkspaceID, survey.ID, prompt, counted.Chars())
 	if err != nil && output == "" {
 		s.logger.Error("question generation failed", "error", err)
-		s.renderSurveyPage(w, r, "The model didn't answer. Try again in a moment.", "")
+		s.renderSurveyPage(w, r, say(r, "generate.error.silent"), "")
 		return
 	}
 
@@ -94,7 +95,7 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "save generated questions", err)
 		return
 	}
-	s.renderSurveyPage(w, r, "", generationNotice(added, skipped))
+	s.renderSurveyPage(w, r, "", generationNotice(text(r), added, skipped))
 }
 
 // surveyGenerateSocket is the same operation with the questions visible
@@ -119,31 +120,31 @@ func (s *server) surveyGenerateSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	prompt := strings.TrimSpace(msg.Control.Param("prompt"))
 	if prompt == "" {
-		_ = conn.Fail("empty", "Describe what you want to ask about first.")
+		_ = conn.Fail("empty", say(r, "generate.error.empty_first"))
 		return
 	}
 
-	output, ok := s.streamGeneration(conn, info.WorkspaceID, survey.ID, prompt)
+	output, ok := s.streamGeneration(conn, text(r), info.WorkspaceID, survey.ID, prompt)
 	if !ok {
 		return
 	}
 	added, skipped, err := s.appendGenerated(conn.Context(), info.UserID, survey, output)
 	if err != nil {
 		s.logger.Error("saving generated questions failed", "error", err)
-		_ = conn.Fail("save", "I drafted those but couldn't save them. Reload and try again.")
+		_ = conn.Fail("save", say(r, "generate.error.save"))
 		return
 	}
-	_ = conn.Status(generationNotice(added, skipped))
+	_ = conn.Status(generationNotice(text(r), added, skipped))
 	_ = conn.Done()
 }
 
 // streamGeneration runs the model call, relaying text to the creator as
 // it arrives. The aiMeter.Check here is what
 // TestAIProviderCallsAreMetered requires, and what the € breaker needs.
-func (s *server) streamGeneration(conn *ws.Conn, workspaceID, surveyID uuid.UUID, prompt string) (string, bool) {
+func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID, surveyID uuid.UUID, prompt string) (string, bool) {
 	ctx := conn.Context()
 	if err := s.aiMeter.Check(ctx, workspaceID); err != nil {
-		_ = conn.Fail("quota", aiRefusalMessage(err))
+		_ = conn.Fail("quota", aiRefusalMessage(l, err))
 		return "", false
 	}
 	stream, err := s.ai.Generate(ctx, ai.GenerateRequest{
@@ -151,7 +152,7 @@ func (s *server) streamGeneration(conn *ws.Conn, workspaceID, surveyID uuid.UUID
 		Prompt: prompt,
 	})
 	if err != nil {
-		_ = conn.Fail("unavailable", aiRefusalMessage(err))
+		_ = conn.Fail("unavailable", aiRefusalMessage(l, err))
 		return "", false
 	}
 	counted := ai.Counted(stream)
@@ -173,7 +174,7 @@ func (s *server) streamGeneration(conn *ws.Conn, workspaceID, surveyID uuid.UUID
 			}
 			s.logger.Error("generation stream failed", "error", err)
 			if output.Len() == 0 {
-				_ = conn.Fail("unavailable", "The model didn't answer. Try again in a moment.")
+				_ = conn.Fail("unavailable", l.T("generate.error.silent"))
 				return "", false
 			}
 			// Partial output is still worth keeping: whole lines parse.
@@ -263,35 +264,46 @@ func parseGeneratedQuestions(output string) []domain.Question {
 	return questions
 }
 
-func generationNotice(added, skipped int) string {
+func generationNotice(l uitext.Localizer, added, skipped int) string {
 	switch {
 	case added == 0 && skipped == 0:
-		return "The model didn't return any usable questions. Try describing your goal differently."
+		return l.T("generate.notice.nothing")
 	case added == 0:
-		return fmt.Sprintf("None of the %d drafted questions were usable. Try describing your goal differently.", skipped)
-	case skipped == 0 && added == 1:
-		return "Added 1 question to your draft — edit it like any other."
+		return l.N("generate.notice.unusable", skipped)
 	case skipped == 0:
-		return fmt.Sprintf("Added %d questions to your draft — edit them like any others.", added)
+		return l.N("generate.notice.added", added)
 	default:
-		return fmt.Sprintf("Added %d questions to your draft; %d were skipped because they weren't valid questions.", added, skipped)
+		return l.T("generate.notice.added_some", uitext.Args{"Added": added, "Skipped": skipped})
 	}
 }
 
 // aiRefusalMessage turns a metering or capability error into something a
 // creator can act on. Quota and breaker are ordinary, temporary states,
 // not failures, and must not read like a crash (stories 21, 67).
-func aiRefusalMessage(err error) string {
+func aiRefusalMessage(l uitext.Localizer, err error) string {
 	switch {
 	case errors.Is(err, ai.ErrQuotaExceeded):
-		return "This workspace has used its AI allowance for today. It resets tomorrow — everything else keeps working."
+		return l.T("ai.refused.quota")
 	case errors.Is(err, ai.ErrBreakerTripped):
-		return "AI features are paused for today while we keep costs in check. They'll be back tomorrow."
+		return l.T("ai.refused.paused")
 	case errors.Is(err, ai.ErrUnsupported):
-		return "AI isn't configured on this instance, so questions have to be written by hand."
+		return l.T("ai.refused.absent")
 	default:
-		return "The AI service didn't respond. Try again in a moment."
+		return l.T("ai.refused.silent")
 	}
+}
+
+// unnamedModel is what is stored as the model of a summary or a
+// translation when the operator named none. It is a value, kept with
+// the run and written into exports, and modelLabel is what words it.
+const unnamedModel = "an unnamed model"
+
+// modelLabel is the name of a model as a reader is told it.
+func modelLabel(l uitext.Localizer, stored string) string {
+	if stored == unnamedModel {
+		return l.T("ai.model.unnamed")
+	}
+	return stored
 }
 
 // canGenerate is what the editor needs to decide whether to offer the AI

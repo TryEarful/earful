@@ -3,8 +3,8 @@ package http
 import (
 	"context"
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -81,7 +81,7 @@ func (s *server) surveyInsights(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.aiMeter.Check(r.Context(), info.WorkspaceID); err != nil {
-		s.renderResults(w, r, survey, results, aiRefusalMessage(err))
+		s.renderResults(w, r, survey, results, aiRefusalMessage(text(r), err))
 		return
 	}
 	prompt := insightPrompt(survey.Title, results)
@@ -90,7 +90,7 @@ func (s *server) surveyInsights(w http.ResponseWriter, r *http.Request) {
 		Prompt: prompt,
 	})
 	if err != nil {
-		s.renderResults(w, r, survey, results, aiRefusalMessage(err))
+		s.renderResults(w, r, survey, results, aiRefusalMessage(text(r), err))
 		return
 	}
 	counted := ai.Counted(stream)
@@ -99,7 +99,7 @@ func (s *server) surveyInsights(w http.ResponseWriter, r *http.Request) {
 	if err != nil && output == "" {
 		s.logger.Error("insight run failed", "error", err)
 		s.renderResults(w, r, survey, results,
-			"The analysis didn't complete. Try again in a moment.")
+			say(r, "results.insight.error.incomplete"))
 		return
 	}
 	if _, err := s.storeInsight(r.Context(), survey.ID, results, output); err != nil {
@@ -131,11 +131,11 @@ func (s *server) surveyInsightsSocket(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.surveys.SurveyResults(ctx, survey.ID)
 	if err != nil {
-		_ = conn.Fail("unavailable", "Couldn't read the responses just now.")
+		_ = conn.Fail("unavailable", say(r, "results.insight.error.unreadable"))
 		return
 	}
 	if len(results.Responses) == 0 {
-		_ = conn.Fail("empty", "There are no responses to analyse yet.")
+		_ = conn.Fail("empty", say(r, "results.insight.error.empty"))
 		return
 	}
 	// Cached: send the stored run and spend nothing.
@@ -147,13 +147,13 @@ func (s *server) surveyInsightsSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.aiMeter.Check(ctx, info.WorkspaceID); err != nil {
-		_ = conn.Fail("quota", aiRefusalMessage(err))
+		_ = conn.Fail("quota", aiRefusalMessage(text(r), err))
 		return
 	}
 	prompt := insightPrompt(survey.Title, results)
 	stream, err := s.ai.Analyze(ctx, ai.AnalyzeRequest{System: insightsSystemPrompt, Prompt: prompt})
 	if err != nil {
-		_ = conn.Fail("unavailable", aiRefusalMessage(err))
+		_ = conn.Fail("unavailable", aiRefusalMessage(text(r), err))
 		return
 	}
 	counted := ai.Counted(stream)
@@ -173,7 +173,7 @@ func (s *server) surveyInsightsSocket(w http.ResponseWriter, r *http.Request) {
 			if !isStreamEnd(recvErr) {
 				s.logger.Error("insight stream failed", "error", recvErr)
 				if output.Len() == 0 {
-					_ = conn.Fail("unavailable", "The analysis didn't complete. Try again in a moment.")
+					_ = conn.Fail("unavailable", say(r, "results.insight.error.incomplete"))
 					return
 				}
 			}
@@ -224,7 +224,7 @@ func (s *server) analyzeModelName() string {
 			return candidate
 		}
 	}
-	return "an unnamed model"
+	return unnamedModel
 }
 
 func (s *server) canAnalyze() bool { return ai.Supports(s.ai, ai.OpAnalyze) }
@@ -313,7 +313,7 @@ func sortStrings(items []string, less func(a, b string) bool) {
 
 // viewInsight formats a stored run for the results page: the summary,
 // and the label that keeps it from passing for data (story 53).
-func viewInsight(run store.InsightRun, results store.Results, available bool) templates.InsightView {
+func viewInsight(l uitext.Localizer, run store.InsightRun, results store.Results, available bool) templates.InsightView {
 	view := templates.InsightView{Available: available}
 	if run.Output == "" {
 		return view
@@ -321,17 +321,16 @@ func viewInsight(run store.InsightRun, results store.Results, available bool) te
 	watermark, count := results.Watermark()
 	view.Present = true
 	view.Output = run.Output
-	view.Model = run.Model
+	view.Model = modelLabel(l, run.Model)
 	view.GeneratedAt = run.CreatedAt.Format(dateTimeLayout)
 	view.ResponseCount = run.ResponseCount
 	view.Stale = !run.Fresh(watermark, count)
 	if view.Stale {
-		view.StaleNote = fmt.Sprintf("%d responses have arrived since this was written.",
-			count-run.ResponseCount)
+		view.StaleNote = l.N("results.insight.stale.arrived", count-run.ResponseCount)
 		if count-run.ResponseCount <= 0 {
-			view.StaleNote = "The responses have changed since this was written."
+			view.StaleNote = l.T("results.insight.stale.changed")
 		}
 	}
-	view.CountLabel = strconv.Itoa(run.ResponseCount) + " responses"
+	view.CountLabel = l.N("results.insight.read", run.ResponseCount)
 	return view
 }
