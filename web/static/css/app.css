@@ -584,6 +584,10 @@ fieldset {
   text-align: center;
   white-space: nowrap;
   font-variant: tabular-nums;
+  /* The shadow under a cap is part of how it looks but not of where it
+     is, so a cap centred by its box looks low by half its shadow. */
+  position: relative;
+  top: -0.05rem;
 }
 
 /* Keys with the words that join them: "+" for keys pressed together,
@@ -591,12 +595,12 @@ fieldset {
    are the button's own text, smaller; only the keys are keycaps. */
 .key-combo {
   display: none;
-  /* The words and the legends on the keys share a baseline. A cap is
-     padded evenly around its legend, so it sits around that line and
-     needs no centring of its own. */
-  align-items: baseline;
-  gap: 0.25rem;
-  font-size: 0.68rem;
+  /* Centred, caps and words alike: a cap is a box, and a box that is
+     not on the centre of the button it sits in looks dropped whatever
+     its legend is aligned to. */
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
   font-weight: 400;
   white-space: nowrap;
   vertical-align: middle;
@@ -1091,22 +1095,31 @@ fieldset {
   gap: 0.6rem;
 }
 
-/* The icon, the word and the keys on one line. Everything that is text
-   stands on one baseline — the button's word, the words of the hint,
-   the legends on the keys — because text set at two sizes and centred
-   on its middle has two baselines, and "Hold" rides above "Dictate".
-   The icon and the live dot are not text, and are centred on the line. */
+/* The icon, the word and the keys on one line, each centred on the
+   button. Two things pull against each other here. Boxes want centring:
+   a cap off the button's centre looks dropped. Words want a baseline:
+   text at two sizes centred on its middle has two baselines, and the
+   smaller rides above the larger. So everything is centred, the words
+   of the hint are set close to the size of the button's word, which
+   leaves under a pixel between their baselines, and they are moved
+   down by that much. The figure is the difference in size times the
+   distance from a line's middle to its baseline, which for the system
+   fonts is a little over a third of an em. */
 .voice-actions button {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 0.4rem;
 }
 
 .voice-actions .voice-icon,
 .voice-actions .voice-button.recording::before {
-  align-self: center;
   margin-right: 0;
+}
+
+.voice-actions .key-word {
+  position: relative;
+  top: 0.05rem;
 }
 
 .paged .voice-actions button > .key-combo {
