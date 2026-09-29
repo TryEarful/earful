@@ -25,19 +25,28 @@ type Participant struct {
 	Suppressed  bool
 }
 
-// Status is the single word the participant list shows.
+// Where a participant stands.
+const (
+	ParticipantSubmitted  = "Submitted"
+	ParticipantBounced    = "Bounced"
+	ParticipantSuppressed = "Suppressed"
+	ParticipantInvited    = "Invited"
+	ParticipantPending    = "Pending"
+)
+
+// Status is where the participant stands, as one of the values above.
 func (p Participant) Status() string {
 	switch {
 	case p.SubmittedAt != nil:
-		return "Submitted"
+		return ParticipantSubmitted
 	case p.BouncedAt != nil:
-		return "Bounced"
+		return ParticipantBounced
 	case p.Suppressed:
-		return "Suppressed"
+		return ParticipantSuppressed
 	case p.InvitedAt != nil:
-		return "Invited"
+		return ParticipantInvited
 	default:
-		return "Pending"
+		return ParticipantPending
 	}
 }
 

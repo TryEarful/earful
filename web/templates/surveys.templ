@@ -29,7 +29,7 @@ func statusClass(s domain.Status) string {
 }
 
 templ StatusChip(s domain.Status) {
-	<span class={ statusClass(s) }>{ string(s) }</span>
+	<span class={ statusClass(s) }>{ statusName(ctx, s) }</span>
 }
 
 templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) {
@@ -149,7 +149,7 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 	<li class="question">
 		<details>
 			<summary>
-				<span class="qtype">{ q.Type.Label() }</span>
+				<span class="qtype">{ typeName(ctx, q.Type) }</span>
 				<span class="qtext">{ q.Text }</span>
 				if q.Required {
 					<span class="chip chip-small">{ t(ctx, "editor.question.required") }</span>
@@ -256,7 +256,7 @@ templ addQuestionForm(csrf string, surveyID string) {
 				<span>{ t(ctx, "editor.add.type") }</span>
 				<select name="type" required>
 					for _, kind := range domain.QuestionTypes {
-						<option value={ string(kind) }>{ kind.Label() } — { kind.Hint() }</option>
+						<option value={ string(kind) }>{ typeName(ctx, kind) } — { typeHint(ctx, kind) }</option>
 					}
 				</select>
 			</label>

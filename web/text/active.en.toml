@@ -1036,3 +1036,154 @@ limit = "a survey can carry at most {{.Limit}} languages"
 [editor.refused]
 # The "store:" has always been shown.
 import = "store: import at most {{.Limit}} addresses at a time"
+
+
+# ── Where a survey stands ──────────────────────────────────────────────
+
+[survey.status]
+draft = "Draft"
+open = "Open"
+closed = "Closed"
+
+
+# ── The kinds of question ──────────────────────────────────────────────
+
+[question.type.long_text]
+name = "Long text"
+hint = "An open answer. Respondents can speak it instead of typing."
+
+[question.type.short_text]
+name = "Short text"
+hint = "A word or a line — a name, a role, a city."
+
+[question.type.single_choice]
+name = "Single choice"
+hint = "Pick exactly one option."
+
+[question.type.multiple_choice]
+name = "Multiple choice"
+hint = "Pick any number of options."
+
+[question.type.rating_scale]
+name = "Rating scale"
+hint = "A numeric scale, e.g. 1–5."
+
+[question.type.nps]
+name = "Net Promoter Score"
+hint = "The standard 0–10 recommendation question."
+
+[question.type.yes_no]
+name = "Yes / No"
+hint = "A straight yes or no."
+
+[question.type.dropdown]
+name = "Dropdown"
+hint = "One option from a long list, in a compact control."
+
+
+# ── Where a participant stands ─────────────────────────────────────────
+
+[participant.status]
+submitted = "Submitted"
+bounced = "Bounced"
+suppressed = "Suppressed"
+invited = "Invited"
+pending = "Pending"
+
+
+# ── The audience, in groups ────────────────────────────────────────────
+
+[audience.group]
+unknown = "Other"
+
+[audience.device]
+phone = "Phone"
+tablet = "Tablet"
+desktop = "Desktop"
+
+
+# ── The names of languages ─────────────────────────────────────────────
+
+[language.ar]
+name = "Arabic"
+
+[language.cs]
+name = "Czech"
+
+[language.da]
+name = "Danish"
+
+[language.de]
+name = "German"
+
+[language.el]
+name = "Greek"
+
+[language.en]
+name = "English"
+
+[language.es]
+name = "Spanish"
+
+[language.fi]
+name = "Finnish"
+
+[language.fr]
+name = "French"
+
+[language.he]
+name = "Hebrew"
+
+[language.hi]
+name = "Hindi"
+
+[language.hu]
+name = "Hungarian"
+
+[language.id]
+name = "Indonesian"
+
+[language.it]
+name = "Italian"
+
+[language.ja]
+name = "Japanese"
+
+[language.ko]
+name = "Korean"
+
+[language.nb]
+name = "Norwegian"
+
+[language.nl]
+name = "Dutch"
+
+[language.pl]
+name = "Polish"
+
+[language.pt]
+name = "Portuguese"
+
+[language.pt_br]
+name = "Portuguese (Brazil)"
+
+[language.ro]
+name = "Romanian"
+
+[language.ru]
+name = "Russian"
+
+[language.sv]
+name = "Swedish"
+
+[language.tr]
+name = "Turkish"
+
+[language.uk]
+name = "Ukrainian"
+
+[language.vi]
+name = "Vietnamese"
+
+[language.zh]
+name = "Chinese"

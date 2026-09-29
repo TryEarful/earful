@@ -71,11 +71,11 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 			Questions:     viewQuestionResults(text(r), results, translations),
 			CanTranslate:  s.canTranslate(),
 			TranslateLang: lang,
-			TranslateName: domain.LanguageName(lang),
+			TranslateName: languageName(text(r), lang),
 			Insight:       insight,
 			Notice:        notice,
 			TableHeaders:  tableHeaders(text(r), results),
-			Table:         viewResponseTable(results),
+			Table:         viewResponseTable(text(r), results),
 		}))
 }
 
@@ -88,7 +88,7 @@ func viewQuestionResults(l uitext.Localizer, results store.Results, translations
 		view := templates.QuestionResultsView{
 			IdentityID:  question.IdentityID,
 			Type:        question.Type,
-			TypeLabel:   question.Type.Label(),
+			TypeLabel:   templates.Named(l, templates.QuestionTypeName(question.Type), string(question.Type)),
 			Text:        question.Text,
 			Answered:    len(question.Answers),
 			SkippedNote: skippedNote(l, len(question.Answers), len(results.Responses)),
@@ -281,7 +281,7 @@ func tableHeaders(l uitext.Localizer, results store.Results) []string {
 	return headers
 }
 
-func viewResponseTable(results store.Results) []templates.ResponseRowView {
+func viewResponseTable(l uitext.Localizer, results store.Results) []templates.ResponseRowView {
 	out := make([]templates.ResponseRowView, 0, len(results.Responses))
 	for _, response := range results.Responses {
 		row := templates.ResponseRowView{
@@ -291,7 +291,7 @@ func viewResponseTable(results store.Results) []templates.ResponseRowView {
 			Participant:  participantLabel(response.ParticipantEmail),
 		}
 		for _, question := range results.Questions {
-			row.Cells = append(row.Cells, truncateLabel(response.Answers[question.IdentityID].Display()))
+			row.Cells = append(row.Cells, truncateLabel(displayAnswer(l, response.Answers[question.IdentityID])))
 		}
 		out = append(out, row)
 	}
@@ -381,7 +381,7 @@ func csvFilename(title string) string {
 // suppressedBuckets drops anything below the n < 5 threshold rather than
 // rounding it or lumping it into "other" — an "other: 1" is just as
 // revealing when the sample is small.
-func suppressedBuckets(stats []store.SurveyStat) []templates.CountView {
+func suppressedBuckets(l uitext.Localizer, stats []store.SurveyStat) []templates.CountView {
 	total := 0
 	for _, stat := range stats {
 		if !audience.Suppressed(stat.Count) {
@@ -398,7 +398,7 @@ func suppressedBuckets(stats []store.SurveyStat) []templates.CountView {
 			percent = int(float64(stat.Count)/float64(total)*100 + 0.5)
 		}
 		out = append(out, templates.CountView{
-			Label: stat.Bucket, Count: stat.Count,
+			Label: audienceGroup(l, stat.Metric, stat.Bucket), Count: stat.Count,
 			Percent: percent, Share: strconv.Itoa(percent) + "%",
 		})
 	}

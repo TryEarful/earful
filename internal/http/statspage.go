@@ -273,7 +273,7 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 	for _, stop := range report.Questions {
 		row := templates.QuestionStopView{
 			Text:      stop.Question.Text,
-			TypeLabel: stop.Question.Type.Label(),
+			TypeLabel: templates.Named(l, templates.QuestionTypeName(stop.Question.Type), string(stop.Question.Type)),
 			Required:  stop.Question.Required,
 			Stopped:   stop.Stopped,
 		}
@@ -292,9 +292,9 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 	for _, stat := range report.Audience {
 		byMetric[stat.Metric] = append(byMetric[stat.Metric], stat)
 	}
-	data.Browsers = suppressedBuckets(byMetric[store.MetricBrowser])
-	data.Devices = suppressedBuckets(byMetric[store.MetricDevice])
-	data.Countries = suppressedBuckets(byMetric[store.MetricCountry])
+	data.Browsers = suppressedBuckets(l, byMetric[store.MetricBrowser])
+	data.Devices = suppressedBuckets(l, byMetric[store.MetricDevice])
+	data.Countries = suppressedBuckets(l, byMetric[store.MetricCountry])
 	data.HasAudience = len(data.Browsers)+len(data.Devices)+len(data.Countries) > 0
 	data.SuppressionNote = l.T("stats.hidden.note", uitext.Args{"Limit": audience.SuppressBelow})
 	return data

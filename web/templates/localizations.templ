@@ -54,7 +54,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 	<section class="card" id={ "lang-" + lang.Code }>
 		<div class="title-row">
-			<h2>{ lang.Name } <span class="muted">({ lang.Code })</span></h2>
+			<h2>{ lang.Label } <span class="muted">({ lang.Code })</span></h2>
 			if lang.Ready {
 				<span class="chip chip-open">{ t(ctx, "languages.status.reviewed") }</span>
 			} else {
@@ -88,7 +88,7 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 							<p class="muted">{ t(ctx, "languages.question.unreviewed") }</p>
 						}
 						<label class="field">
-							<span>{ lang.Name }</span>
+							<span>{ lang.Label }</span>
 							<textarea name={ "t_" + q.IdentityID } rows="2">{ q.Text }</textarea>
 						</label>
 						if q.NeedsOptions {

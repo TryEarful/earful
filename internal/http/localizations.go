@@ -38,7 +38,7 @@ func (s *server) renderLocalizations(w http.ResponseWriter, r *http.Request, err
 	render(w, r, http.StatusOK, templates.Localizations(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.LocalizationsData{
 			Survey:       viewSurvey(survey, s.clock.Now()),
-			Languages:    viewLanguages(draft),
+			Languages:    viewLanguages(text(r), draft),
 			Questions:    draft.Questions,
 			CanTranslate: s.canTranslate(),
 			Error:        errMsg,
@@ -94,7 +94,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	lang := domain.NormalizeLang(r.PathValue("lang"))
 	pending := draft.Pending(lang)
 	if len(pending) == 0 {
-		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": domain.LanguageName(lang)}))
+		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": languageName(text(r), lang)}))
 		return
 	}
 
@@ -125,7 +125,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderLocalizations(w, r, "",
-		sayN(r, "languages.notice.drafted", len(translated), uitext.Args{"Language": domain.LanguageName(lang)}))
+		sayN(r, "languages.notice.drafted", len(translated), uitext.Args{"Language": languageName(text(r), lang)}))
 }
 
 // translateQuestions runs one model call per question, re-checking the
@@ -194,7 +194,7 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notice := sayN(r, "languages.notice.saved", saved, uitext.Args{"Language": domain.LanguageName(lang)})
+	notice := sayN(r, "languages.notice.saved", saved, uitext.Args{"Language": languageName(text(r), lang)})
 	if remaining := len(draft.Pending(lang)); remaining > 0 {
 		notice += " " + sayN(r, "languages.notice.remaining", remaining)
 	}
@@ -220,14 +220,15 @@ func localizationsPath(surveyID uuid.UUID, lang string) string {
 
 // viewLanguages describes each language's state: how much is translated,
 // how much is still waiting for a person to read it.
-func viewLanguages(draft domain.Draft) []templates.LanguageView {
+func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageView {
 	out := make([]templates.LanguageView, 0, len(draft.Localizations))
 	for _, lang := range draft.Languages() {
 		localization := draft.Localizations[lang]
 		pending := draft.Pending(lang)
 		view := templates.LanguageView{
 			Code:         lang,
-			Name:         domain.LanguageName(lang),
+			Name:         languageName(l, lang),
+			Label:        languageLabel(l, lang),
 			Total:        len(draft.Questions),
 			Reviewed:     len(draft.Questions) - len(pending),
 			PendingCount: len(pending),
@@ -367,7 +368,7 @@ func viewLanguageChoices(version store.ServedVersion, r *http.Request) []templat
 	for _, lang := range version.Languages {
 		choices = append(choices, templates.LanguageChoice{
 			Code:      lang,
-			Name:      domain.LanguageName(lang),
+			Name:      languageLabel(text(r), lang),
 			Selected:  version.Lang == lang,
 			Suggested: version.Lang == "" && lang == preferred,
 		})

@@ -103,8 +103,8 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 			return
 		}
 		for _, p := range participants {
-			view := templates.ParticipantView{Email: p.Email, Status: p.Status()}
-			if view.Status == "Pending" {
+			view := templates.ParticipantView{Email: p.Email, Status: participantStatus(text(r), p.Status())}
+			if p.Status() == store.ParticipantPending {
 				data.PendingCount++
 			}
 			data.Participants = append(data.Participants, view)

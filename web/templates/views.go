@@ -244,8 +244,11 @@ type LocalizationsData struct {
 
 // LanguageView is one language and how far along it is.
 type LanguageView struct {
-	Code         string
+	Code string
+	// Name is the language as a sentence names it, and Label as it
+	// stands on its own: a heading, a field's label.
 	Name         string
+	Label        string
 	Total        int
 	Reviewed     int
 	PendingCount int

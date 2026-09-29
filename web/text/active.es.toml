@@ -1892,3 +1892,242 @@ other = "una encuesta admite como máximo {{.Limit}} idiomas"
 [editor.refused.import]
 hash = "sha1-ec24e3beddd70786574fe0e7f0111f967e6a8d52"
 other = "importe como máximo {{.Limit}} direcciones cada vez"
+
+
+# ── En qué estado está una encuesta ────────────────────────────────────
+
+[survey.status.draft]
+hash = "sha1-23d33e22acfcb9ecddb4a85f10607dc4ff49e23c"
+other = "Borrador"
+
+[survey.status.open]
+hash = "sha1-cf9b77061f7b3126b49d50a6fa68f7ca8c26b7a3"
+other = "Abierta"
+
+[survey.status.closed]
+hash = "sha1-88d86b7721d587644e9c4cf33a084202cb3b0ff0"
+other = "Cerrada"
+
+
+# ── Los tipos de pregunta ──────────────────────────────────────────────
+
+[question.type.long_text.name]
+hash = "sha1-862b905c967baf269ff94dab8dddefb147ab329d"
+other = "Texto largo"
+
+[question.type.long_text.hint]
+hash = "sha1-d993ee91768072e76fb1980579159d7a87f31bf9"
+other = "Una respuesta abierta. Quien responde puede decirla en vez de escribirla."
+
+[question.type.short_text.name]
+hash = "sha1-acea3b355f8c6ca067551d39fbd15c1b657c8a22"
+other = "Texto corto"
+
+[question.type.short_text.hint]
+hash = "sha1-13a1542ead7ccb11a6c07e10967b1c837b229dc4"
+other = "Una palabra o una línea: un nombre, un cargo, una ciudad."
+
+[question.type.single_choice.name]
+hash = "sha1-68e3e01b2c0b7734a576d1d4b77634823fab87c1"
+other = "Selección única"
+
+[question.type.single_choice.hint]
+hash = "sha1-562e5371cffc6dec7bbf52ba71d8c458072d3620"
+other = "Se elige exactamente una opción."
+
+[question.type.multiple_choice.name]
+hash = "sha1-b88936a23af9f0d4355b377812d49b5e6e513657"
+other = "Selección múltiple"
+
+[question.type.multiple_choice.hint]
+hash = "sha1-503448b7e6d029184409550bdb9224c86556809d"
+other = "Se elige cualquier número de opciones."
+
+[question.type.rating_scale.name]
+hash = "sha1-4e0841e954cf5b6828f948259ce5d5b30c2d1834"
+other = "Escala de valoración"
+
+[question.type.rating_scale.hint]
+hash = "sha1-28d143583280a9428c69e762922d92c16c8a5b08"
+other = "Una escala numérica, p. ej., del 1 al 5."
+
+[question.type.nps.name]
+hash = "sha1-df06d4a631773177430fe15c805c4fa7168a295f"
+other = "Net Promoter Score"
+
+[question.type.nps.hint]
+hash = "sha1-f546229f3400eae81aed9f482889fbf5e55e8c9a"
+other = "La pregunta habitual de recomendación, del 0 al 10."
+
+[question.type.yes_no.name]
+hash = "sha1-0c62237499922441f0644621a77b6a39c2de72ee"
+other = "Sí / No"
+
+[question.type.yes_no.hint]
+hash = "sha1-dd511f6362be151a75cbe69abef41dc224255459"
+other = "Un sí o un no, sin más."
+
+[question.type.dropdown.name]
+hash = "sha1-fc2d12b944acebe30dd287a5a171feeca740c24d"
+other = "Lista desplegable"
+
+[question.type.dropdown.hint]
+hash = "sha1-02f192b138365f453543a5f934c7430d3e4a1e83"
+other = "Una opción de una lista larga, en un control compacto."
+
+
+# ── En qué estado está un participante ─────────────────────────────────
+
+[participant.status.submitted]
+hash = "sha1-2e00359b9802d1fa28aa05450482d8df1c0cf61f"
+other = "Respondió"
+
+[participant.status.bounced]
+hash = "sha1-dfe939fe6b9753e92cacfcc5cd50937ab0d0ae31"
+other = "Rebotado"
+
+[participant.status.suppressed]
+hash = "sha1-fce88db5f53f934ae001018503352b5ba6d1d4d5"
+other = "Suprimido"
+
+[participant.status.invited]
+hash = "sha1-53469df1c48ff6abdcf1b528fd8c8ac2baf05099"
+other = "Invitado"
+
+[participant.status.pending]
+hash = "sha1-96f608c16cef16caa06bf38901fb5f618a35a70b"
+other = "Pendiente"
+
+
+# ── La audiencia, por grupos ───────────────────────────────────────────
+
+[audience.group.unknown]
+hash = "sha1-6e6a6f2086bb5fe5dbfd17d8d5f502d48759834b"
+other = "Otro"
+
+[audience.device.phone]
+hash = "sha1-77064d5265236e0ac252f3fc4a5ba7b274b6a583"
+other = "Teléfono"
+
+[audience.device.tablet]
+hash = "sha1-fabcacd2a76a1a809975d60d7982c2a1035ab1c0"
+other = "Tableta"
+
+[audience.device.desktop]
+hash = "sha1-532c67fe1b5afae15d2d08fba7a78de0f63cc4b5"
+other = "Ordenador"
+
+
+# ── Los nombres de los idiomas ─────────────────────────────────────────
+
+[language.ar.name]
+hash = "sha1-af4f4762f9bd3f0f4a10caf5b6e63dc4ce543724"
+other = "árabe"
+
+[language.cs.name]
+hash = "sha1-eea467c6cfe01f36237780838f0a1cff68eb889d"
+other = "checo"
+
+[language.da.name]
+hash = "sha1-9f9f264815f8de2fa0a0e756083fbbf633ed8ba1"
+other = "danés"
+
+[language.de.name]
+hash = "sha1-da91388c72d3e31da19dcd85c97374197748485d"
+other = "alemán"
+
+[language.el.name]
+hash = "sha1-59d5f5b13f13f6d5e8e88a5a92e137f7d64b2954"
+other = "griego"
+
+[language.en.name]
+hash = "sha1-649df08a448ee3fa90f3746baaf6b0907df42c91"
+other = "inglés"
+
+[language.es.name]
+hash = "sha1-8df7f1b361b2af42d36011e00d22c0f9891ec0b0"
+other = "español"
+
+[language.fi.name]
+hash = "sha1-57eef27b1643e8b06fcc0444b2a3519d01b2cef8"
+other = "finés"
+
+[language.fr.name]
+hash = "sha1-44389f6a466eaabf5c1db729e369511134e2b03b"
+other = "francés"
+
+[language.he.name]
+hash = "sha1-348d00693e12bc983bd092677b90434b5a4d869e"
+other = "hebreo"
+
+[language.hi.name]
+hash = "sha1-c9e6b253fc34a7155f97dc0aab1c389d34cafdad"
+other = "hindi"
+
+[language.hu.name]
+hash = "sha1-80cb96f852d1ce7ae9b00c59c13912122674f7ce"
+other = "húngaro"
+
+[language.id.name]
+hash = "sha1-2339b8ad3625abec50c5fec9ccfe1b4c0adb5b6e"
+other = "indonesio"
+
+[language.it.name]
+hash = "sha1-485b57adcc80650a0f376fe516e0ea35fef68007"
+other = "italiano"
+
+[language.ja.name]
+hash = "sha1-9239c22d1d1c990ca8c206cb408b345a3ec8114c"
+other = "japonés"
+
+[language.ko.name]
+hash = "sha1-dec66c5bf0f7fe4cc038ac871def8eb1ac31c146"
+other = "coreano"
+
+[language.nb.name]
+hash = "sha1-79b723002f87708ebc11fd4f3b902a03f7c9a5c1"
+other = "noruego"
+
+[language.nl.name]
+hash = "sha1-334a85f1b16e32b6ba9a69313c6f584edef482cc"
+other = "neerlandés"
+
+[language.pl.name]
+hash = "sha1-d011986407b1110e57283981ea38a369075023b8"
+other = "polaco"
+
+[language.pt.name]
+hash = "sha1-23882c575954a0789bf02aba9e6dd01f539bc738"
+other = "portugués"
+
+[language.pt_br.name]
+hash = "sha1-f3f91e1ec3e0ae32e56bc723e25644fbcc1e3fe2"
+other = "portugués (Brasil)"
+
+[language.ro.name]
+hash = "sha1-cfd5233f6c25112a7ae3ff91e4acc195f899f25f"
+other = "rumano"
+
+[language.ru.name]
+hash = "sha1-74ad93cbebf587ac46ab0ef1e3f24139ddd3f535"
+other = "ruso"
+
+[language.sv.name]
+hash = "sha1-04a422d38c95415cece1ac86e1ad2a1030048c03"
+other = "sueco"
+
+[language.tr.name]
+hash = "sha1-ab650a1a4b8fdf3a4053ce8d277d335dd82e5447"
+other = "turco"
+
+[language.uk.name]
+hash = "sha1-515451058797b204e188dd70f8d20f32dacca327"
+other = "ucraniano"
+
+[language.vi.name]
+hash = "sha1-1d6b8a691f0d907efa971075035a145a937381ac"
+other = "vietnamita"
+
+[language.zh.name]
+hash = "sha1-15dc18865567bcc98554a72a8036e1b64a8b85d5"
+other = "chino"
