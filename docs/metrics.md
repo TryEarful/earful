@@ -15,8 +15,8 @@ of the product's own objects.
 |---|---|---|
 | **Accounts** | Users not soft-deleted. | Growth; also the denominator for activation. |
 | **Workspaces** | Workspaces not soft-deleted. One per account today (MVP is sole-member), so this tracks Accounts until member invites ship. |
-| **Surveys** | Surveys not soft-deleted, drafts included. | A gap between this and Published surveys means people start and stop. |
-| **Published surveys** | Surveys with at least one Survey Version. | The real activation metric: a draft nobody published helped nobody. |
+| **Surveys** | Surveys not soft-deleted, drafts included. A Starter Survey is counted once its owner has published a version of it. | A gap between this and Published surveys means people start and stop. |
+| **Published surveys** | Surveys with at least one Survey Version. For a Starter Survey, at least two. | The real activation metric: a draft nobody published helped nobody. |
 | **Responses** | Responses not soft-deleted, across every survey. | The product's actual output. |
 | **Participants invited** | Participant rows, i.e. addresses imported into invited surveys. | Not "emails sent": sending is drip-capped and may lag. |
 | **Completion rate** | `completion ÷ start` summed over the unlinked survey counters, the undated totals and the per-day rows together (ADR-0009, ADR-0012). | See the caveats below — it is an underestimate. |
@@ -48,6 +48,14 @@ cohort, no session replay — not because it would be hard, but because
 the product's promise to respondents is that it does not do that. If a
 future question needs per-person data to answer, the answer is that we
 do not answer it.
+
+**A Starter Survey is nobody's doing until somebody changes it.** Every
+workspace is created holding one, already published (ADR-0015). Counted
+like any other it would add one to Surveys and one to Published surveys
+with every signup, and both would become Accounts under another name.
+Its first version is therefore not counted, and its second is: that is
+a creator publishing. Responses to it are counted from the first,
+because somebody did give them.
 
 **Soft-deleted data disappears from these counts immediately** and is
 erased 30 days later. A sudden drop is usually somebody deleting a

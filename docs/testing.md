@@ -109,9 +109,14 @@ creates and migrates `<base>_purge` on first use) and **does not call
 through the real application, time-travel `app.Clock`, assert on what
 survives.
 
-This is the only test in the repository that needs its own database. If a
-second one appears, ask hard whether the feature really has to be
-global.
+Two suites need a database of their own, and both for the same reason:
+what they test is a fact about the whole database. The other is the
+founder metrics' totals
+([adminmetrics_test.go](../internal/http/adminmetrics_test.go)), which
+are counts of every survey on the instance; the test reads them before
+and after what it does, and in a shared database somebody else's survey
+would arrive in between. If a third appears, ask hard whether the
+feature really has to be global.
 
 ### Private-beta helpers (M12)
 

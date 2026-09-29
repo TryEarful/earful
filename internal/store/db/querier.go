@@ -170,6 +170,11 @@ type Querier interface {
 	// Nothing here is added to a respondent page and no third-party
 	// analytics exists to add (ADR-0006). These are counts of the product's
 	// own objects, read by a super admin.
+	// A Starter Survey (ADR-0015) is created and published with its
+	// workspace, by nobody. Counted as it stands it would add one survey
+	// created and one published to every signup, and both numbers would
+	// follow Accounts and say nothing of their own. It is counted from its
+	// second version, which is the first a person published.
 	MetricTotals(ctx context.Context) (MetricTotalsRow, error)
 	NextVersionNumber(ctx context.Context, surveyID uuid.UUID) (int32, error)
 	// Who still needs an invite: never invited, not bounced, not suppressed.

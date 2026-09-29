@@ -5,11 +5,22 @@
 -- own objects, read by a super admin.
 
 -- name: MetricTotals :one
+-- A Starter Survey (ADR-0015) is created and published with its
+-- workspace, by nobody. Counted as it stands it would add one survey
+-- created and one published to every signup, and both numbers would
+-- follow Accounts and say nothing of their own. It is counted from its
+-- second version, which is the first a person published.
 SELECT
     (SELECT count(*) FROM users WHERE deleted_at IS NULL)::bigint      AS users,
     (SELECT count(*) FROM workspaces WHERE deleted_at IS NULL)::bigint AS workspaces,
-    (SELECT count(*) FROM surveys WHERE deleted_at IS NULL)::bigint    AS surveys,
-    (SELECT count(DISTINCT survey_id) FROM survey_versions)::bigint    AS published_surveys,
+    (SELECT count(*) FROM surveys s
+      WHERE s.deleted_at IS NULL
+        AND (s.origin <> 'starter' OR EXISTS (
+            SELECT 1 FROM survey_versions v
+             WHERE v.survey_id = s.id AND v.number > 1)))::bigint      AS surveys,
+    (SELECT count(DISTINCT v.survey_id) FROM survey_versions v
+       JOIN surveys s ON s.id = v.survey_id
+      WHERE s.origin <> 'starter' OR v.number > 1)::bigint             AS published_surveys,
     (SELECT count(*) FROM responses WHERE deleted_at IS NULL)::bigint  AS responses,
     (SELECT count(*) FROM participants WHERE deleted_at IS NULL)::bigint AS participants;
 
