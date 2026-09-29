@@ -35,7 +35,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | M12 — Private beta gate | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted); turning it off is a manual decision with no date on it |
 | Issue #2 — Stats over time | [x] done | 1/1 · post-MVP, added 2026-09-27 |
 | Interface text | [x] done | 6/6 · post-MVP, added 2026-09-29 (ADR-0014); English and Spanish |
-| Starter Survey | [~] in progress | 2/4 · post-MVP, added 2026-09-29 (ADR-0015) |
+| Starter Survey | [~] in progress | 3/4 · post-MVP, added 2026-09-29 (ADR-0015) |
 
 ### Status log
 
@@ -348,7 +348,8 @@ workspace, which is the feedback survey M9-T5 asks for.
 - [x] **SS-1 Seeded with the workspace.** Goal: `internal/starter` writes the survey from `web/text`; `auth.WorkspaceSeeder` runs it in the transaction of both signup paths; `surveys.origin` and the one-live-starter index; a line on the dashboard card until the owner publishes a version of their own. AC: a workspace made by sign-in link and one made by invite code each hold one open, anonymous survey that a signed-out visitor can read in English and in Spanish; signing in again adds none; rewording publishes version 2 after the Spanish is read again; deleting it leaves the empty dashboard. Deps: IT-5
 - [x] **SS-2 Metrics.** Goal: the founder metrics count a Starter Survey from its second version. AC: a signup adds nothing to Surveys or Published surveys; republishing adds one to each. Deps: SS-1
   _Note (2026-09-29): the totals are of the whole instance, so the test that reads them before and after has a database of its own, the second suite to need one (docs/testing.md). Responses to a Starter Survey are counted from the first: somebody gave them.
-- [ ] **SS-3 For a workspace that has none.** Goal: `earful starter-survey add <owner-email>`. AC: a workspace made before SS-1 is given the survey and its address is printed; a second run is refused. Deps: SS-1
+- [x] **SS-3 For a workspace that has none.** Goal: `earful starter-survey add <owner-email>`. AC: a workspace made before SS-1 is given the survey and its address is printed; a second run is refused. Deps: SS-1
+  _Note (2026-09-29): run on production as an execution of the migrate job with its arguments replaced (docs/runbook.md). This is also M9-T5's "seed feedback survey": Earful's own workspace was made before SS-1, and its feedback survey is the Starter Survey added to it.
 - [ ] **SS-4 Feature tour.** Goal: the tour's first dashboard shows the Starter Survey, and the deck is the same from a fresh database and a used one. Deps: SS-3
 
 ### Interface text (added 2026-09-29)

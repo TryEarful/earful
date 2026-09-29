@@ -1,7 +1,8 @@
 // Command earful is the single binary for the Earful survey platform:
 // serve (HTTP server), migrate (goose migrations), purge (retention
 // cleanup), healthcheck (container probe), beta-codes (private-beta
-// invite codes, M12), and admin (super-admin grants, M12).
+// invite codes, M12), admin (super-admin grants, M12), and starter-survey
+// (the survey a workspace starts with, story 86).
 package main
 
 import (
@@ -17,7 +18,7 @@ func main() {
 	defer stop()
 
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: earful <serve|migrate|purge|healthcheck|beta-codes|admin> [flags]")
+		fmt.Fprintln(os.Stderr, "usage: earful <serve|migrate|purge|healthcheck|beta-codes|admin|starter-survey> [flags]")
 		os.Exit(2)
 	}
 
@@ -35,6 +36,8 @@ func main() {
 		code = runBetaCodes(ctx, os.Args[2:])
 	case "admin":
 		code = runAdmin(ctx, os.Args[2:])
+	case "starter-survey":
+		code = runStarterSurvey(ctx, os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
 		code = 2

@@ -438,6 +438,40 @@ Each of these is a live outage that presents as something else.
   challenge TXT is committed in `dns.tf`, so it comes back with the repo,
   but confirm the value GitHub expects still matches.
 
+## Starter survey for a workspace that has none
+
+Every workspace is created holding one published survey, the Starter
+Survey (ADR-0015). A workspace made before that has none, and neither
+has one whose owner deleted theirs. Where the owner asks for one:
+
+```sh
+earful starter-survey add <owner-email>
+```
+
+On production the binary is run as an execution of the migrate job,
+which has the service's image, database and settings. The arguments
+apply to that execution and no other:
+
+```sh
+gcloud run jobs execute earful-migrate --wait \
+  --args=starter-survey,add,<owner-email> \
+  --project earful-pro-<sfx> --region europe-west4
+```
+
+It prints the survey's address and the address of its Spanish, in the
+execution's log. The survey is written as a new workspace's is and is
+the owner's from then on: answers to it arrive in their workspace.
+
+- **Refused: no account has the address.** The address is not a live
+  account's, or the account has no workspace.
+- **Refused: already holds a starter survey.** A workspace holds one
+  live Starter Survey. Its owner can find it on their dashboard; if it
+  was renamed, it is the one the database marks
+  `origin = 'starter'`.
+
+Earful's own feedback survey is this survey, in Earful's workspace. Its
+address is handed out by hand; nothing in the application links to it.
+
 ## Erasure request (GDPR)
 
 **Deadline: 24 hours.** The ordinary route (delete → 30-day purge) is
