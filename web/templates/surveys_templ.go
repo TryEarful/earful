@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -16,11 +17,10 @@ import (
 	"github.com/TryEarful/earful/web/static"
 )
 
-func responseCountLabel(n int) string {
-	if n == 1 {
-		return "1 response"
-	}
-	return fmt.Sprintf("%d responses", n)
+// responseCountLabel is "1 response", "5 responses": how many times a
+// survey has been submitted, wherever that is said.
+func responseCountLabel(ctx context.Context, n int) string {
+	return tn(ctx, "survey.responses", n)
 }
 
 // statusClass maps a Survey Status onto its chip styling.
@@ -304,9 +304,9 @@ func SurveyEditor(email string, workspaceName string, csrf string, data SurveyEd
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var15 string
-				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(responseCountLabel(data.ResponseCount))
+				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(responseCountLabel(ctx, data.ResponseCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/surveys.templ`, Line: 95, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/surveys.templ`, Line: 95, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {

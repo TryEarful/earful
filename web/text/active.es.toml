@@ -593,3 +593,128 @@ other = "Aplicar"
 [stats.range.csv.label]
 hash = "sha1-eaa216ad406cea80c9080f3bd9c4417c3a3a682d"
 other = "Descargar CSV"
+
+
+# ── Resultados ──────────────────────────────────────────────────────────
+
+[survey.responses]
+hash = "sha1-251efcf8ad06aa4671a86255988978111469f5c5"
+one = "1 envío"
+many = "{{.Count}} envíos"
+other = "{{.Count}} envíos"
+
+[results.title]
+hash = "sha1-fb2513de889a02014fc1377b4c52369a9bb7a2e7"
+other = "{{.Survey}} — resultados — Earful"
+
+[results.heading]
+hash = "sha1-612e12d29278b5519294bc25cdaddffec6d0f1c6"
+other = "Resultados"
+
+[results.versions]
+hash = "sha1-82f9a585fa53cc871735a5052b60dfc637bcb18a"
+one = "en 1 versión"
+many = "en {{.Count}} versiones"
+other = "en {{.Count}} versiones"
+
+[results.csv.label]
+hash = "sha1-eaa216ad406cea80c9080f3bd9c4417c3a3a682d"
+other = "Descargar CSV"
+
+[results.empty.heading]
+hash = "sha1-ff161bb9acca836d6ccd7e7d483bee4a60938118"
+other = "Todavía no hay envíos"
+
+[results.empty.body]
+hash = "sha1-f7aeb8204c39c48621be894ff4251ad944a2fb3c"
+other = "Comparta el enlace de la encuesta y las respuestas aparecerán aquí. Los resultados se agrupan por pregunta, así que puede seguir mejorando la redacción sin perder la posibilidad de comparar."
+
+[results.insight.heading]
+hash = "sha1-d3e5ca9361ed47e2c87254f9adfc1011955ce532"
+other = "Resumen de hallazgos"
+
+[results.insight.label_html]
+hash = "sha1-6da20e2edd51bccdacc511e292136e640b2e9a29"
+other = "Generado por IA con <strong>{{.Model}}</strong> el {{.Date}}, a partir de {{.Responses}}. Es una lectura de las respuestas, no las respuestas mismas: compruebe todo aquello sobre lo que piense actuar."
+
+[results.insight.again_hint]
+hash = "sha1-15b320acb30fc478ee7298c4553c195371e63766"
+other = "Vuelva a ejecutarlo para obtener un resumen actualizado."
+
+[results.insight.intro]
+hash = "sha1-e529616210d2fe4cc71e0bc6f7c31bbded916822"
+other = "Lea todas las respuestas a la vez: temas, patrones y citas representativas de todos los envíos, incluidos los que se dieron a versiones anteriores de las preguntas."
+
+[results.insight.again.label]
+hash = "sha1-4f26e4fece72282eaaee896421ad2e555e8c09b0"
+other = "Volver a ejecutar el análisis"
+
+[results.insight.run.label]
+hash = "sha1-4799576fa2c88361a357af02e2287dc4e29f072a"
+other = "Analizar las respuestas"
+
+[results.table.heading]
+hash = "sha1-d465cf6fcbc63d0cc1689692dcb83583d34d1c57"
+other = "Todos los envíos"
+
+[results.table.participant]
+hash = "sha1-a77366e97a2bf514bbc87a66e670fd0ba7173892"
+other = "Participante"
+
+[results.table.actions]
+hash = "sha1-c3cd636a585b20c40ac2df5ffb403e83cb2eef51"
+other = "Acciones"
+
+[results.table.note]
+hash = "sha1-71b82bff7a1c4e657ec4372fbf06b688e8bcee91"
+other = "Al eliminar un envío, desaparece de inmediato de los resultados, las estadísticas y las exportaciones. Soporte puede restaurarlo durante 30 días; después se borra."
+
+[results.table.delete.label]
+hash = "sha1-f6fdbe48dc54dd86f63097a03bd24094dedd713a"
+other = "Eliminar"
+
+[results.translate.label]
+hash = "sha1-e0b946bfde1fd14add5d3a5a74e0b98c92081d65"
+other = "Traducir las respuestas a"
+
+[results.translate.placeholder]
+hash = "sha1-094b0fe0e302854af1311afab85b5203ba457a3b"
+other = "es"
+
+[results.translate.showing]
+hash = "sha1-a94f40f45e7001d0084c2893c223b4274d86b13a"
+other = "Se muestran traducciones automáticas al {{.Language}} junto a cada respuesta."
+
+[results.translate.submit.label]
+hash = "sha1-2be17aa181d8226bfad83ce993e838fa79dcce4d"
+other = "Traducir"
+
+[results.translate.originals.label]
+hash = "sha1-72933069774ac4ead883697611e0f1d0b66c2c71"
+other = "Mostrar solo los originales"
+
+[results.answers]
+hash = "sha1-8abdaa43acddad0874532e30c99cc0fe6f07129c"
+one = "1 respuesta"
+many = "{{.Count}} respuestas"
+other = "{{.Count}} respuestas"
+
+[results.question.reworded]
+hash = "sha1-f409a43a36ca6dd6f77381f836a596fd6a71e014"
+other = "Esta pregunta se reformuló: vea cómo se preguntó"
+
+[results.question.together]
+hash = "sha1-10d6ea9d5f68158de4c75e9032dee60bd8ee25d1"
+other = "Las respuestas de todas las versiones se cuentan juntas: son la misma pregunta (ADR-0001)."
+
+[results.question.empty]
+hash = "sha1-b730f32a120e3a114fbb0e2a38de764af9f08975"
+other = "Todavía no hay respuestas a esta pregunta."
+
+[results.answer.machine]
+hash = "sha1-6642e6e77e79130e4510ada830961b0eb11e08a6"
+other = "Traducción automática"
+
+[results.answer.translated_by]
+hash = "sha1-9abae5ebb726f05c11f4c5a18f639c6eac44dffc"
+other = "Traducido por {{.Model}}; el original está arriba."
