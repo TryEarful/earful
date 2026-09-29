@@ -94,12 +94,12 @@
     button.appendChild(icon(MIC_ICON));
     // The label is its own text node so the key hint beside it survives
     // every label change; setting button.textContent would delete it.
-    var label = document.createTextNode("Answer by speaking");
+    var label = document.createTextNode("Dictate");
     button.appendChild(label);
     // Holding Space records for as long as it is held (attachKeys);
     // Shift+Space, which respond.js owns, still starts and stops a take.
-    // The hint is aria-hidden so the button is named "Answer by
-    // speaking", not "Answer by speaking Hold Space".
+    // The hint is aria-hidden so the button is named "Dictate", not
+    // "Dictate Hold Space".
     button.appendChild(keyHint("Hold Space"));
 
     function setLabel(text) {
@@ -116,11 +116,18 @@
     resetButton.appendChild(document.createTextNode("Reset"));
     resetButton.appendChild(keyHint("Esc Esc"));
 
-    var status = document.createElement("span");
+    // The status box heads the card. It always says something — what to
+    // do when idle, what is happening otherwise — so the card never
+    // opens with an empty frame, and its edge takes the colour of the
+    // state (see the stylesheet). Recording state and transcription
+    // progress are announced, not just shown: this control is unusable
+    // otherwise.
+    var status = document.createElement("div");
     status.className = "voice-status";
-    // Recording state and transcription progress are announced, not just
-    // shown: this control is unusable otherwise.
     status.setAttribute("aria-live", "polite");
+    var statusText = document.createElement("span");
+    statusText.className = "voice-status-text";
+    status.appendChild(statusText);
 
     // Transcription reports no progress — the model answers when it
     // answers — so this bar is indeterminate on purpose. A percentage
@@ -153,9 +160,6 @@
     var input = document.createElement("span");
     input.className = "voice-input";
 
-    monitor.appendChild(spectrum);
-    monitor.appendChild(input);
-
     // Which microphone, as a choice rather than a fact. The browser
     // picks the input silently, and the only sign of a wrong pick is a
     // flat meter and an empty transcript; here the pick is changeable.
@@ -170,13 +174,22 @@
     select.className = "voice-device";
     picker.appendChild(select);
 
-    wrap.appendChild(button);
-    wrap.appendChild(resetButton);
+    // The card, top to bottom: the status box (with the transcription
+    // bar along its foot), the two buttons, then the microphone and its
+    // meter side by side.
+    status.appendChild(progress);
+    var actions = document.createElement("div");
+    actions.className = "voice-actions";
+    actions.appendChild(button);
+    actions.appendChild(resetButton);
+    monitor.appendChild(picker);
+    monitor.appendChild(input);
+    monitor.appendChild(spectrum);
     wrap.appendChild(status);
-    wrap.appendChild(picker);
+    wrap.appendChild(actions);
     wrap.appendChild(monitor);
-    wrap.appendChild(progress);
     field.parentNode.insertBefore(wrap, field.nextSibling);
+    say("");
 
     // While a take is running the field says what is about to land in it.
     // A browser hides a placeholder as soon as the field has content, so
@@ -216,7 +229,7 @@
       // fail is the status line for something that went wrong: the same
       // line, boxed and bordered, so it is not read as a progress update.
       fail: function (message) {
-        status.textContent = message;
+        statusText.textContent = message;
         status.classList.add("voice-error");
       },
       settled: function () {
@@ -229,10 +242,15 @@
       },
     };
 
+    // Once the picker has devices to show, the row stays: the choice is
+    // for the next take, and it should not vanish the moment there is
+    // nothing to choose it for. Without a picker the row was only ever
+    // the meter and the device name, and both go with the take.
     function stopMeter() {
       if (meter) meter.stop();
       meter = null;
-      monitor.hidden = true;
+      monitor.hidden = picker.hidden;
+      if (picker.hidden) input.textContent = "";
     }
 
     var recorder = null; // the live take, once the microphone is open
@@ -258,7 +276,7 @@
 
     function say(message) {
       status.classList.remove("voice-error");
-      status.textContent = message || "";
+      statusText.textContent = message || idleHint();
     }
 
     // A microphone that cannot be opened — permission refused, no
@@ -341,7 +359,7 @@
 
     function reset() {
       recorder = null;
-      setLabel("Answer by speaking");
+      setLabel("Dictate");
       button.classList.remove("recording");
       ui.settled();
     }
@@ -350,7 +368,7 @@
       if (!recorder) return;
       var current = recorder;
       recorder = null;
-      setLabel("Answer by speaking");
+      setLabel("Dictate");
       button.classList.remove("recording");
       current.stop();
     }
@@ -480,6 +498,18 @@
       svg.appendChild(path);
     });
     return svg;
+  }
+
+  // What the status box says when nothing is happening. Space is only
+  // mentioned where a keyboard is likely, by the same test the
+  // stylesheet uses to show the key hints.
+  function idleHint() {
+    var keyboard =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    return keyboard
+      ? "Press Dictate, or hold Space, to speak your answer."
+      : "Press Dictate to speak your answer.";
   }
 
   // As in respond.js and the template: the hint is aria-hidden, so it
@@ -722,7 +752,7 @@
 
     var title = document.createElement("h2");
     title.id = "voice-consent-title";
-    title.textContent = "Answer by speaking";
+    title.textContent = "Dictate your answer";
 
     var body = document.createElement("p");
     body.textContent =
@@ -1164,6 +1194,7 @@
         stopped = true;
         window.cancelAnimationFrame(frame);
         analyser.disconnect();
+        paint.clearRect(0, 0, canvas.width, canvas.height);
       },
     };
   }

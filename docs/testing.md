@@ -334,7 +334,7 @@ cannot see — layout, wording, whether the labelling reads as honest:
    and the summary line ends it. Snapshot the panel: the form must carry
    `data-enhanced`, or you are watching the plain POST path instead
 3. **Voice**: publish, open the share link in a new context, press
-   *Answer by speaking*. The consent dialog must say the voice is never
+   *Dictate*. The consent dialog must say the voice is never
    stored **before** the mic opens, and the transcript must land in an
    editable textarea. Note that a laptop with no microphone is a valid
    state to check: the mic degrades to "please type your answer"

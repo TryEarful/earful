@@ -97,7 +97,7 @@ test("a spoken answer is kept across a reload too", async ({ page, browser }) =>
   const offered = await offersVoice(respondent);
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
-  await respondent.getByRole("button", { name: "Answer by speaking" }).click();
+  await respondent.getByRole("button", { name: "Dictate" }).click();
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
   await respondent.waitForTimeout(1500);
   await respondent.getByRole("button", { name: "Stop and transcribe" }).click();

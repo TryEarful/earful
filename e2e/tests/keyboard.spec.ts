@@ -283,7 +283,7 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   await expect(answer).toHaveValue(/^Plan b\s+\S/);
   await expect(row).toHaveAttribute("data-state", "idle");
   await expect(answer).not.toHaveClass(/voice-live/);
-  await expect(respondent.getByRole("button", { name: "Answer by speaking" })).toBeVisible();
+  await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
 
   // The reset button is named by its text alone; its icon is decoration.
   await expect(respondent.getByRole("button", { name: "Reset", exact: true })).toHaveCount(1);
@@ -332,7 +332,7 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   await expect(respondent.getByRole("button", { name: "Release Space to transcribe" })).toBeVisible();
   await respondent.keyboard.press("Escape");
   await respondent.keyboard.press("Escape");
-  await expect(respondent.getByRole("button", { name: "Answer by speaking" })).toBeVisible();
+  await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
   await expect(status).toHaveText(/Cleared/);
   await respondent.keyboard.up(" ");
   await respondent.waitForTimeout(1000); // long enough for a stray transcript to have landed

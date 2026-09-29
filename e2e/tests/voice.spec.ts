@@ -51,7 +51,7 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
     // No transcription configured means no mic — and a typed answer
     // that works exactly as it always did. That is the whole promise
     // when the capability is absent.
-    await expect(respondent.getByRole("button", { name: "Answer by speaking" })).toHaveCount(0);
+    await expect(respondent.getByRole("button", { name: "Dictate" })).toHaveCount(0);
     await respondent.locator("textarea").fill("Typed, because this instance has no mic.");
     await expect(respondent.locator("textarea")).not.toBeEmpty();
     await context.close();
@@ -60,7 +60,7 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
 
   // The mic is offered on the long-text question, next to a textarea
   // that already works.
-  const mic = respondent.getByRole("button", { name: "Answer by speaking" });
+  const mic = respondent.getByRole("button", { name: "Dictate" });
   await expect(mic).toBeVisible();
   await expect(respondent.locator("textarea")).toBeVisible();
 
@@ -116,10 +116,12 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   // and the transcription indicator is hidden. The indicator's visible
   // moment is deliberately not asserted — it lasts exactly as long as
   // the provider takes, and a race is not something a promotion gate can
-  // afford.
+  // afford. The microphone row stays, since its picker is a choice for
+  // the next take.
   await expect(answer).not.toHaveAttribute("placeholder", /Recording in progress/);
   await expect(respondent.locator(".voice-progress")).toBeHidden();
-  await expect(respondent.locator(".voice-monitor")).toBeHidden();
+  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
+  await expect(respondent.getByLabel("Microphone")).toBeVisible();
 
   await context.close();
 });
@@ -182,7 +184,7 @@ test("without a microphone the voice controls are disabled and the error is boxe
   await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
   await respondent.reload();
 
-  const mic = respondent.getByRole("button", { name: "Answer by speaking" });
+  const mic = respondent.getByRole("button", { name: "Dictate" });
   const reset = respondent.getByRole("button", { name: "Reset", exact: true });
   const status = respondent.locator(".voice-status").first();
   await mic.click();
@@ -239,7 +241,7 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
   await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
   await respondent.reload();
 
-  const mic = respondent.getByRole("button", { name: "Answer by speaking" });
+  const mic = respondent.getByRole("button", { name: "Dictate" });
   const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
   const picker = respondent.getByLabel("Microphone");
   const status = respondent.locator(".voice-status").first();
@@ -273,7 +275,7 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
 
   // Remembered across a reload, and still a plain <select> with a name.
   await respondent.reload();
-  await respondent.getByRole("button", { name: "Answer by speaking" }).click();
+  await respondent.getByRole("button", { name: "Dictate" }).click();
   await expect(respondent.getByLabel("Microphone")).toHaveValue("usb-1");
   expect((await lastRequest()).audio.deviceId).toEqual({ exact: "usb-1" });
   const scan = await new AxeBuilder({ page: respondent }).analyze();

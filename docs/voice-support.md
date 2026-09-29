@@ -80,13 +80,14 @@ textarea the server rendered is the whole interface (story 38).
 1. `AI_PROVIDER=scripted TRANSCRIBE_PROVIDER=scripted docker compose --profile app up`
    (or point `TRANSCRIBE_PROVIDER` at a real whisper-cli model).
 2. Open a published survey's share link with a long-text question.
-3. **Consent**: the first click on *Answer by speaking* shows the consent
+3. **Consent**: the first click on *Dictate* shows the consent
    dialog and it says the voice is never stored. Decline → nothing
    happens, typing still works. Accept → the browser's own microphone
    prompt appears.
 4. **Recording**: the button becomes *Stop and transcribe*, solid red with
-   a pulsing dot, and the textarea gets a red outline; the status line
-   announces "Listening…". With reduced motion on, the dot is still.
+   a pulsing dot, and the textarea gets a red outline; the status box at
+   the top of the card announces "Listening…" and its left edge turns
+   red. With reduced motion on, the dot is still.
 5. **Transcript**: stopping streams text into the textarea, word by word,
    and the status line ends with "edit it if it isn't quite right".
 6. **Hold to talk**: with the caret in the textarea, hold Space: the

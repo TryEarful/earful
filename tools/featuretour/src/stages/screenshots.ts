@@ -300,7 +300,7 @@ class Story {
         await page.goto(st.shareUrl);
         await fillRespondForm(page, "");
         const step = await stepTo(page, spoken.text);
-        await step.getByRole("button", { name: "Answer by speaking" }).click();
+        await step.getByRole("button", { name: "Dictate" }).click();
         await page.getByRole("dialog").waitFor();
         await shoot(manifest, page, "voice-consent", {
             kind: "viewport",
