@@ -361,3 +361,85 @@ other = "No se pudo copiar. El enlace abre el Markdown."
 [document.markdown.label]
 hash = "sha1-06ef85be40ec63efaf506c72834cab035bd82106"
 other = "Ver como Markdown"
+
+
+# ── La ruta en lo alto de una página de creador ─────────────────────────
+
+[breadcrumb.aria]
+hash = "sha1-c766e665183df1bd0aa1d956b163b9e6375ea465"
+other = "Ruta de navegación"
+
+[breadcrumb.surveys]
+hash = "sha1-0762895fdf43e65d386349a557579da462c433e9"
+other = "Encuestas"
+
+
+# ── Los idiomas de una encuesta ─────────────────────────────────────────
+
+[languages.title]
+hash = "sha1-cb7e710a4444f2cf70636e897aa838f6c3ed9d57"
+other = "{{.Survey}} — idiomas — Earful"
+
+[languages.heading]
+hash = "sha1-db07be184479f34078cd4fc76d248dc0975720e9"
+other = "Idiomas"
+
+[languages.intro]
+hash = "sha1-1f6adfb280ba0a06a9ffe84b06d0789aee14ecde"
+other = "Las personas encuestadas pueden responder en su propio idioma. Las traducciones se redactan por usted, pero no se publica nada hasta que usted lo haya leído: una traducción automática que sale en su nombre compromete su reputación, no la del modelo."
+
+[languages.add.heading]
+hash = "sha1-8960674be5c7679fb51b377c8d250daa8832b648"
+other = "Añadir un idioma"
+
+[languages.add.empty]
+hash = "sha1-2297fdba8130ec4816f245f8963206275bfab3ef"
+other = "Primero añada preguntas a la encuesta: todavía no hay nada que traducir."
+
+[languages.add.code.label_html]
+hash = "sha1-ccbd2a08fac10e367ad9d96cd330254c9f4ac214"
+other = 'Código de idioma <small class="muted">(como nl, de, pt-BR)</small>'
+
+[languages.add.code.placeholder]
+hash = "sha1-595477bd43c386b66363f3cbda218df80e9512da"
+other = "nl"
+
+[languages.add.submit.label]
+hash = "sha1-cb78db4bbad6c8d1cb637c4a9f5e81580ed8e0f2"
+other = "Añadir idioma"
+
+[languages.status.reviewed]
+hash = "sha1-31ef8593372c7a94221995129fdb5c29135b555f"
+other = "Revisado"
+
+[languages.status.pending]
+hash = "sha1-a603e34a55f4ee29d4647426b3e97ec8d0e17085"
+other = "{{.Count}} por revisar"
+
+[languages.status.progress]
+hash = "sha1-60cf90b8894b5a876ecc13ec1e2cd3d4683db78b"
+other = "{{.Reviewed}} de {{.Total}} preguntas revisadas.{{if .Blocked}} No se puede publicar hasta que se hayan leído todas.{{end}}"
+
+[languages.draft.label]
+hash = "sha1-e37425a2e8377cd30c85b95cd86e7a472434441c"
+other = "Redactar con IA las traducciones que faltan"
+
+[languages.remove.label]
+hash = "sha1-6826648c7bb214d3a2be66a1f77bae16ba3fb87e"
+other = "Quitar {{.Language}}"
+
+[languages.question.stale]
+hash = "sha1-cd23f790f79576da19b1c3c89a7eb1c762b7c247"
+other = "La pregunta cambió después de traducirse: vuelva a leerla."
+
+[languages.question.unreviewed]
+hash = "sha1-048d2490e8e5a614c33b8a8a250a42f151a5c6e2"
+other = "Redactada por IA, aún sin revisar."
+
+[languages.options.label_html]
+hash = "sha1-a8f5510ed4bec54a342be1f775962fb98025af77"
+other = 'Opciones <small class="muted">(una por línea; déjelo vacío para conservar las originales)</small>'
+
+[languages.save.label]
+hash = "sha1-a26226ca5a7d7fdddfdded0eb89234632eeffbdb"
+other = "Guardar y marcar como revisado"

@@ -253,3 +253,52 @@ failed = "Couldn't copy. The link opens the Markdown instead."
 
 [document.markdown]
 label = "View as Markdown"
+
+
+# ── The trail at the top of a creator's page ────────────────────────────
+
+[breadcrumb]
+aria = "Breadcrumb"
+surveys = "Surveys"
+
+
+# ── A survey's languages ────────────────────────────────────────────────
+
+[languages]
+title = "{{.Survey}} — languages — Earful"
+heading = "Languages"
+intro = "Respondents can answer in their own language. Translations are drafted for you, but nothing is published until you have read it — a machine translation going out in your name is your reputation, not the model's."
+
+[languages.add]
+heading = "Add a language"
+empty = "Add questions to the survey first — there is nothing to translate yet."
+
+[languages.add.code]
+label_html = 'Language code <small class="muted">(like nl, de, pt-BR)</small>'
+placeholder = "nl"
+
+[languages.add.submit]
+label = "Add language"
+
+[languages.status]
+reviewed = "Reviewed"
+pending = "{{.Count}} to review"
+# The spaces after the first full stop are as the page has always drawn
+# them.
+progress = "{{.Reviewed}} of {{.Total}} questions reviewed. {{if .Blocked}} Publishing is blocked until every one has been read.{{end}}"
+
+[languages.draft]
+label = "Draft the missing translations with AI"
+
+[languages.remove]
+label = "Remove {{.Language}}"
+
+[languages.question]
+stale = "The question changed after this was translated — read it again."
+unreviewed = "Drafted by AI, not yet reviewed."
+
+[languages.options]
+label_html = 'Options <small class="muted">(one per line; leave empty to keep the originals)</small>'
+
+[languages.save]
+label = "Save and mark reviewed"

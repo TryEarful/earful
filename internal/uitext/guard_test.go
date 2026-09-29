@@ -24,12 +24,11 @@ import (
 // A template leaves the list when its wording has moved to web/text,
 // and the list is empty when the move is done.
 var unmoved = map[string]bool{
-	"admin_templ.go":         true,
-	"localizations_templ.go": true,
-	"respond_templ.go":       true,
-	"results_templ.go":       true,
-	"stats_templ.go":         true,
-	"surveys_templ.go":       true,
+	"admin_templ.go":   true,
+	"respond_templ.go": true,
+	"results_templ.go": true,
+	"stats_templ.go":   true,
+	"surveys_templ.go": true,
 }
 
 // notWording lists what reads like wording and is not: a name that is
