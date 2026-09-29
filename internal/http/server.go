@@ -26,6 +26,7 @@ import (
 	"github.com/TryEarful/earful/internal/email"
 	"github.com/TryEarful/earful/internal/invites"
 	"github.com/TryEarful/earful/internal/store"
+	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/internal/voice"
 )
 
@@ -34,12 +35,15 @@ import (
 // (the local-dev defaults). Google may be nil — Google login is optional
 // (self-hosters, Appendix D) and the login page adapts. AI defaults to
 // the config-built provider (ai.FromConfig); tests inject an ai.Fake.
+// Text defaults to the interface text built into the binary; tests pass
+// a strict Catalog, for which a missing message is a failure.
 type Deps struct {
 	Pool   *pgxpool.Pool
 	Clock  clock.Clock
 	Email  email.Sender
 	Google *auth.GoogleOIDC
 	AI     ai.Provider
+	Text   *uitext.Catalog
 }
 
 type server struct {
@@ -58,6 +62,9 @@ type server struct {
 	// isn't.
 	ai      ai.Provider
 	aiMeter *ai.Meter
+
+	// text is the interface's wording, in every language it is served in.
+	text *uitext.Catalog
 
 	// health caches the DB liveness probe so a flood of unauthenticated
 	// /health hits cannot turn into an unbounded stream of DB round-trips.
@@ -102,6 +109,9 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	if deps.AI == nil {
 		deps.AI = ai.FromConfig(cfg)
 	}
+	if deps.Text == nil {
+		deps.Text = uitext.Embedded()
+	}
 	surveys := store.NewSurveys(deps.Pool)
 	authSvc := auth.NewService(deps.Pool, deps.Clock, deps.Email, cfg.BaseURL)
 	// While the private beta is on, no path may create an account except
@@ -118,6 +128,7 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		emailSender: deps.Email,
 		google:      deps.Google,
 		ai:          deps.AI,
+		text:        deps.Text,
 		aiMeter: &ai.Meter{
 			Store:                   surveys,
 			Clock:                   deps.Clock,
@@ -165,8 +176,11 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	// (requireCSRF). BasicAuthGate (staging only) sits inside
 	// SecurityHeaders so its 401 challenges are logged and carry the
 	// security headers, and outside the mux so nothing serves ungated.
+	// interfaceText sits directly around the mux: every page a handler
+	// renders is worded, and the refusals outside it are plain text with
+	// nothing to word.
 	var cop http.CrossOriginProtection
-	var h http.Handler = cop.Handler(mux)
+	var h http.Handler = cop.Handler(s.interfaceText(mux))
 	h = limitBody(h)
 	h = BasicAuthGate(cfg)(h)
 	h = SecurityHeaders(cfg)(h)

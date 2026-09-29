@@ -1,0 +1,15 @@
+# El texto de la interfaz de Earful, en español.
+#
+# Cada mensaje traduce el que lleva el mismo nombre en active.en.toml,
+# que es el texto de referencia. Las reglas de ese archivo sobre nombres,
+# marcadores como {{.Name}}, formas según la cantidad y etiquetas valen
+# también aquí.
+#
+# Registro: usted, y un vocabulario que se lea con naturalidad tanto en
+# España como en América.
+#
+# Cantidades: el español tiene tres formas. `one` para 1, `many` para
+# los millones exactos y `other` para todo lo demás; `many` suele decir
+# lo mismo que `other`.
+#
+# `hash` identifica el texto en inglés del que se tradujo el mensaje.

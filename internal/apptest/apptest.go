@@ -22,6 +22,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,6 +38,8 @@ import (
 	apphttp "github.com/TryEarful/earful/internal/http"
 	"github.com/TryEarful/earful/internal/logging"
 	"github.com/TryEarful/earful/internal/store"
+	"github.com/TryEarful/earful/internal/uitext"
+	"github.com/TryEarful/earful/web/text"
 )
 
 // Options configures the in-process application instance.
@@ -175,11 +178,35 @@ func New(t *testing.T, opts Options) *App {
 		Email:  app.Emails,
 		Google: google,
 		AI:     opts.AI,
+		Text:   strictText(t),
 	}))
 	srv.Start()
 	t.Cleanup(srv.Close)
 	t.Cleanup(func() { captured.emails(app.Emails) })
 	return app
+}
+
+var (
+	strictOnce    sync.Once
+	strictCatalog *uitext.Catalog
+	strictErr     error
+)
+
+// strictText is the interface text as the binary carries it, made
+// strict: a page that names a message which does not exist, or leaves a
+// placeholder without its value, panics, and the test that asked for the
+// page fails on the 500. A running service shows the message's name and
+// carries on, which is right for a reader and would hide the mistake
+// from a test.
+func strictText(t *testing.T) *uitext.Catalog {
+	t.Helper()
+	strictOnce.Do(func() {
+		strictCatalog, strictErr = uitext.Load(text.FS, uitext.Options{Strict: true})
+	})
+	if strictErr != nil {
+		t.Fatalf("apptest: interface text: %v", strictErr)
+	}
+	return strictCatalog
 }
 
 // BrowserClient returns an http.Client with a cookie jar that follows

@@ -3,15 +3,18 @@ module github.com/TryEarful/earful
 go 1.25.14
 
 require (
+	github.com/BurntSushi/toml v1.6.0
 	github.com/a-h/templ v0.3.1020
 	github.com/altcha-org/altcha-lib-go v1.0.0
 	github.com/coder/websocket v1.8.15
 	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/nicksnyder/go-i18n/v2 v2.6.1
 	github.com/pressly/goose/v3 v3.24.1
 	golang.org/x/crypto v0.31.0
 	golang.org/x/oauth2 v0.36.0
+	golang.org/x/text v0.40.0
 )
 
 require (
@@ -25,5 +28,4 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
 )

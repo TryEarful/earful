@@ -1,0 +1,55 @@
+# Earful's interface text, in English.
+#
+# Every sentence, label and message the application shows is in this
+# file. English is the language the interface is written in; the other
+# files (active.es.toml, …) translate what is here, message by message.
+#
+# Editing
+#
+#   Change the text to the right of the `=` and rebuild. Nothing else
+#   refers to the wording, so a sentence can be rewritten freely.
+#
+# Names
+#
+#   A message is named for where it is and what it is for, never for
+#   what it says:
+#
+#       [respond.submit]
+#       label = "Submit answers"
+#
+#   is `respond.submit.label`. The name is what the templates use, so it
+#   stays the same when the wording changes.
+#
+# Placeholders
+#
+#   {{.Name}} is replaced when the page is drawn. A placeholder can move
+#   within its sentence; it cannot be renamed or removed.
+#
+# Counts
+#
+#   A message that depends on a number has one wording per form, and
+#   {{.Count}} is the number:
+#
+#       [surveys.invites.send]
+#       one = "Send 1 invite"
+#       other = "Send {{.Count}} invites"
+#
+# Markup
+#
+#   A name ending in `_html` may contain <strong>, <em>, <a>, <code>,
+#   <small> and <br>. No other message may contain a tag.
+#
+# Notes for translators
+#
+#   `description` says what a translator cannot see from the text alone.
+#   A message with a note is written out in full, its text as `other`:
+#
+#       [voice.stop.label]
+#       description = "Button. Ends a recording."
+#       other = "Stop"
+#
+# Reserved words
+#
+#   The last part of a name cannot be id, description, hash, leftdelim,
+#   rightdelim, zero, one, two, few, many or other: those are the fields
+#   of a message. No part of a name can be `translation`.
