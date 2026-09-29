@@ -984,10 +984,14 @@
           },
         });
 
+        // Every way a take ends comes through here, and the socket goes
+        // with it: a take is one session, and a socket left open after
+        // its done or error frame would reconnect and send start again.
         var cleaned = false;
         function cleanup() {
           if (cleaned) return;
           cleaned = true;
+          socket.close();
           stream.getTracks().forEach(function (track) {
             track.stop();
           });

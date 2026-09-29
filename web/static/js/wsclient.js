@@ -25,6 +25,7 @@ window.EarfulSocket = (function () {
     handlers = handlers || {};
     var attempts = 0;
     var closedByUs = false;
+    var finished = false; // the server sent done or error: the session is over
     var socket = null;
     var queue = [];
 
@@ -55,6 +56,14 @@ window.EarfulSocket = (function () {
         } catch (err) {
           return;
         }
+        // done and error end the session: the server closes right after
+        // sending either, and that close is the end of the conversation,
+        // not a drop to recover from. Reconnecting here would replay the
+        // caller's opening message into a fresh session — for voice, a
+        // new take the respondent never started — and a server that
+        // refuses each one (a stale form token, say) turns that into a
+        // loop at the backoff rate until the rate limiter ends it.
+        if (frame.type === "done" || frame.type === "error") finished = true;
         if (frame.type === "chunk" && handlers.onChunk) handlers.onChunk(frame.text || "");
         else if (frame.type === "status" && handlers.onStatus) handlers.onStatus(frame.text || "");
         else if (frame.type === "done" && handlers.onDone) handlers.onDone();
@@ -64,7 +73,7 @@ window.EarfulSocket = (function () {
       };
 
       socket.onclose = function () {
-        if (closedByUs) return;
+        if (closedByUs || finished) return;
         attempts += 1;
         if (attempts > MAX_ATTEMPTS) {
           giveUp();
@@ -86,7 +95,7 @@ window.EarfulSocket = (function () {
 
     function rawSend(payload) {
       if (socket && socket.readyState === WebSocket.OPEN) socket.send(payload);
-      else if (!closedByUs) queue.push(payload);
+      else if (!closedByUs && !finished) queue.push(payload);
     }
 
     connect();
