@@ -2315,3 +2315,140 @@ other = "Espacio de trabajo personal"
 [workspace.name.of]
 hash = "sha1-76ec7d4bf42e30dcdd8065e0798d45d8dd5cf4ff"
 other = "Espacio de trabajo de {{.Name}}"
+
+
+# ── Responder una encuesta ─────────────────────────────────────────────
+
+[respond.preview.banner_html]
+hash = "sha1-b422a80d372b104cf39d64e8c23e4eee6a6df3e0"
+other = "<strong>Vista previa</strong>: esto es exactamente lo que ven quienes responden. No se registra nada de lo que escriba aquí."
+
+[respond.preview.voice]
+hash = "sha1-1a922bb79dbaf02941e72e79165633381e4c1bb8"
+other = "Quienes responden pueden contestar esto hablando; sus palabras se transcriben y el audio nunca se guarda."
+
+[respond.preview.submitted.title]
+hash = "sha1-6b01923bdeb0c2f4a0e8ec7cc8f8f642947ae723"
+other = "Vista previa — {{.Survey}}"
+
+[respond.preview.submitted.heading]
+hash = "sha1-dec8d11d28f090e6e951b28c578cd1104533a55c"
+other = "No se envió nada"
+
+[respond.preview.submitted.body]
+hash = "sha1-93d3919af2a49b2d14dc13174bad8ca0e230cd9f"
+other = "Era una vista previa, así que no se registró ningún envío."
+
+[respond.preview.submitted.back]
+hash = "sha1-89b4c6570aaff1a46bee5e7738037cadc29d059b"
+other = "Volver a la encuesta"
+
+[respond.before.note]
+hash = "sha1-0de4022a20e1b4d1c4868f216b525927bfdcca7f"
+other = "Parece que ya respondió esta encuesta. Puede responder de nuevo: cada envío se registra por separado."
+
+[respond.errors.heading]
+hash = "sha1-084087997c9114b4c50d67214ec3c2cb3e4f1585"
+one = "Revise una respuesta, por favor"
+many = "Revise {{.Count}} respuestas, por favor"
+other = "Revise {{.Count}} respuestas, por favor"
+
+[respond.errors.item]
+hash = "sha1-5c106f72b3f38e8c25008bf4a29b4db57aae8903"
+other = "Pregunta {{.Position}}: {{.Problem}}"
+
+[respond.honeypot.label]
+hash = "sha1-5826b136ec5c527937c7542c650f869abbc44145"
+other = "Deje este campo vacío"
+
+[respond.submit.label]
+hash = "sha1-988c413069b4b7728a5de7ac672e08f1fd730034"
+other = "Enviar respuestas"
+
+[respond.picker.label]
+hash = "sha1-89b86ab0e66f527166d98df92ddbcf5416ed58f6"
+other = "Idioma"
+
+[respond.picker.suggested]
+hash = "sha1-83c812aa3e5eaff6c10460da6930ceb0ecf25a12"
+other = "{{.Language}} (sugerido)"
+
+[respond.picker.submit]
+hash = "sha1-789b14dfa8cb7b36e164a4ef9f37dbfc44c25ba0"
+other = "Cambiar de idioma"
+
+[respond.question.position]
+hash = "sha1-f667f92a288a788985a6e7ef81be35ba98608e1f"
+other = "Pregunta {{.Current}} de {{.Total}}"
+
+[respond.question.required]
+hash = "sha1-0002fd23baf39bcf8429749e2d5d876d864c7385"
+other = "(obligatoria)"
+
+[respond.question.optional]
+hash = "sha1-b16c7ac6faff07d7e255da685e52bd66d3bf1575"
+other = "(opcional)"
+
+[respond.nps.low]
+hash = "sha1-069986340ae086d6650dec31dc7cda1bb226dc43"
+other = "0: nada probable"
+
+[respond.nps.high]
+hash = "sha1-c468c19e2ff93bf2117b9da47ce8fd9924754ab2"
+other = "10: muy probable"
+
+[respond.disclosure.controller_html]
+hash = "sha1-0ea29cbb39781dcca0bf846f520a7ed040be7e1e"
+other = "Esta encuesta la organiza <strong>{{.Workspace}}</strong>, que decide qué ocurre con las respuestas."
+
+[respond.disclosure.anonymous]
+hash = "sha1-5d40d1ab106d255d7fd9ddcf4c943538c093dc6f"
+other = "Es anónima: sus respuestas se guardan sin correo electrónico, sin dirección IP y sin datos del dispositivo; nada que le identifique."
+
+[respond.disclosure.identified_html]
+hash = "sha1-2ec800bbeb477c2bc1f6156bcd2ed0c4058bcb5e"
+other = "Responde como <strong>{{.Email}}</strong>, y {{.Workspace}} verá que estas respuestas son suyas. Su enlace personal sirve para un único envío."
+
+[respond.disclosure.invited]
+hash = "sha1-b56306b0a7bfc5b7f06bdb569881c76d2f4bec9b"
+other = "Sus respuestas están vinculadas a su invitación, así que {{.Workspace}} puede ver quién respondió qué."
+
+[respond.disclosure.voice]
+hash = "sha1-8cffbbbb97c00dbc8f9b88adfc9daed1872348d8"
+other = "Puede responder hablando. Lo que diga se convierte en un texto que puede leer y corregir antes de que pase a ser su respuesta; su voz en sí nunca se guarda."
+
+[respond.disclosure.draft]
+hash = "sha1-e22a2b96fffcb738bf84528635dac0b83bb4e9a8"
+other = "Las respuestas que aún no ha enviado, y sus versiones anteriores, se guardan en este navegador para que no se pierdan al recargar la página o por un error. No se envían hasta que usted las envía, y se borran al hacerlo y al cabo de un día."
+
+[respond.disclosure.trust]
+hash = "sha1-cad2aa0617178708120fe6dcbe5489217018671e"
+other = "Cómo trata Earful sus datos"
+
+[respond.already.title]
+hash = "sha1-1ffd482858380905157dfc9210114677ecda3dd8"
+other = "Ya respondió"
+
+[respond.already.heading]
+hash = "sha1-1e09ff9e464d3214cef8d18656de43ff6f13c513"
+other = "Ya ha respondido"
+
+[respond.already.body]
+hash = "sha1-cfda00e7e55b6bba3b9a7584deed9fb1002e69f3"
+other = "Su enlace personal sirve para un único envío, y el suyo ya ha quedado registrado. No hay nada más que hacer. ¡Gracias!"
+
+[respond.thanks.title]
+hash = "sha1-9aa7344365b4f6bb6d719d51e53810d0aedeae0f"
+other = "Gracias — {{.Survey}}"
+
+[respond.thanks.heading]
+hash = "sha1-6b50e31a7e1337db9ecb0e2fcb6e65ca27f57df5"
+other = "Gracias"
+
+[respond.thanks.body]
+hash = "sha1-b3d7616ba25c51d7db7298111f0e5e11915d3d06"
+other = "Sus respuestas han quedado registradas."
+
+[respond.thanks.anonymous]
+hash = "sha1-7d4ee0e3a611ee3405f99470e3a7a6da387221fe"
+other = "Era una encuesta anónima: sus respuestas se guardaron sin nada que le identifique."

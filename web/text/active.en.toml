@@ -1276,3 +1276,66 @@ The link is yours alone and works for one submission. If you weren't expecting t
 personal = "Personal workspace"
 # Given once, when the account is made, in the language it was made in.
 of = "{{.Name}}'s workspace"
+
+
+# ── Answering a survey ─────────────────────────────────────────────────
+
+[respond.preview]
+banner_html = "<strong>Preview</strong> — this is exactly what respondents see. Nothing you enter here is recorded."
+voice = "Respondents can answer this by speaking; their words are transcribed and the audio is never stored."
+
+[respond.preview.submitted]
+title = "Preview — {{.Survey}}"
+heading = "Nothing was submitted"
+body = "This was a preview, so no response was recorded."
+back = "Back to the survey"
+
+[respond.before]
+note = "It looks like you've answered this survey before. You can answer again — each submission is recorded separately."
+
+[respond.errors.heading]
+one = "Please check one answer"
+other = "Please check {{.Count}} answers"
+
+[respond.errors]
+item = "Question {{.Position}}: {{.Problem}}"
+
+[respond.honeypot]
+label = "Leave this field empty"
+
+[respond.submit]
+label = "Submit answers"
+
+[respond.picker]
+label = "Language"
+suggested = "{{.Language}} (suggested)"
+submit = "Change language"
+
+[respond.question]
+position = "Question {{.Current}} of {{.Total}}"
+required = "(required)"
+optional = "(optional)"
+
+[respond.nps]
+low = "0 — not at all likely"
+high = "10 — extremely likely"
+
+[respond.disclosure]
+controller_html = "This survey is run by <strong>{{.Workspace}}</strong>, who decides what happens to the answers."
+anonymous = "It's anonymous: your answers are stored with no email address, no IP address and no device details — nothing that identifies you."
+identified_html = "You're answering as <strong>{{.Email}}</strong>, and {{.Workspace}} will see that these answers are yours. Your personal link works for one submission."
+invited = "Your answers are linked to your invitation, so {{.Workspace}} can see who answered what."
+voice = "You can answer by speaking. What you say is turned into text you can read and edit before it becomes your answer — your voice itself is never stored."
+draft = "Answers you haven't submitted, and earlier versions of them, are kept in this browser so a refresh or a mistake doesn't lose them. They're never sent until you submit, and are cleared when you do, and after a day."
+trust = "How Earful handles your data"
+
+[respond.already]
+title = "Already answered"
+heading = "You've already answered"
+body = "Your personal link works for one submission, and yours has been recorded. There's nothing more to do — thank you!"
+
+[respond.thanks]
+title = "Thank you — {{.Survey}}"
+heading = "Thank you"
+body = "Your answers have been recorded."
+anonymous = "This was an anonymous survey: your answers were stored without anything that identifies you."

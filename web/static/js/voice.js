@@ -1065,8 +1065,19 @@
     );
   }
 
+  // The language dictation listens for is an attribute of the form, the
+  // language of the survey. The page's own declaration is what it is
+  // worded in where no survey language was chosen, which says nothing
+  // about what a respondent is about to say; it is read only by a page
+  // served before the attribute existed.
+  function voiceLanguage() {
+    var declared = form.getAttribute("data-voice-lang");
+    if (declared !== null) return declared;
+    return document.documentElement.lang || "";
+  }
+
   function pageLanguage() {
-    return document.documentElement.lang || "en";
+    return voiceLanguage() || "en";
   }
 
   // --- on-device recognition (M5-T1) -------------------------------------
@@ -1224,7 +1235,7 @@
               params: {
                 token: form.querySelector('[name="form_ts"]').value,
                 nonce: form.querySelector('[name="form_nonce"]').value,
-                lang: document.documentElement.lang || "",
+                lang: voiceLanguage(),
               },
             });
             announceOpen(true);

@@ -63,11 +63,12 @@ func dialVoice(t *testing.T, app *apptest.App, path, page string) *websocket.Con
 	return conn
 }
 
-var htmlLangRe = regexp.MustCompile(`<html lang="([^"]+)"`)
+var voiceLangRe = regexp.MustCompile(`data-voice-lang="([^"]*)"`)
 
-// pageLanguage reads what the page declares itself to be.
+// pageLanguage reads the language the form says dictation listens for,
+// which is what voice.js sends.
 func pageLanguage(page string) string {
-	if m := htmlLangRe.FindStringSubmatch(page); m != nil {
+	if m := voiceLangRe.FindStringSubmatch(page); m != nil {
 		return m[1]
 	}
 	return ""

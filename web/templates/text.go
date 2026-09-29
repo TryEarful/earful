@@ -28,7 +28,7 @@ func thtml(ctx context.Context, id uitext.ID, args ...uitext.Args) templ.Compone
 	return templ.Raw(uitext.From(ctx).HTML(id, args...))
 }
 
-// lang is the language the page is worded in, for its <html lang>.
-func lang(ctx context.Context) string {
+// interfaceLang is the language the page is worded in.
+func interfaceLang(ctx context.Context) string {
 	return uitext.From(ctx).Lang()
 }

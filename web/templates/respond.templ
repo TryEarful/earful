@@ -1,11 +1,12 @@
 package templates
 
 import (
-	"fmt"
+	"context"
 	"net/url"
 	"strconv"
 
 	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/static"
 )
 
@@ -66,7 +67,7 @@ func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Previe
 // surveys out of search results and LLM scrapes (M4-T5).
 templ RespondLayout(title string, lang string) {
 	<!DOCTYPE html>
-	<html lang={ htmlLang(lang) }>
+	<html lang={ htmlLang(ctx, lang) }>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -80,10 +81,29 @@ templ RespondLayout(title string, lang string) {
 	</html>
 }
 
-// htmlLang is what the page declares itself to be. It matters beyond
-// tidiness: screen readers pick pronunciation from it, and voice.js
-// passes it to the transcriber as the recognition language (M11-T3).
-func htmlLang(lang string) string {
+// htmlLang is what the page declares itself to be, which screen readers
+// pick their pronunciation from. A respondent's page is for its
+// questions, so it declares the language of the survey where one was
+// chosen; where none was, and on a page that has no questions, it
+// declares the language it is worded in.
+func htmlLang(ctx context.Context, lang string) string {
+	if lang == "" {
+		return interfaceLang(ctx)
+	}
+	return lang
+}
+
+// sentenceGap is written between two sentences and is empty: what
+// separates them is the space templ adds after it.
+const sentenceGap = ""
+
+// voiceLang is the language dictation listens for (M11-T3): the
+// language of the survey, and English where none was chosen. It is an
+// attribute of its own and not read off the page's declaration, because
+// the declaration follows the wording of the page where no language was
+// chosen, and what a respondent is about to say is not known from what
+// language the buttons are in.
+func voiceLang(lang string) string {
 	if lang == "" {
 		return "en"
 	}
@@ -95,24 +115,24 @@ templ Respond(data RespondData) {
 		<main>
 			if data.Preview {
 				<div class="preview-banner" role="status">
-					<strong>Preview</strong> — this is exactly what respondents see. Nothing you enter here is recorded.
+					@thtml(ctx, "respond.preview.banner_html")
 				</div>
 			}
 			<h1>{ data.Title }</h1>
 			@languagePicker(data)
 			@respondentDisclosure(data)
 			if data.AlreadyAnswered && !data.Preview {
-				<p class="notice">It looks like you've answered this survey before. You can answer again — each submission is recorded separately.</p>
+				<p class="notice">{ t(ctx, "respond.before.note") }</p>
 			}
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
 			if len(data.ErrorList) > 0 {
 				<div class="error-summary" role="alert" tabindex="-1" id="error-summary">
-					<h2>Please check { pluralAnswers(len(data.ErrorList)) }</h2>
+					<h2>{ tn(ctx, "respond.errors.heading", len(data.ErrorList)) }</h2>
 					<ul>
 						for _, e := range data.ErrorList {
-							<li><a href={ templ.SafeURL("#q-" + e.IdentityID) }>Question { strconv.Itoa(e.Position) }: { e.Message }</a></li>
+							<li><a href={ templ.SafeURL("#q-" + e.IdentityID) }>{ t(ctx, "respond.errors.item", uitext.Args{"Position": e.Position, "Problem": e.Message}) }</a></li>
 						}
 					</ul>
 				</div>
@@ -127,6 +147,7 @@ templ Respond(data RespondData) {
 				}
 				if data.VoiceEnabled() {
 					data-voice-path={ data.VoicePath }
+					data-voice-lang={ voiceLang(data.Lang) }
 					data-voice-max-seconds={ strconv.Itoa(data.VoiceMaxSeconds) }
 				}
 				novalidate
@@ -140,7 +161,7 @@ templ Respond(data RespondData) {
 				// filling it in is automated (M4-T5).
 				<div class="hp" aria-hidden="true">
 					<label>
-						Leave this field empty
+						{ t(ctx, "respond.honeypot.label") }
 						<input type="text" name="website" tabindex="-1" autocomplete="off"/>
 					</label>
 				</div>
@@ -152,7 +173,7 @@ templ Respond(data RespondData) {
 				<div class="respond-actions">
 					<button type="submit" class="respond-submit">
 						<span class="button-label">
-							Submit answers
+							{ t(ctx, "respond.submit.label") }
 							<svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 								<path d="M22 2 11 13"></path>
 								<path d="M22 2 15 22l-4-9-9-4z"></path>
@@ -192,13 +213,6 @@ func withLang(path string, lang string) string {
 	return path + "?lang=" + url.QueryEscape(lang)
 }
 
-func pluralAnswers(n int) string {
-	if n == 1 {
-		return "one answer"
-	}
-	return fmt.Sprintf("%d answers", n)
-}
-
 // languagePicker offers the languages this version was published with
 // (story 25). It is a plain form: choosing reloads the page in that
 // language, and nothing about the choice is stored — no cookie, no
@@ -207,20 +221,20 @@ templ languagePicker(data RespondData) {
 	if len(data.Languages) > 1 && !data.Preview {
 		<form method="get" class="language-picker">
 			<label class="field">
-				<span>Language</span>
+				<span>{ t(ctx, "respond.picker.label") }</span>
 				<select name="lang" data-language-picker>
 					for _, choice := range data.Languages {
 						if choice.Selected {
 							<option value={ choice.Code } selected>{ choice.Name }</option>
 						} else if choice.Suggested {
-							<option value={ choice.Code }>{ choice.Name + " (suggested)" }</option>
+							<option value={ choice.Code }>{ t(ctx, "respond.picker.suggested", uitext.Args{"Language": choice.Name}) }</option>
 						} else {
 							<option value={ choice.Code }>{ choice.Name }</option>
 						}
 					}
 				</select>
 			</label>
-			<button type="submit">Change language</button>
+			<button type="submit">{ t(ctx, "respond.picker.submit") }</button>
 		</form>
 	}
 }
@@ -236,19 +250,22 @@ templ languagePicker(data RespondData) {
 templ respondentDisclosure(data RespondData) {
 	<div class="disclosure">
 		<p>
-			This survey is run by <strong>{ data.WorkspaceName }</strong>, who decides what happens to the answers.
+			@thtml(ctx, "respond.disclosure.controller_html", uitext.Args{"Workspace": data.WorkspaceName})
+			// The space between this sentence and the next. templ puts
+			// one after text that a line break follows and none after a
+			// component, which is what a sentence with markup in it is.
+			{ sentenceGap }
 			if data.IsAnonymous {
-				It's anonymous: your answers are stored with no email address, no IP address and no device details — nothing that identifies you.
+				{ t(ctx, "respond.disclosure.anonymous") }
 			} else if data.ParticipantEmail != "" {
-				You're answering as <strong>{ data.ParticipantEmail }</strong>, and { data.WorkspaceName } will see that these answers are yours. Your personal link works for one submission.
+				@thtml(ctx, "respond.disclosure.identified_html", uitext.Args{"Email": data.ParticipantEmail, "Workspace": data.WorkspaceName})
 			} else {
-				Your answers are linked to your invitation, so { data.WorkspaceName } can see who answered what.
+				{ t(ctx, "respond.disclosure.invited", uitext.Args{"Workspace": data.WorkspaceName}) }
 			}
 		</p>
 		if data.VoiceEnabled() {
 			<p>
-				You can answer by speaking. What you say is turned into text you can read and edit before
-				it becomes your answer — your voice itself is never stored.
+				{ t(ctx, "respond.disclosure.voice") }
 			</p>
 		}
 		if !data.Preview {
@@ -256,26 +273,24 @@ templ respondentDisclosure(data RespondData) {
 			// which is a better deal than a server-side draft would be —
 			// but on a shared device it is still worth saying out loud.
 			<p class="muted">
-				Answers you haven't submitted, and earlier versions of them, are kept in this browser so a
-				refresh or a mistake doesn't lose them. They're never sent until you submit, and are
-				cleared when you do, and after a day.
+				{ t(ctx, "respond.disclosure.draft") }
 			</p>
 		}
 		<p class="muted">
-			<a href="/trust">How Earful handles your data</a>
+			<a href="/trust">{ t(ctx, "respond.disclosure.trust") }</a>
 		</p>
 	</div>
 }
 
 // RespondAlreadySubmitted is the one-per-participant page (M4-T3).
 templ RespondAlreadySubmitted(title string) {
-	@RespondLayout("Already answered", "") {
+	@RespondLayout(t(ctx, "respond.already.title"), "") {
 		<main>
-			<h1>You've already answered</h1>
+			<h1>{ t(ctx, "respond.already.heading") }</h1>
 			if title != "" {
 				<p class="muted">{ title }</p>
 			}
-			<p>Your personal link works for one submission, and yours has been recorded. There's nothing more to do — thank you!</p>
+			<p>{ t(ctx, "respond.already.body") }</p>
 		</main>
 	}
 }
@@ -291,12 +306,12 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 	>
 		<fieldset>
 			<legend>
-				<span class="q-position">Question { strconv.Itoa(index + 1) } of { strconv.Itoa(total) }</span>
+				<span class="q-position">{ t(ctx, "respond.question.position", uitext.Args{"Current": index + 1, "Total": total}) }</span>
 				<span class="q-text" id={ "qt-" + q.IdentityID }>{ q.Text }</span>
 				if q.Required {
-					<span class="q-required">(required)</span>
+					<span class="q-required">{ t(ctx, "respond.question.required") }</span>
 				} else {
-					<span class="q-optional">(optional)</span>
+					<span class="q-optional">{ t(ctx, "respond.question.optional") }</span>
 				}
 			</legend>
 			if data.Errors[q.IdentityID] != "" {
@@ -304,7 +319,7 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 			}
 			@answerControl(q, data)
 			if data.Preview && q.Type.AcceptsVoice() {
-				<p class="muted voice-preview-note">Respondents can answer this by speaking; their words are transcribed and the audio is never stored.</p>
+				<p class="muted voice-preview-note">{ t(ctx, "respond.preview.voice") }</p>
 			}
 		</fieldset>
 	</li>
@@ -390,7 +405,7 @@ templ answerControl(q domain.Question, data RespondData) {
 				}
 			</div>
 			if q.Type == domain.NPS {
-				<p class="scale-hint"><span>0 — not at all likely</span><span>10 — extremely likely</span></p>
+				<p class="scale-hint"><span>{ t(ctx, "respond.nps.low") }</span><span>{ t(ctx, "respond.nps.high") }</span></p>
 			}
 		case domain.YesNo:
 			// Y and N rather than A and B: the initial is the obvious key
@@ -403,7 +418,7 @@ templ answerControl(q domain.Question, data RespondData) {
 						<input type="radio" name={ "q_" + q.IdentityID } value="yes"/>
 					}
 					@keyHint("Y")
-					<span>Yes</span>
+					<span>{ t(ctx, "answer.yes") }</span>
 				</label>
 				<label class="option">
 					if boolEquals(data.Answers[q.IdentityID].Bool, false) {
@@ -412,7 +427,7 @@ templ answerControl(q domain.Question, data RespondData) {
 						<input type="radio" name={ "q_" + q.IdentityID } value="no"/>
 					}
 					@keyHint("N")
-					<span>No</span>
+					<span>{ t(ctx, "answer.no") }</span>
 				</label>
 			</div>
 	}
@@ -460,12 +475,12 @@ func boolEquals(got *bool, want bool) bool { return got != nil && *got == want }
 
 // RespondThanks closes the loop for the respondent.
 templ RespondThanks(title string, anonymous bool) {
-	@RespondLayout("Thank you — "+title, "") {
+	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": title}), "") {
 		<main>
-			<h1>Thank you</h1>
-			<p>Your answers have been recorded.</p>
+			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
+			<p>{ t(ctx, "respond.thanks.body") }</p>
 			if anonymous {
-				<p class="muted">This was an anonymous survey: your answers were stored without anything that identifies you.</p>
+				<p class="muted">{ t(ctx, "respond.thanks.anonymous") }</p>
 			}
 		</main>
 	}
@@ -474,11 +489,11 @@ templ RespondThanks(title string, anonymous bool) {
 // RespondPreviewSubmitted is what a creator sees if they submit the
 // preview form. Nothing is written; the page says so plainly.
 templ RespondPreviewSubmitted(surveyID string, title string) {
-	@RespondLayout("Preview — "+title, "") {
+	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "") {
 		<main>
-			<h1>Nothing was submitted</h1>
-			<p>This was a preview, so no response was recorded.</p>
-			<p><a class="button" href={ templ.SafeURL("/surveys/" + surveyID) }>Back to the survey</a></p>
+			<h1>{ t(ctx, "respond.preview.submitted.heading") }</h1>
+			<p>{ t(ctx, "respond.preview.submitted.body") }</p>
+			<p><a class="button" href={ templ.SafeURL("/surveys/" + surveyID) }>{ t(ctx, "respond.preview.submitted.back") }</a></p>
 		</main>
 	}
 }

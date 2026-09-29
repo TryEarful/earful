@@ -23,9 +23,7 @@ import (
 // unmoved lists the templates whose wording is still written in them.
 // A template leaves the list when its wording has moved to web/text,
 // and the list is empty when the move is done.
-var unmoved = map[string]bool{
-	"respond_templ.go": true,
-}
+var unmoved = map[string]bool{}
 
 // notWording lists what reads like wording and is not: a name that is
 // the same in every language.
