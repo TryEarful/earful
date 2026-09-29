@@ -225,6 +225,9 @@ set from script is outside the browser's own history.
   to the processor table on `/trust`.
 - **Offered where dictation is**, as a small *Previous versions* link
   under the answer, shown once there is a version to look at.
+- **The respondent can clear it.** *Clear all* drops every version of
+  that answer and leaves the answer itself alone, so a history on a
+  shared device need not wait for submission or expiry.
 
 ### Answering from the keyboard (post-MVP)
 

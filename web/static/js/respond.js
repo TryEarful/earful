@@ -490,8 +490,17 @@ function attachVersions(form) {
     });
 
     link.addEventListener("click", function () {
-      show(field, list, link);
+      show(field, list, link, forget);
     });
+
+    // forget drops every version of this answer. The array is emptied
+    // in place, since it is the one the store holds; the answer itself
+    // is not touched. With nothing left to look at, the link goes too.
+    function forget() {
+      list.length = 0;
+      save();
+      holder.hidden = true;
+    }
 
     function keep(text) {
       // An empty answer is not a version anyone will want back.
@@ -515,7 +524,7 @@ function attachVersions(form) {
     return date.toLocaleString([], clock);
   }
 
-  function show(field, list, opener) {
+  function show(field, list, opener, forget) {
     var backdrop = document.createElement("div");
     backdrop.className = "versions-backdrop";
 
@@ -577,9 +586,17 @@ function attachVersions(form) {
 
     var actions = document.createElement("div");
     actions.className = "versions-actions";
+    // The history is the respondent's, on what may be a shared device:
+    // they can be rid of it without submitting or waiting a day. Kept
+    // at the far end from Close, the button pressed without looking.
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "secondary";
+    clear.textContent = "Clear all";
     var done = document.createElement("button");
     done.type = "button";
     done.textContent = "Close";
+    actions.appendChild(clear);
     actions.appendChild(done);
 
     dialog.appendChild(title);
@@ -602,6 +619,13 @@ function attachVersions(form) {
       opener.focus();
     }
     done.addEventListener("click", dismiss);
+    clear.addEventListener("click", function () {
+      forget();
+      close();
+      // The link that opened this is hidden now, so focus goes to the
+      // answer rather than to nothing.
+      field.focus();
+    });
     backdrop.addEventListener("click", dismiss);
     dialog.addEventListener("keydown", function (event) {
       if (event.key === "Escape") dismiss();

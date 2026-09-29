@@ -128,8 +128,9 @@ textarea the server rendered is the whole interface (story 38).
 14. **Previous versions**: type or dictate, wait five seconds, and a
    small *Previous versions* link appears under the answer. Reset the
    answer, open the link: the text Reset removed is the newest entry,
-   with the time beside it. *Restore* puts it back. The browser's
-   network panel shows no request for any of this.
+   with the time beside it. *Restore* puts it back. *Clear all* empties
+   the list, leaves the answer as it is, and the link disappears. The
+   browser's network panel shows no request for any of this.
 15. **No microphone**: deny the browser's microphone prompt (or unplug the
    device). Both buttons grey out, the boxed error reads "Microphone
    unavailable", Space types a space and ESC twice does nothing; typing

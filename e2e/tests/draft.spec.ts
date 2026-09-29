@@ -211,5 +211,22 @@ test("earlier versions of an answer are kept in the browser and can be restored"
   );
   expect(stored).toHaveLength(1);
 
+  // Clear all drops the history and leaves the answer alone; with
+  // nothing to look at, the link goes, and stays gone after a reload.
+  await respondent.getByRole("button", { name: "Previous versions" }).click();
+  await respondent.getByRole("button", { name: "Clear all" }).click();
+  await expect(respondent.getByRole("dialog")).toBeHidden();
+  await expect(respondent.getByRole("button", { name: "Previous versions" })).toBeHidden();
+  await expect(respondent.locator("textarea")).toHaveValue(
+    "First thought. Second thought, which took a while to put into words."
+  );
+  const kept = await respondent.evaluate(() => {
+    const name = Object.keys(localStorage).find((k) => k.startsWith("earful.versions."));
+    return name ? Object.values(JSON.parse(localStorage.getItem(name)!).fields).flat().length : 0;
+  });
+  expect(kept).toBe(0);
+  await respondent.reload();
+  await expect(respondent.getByRole("button", { name: "Previous versions" })).toBeHidden();
+
   await context.close();
 });
