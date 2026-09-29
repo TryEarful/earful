@@ -966,6 +966,16 @@
         var context = new (window.AudioContext || window.webkitAudioContext)({
           sampleRate: SAMPLE_RATE,
         });
+        // A take begins when the server has its start message, not when
+        // the microphone opens: audio is never queued, so everything
+        // spoken before the socket is open is lost, and a stop sent
+        // during the handshake would reach a session that has not
+        // started. Until then the respondent sees "Starting…" and no
+        // stop control. opened settles false when the take ends first.
+        var announceOpen;
+        var opened = new Promise(function (resolve) {
+          announceOpen = resolve;
+        });
         var socket = window.EarfulSocket.open(voicePath, {
           onOpen: function () {
             socket.send({
@@ -976,6 +986,7 @@
                 lang: document.documentElement.lang || "",
               },
             });
+            announceOpen(true);
           },
           onStatus: say,
           onChunk: function (text) {
@@ -1026,6 +1037,7 @@
             track.stop();
           });
           if (context.state !== "closed") context.close();
+          announceOpen(false);
           done();
         }
 
@@ -1058,7 +1070,12 @@
         // before it: names are only available once this stream is open.
         // On-device recognition (startLocalRecognition) opens its own
         // input and cannot be pointed at a device, so it lists none.
-        return Promise.all([pump(context, stream, socket), listInputs()]).then(function (results) {
+        return Promise.all([pump(context, stream, socket), listInputs(), opened]).then(function (
+          results
+        ) {
+          // The take ended before the connection opened; what went wrong
+          // is already on the status line.
+          if (!results[2]) return null;
           return {
             stop: finish,
             abort: abort,

@@ -7,6 +7,7 @@ import {
   noMicrophone,
   offersVoice,
   scriptedVoice,
+  slowSockets,
 } from "./helpers";
 
 // Spoken answers, in a real browser with a fake microphone (M5).
@@ -280,6 +281,50 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
   expect((await lastRequest()).audio.deviceId).toEqual({ exact: "usb-1" });
   const scan = await new AxeBuilder({ page: respondent }).analyze();
   expect(scan.violations).toEqual([]);
+
+  await context.close();
+});
+
+// A take is a conversation that opens with start. On a slow connection
+// the socket is still connecting when the microphone is already open,
+// and a stop sent in that gap used to reach the server ahead of the
+// start: the session never began, nothing was transcribed, and the page
+// waited on "Transcribing…" for good. The stop control now appears only
+// once the connection is open, so what is said is what is sent.
+test("a take on a slow connection is still transcribed", async ({ page, browser }) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+
+  const share = await createPublishedSurvey(page, `E2E voice slow ${Date.now()}`);
+
+  const context = await browser.newContext({
+    storageState: undefined,
+    permissions: ["microphone"],
+  });
+  await fakeMicrophone(context);
+  await slowSockets(context, 800);
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
+  await respondent.reload();
+
+  const mic = respondent.getByRole("button", { name: "Dictate" });
+  const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
+  const status = respondent.locator(".voice-status").first();
+
+  await mic.click();
+  await expect(stop).toBeVisible();
+  // Long enough to have said something, far shorter than the handshake.
+  await respondent.waitForTimeout(250);
+  await stop.click();
+  await expect(status).toHaveText(/Transcribed/, { timeout: aiTimeout });
+  await expect(respondent.locator("textarea")).not.toBeEmpty();
 
   await context.close();
 });

@@ -45,8 +45,12 @@ window.EarfulSocket = (function () {
 
       socket.onopen = function () {
         attempts = 0;
-        while (queue.length) socket.send(queue.shift());
+        // The caller's opening message goes first. Anything queued while
+        // the socket was connecting was said after the conversation had
+        // begun, and a server that receives it ahead of the opening has
+        // no session to attach it to.
         if (handlers.onOpen) handlers.onOpen();
+        while (queue.length) socket.send(queue.shift());
       };
 
       socket.onmessage = function (event) {

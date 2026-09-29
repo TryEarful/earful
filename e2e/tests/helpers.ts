@@ -154,6 +154,53 @@ export async function fakeMicrophone(context: BrowserContext): Promise<void> {
   );
 }
 
+// slowSockets makes every WebSocket the page opens take delayMs to
+// connect, which is what a phone on a poor connection does and what a
+// laptop talking to localhost never does. While it waits the socket
+// reports CONNECTING and refuses to send, exactly as a real one would.
+export async function slowSockets(context: BrowserContext, delayMs: number): Promise<void> {
+  await context.addInitScript((delay: number) => {
+    const Native = window.WebSocket;
+    function SlowSocket(this: any, url: string, protocols?: string | string[]) {
+      this.readyState = 0;
+      this.binaryType = "blob";
+      this.onopen = this.onmessage = this.onclose = this.onerror = null;
+      this.real = null;
+      this.closedEarly = false;
+      window.setTimeout(() => {
+        if (this.closedEarly) {
+          this.readyState = 3;
+          if (this.onclose) this.onclose(new CloseEvent("close"));
+          return;
+        }
+        const real = new Native(url, protocols);
+        real.binaryType = this.binaryType;
+        this.real = real;
+        real.onopen = (event) => {
+          this.readyState = 1;
+          if (this.onopen) this.onopen(event);
+        };
+        real.onmessage = (event) => this.onmessage && this.onmessage(event);
+        real.onerror = (event) => this.onerror && this.onerror(event);
+        real.onclose = (event) => {
+          this.readyState = 3;
+          if (this.onclose) this.onclose(event);
+        };
+      }, delay);
+    }
+    SlowSocket.prototype.send = function (data: any) {
+      if (this.readyState !== 1) throw new DOMException("still connecting", "InvalidStateError");
+      this.real.send(data);
+    };
+    SlowSocket.prototype.close = function () {
+      if (this.real) this.real.close();
+      else this.closedEarly = true;
+    };
+    Object.assign(SlowSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
+    (window as any).WebSocket = SlowSocket;
+  }, delayMs);
+}
+
 // --- What this instance offers -------------------------------------
 //
 // "An absent capability is an absent feature" (SPEC.md Appendix D): an
