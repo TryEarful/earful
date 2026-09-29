@@ -105,11 +105,15 @@ input[type="text"] {
   font: inherit;
 }
 
+/* A button's border is twice a card's, and an outlined button's is
+   darker than a card's as well. Cards and outlined buttons are both
+   rounded boxes on the same ground, and at one hairline each the only
+   way to tell them apart was to try clicking. */
 .button,
 button {
   display: inline-block;
   padding: 0.5rem 1rem;
-  border: 1px solid var(--accent);
+  border: 2px solid var(--accent);
   border-radius: 0.375rem;
   background: var(--accent);
   color: var(--accent-contrast);
@@ -122,7 +126,7 @@ button {
 button.secondary {
   background: transparent;
   color: inherit;
-  border-color: var(--border);
+  border-color: color-mix(in srgb, CanvasText 40%, Canvas);
 }
 
 .button.danger,
@@ -505,21 +509,22 @@ fieldset {
    bold, the way shortcuts are written wherever they are documented. The
    colours are mixed from the page's own, so the cap is a light key on a
    light page and a dark key on a dark one, and keeps its own ground on a
-   coloured button. */
+   coloured button. Small: a hint is a footnote to the control it sits
+   on, and must not compete with the control's own word. */
 .key-hint {
   display: none;
   flex: none;
   box-sizing: border-box;
-  min-width: 1.6rem;
-  padding: 0.1rem 0.45rem;
+  min-width: 1.3rem;
+  padding: 0.08rem 0.36rem;
   border: 1px solid color-mix(in srgb, CanvasText 28%, Canvas);
-  border-radius: 0.35rem;
+  border-radius: 0.28rem;
   background: color-mix(in srgb, CanvasText 9%, Canvas);
   box-shadow:
-    0 2px 0 color-mix(in srgb, CanvasText 28%, Canvas),
+    0 1.5px 0 color-mix(in srgb, CanvasText 28%, Canvas),
     inset 0 1px 0 color-mix(in srgb, Canvas 60%, transparent);
   color: CanvasText;
-  font-size: 0.8rem;
+  font-size: 0.64rem;
   font-weight: 600;
   line-height: 1.4;
   text-align: center;
@@ -533,8 +538,8 @@ fieldset {
 .key-combo {
   display: none;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 0.8rem;
+  gap: 0.25rem;
+  font-size: 0.68rem;
   font-weight: 400;
   white-space: nowrap;
   vertical-align: middle;
@@ -708,10 +713,20 @@ fieldset {
 
 /* Half a phone's width will not hold "Submit answers" at this size, so
    on a narrow page Back takes the width of its word and the forward
-   button has the rest. */
+   button has the rest. A flex row rather than the grid, because a grid
+   column keeps its gap when the button in it is hidden, and on the
+   first question that set Next in from the edge. */
 @media (max-width: 34rem) {
   .respond-nav {
-    grid-template-columns: auto 1fr;
+    display: flex;
+  }
+
+  .respond-nav > * {
+    flex: 1 1 auto;
+  }
+
+  .respond-nav > button.secondary {
+    flex: 0 0 auto;
   }
 }
 
@@ -1015,6 +1030,25 @@ fieldset {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 0.6rem;
+}
+
+/* The icon, the word and the keys, centred on one line. Left inline
+   they share a text baseline, and a keycap set smaller than the word
+   beside it sits on that baseline and looks dropped. */
+.voice-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.voice-actions .voice-icon,
+.voice-actions .voice-button.recording::before {
+  margin-right: 0;
+}
+
+.paged .voice-actions button > .key-combo {
+  margin-left: 0.2rem;
 }
 
 /* Idle is an outlined button with a microphone; live is a solid red one
