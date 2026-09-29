@@ -68,8 +68,8 @@ func TestErasure_IsSupportOnlyAndTwoSteps(t *testing.T) {
 		t.Errorf("after erasure the subject still has data:\n%s", page)
 	}
 
-	// The address is free again: signing in creates a new, empty account
-	// rather than resurrecting the old one.
+	// The address is free again: signing in creates a new account that
+	// holds nothing of the old one, rather than resurrecting it.
 	fresh := app.Login(t, subject)
 	dashboard := mustGet(t, fresh, app.Server.URL+"/dashboard")
 	if bodyContains(dashboard, "Their survey") {

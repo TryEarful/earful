@@ -21,14 +21,12 @@ func TestSurvey_CreateAndAppearInList(t *testing.T) {
 	id := app.CreateSurvey(t, client, "Team retro Q3", true)
 
 	body := getBody(t, client, app.Server.URL+"/surveys")
-	if !bodyContains(body, "Team retro Q3") {
-		t.Errorf("dashboard does not list the new survey:\n%s", body)
+	card := surveyCard(t, body, "Team retro Q3")
+	if !bodyContains(card, "Draft") {
+		t.Errorf("a never-published survey should show status Draft:\n%s", card)
 	}
-	if !bodyContains(body, "Draft") {
-		t.Errorf("a never-published survey should show status Draft:\n%s", body)
-	}
-	if !bodyContains(body, "Anonymous") {
-		t.Errorf("survey list should show the anonymity choice:\n%s", body)
+	if !bodyContains(card, "Anonymous") {
+		t.Errorf("survey list should show the anonymity choice:\n%s", card)
 	}
 
 	page := app.SurveyPage(t, client, id)

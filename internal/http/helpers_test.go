@@ -19,6 +19,25 @@ func bodyContains(body, want string) bool {
 	return strings.Contains(html.UnescapeString(body), want)
 }
 
+var surveyCardRe = regexp.MustCompile(`(?s)<li class="card">.*?</li>`)
+
+// surveyCard returns the dashboard's card for the survey with this title,
+// so that what a test reads about one survey is not satisfied by another
+// in the same list.
+func surveyCard(t *testing.T, dashboard, title string) string {
+	t.Helper()
+	var found []string
+	for _, card := range surveyCardRe.FindAllString(dashboard, -1) {
+		if bodyContains(card, title) {
+			found = append(found, card)
+		}
+	}
+	if len(found) != 1 {
+		t.Fatalf("dashboard lists %q %d times, want once:\n%s", title, len(found), dashboard)
+	}
+	return found[0]
+}
+
 // Cookie-jar helpers shared by the auth/session tests: they let a test
 // inspect or plant individual cookies while still driving the server
 // through an ordinary browser-like client.

@@ -123,14 +123,17 @@ func TestWorkspaceExport_ContainsEverythingTheWorkspaceHolds(t *testing.T) {
 	if _, ok := files["README.txt"]; !ok {
 		t.Errorf("no README.txt: an archive should explain itself; files: %v", keys(files))
 	}
-	var csvCount int
-	for name := range files {
-		if strings.HasPrefix(name, "surveys/") && strings.HasSuffix(name, ".csv") {
-			csvCount++
+	// A CSV is named for its survey and ends in the start of its id.
+	for _, id := range []string{anon, invited} {
+		var csvCount int
+		for name := range files {
+			if strings.HasPrefix(name, "surveys/") && strings.HasSuffix(name, "-"+id[:8]+".csv") {
+				csvCount++
+			}
 		}
-	}
-	if csvCount != 2 {
-		t.Errorf("archive holds %d survey CSVs, want one per survey", csvCount)
+		if csvCount != 1 {
+			t.Errorf("archive holds %d CSVs for survey %s, want 1; files: %v", csvCount, id, keys(files))
+		}
 	}
 
 	var archive export.Archive
@@ -140,16 +143,15 @@ func TestWorkspaceExport_ContainsEverythingTheWorkspaceHolds(t *testing.T) {
 	if archive.FormatVersion != export.FormatVersion {
 		t.Errorf("format_version = %d, want %d", archive.FormatVersion, export.FormatVersion)
 	}
-	if len(archive.Surveys) != 2 {
-		t.Fatalf("archive holds %d surveys, want 2", len(archive.Surveys))
-	}
 
+	// Found by id: what else the workspace holds is not this test's to
+	// count.
 	var anonymous, invitedSurvey *export.Survey
 	for i := range archive.Surveys {
-		switch archive.Surveys[i].Title {
-		case "Anonymous survey":
+		switch archive.Surveys[i].ID {
+		case anon:
 			anonymous = &archive.Surveys[i]
-		case "Invited survey":
+		case invited:
 			invitedSurvey = &archive.Surveys[i]
 		}
 	}
@@ -253,10 +255,16 @@ func TestWorkspaceExport_CarriesInsightsLabelled(t *testing.T) {
 	if err := json.Unmarshal(files["workspace.json"], &archive); err != nil {
 		t.Fatalf("workspace.json: %v", err)
 	}
-	if len(archive.Surveys) != 1 || len(archive.Surveys[0].Insights) != 1 {
+	var exported *export.Survey
+	for i := range archive.Surveys {
+		if archive.Surveys[i].ID == id {
+			exported = &archive.Surveys[i]
+		}
+	}
+	if exported == nil || len(exported.Insights) != 1 {
 		t.Fatalf("no insight in the export: %+v", archive.Surveys)
 	}
-	insight := archive.Surveys[0].Insights[0]
+	insight := exported.Insights[0]
 	if !strings.Contains(insight.Output, "onboarding friction") {
 		t.Errorf("exported summary = %q", insight.Output)
 	}
