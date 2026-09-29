@@ -156,3 +156,43 @@ func TestAccept_ClosesAtTheLifetimeCap(t *testing.T) {
 		t.Fatal("the connection outlived its lifetime cap")
 	}
 }
+
+// TestConn_SurvivesKeepaliveWhileStreaming: a handler that has made its
+// request and is streaming the answer back is not reading, and a pong is
+// only heard by a reader. The connection must outlast several ping
+// intervals in that state, or every answer slower than one interval plus
+// the timeout is cut off in the middle.
+func TestConn_SurvivesKeepaliveWhileStreaming(t *testing.T) {
+	t.Parallel()
+	opts := ws.Options{PingInterval: 40 * time.Millisecond, PingTimeout: 120 * time.Millisecond}
+	srv := serve(t, opts, func(conn *ws.Conn) {
+		if _, err := conn.Receive(); err != nil {
+			t.Errorf("receive: %v", err)
+			return
+		}
+		// The model thinks, then answers: well past interval + timeout.
+		select {
+		case <-conn.Context().Done():
+			t.Error("the connection was given up while the handler was streaming")
+			return
+		case <-time.After(600 * time.Millisecond):
+		}
+		_ = conn.Chunk("the answer")
+		_ = conn.Done()
+	})
+
+	client := dial(t, srv, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := client.Write(ctx, websocket.MessageText, []byte(`{"action":"generate"}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	// Reading is what makes this client answer pings, as a browser does.
+	_, first, err := client.Read(ctx)
+	if err != nil {
+		t.Fatalf("the stream ended before the answer: %v", err)
+	}
+	if !strings.Contains(string(first), "the answer") {
+		t.Errorf("first frame = %s, want the answer chunk", first)
+	}
+}

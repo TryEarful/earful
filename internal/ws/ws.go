@@ -80,19 +80,39 @@ type Options struct {
 	// PingInterval keeps intermediaries from dropping an idle stream
 	// (a model can think for a while before its first token).
 	PingInterval time.Duration
+	// PingTimeout is how long a ping may go unanswered before the
+	// connection is given up as dead.
+	PingTimeout time.Duration
 }
 
 const (
 	defaultMaxMessageBytes = 1 << 20 // 1 MiB: far above a control frame, ample for one audio chunk
 	defaultMaxLifetime     = 55 * time.Minute
 	defaultPingInterval    = 30 * time.Second
+	defaultPingTimeout     = 10 * time.Second
+
+	// inboxSize is how many messages may wait for a handler that is busy
+	// streaming. A client says little once its request is made (the tail
+	// of an audio take, at most), so this is headroom rather than a
+	// queue; when it is full the reader waits, as it would with none.
+	inboxSize = 32
 )
 
 // Conn is an accepted connection with its lifetime context.
 type Conn struct {
-	conn   *websocket.Conn
-	ctx    context.Context
-	cancel context.CancelFunc
+	conn        *websocket.Conn
+	ctx         context.Context
+	cancel      context.CancelFunc
+	pingTimeout time.Duration
+	inbox       chan received
+}
+
+// received is one result of reading the connection: a message or the
+// error that ended the reading.
+type received struct {
+	typ  websocket.MessageType
+	data []byte
+	err  error
 }
 
 // Accept upgrades the request. The returned Conn must be Closed; its
@@ -109,6 +129,9 @@ func Accept(w http.ResponseWriter, r *http.Request, opts Options) (*Conn, error)
 	if opts.PingInterval <= 0 {
 		opts.PingInterval = defaultPingInterval
 	}
+	if opts.PingTimeout <= 0 {
+		opts.PingTimeout = defaultPingTimeout
+	}
 
 	// No OriginPatterns: the library then requires the Origin host to
 	// equal the request host. Same-origin only, deliberately.
@@ -121,9 +144,38 @@ func Accept(w http.ResponseWriter, r *http.Request, opts Options) (*Conn, error)
 	conn.SetReadLimit(opts.MaxMessageBytes)
 
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), opts.MaxLifetime)
-	c := &Conn{conn: conn, ctx: ctx, cancel: cancel}
+	c := &Conn{
+		conn:        conn,
+		ctx:         ctx,
+		cancel:      cancel,
+		pingTimeout: opts.PingTimeout,
+		inbox:       make(chan received, inboxSize),
+	}
+	go c.read()
 	go c.keepalive(opts.PingInterval)
 	return c, nil
+}
+
+// read is the connection's one reader, running for as long as the
+// connection does. The library hears a pong only while a read is in
+// progress, and a handler streaming a model's answer is not reading: it
+// made its one Receive and is now only sending. Without a standing
+// reader every ping sent during a long answer goes unanswered as far as
+// the server can tell, and keepalive ends a healthy connection in the
+// middle of the stream it exists to protect.
+func (c *Conn) read() {
+	defer close(c.inbox)
+	for {
+		typ, data, err := c.conn.Read(c.ctx)
+		select {
+		case c.inbox <- received{typ: typ, data: data, err: err}:
+		case <-c.ctx.Done():
+			return
+		}
+		if err != nil {
+			return
+		}
+	}
 }
 
 // Context is cancelled when the connection closes or the lifetime cap
@@ -141,7 +193,7 @@ func (c *Conn) keepalive(every time.Duration) {
 			c.conn.Close(websocket.StatusGoingAway, "connection lifetime reached")
 			return
 		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(c.ctx, 10*time.Second)
+			ctx, cancel := context.WithTimeout(c.ctx, c.pingTimeout)
 			err := c.conn.Ping(ctx)
 			cancel()
 			if err != nil {
@@ -156,7 +208,23 @@ func (c *Conn) keepalive(every time.Duration) {
 // as ErrClosed so handlers can end quietly on a normal disconnect —
 // a respondent closing a tab is not an incident.
 func (c *Conn) Receive() (Message, error) {
-	typ, data, err := c.conn.Read(c.ctx)
+	var in received
+	var open bool
+	// What has already arrived is delivered before the end of the
+	// connection is reported, so a final message is not lost to it.
+	select {
+	case in, open = <-c.inbox:
+	default:
+		select {
+		case in, open = <-c.inbox:
+		case <-c.ctx.Done():
+			return Message{}, ErrClosed
+		}
+	}
+	if !open {
+		return Message{}, ErrClosed
+	}
+	typ, data, err := in.typ, in.data, in.err
 	if err != nil {
 		if isClosed(err) {
 			return Message{}, ErrClosed
