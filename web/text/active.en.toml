@@ -302,3 +302,67 @@ label_html = 'Options <small class="muted">(one per line; leave empty to keep th
 
 [languages.save]
 label = "Save and mark reviewed"
+
+
+# ── The two views of a survey's answers ─────────────────────────────────
+
+[tabs]
+aria = "Survey views"
+answers = "Answers"
+stats = "Stats"
+
+
+# ── Stats ───────────────────────────────────────────────────────────────
+
+[stats]
+title = "{{.Survey}} — stats — Earful"
+heading = "Stats"
+
+[stats.opened]
+label = "Opened"
+
+[stats.submissions]
+label = "Submissions"
+
+[stats.picture]
+heading = "Big picture"
+completion = "Completion rate"
+time = "Time to complete"
+note = '"Opened" counts times the survey page was loaded, so it is an upper bound on people. Days are counted in UTC. Nothing here is linked to any individual response.'
+
+[stats.trend]
+heading = "Trends"
+range = "Per day, {{.Range}}."
+aria = "Opened and submissions per day; the table below holds the same numbers"
+empty = "Nothing in this range yet."
+day = "Day"
+
+[stats.questions]
+heading = "Question by question"
+intro = "The last question each submitted response answered — useful for spotting a question people give up on. Respondents who left without submitting are not counted, because survey pages report nothing until the answers are sent."
+empty = "No published questions yet."
+question = "Question"
+stopped = "Stopped here"
+required = "Required"
+
+[stats.audience]
+heading = "Audience"
+intro = "Totals for the whole life of the survey: these three counts keep no dates, so no date range can narrow them to a day, and a day on a small survey is a person."
+browser = "Browser"
+device = "Device"
+country = "Country"
+empty = "Nothing to show yet."
+
+[stats.range]
+aria = "Range presets"
+week = "Last 7 days"
+month = "Last 30 days"
+all = "All time"
+from = "From"
+to = "To"
+
+[stats.range.apply]
+label = "Apply"
+
+[stats.range.csv]
+label = "Download CSV"

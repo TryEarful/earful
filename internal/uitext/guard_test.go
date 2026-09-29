@@ -27,7 +27,6 @@ var unmoved = map[string]bool{
 	"admin_templ.go":   true,
 	"respond_templ.go": true,
 	"results_templ.go": true,
-	"stats_templ.go":   true,
 	"surveys_templ.go": true,
 }
 

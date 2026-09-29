@@ -443,3 +443,153 @@ other = 'Opciones <small class="muted">(una por línea; déjelo vacío para cons
 [languages.save.label]
 hash = "sha1-a26226ca5a7d7fdddfdded0eb89234632eeffbdb"
 other = "Guardar y marcar como revisado"
+
+
+# ── Las dos vistas de las respuestas de una encuesta ────────────────────
+
+[tabs.aria]
+hash = "sha1-63e3a24556cd0312951defd1e44f9d6f02753a68"
+other = "Vistas de la encuesta"
+
+[tabs.answers]
+hash = "sha1-b12fcedc7bf1f597e5ad2703f34f510c39410a64"
+other = "Respuestas"
+
+[tabs.stats]
+hash = "sha1-be763e9aba2af6b8baabada85d5e26c043c93fed"
+other = "Estadísticas"
+
+
+# ── Estadísticas ────────────────────────────────────────────────────────
+
+[stats.title]
+hash = "sha1-6e54a3a1ac3b75d940314d9acd567ca7e14afeb4"
+other = "{{.Survey}} — estadísticas — Earful"
+
+[stats.heading]
+hash = "sha1-be763e9aba2af6b8baabada85d5e26c043c93fed"
+other = "Estadísticas"
+
+[stats.opened.label]
+hash = "sha1-c4f1f5b1d49f90d5437402166829d6b471bf1593"
+other = "Aperturas"
+
+[stats.submissions.label]
+hash = "sha1-d6f33c151fbb46c8e7be88c9077be381580c9087"
+other = "Envíos"
+
+[stats.picture.heading]
+hash = "sha1-a585e1ee3cfc0d8710e477d7b2638323336664fd"
+other = "Panorama general"
+
+[stats.picture.completion]
+hash = "sha1-a36008372807c922a809b75df95445c475ea9564"
+other = "Tasa de finalización"
+
+[stats.picture.time]
+hash = "sha1-e21705832ad34557a27336a30329ef7c1c7b75bf"
+other = "Tiempo para completarla"
+
+[stats.picture.note]
+hash = "sha1-1c59e8f7701c4be4f5e1868a7f3b6d37b3fe3ed9"
+other = "«Aperturas» cuenta las veces que se cargó la página de la encuesta, así que es un límite superior del número de personas. Los días se cuentan en UTC. Nada de lo que hay aquí está vinculado a un envío concreto."
+
+[stats.trend.heading]
+hash = "sha1-716f3fa8e1e52264e7e77e2b4291372c265d085c"
+other = "Tendencias"
+
+[stats.trend.range]
+hash = "sha1-eafd045782285ea32872a49e65c53564f21c3f6c"
+other = "Por día, {{.Range}}."
+
+[stats.trend.aria]
+hash = "sha1-a166197da4f934665f7c63b01674a1c4577ecb66"
+other = "Aperturas y envíos por día; la tabla de abajo contiene las mismas cifras"
+
+[stats.trend.empty]
+hash = "sha1-b474c6dd78297c9453efbf81441f9eb92cbd71e6"
+other = "Todavía no hay nada en este intervalo."
+
+[stats.trend.day]
+hash = "sha1-987b9ced08d4ac5d11d286ca4b54b99a4f69164b"
+other = "Día"
+
+[stats.questions.heading]
+hash = "sha1-6a317646b0f7e221df54a1a07addb5bd140020f2"
+other = "Pregunta por pregunta"
+
+[stats.questions.intro]
+hash = "sha1-d90d1c49e59976680947ddbde5cb44f3719c2250"
+other = "La última pregunta que respondió cada envío: sirve para detectar una pregunta en la que la gente abandona. Quienes se fueron sin enviar no se cuentan, porque las páginas de la encuesta no comunican nada hasta que se envían las respuestas."
+
+[stats.questions.empty]
+hash = "sha1-0e44965f61a51a56f0b25dd9beeca085650f2c24"
+other = "Todavía no hay preguntas publicadas."
+
+[stats.questions.question]
+hash = "sha1-002ff598115d84595ffeee6219cb5c03d3a1d4a6"
+other = "Pregunta"
+
+[stats.questions.stopped]
+hash = "sha1-dd8697053540f1786709152829645efc27f73e63"
+other = "Se detuvieron aquí"
+
+[stats.questions.required]
+hash = "sha1-eed6bfb41051ed5b74447340f3c2e29d11e99a7c"
+other = "Obligatoria"
+
+[stats.audience.heading]
+hash = "sha1-51d9934555e29c55ec859265102b489e0b764ac8"
+other = "Audiencia"
+
+[stats.audience.intro]
+hash = "sha1-f3c3e49375389d0382d9c0aa6806aad9d9071abf"
+other = "Totales de toda la vida de la encuesta: estos tres recuentos no guardan fechas, de modo que ningún intervalo puede reducirlos a un día, y un día en una encuesta pequeña es una persona."
+
+[stats.audience.browser]
+hash = "sha1-54a2cf5e634dbba0be2bf8a55f79252f5c790bdb"
+other = "Navegador"
+
+[stats.audience.device]
+hash = "sha1-a5a74a6df09278b88cb6ea23b7d7f2570c33babf"
+other = "Dispositivo"
+
+[stats.audience.country]
+hash = "sha1-d523ebbd10146cdfd39dee077f04c9d08468d0bc"
+other = "País"
+
+[stats.audience.empty]
+hash = "sha1-dfd6503c55b8a22a5a86300c9ee7207d86e4f2a5"
+other = "Todavía no hay nada que mostrar."
+
+[stats.range.aria]
+hash = "sha1-708c39b19013f03ab288057f388370c5b88052fd"
+other = "Intervalos predefinidos"
+
+[stats.range.week]
+hash = "sha1-df833fe88d3888a1ce9d1dbefea78fe4d4cffc4e"
+other = "Últimos 7 días"
+
+[stats.range.month]
+hash = "sha1-6b32985251a1f00785875492de31de15b7e04116"
+other = "Últimos 30 días"
+
+[stats.range.all]
+hash = "sha1-dbad49d891235d758443e82ef009973685e3a639"
+other = "Todo el periodo"
+
+[stats.range.from]
+hash = "sha1-3f66052a107eaf9bae7cad0f61fb462f47ec2c47"
+other = "Desde"
+
+[stats.range.to]
+hash = "sha1-ae79ea1e9c6391a9ed83a2e18a031b835feec0c9"
+other = "Hasta"
+
+[stats.range.apply.label]
+hash = "sha1-cfea419c3b4e8b02ee586e70a28bf846e44cdda4"
+other = "Aplicar"
+
+[stats.range.csv.label]
+hash = "sha1-eaa216ad406cea80c9080f3bd9c4417c3a3a682d"
+other = "Descargar CSV"

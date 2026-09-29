@@ -3,6 +3,7 @@ package templates
 import (
 	"strconv"
 
+	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/static"
 )
 
@@ -17,53 +18,52 @@ import (
 // a table until stats.js draws them, and the table stays reachable
 // afterwards.
 templ SurveyStats(email string, csrf string, data SurveyStatsData) {
-	@Layout(data.Survey.Title + " — stats — Earful") {
+	@Layout(t(ctx, "stats.title", uitext.Args{"Survey": data.Survey.Title})) {
 		@AuthedHeader(email, csrf)
 		<main class="stats-page">
-			<nav class="breadcrumb" aria-label="Breadcrumb">
-				<a href="/surveys">Surveys</a> /
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }>
+				<a href="/surveys">{ t(ctx, "breadcrumb.surveys") }</a> /
 				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> /
-				Stats
+				{ t(ctx, "stats.heading") }
 			</nav>
 			<div class="title-row">
-				<h1>Stats</h1>
+				<h1>{ t(ctx, "stats.heading") }</h1>
 				@StatusChip(data.Survey.Status)
 			</div>
-			<nav class="tabs" aria-label="Survey views">
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>Answers</a>
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") } aria-current="page">Stats</a>
+			<nav class="tabs" aria-label={ t(ctx, "tabs.aria") }>
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>{ t(ctx, "tabs.answers") }</a>
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") } aria-current="page">{ t(ctx, "tabs.stats") }</a>
 			</nav>
 
 			@rangeControl(data)
 
 			<section class="card">
-				<h2>Big picture</h2>
+				<h2>{ t(ctx, "stats.picture.heading") }</h2>
 				<dl class="stat-grid">
 					<div>
-						<dt>Opened</dt>
+						<dt>{ t(ctx, "stats.opened.label") }</dt>
 						<dd>{ data.Opened }</dd>
 					</div>
 					<div>
-						<dt>Submissions</dt>
+						<dt>{ t(ctx, "stats.submissions.label") }</dt>
 						<dd>{ data.Submissions }</dd>
 					</div>
 					if data.CompletionRate != "" {
 						<div>
-							<dt>Completion rate</dt>
+							<dt>{ t(ctx, "stats.picture.completion") }</dt>
 							<dd>{ data.CompletionRate }</dd>
 						</div>
 					}
 					if data.TimeToComplete != "" {
 						<div>
-							<dt>Time to complete</dt>
+							<dt>{ t(ctx, "stats.picture.time") }</dt>
 							<dd>{ data.TimeToComplete }</dd>
 							<dd class="stat-sub">{ data.TimedNote }</dd>
 						</div>
 					}
 				</dl>
 				<p class="muted">
-					"Opened" counts times the survey page was loaded, so it is an upper bound on people.
-					Days are counted in UTC. Nothing here is linked to any individual response.
+					{ t(ctx, "stats.picture.note") }
 				</p>
 				if data.LumpNote != "" {
 					<p class="muted">{ data.LumpNote }</p>
@@ -72,22 +72,22 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 
 			<section class="card trend" id="trend">
 				<div class="title-row">
-					<h2>Trends</h2>
+					<h2>{ t(ctx, "stats.trend.heading") }</h2>
 					<div class="trend-controls"></div>
 				</div>
-				<p class="muted">Per day, { data.Range.Label }.</p>
-				<div class="trend-chart" role="img" aria-label="Opened and submissions per day; the table below holds the same numbers"></div>
+				<p class="muted">{ t(ctx, "stats.trend.range", uitext.Args{"Range": data.Range.Label}) }</p>
+				<div class="trend-chart" role="img" aria-label={ t(ctx, "stats.trend.aria") }></div>
 				<div class="trend-table">
 					if len(data.TrendRows) == 0 {
-						<p class="muted">Nothing in this range yet.</p>
+						<p class="muted">{ t(ctx, "stats.trend.empty") }</p>
 					} else {
 						<div class="table-scroll">
 							<table class="responses">
 								<thead>
 									<tr>
-										<th scope="col">Day</th>
-										<th scope="col">Opened</th>
-										<th scope="col">Submissions</th>
+										<th scope="col">{ t(ctx, "stats.trend.day") }</th>
+										<th scope="col">{ t(ctx, "stats.opened.label") }</th>
+										<th scope="col">{ t(ctx, "stats.submissions.label") }</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -107,21 +107,19 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 			</section>
 
 			<section class="card" id="questions">
-				<h2>Question by question</h2>
+				<h2>{ t(ctx, "stats.questions.heading") }</h2>
 				<p class="muted">
-					The last question each submitted response answered — useful for spotting a question
-					people give up on. Respondents who left without submitting are not counted, because
-					survey pages report nothing until the answers are sent.
+					{ t(ctx, "stats.questions.intro") }
 				</p>
 				if len(data.Questions) == 0 {
-					<p class="muted">No published questions yet.</p>
+					<p class="muted">{ t(ctx, "stats.questions.empty") }</p>
 				} else {
 					<div class="table-scroll">
 						<table class="responses stops" data-sortable>
 							<thead>
 								<tr>
-									<th scope="col" data-sort="text">Question</th>
-									<th scope="col" data-sort="number" class="num">Stopped here</th>
+									<th scope="col" data-sort="text">{ t(ctx, "stats.questions.question") }</th>
+									<th scope="col" data-sort="number" class="num">{ t(ctx, "stats.questions.stopped") }</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -130,7 +128,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 										<td>
 											<span class="chip chip-small">{ row.TypeLabel }</span>
 											if row.Required {
-												<span class="required" title="Required">*</span>
+												<span class="required" title={ t(ctx, "stats.questions.required") }>*</span>
 											}
 											{ row.Text }
 										</td>
@@ -149,18 +147,17 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 			</section>
 
 			<section class="card stats">
-				<h2>Audience</h2>
+				<h2>{ t(ctx, "stats.audience.heading") }</h2>
 				<p class="muted">
-					Totals for the whole life of the survey: these three counts keep no dates, so no
-					date range can narrow them to a day, and a day on a small survey is a person.
+					{ t(ctx, "stats.audience.intro") }
 				</p>
 				if data.HasAudience {
-					@statBuckets("Browser", data.Browsers)
-					@statBuckets("Device", data.Devices)
-					@statBuckets("Country", data.Countries)
+					@statBuckets(t(ctx, "stats.audience.browser"), data.Browsers)
+					@statBuckets(t(ctx, "stats.audience.device"), data.Devices)
+					@statBuckets(t(ctx, "stats.audience.country"), data.Countries)
 					<p class="muted">{ data.SuppressionNote }</p>
 				} else {
-					<p class="muted">{ data.SuppressionNote } Nothing to show yet.</p>
+					<p class="muted">{ data.SuppressionNote } { t(ctx, "stats.audience.empty") }</p>
 				}
 			</section>
 		</main>
@@ -172,21 +169,21 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 // CSV link downloads exactly what the page shows.
 templ rangeControl(data SurveyStatsData) {
 	<form method="get" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") } class="range-form">
-		<nav class="range-presets" aria-label="Range presets">
-			@rangePreset(data, "7d", "Last 7 days")
-			@rangePreset(data, "30d", "Last 30 days")
-			@rangePreset(data, "all", "All time")
+		<nav class="range-presets" aria-label={ t(ctx, "stats.range.aria") }>
+			@rangePreset(data, "7d", t(ctx, "stats.range.week"))
+			@rangePreset(data, "30d", t(ctx, "stats.range.month"))
+			@rangePreset(data, "all", t(ctx, "stats.range.all"))
 		</nav>
 		<label class="field">
-			<span>From</span>
+			<span>{ t(ctx, "stats.range.from") }</span>
 			<input type="date" name="from" value={ data.Range.FromInput } max={ data.Range.MaxInput } required/>
 		</label>
 		<label class="field">
-			<span>To</span>
+			<span>{ t(ctx, "stats.range.to") }</span>
 			<input type="date" name="to" value={ data.Range.ToInput } max={ data.Range.MaxInput } required/>
 		</label>
-		<button type="submit" class="secondary">Apply</button>
-		<a class="button secondary" href={ templ.SafeURL(data.CSVURL) }>Download CSV</a>
+		<button type="submit" class="secondary">{ t(ctx, "stats.range.apply.label") }</button>
+		<a class="button secondary" href={ templ.SafeURL(data.CSVURL) }>{ t(ctx, "stats.range.csv.label") }</a>
 	</form>
 }
 
