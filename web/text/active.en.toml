@@ -1245,3 +1245,34 @@ megabytes = "{{.Value}} MB"
 [format.duration]
 seconds = "{{.Seconds}}s"
 minutes = "{{.Minutes}}m {{.Seconds}}s"
+
+
+# ── Email ──────────────────────────────────────────────────────────────
+
+[email.magic]
+subject = "Your Earful sign-in link"
+body = '''
+Click to sign in to Earful:
+
+{{.Link}}
+
+The link is valid for 15 minutes and can be used once. If you didn't request it, ignore this email.'''
+
+[email.invite]
+subject = "You're invited: {{.Survey}}"
+body = '''
+{{.Workspace}} invites you to answer the survey "{{.Survey}}".
+
+Your personal link:
+
+{{.Link}}
+
+The link is yours alone and works for one submission. If you weren't expecting this, you can ignore it.'''
+
+
+# ── The name a workspace is given ──────────────────────────────────────
+
+[workspace.name]
+personal = "Personal workspace"
+# Given once, when the account is made, in the language it was made in.
+of = "{{.Name}}'s workspace"

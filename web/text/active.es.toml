@@ -2273,3 +2273,45 @@ other = "{{.Seconds}} s"
 [format.duration.minutes]
 hash = "sha1-d5ec82dce6e73bd0eade7389542d3488eb359dcc"
 other = "{{.Minutes}} min {{.Seconds}} s"
+
+
+# ── Correo electrónico ─────────────────────────────────────────────────
+
+[email.magic.subject]
+hash = "sha1-05efb5369c50e5dbe5f08603289016171d870ec6"
+other = "Su enlace de acceso a Earful"
+
+[email.magic.body]
+hash = "sha1-e439fc99e1bbc6ebcaefe9bcdb8c13177ab76872"
+other = '''
+Pulse para iniciar sesión en Earful:
+
+{{.Link}}
+
+El enlace es válido durante 15 minutos y solo puede usarse una vez. Si no lo ha solicitado, no haga caso de este correo.'''
+
+[email.invite.subject]
+hash = "sha1-2526e608d3b9d923c6a4e1e27f2ec93493a8eca4"
+other = "Tiene una invitación: {{.Survey}}"
+
+[email.invite.body]
+hash = "sha1-31c724d7f541ff94e3ab04f0e82a11c72a9f75dd"
+other = '''
+{{.Workspace}} le invita a responder la encuesta «{{.Survey}}».
+
+Su enlace personal:
+
+{{.Link}}
+
+El enlace es solo suyo y sirve para un único envío. Si no esperaba este mensaje, puede no hacerle caso.'''
+
+
+# ── El nombre que se le da a un espacio de trabajo ─────────────────────
+
+[workspace.name.personal]
+hash = "sha1-5b85240ed7a8531818b0cfcd70c53887b79f11bb"
+other = "Espacio de trabajo personal"
+
+[workspace.name.of]
+hash = "sha1-76ec7d4bf42e30dcdd8065e0798d45d8dd5cf4ff"
+other = "Espacio de trabajo de {{.Name}}"

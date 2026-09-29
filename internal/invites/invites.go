@@ -9,7 +9,8 @@ package invites
 
 import (
 	"context"
-	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -74,12 +75,20 @@ func (s *Service) SendPending(ctx context.Context, workspaceID, surveyID uuid.UU
 			return result, err
 		}
 		link := s.baseURL + "/p/" + raw
+		// An invitation is written in the language of whoever sends it.
+		// What language the person invited reads is not known, and is
+		// not something to record about them in order to find out.
+		l := uitext.From(ctx)
+		// The title is quoted as Go quotes it, so that one with a quote
+		// of its own in it cannot be read as ending early. The message
+		// supplies the marks, which differ from language to language.
+		quoted := strconv.Quote(surveyTitle)
 		err = s.sender.Send(ctx, email.Message{
 			To:      participant.Email,
-			Subject: "You're invited: " + surveyTitle,
-			Text: fmt.Sprintf(
-				"%s invites you to answer the survey %q.\n\nYour personal link:\n\n%s\n\nThe link is yours alone and works for one submission. If you weren't expecting this, you can ignore it.",
-				workspaceName, surveyTitle, link),
+			Subject: l.T("email.invite.subject", uitext.Args{"Survey": surveyTitle}),
+			Text: l.T("email.invite.body", uitext.Args{
+				"Workspace": workspaceName, "Survey": quoted[1 : len(quoted)-1], "Link": link,
+			}),
 		})
 		if err != nil {
 			// A failed send rolls back to pending so the next run retries

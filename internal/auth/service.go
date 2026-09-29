@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/mail"
 	"strings"
 	"time"
@@ -126,12 +127,13 @@ func (s *Service) RequestMagicLink(ctx context.Context, address, ip string) erro
 	}
 
 	link := s.baseURL + "/auth/magic/verify?token=" + raw
+	// The link is written to whoever asked for it, in the language they
+	// asked in, which the request's context carries.
+	l := uitext.From(ctx)
 	return s.sender.Send(ctx, email.Message{
 		To:      addressNorm,
-		Subject: "Your Earful sign-in link",
-		Text: "Click to sign in to Earful:\n\n" + link +
-			"\n\nThe link is valid for 15 minutes and can be used once. " +
-			"If you didn't request it, ignore this email.",
+		Subject: l.T("email.magic.subject"),
+		Text:    l.T("email.magic.body", uitext.Args{"Link": link}),
 	})
 }
 
@@ -236,7 +238,7 @@ func (s *Service) login(ctx context.Context, address string, googleSub *string) 
 
 	ws, err := qtx.GetWorkspaceForUser(ctx, user.ID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		ws, err = qtx.CreateWorkspace(ctx, workspaceNameFor(address))
+		ws, err = qtx.CreateWorkspace(ctx, workspaceNameFor(ctx, address))
 		if err != nil {
 			return db.User{}, db.Workspace{}, fmt.Errorf("auth: create workspace: %w", err)
 		}
@@ -331,13 +333,15 @@ func (s *Service) DeleteAccount(ctx context.Context, userID uuid.UUID) error {
 }
 
 // workspaceNameFor derives the personal-workspace name from the email's
-// local part: "sam@example.com" → "sam's workspace".
-func workspaceNameFor(address string) string {
+// local part: "sam@example.com" → "sam's workspace". The name is given
+// once and kept, so it is in the language the account was made in.
+func workspaceNameFor(ctx context.Context, address string) string {
+	l := uitext.From(ctx)
 	local, _, ok := strings.Cut(address, "@")
 	if !ok || local == "" {
-		return "Personal workspace"
+		return l.T("workspace.name.personal")
 	}
-	return local + "'s workspace"
+	return l.T("workspace.name.of", uitext.Args{"Name": local})
 }
 
 func ptr[T any](v T) *T { return &v }
