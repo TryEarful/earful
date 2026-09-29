@@ -80,6 +80,16 @@ abuse-monitoring pages, read on 2026-09-28:
   Pro id, and any other id gets the plain request, because Gemini 2.5
   rejects the field with a 400 and no transcript. A model change is
   therefore a tfvars change and nothing else.
+- The `eu` endpoint runs on shared capacity, and a request is
+  occasionally accepted and then met with silence for a minute or more
+  while the same request sent again is answered at the usual speed. The
+  client times only the beginning of an answer: an attempt that has
+  produced nothing within its allowance (20 s for a transcript, 30 s
+  for drafting and translation, 90 s for a summary) is abandoned and
+  the request made again, three attempts in all. Measured on
+  2026-09-29, a draft begins in 6 to 13 seconds at the default thinking
+  level and in 1 to 4 at `LOW`; lowering it for drafting is a row in
+  the client's table if the wait proves too long.
 - The rollout order is apply, then tag. The pipeline moves only the
   image, so a binary that expects the new location or model must not
   reach production before the environment does; `make release-check`

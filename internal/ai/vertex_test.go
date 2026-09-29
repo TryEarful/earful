@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -381,4 +384,102 @@ func TestVertex_Integration(t *testing.T) {
 		t.Error("transcription returned nothing")
 	}
 	t.Logf("transcript: %q", strings.TrimSpace(transcript))
+}
+
+// stallingVertex answers like Vertex, except that its first `stalls`
+// requests say nothing until the client gives up. afterHeaders chooses
+// where the silence falls: before the response begins, or after its
+// headers with no event following.
+func stallingVertex(t *testing.T, stalls int32, afterHeaders bool) (*httptest.Server, *atomic.Int32) {
+	t.Helper()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(io.Discard, r.Body)
+		n := calls.Add(1)
+		w.Header().Set("Content-Type", "text/event-stream")
+		if n <= stalls {
+			if afterHeaders {
+				w.WriteHeader(http.StatusOK)
+				w.(http.Flusher).Flush()
+			}
+			<-r.Context().Done()
+			return
+		}
+		fmt.Fprintf(w, "data: %s\n\n", textFrame("the answer"))
+	}))
+	t.Cleanup(srv.Close)
+	return srv, &calls
+}
+
+// TestVertex_AsksAgainWhenAnAttemptSaysNothing: a request that is
+// accepted and then met with silence is abandoned after its allowance
+// and made again, wherever in the exchange the silence falls.
+func TestVertex_AsksAgainWhenAnAttemptSaysNothing(t *testing.T) {
+	t.Parallel()
+	for name, afterHeaders := range map[string]bool{"before the response": false, "after the headers": true} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			srv, calls := stallingVertex(t, 1, afterHeaders)
+			provider := &ai.Vertex{
+				Project: "earful-stg", Location: "eu",
+				Models:             ai.ModelSet{Default: "gemini-3.8-flash"},
+				Endpoint:           srv.URL,
+				Client:             srv.Client(),
+				FirstAnswerTimeout: 60 * time.Millisecond,
+			}
+			stream, err := provider.Generate(context.Background(), ai.GenerateRequest{Prompt: "ten questions"})
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			text, err := ai.Collect(stream)
+			if err != nil || text != "the answer" {
+				t.Fatalf("answer = %q (%v), want the second attempt's", text, err)
+			}
+			if got := calls.Load(); got != 2 {
+				t.Errorf("requests made = %d, want 2", got)
+			}
+		})
+	}
+}
+
+func TestVertex_GivesUpWhenNoAttemptAnswers(t *testing.T) {
+	t.Parallel()
+	srv, calls := stallingVertex(t, 100, false)
+	provider := &ai.Vertex{
+		Project: "earful-stg", Location: "eu",
+		Models:             ai.ModelSet{Default: "gemini-3.8-flash"},
+		Endpoint:           srv.URL,
+		Client:             srv.Client(),
+		FirstAnswerTimeout: 40 * time.Millisecond,
+	}
+	_, err := provider.Generate(context.Background(), ai.GenerateRequest{Prompt: "ten questions"})
+	if err == nil || !strings.Contains(err.Error(), "did not begin to answer") {
+		t.Fatalf("error = %v, want the stall reported", err)
+	}
+	if got := calls.Load(); got != 3 {
+		t.Errorf("requests made = %d, want 3", got)
+	}
+}
+
+// TestVertex_ACallerGivingUpIsNotAStall: when the person goes away the
+// request ends with them; it is not mistaken for silence and repeated.
+func TestVertex_ACallerGivingUpIsNotAStall(t *testing.T) {
+	t.Parallel()
+	srv, calls := stallingVertex(t, 100, false)
+	provider := &ai.Vertex{
+		Project: "earful-stg", Location: "eu",
+		Models:             ai.ModelSet{Default: "gemini-3.8-flash"},
+		Endpoint:           srv.URL,
+		Client:             srv.Client(),
+		FirstAnswerTimeout: 5 * time.Second,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Millisecond)
+	defer cancel()
+	_, err := provider.Generate(ctx, ai.GenerateRequest{Prompt: "ten questions"})
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error = %v, want the caller's deadline", err)
+	}
+	if got := calls.Load(); got != 1 {
+		t.Errorf("requests made = %d, want 1", got)
+	}
 }

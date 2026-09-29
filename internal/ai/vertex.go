@@ -5,13 +5,16 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -43,6 +46,10 @@ type Vertex struct {
 	// Endpoint overrides the API host (tests point it at a stub server).
 	// Empty means the Vertex host that serves Location.
 	Endpoint string
+	// FirstAnswerTimeout overrides how long one attempt may go without
+	// beginning to answer (tests shorten it). Zero means the allowance
+	// for the operation, see firstAnswerAllowance.
+	FirstAnswerTimeout time.Duration
 	// Client, when set, is used as-is; otherwise an ADC-authenticated
 	// client is built on first use.
 	Client *http.Client
@@ -175,28 +182,132 @@ func (v *Vertex) stream(ctx context.Context, op Op, system string, parts []verte
 
 	url := fmt.Sprintf("%s/v1/projects/%s/locations/%s/publishers/google/models/%s:streamGenerateContent?alt=sse",
 		v.host(), v.Project, v.Location, model)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
+
+	allowance := v.FirstAnswerTimeout
+	if allowance <= 0 {
+		allowance = firstAnswerAllowance(op)
+	}
+	for attempt := 1; ; attempt++ {
+		answer, err := v.attempt(ctx, op, url, payload, allowance)
+		if err == nil {
+			return answer, nil
+		}
+		if !errors.Is(err, errStalled) {
+			return nil, err
+		}
+		if attempt == vertexAttempts {
+			return nil, fmt.Errorf("ai: vertex %s request: %w in any of %d attempts", op, err, vertexAttempts)
+		}
+		slog.Default().Warn("ai: vertex did not begin to answer; asking again",
+			"op", string(op), "attempt", attempt, "allowance", allowance.String())
+	}
+}
+
+// A shared-capacity endpoint occasionally accepts a request and then
+// says nothing for a minute or more, while the same request sent again
+// is answered at the usual speed. Waiting such a call out is the worst
+// option for the person watching, so an attempt that has not begun to
+// answer within its allowance is abandoned and the request is made
+// again. Only the beginning is timed: once the first fragment arrives
+// the answer streams for as long as it needs.
+const vertexAttempts = 3
+
+// errStalled marks an attempt abandoned for saying nothing.
+var errStalled = errors.New("the model did not begin to answer")
+
+// firstAnswerAllowance is how long an attempt may take to produce its
+// first fragment. The model thinks before it answers and sends nothing
+// while it does, so the allowance has to cover the thinking an
+// operation ordinarily needs with room to spare: a transcript asks for
+// almost none, a summary of many responses for the most.
+func firstAnswerAllowance(op Op) time.Duration {
+	switch op {
+	case OpTranscribe:
+		return 20 * time.Second
+	case OpAnalyze:
+		return 90 * time.Second
+	default:
+		return 30 * time.Second
+	}
+}
+
+// attempt makes the request once and returns a stream that has already
+// produced its first fragment, or errStalled when the allowance ran out
+// before it did.
+func (v *Vertex) attempt(ctx context.Context, op Op, url string, payload []byte, allowance time.Duration) (Stream, error) {
+	attemptCtx, cancel := context.WithCancel(ctx)
+	var stalled atomic.Bool
+	watchdog := time.AfterFunc(allowance, func() {
+		stalled.Store(true)
+		cancel()
+	})
+	fail := func(err error) (Stream, error) {
+		watchdog.Stop()
+		cancel()
+		// The caller giving up is not a stall, whatever the timer says.
+		if stalled.Load() && ctx.Err() == nil {
+			return nil, errStalled
+		}
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(attemptCtx, http.MethodPost, url, bytes.NewReader(payload))
 	if err != nil {
-		return nil, fmt.Errorf("ai: build vertex request: %w", err)
+		return fail(fmt.Errorf("ai: build vertex request: %w", err))
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	client, err := v.httpClient(ctx)
 	if err != nil {
-		return nil, err
+		return fail(err)
 	}
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("ai: vertex %s request: %w", op, err)
+		return fail(fmt.Errorf("ai: vertex %s request: %w", op, err))
 	}
 	if resp.StatusCode >= 300 {
 		// The body carries Google's error message, which names the real
 		// problem (model id, region, permission) far better than the code.
 		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
 		resp.Body.Close()
-		return nil, fmt.Errorf("ai: vertex %s request: status %d: %s", op, resp.StatusCode, detail)
+		return fail(fmt.Errorf("ai: vertex %s request: status %d: %s", op, resp.StatusCode, detail))
 	}
-	return newSSEStream(resp.Body, decodeVertexEvent), nil
+
+	events := newSSEStream(resp.Body, decodeVertexEvent)
+	first, err := events.Recv()
+	if err != nil && !errors.Is(err, io.EOF) {
+		resp.Body.Close()
+		return fail(err)
+	}
+	if !watchdog.Stop() || stalled.Load() {
+		resp.Body.Close()
+		return fail(errStalled)
+	}
+	return &startedStream{events: events, release: cancel, first: first, firstErr: err, unread: true}, nil
+}
+
+// startedStream is an answer whose first fragment has been read ahead,
+// to prove the attempt alive. Recv hands that fragment over first.
+type startedStream struct {
+	events   *sseStream
+	release  context.CancelFunc
+	first    string
+	firstErr error // io.EOF when the answer was empty
+	unread   bool
+}
+
+func (s *startedStream) Recv() (string, error) {
+	if s.unread {
+		s.unread = false
+		return s.first, s.firstErr
+	}
+	return s.events.Recv()
+}
+
+func (s *startedStream) Close() error {
+	err := s.events.Close()
+	s.release()
+	return err
 }
 
 // generationConfig returns the request tuning for op on model, or nil
