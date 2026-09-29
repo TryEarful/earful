@@ -55,3 +55,89 @@
 #   The last part of a name cannot be id, description, hash, leftdelim,
 #   rightdelim, zero, one, two, few, many or other: those are the fields
 #   of a message. No part of a name can be `translation`.
+
+
+# ── Every page ──────────────────────────────────────────────────────────
+
+[page]
+title = "{{.Title}} — Earful"
+
+[page.home]
+label = "Home"
+
+
+# ── Home ────────────────────────────────────────────────────────────────
+
+[home.intro]
+body = "Open-source, AI-enhanced, voice-first surveys."
+
+[home.sign_in]
+label = "Sign in"
+
+
+# ── Signing in and creating an account ──────────────────────────────────
+
+[auth.email]
+label = "Email address"
+
+[auth.password]
+label = "Password"
+
+[login]
+title = "Sign in — Earful"
+heading = "Sign in"
+
+[login.submit]
+label = "Sign in"
+
+[login.beta]
+note_html = 'Earful is in private beta. Have an invite code? <a href="/signup">Create your account</a>.'
+
+[login.magic]
+hint = "No password, no account setup — the link signs you in and creates your workspace on first use."
+
+[login.magic.submit]
+label = "Email me a sign-in link"
+
+[login.google]
+divider = "or"
+label = "Continue with Google"
+
+[signup]
+title = "Create account — Earful"
+heading = "Create your account"
+note_html = '''Earful is in private beta — an invite code creates exactly one account, and you're signed in immediately. Already have an account? <a href="/login">Sign in</a>.'''
+
+[signup.code]
+label = "Invite code"
+
+[signup.submit]
+label = "Create account"
+
+[magic.sent]
+title = "Check your email — Earful"
+heading = "Check your email"
+body_html = "If <strong>{{.Email}}</strong> is a valid address, a sign-in link is on its way. It works once and expires in 15 minutes."
+retry_html = 'Nothing arriving? Check spam, or <a href="/login">request another link</a>.'
+
+[magic.confirm]
+title = "Confirm sign-in — Earful"
+heading = "Confirm sign-in"
+question_html = "Sign in to Earful as <strong>{{.Email}}</strong>?"
+note = "Wasn't you? Just close this page — the link expires on its own."
+
+[magic.confirm.submit]
+label = "Sign in"
+
+[magic.invalid]
+title = "Sign-in link problem — Earful"
+heading = "Sign-in link problem"
+
+[magic.invalid.back]
+label = "Back to sign-in"
+
+[goodbye]
+title = "Account deleted — Earful"
+heading = "Your account is deleted"
+body = "Your account and workspace are now deactivated and scheduled for permanent deletion after 30 days. If this was a mistake, contact support within those 30 days to restore it."
+again = "You can create a fresh account with the same email at any time."

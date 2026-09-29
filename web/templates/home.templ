@@ -4,8 +4,8 @@ templ Home() {
 	@Layout("Earful") {
 		<main>
 			<h1>Earful</h1>
-			<p>Open-source, AI-enhanced, voice-first surveys.</p>
-			<p><a class="button" href="/login">Sign in</a></p>
+			<p>{ t(ctx, "home.intro.body") }</p>
+			<p><a class="button" href="/login">{ t(ctx, "home.sign_in.label") }</a></p>
 		</main>
 	}
 }

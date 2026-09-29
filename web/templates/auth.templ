@@ -1,5 +1,7 @@
 package templates
 
+import "github.com/TryEarful/earful/internal/uitext"
+
 // Login is the combined sign-in page. In beta mode (M12) it is an
 // email+password form with a pointer to invite-code signup — no email is
 // ever sent; otherwise it is the magic-link email form. Google appears
@@ -7,9 +9,9 @@ package templates
 // Appendix D). errMsg re-renders the form after a rejected submission;
 // notice carries post-redirect messages ("signed out").
 templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
-	@Layout("Sign in — Earful") {
+	@Layout(t(ctx, "login.title")) {
 		<main>
-			<h1>Sign in</h1>
+			<h1>{ t(ctx, "login.heading") }</h1>
 			if notice != "" {
 				<p class="notice">{ notice }</p>
 			}
@@ -17,38 +19,40 @@ templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
 				<div class="card">
 					<form method="post" action="/login">
 						<label class="field">
-							<span>Email address</span>
+							<span>{ t(ctx, "auth.email.label") }</span>
 							<input type="email" name="email" required autocomplete="email" autofocus/>
 						</label>
 						<label class="field">
-							<span>Password</span>
+							<span>{ t(ctx, "auth.password.label") }</span>
 							<input type="password" name="password" required autocomplete="current-password"/>
 						</label>
 						if errMsg != "" {
 							<p class="error-text">{ errMsg }</p>
 						}
-						<button type="submit">Sign in</button>
+						<button type="submit">{ t(ctx, "login.submit.label") }</button>
 					</form>
-					<p class="muted">Earful is in private beta. Have an invite code? <a href="/signup">Create your account</a>.</p>
+					<p class="muted">
+						@thtml(ctx, "login.beta.note_html")
+					</p>
 				</div>
 			} else {
 				<div class="card">
 					<form method="post" action="/auth/magic/request">
 						<label class="field">
-							<span>Email address</span>
+							<span>{ t(ctx, "auth.email.label") }</span>
 							<input type="email" name="email" required autocomplete="email" autofocus/>
 						</label>
 						if errMsg != "" {
 							<p class="error-text">{ errMsg }</p>
 						}
-						<button type="submit">Email me a sign-in link</button>
+						<button type="submit">{ t(ctx, "login.magic.submit.label") }</button>
 					</form>
-					<p class="muted">No password, no account setup — the link signs you in and creates your workspace on first use.</p>
+					<p class="muted">{ t(ctx, "login.magic.hint") }</p>
 				</div>
 			}
 			if googleEnabled {
-				<div class="divider">or</div>
-				<a class="button secondary" href="/auth/google/start" rel="nofollow">Continue with Google</a>
+				<div class="divider">{ t(ctx, "login.google.divider") }</div>
+				<a class="button secondary" href="/auth/google/start" rel="nofollow">{ t(ctx, "login.google.label") }</a>
 			}
 		</main>
 	}
@@ -59,40 +63,46 @@ templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
 // the new user is signed in immediately — no confirmation email exists
 // to send.
 templ Signup(errMsg string) {
-	@Layout("Create account — Earful") {
+	@Layout(t(ctx, "signup.title")) {
 		<main>
-			<h1>Create your account</h1>
+			<h1>{ t(ctx, "signup.heading") }</h1>
 			<div class="card">
 				<form method="post" action="/signup">
 					<label class="field">
-						<span>Invite code</span>
+						<span>{ t(ctx, "signup.code.label") }</span>
 						<input type="text" name="code" required autocomplete="off" placeholder="earful-xxxx-xxxx-xxxx" autofocus/>
 					</label>
 					<label class="field">
-						<span>Email address</span>
+						<span>{ t(ctx, "auth.email.label") }</span>
 						<input type="email" name="email" required autocomplete="email"/>
 					</label>
 					<label class="field">
-						<span>Password</span>
+						<span>{ t(ctx, "auth.password.label") }</span>
 						<input type="password" name="password" required autocomplete="new-password" minlength="8"/>
 					</label>
 					if errMsg != "" {
 						<p class="error-text">{ errMsg }</p>
 					}
-					<button type="submit">Create account</button>
+					<button type="submit">{ t(ctx, "signup.submit.label") }</button>
 				</form>
-				<p class="muted">Earful is in private beta — an invite code creates exactly one account, and you're signed in immediately. Already have an account? <a href="/login">Sign in</a>.</p>
+				<p class="muted">
+					@thtml(ctx, "signup.note_html")
+				</p>
 			</div>
 		</main>
 	}
 }
 
 templ MagicSent(email string) {
-	@Layout("Check your email — Earful") {
+	@Layout(t(ctx, "magic.sent.title")) {
 		<main>
-			<h1>Check your email</h1>
-			<p>If <strong>{ email }</strong> is a valid address, a sign-in link is on its way. It works once and expires in 15 minutes.</p>
-			<p class="muted">Nothing arriving? Check spam, or <a href="/login">request another link</a>.</p>
+			<h1>{ t(ctx, "magic.sent.heading") }</h1>
+			<p>
+				@thtml(ctx, "magic.sent.body_html", uitext.Args{"Email": email})
+			</p>
+			<p class="muted">
+				@thtml(ctx, "magic.sent.retry_html")
+			</p>
 		</main>
 	}
 }
@@ -101,46 +111,48 @@ templ MagicSent(email string) {
 // pressing the button (a POST): link-prefetching email scanners only ever
 // GET, so they cannot consume the single-use token.
 templ MagicConfirm(email string, token string) {
-	@Layout("Confirm sign-in — Earful") {
+	@Layout(t(ctx, "magic.confirm.title")) {
 		<main>
-			<h1>Confirm sign-in</h1>
-			<p>Sign in to Earful as <strong>{ email }</strong>?</p>
+			<h1>{ t(ctx, "magic.confirm.heading") }</h1>
+			<p>
+				@thtml(ctx, "magic.confirm.question_html", uitext.Args{"Email": email})
+			</p>
 			<form method="post" action="/auth/magic/verify">
 				<input type="hidden" name="token" value={ token }/>
-				<button type="submit">Sign in</button>
+				<button type="submit">{ t(ctx, "magic.confirm.submit.label") }</button>
 			</form>
-			<p class="muted">Wasn't you? Just close this page — the link expires on its own.</p>
+			<p class="muted">{ t(ctx, "magic.confirm.note") }</p>
 		</main>
 	}
 }
 
 templ MagicInvalid(reason string) {
-	@Layout("Sign-in link problem — Earful") {
+	@Layout(t(ctx, "magic.invalid.title")) {
 		<main>
-			<h1>Sign-in link problem</h1>
+			<h1>{ t(ctx, "magic.invalid.heading") }</h1>
 			<p>{ reason }</p>
-			<p><a class="button" href="/login">Back to sign-in</a></p>
+			<p><a class="button" href="/login">{ t(ctx, "magic.invalid.back.label") }</a></p>
 		</main>
 	}
 }
 
 templ ErrorPage(title string, msg string) {
-	@Layout(title + " — Earful") {
+	@Layout(t(ctx, "page.title", uitext.Args{"Title": title})) {
 		<main>
 			<h1>{ title }</h1>
 			<p>{ msg }</p>
-			<p><a href="/">Home</a></p>
+			<p><a href="/">{ t(ctx, "page.home.label") }</a></p>
 		</main>
 	}
 }
 
 templ Goodbye() {
-	@Layout("Account deleted — Earful") {
+	@Layout(t(ctx, "goodbye.title")) {
 		<main>
-			<h1>Your account is deleted</h1>
-			<p>Your account and workspace are now deactivated and scheduled for permanent deletion after 30 days. If this was a mistake, contact support within those 30 days to restore it.</p>
-			<p class="muted">You can create a fresh account with the same email at any time.</p>
-			<p><a href="/">Home</a></p>
+			<h1>{ t(ctx, "goodbye.heading") }</h1>
+			<p>{ t(ctx, "goodbye.body") }</p>
+			<p class="muted">{ t(ctx, "goodbye.again") }</p>
+			<p><a href="/">{ t(ctx, "page.home.label") }</a></p>
 		</main>
 	}
 }

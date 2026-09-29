@@ -13,3 +13,173 @@
 # lo mismo que `other`.
 #
 # `hash` identifica el texto en inglés del que se tradujo el mensaje.
+#
+# Vocabulario
+#
+#   Survey            encuesta
+#   Draft             borrador
+#   Survey Version    versión
+#   Answer            respuesta (lo que se contesta a una pregunta)
+#   Response          envío (un formulario entregado, con todas sus respuestas)
+#   Workspace         espacio de trabajo
+#   Creator           creador
+#   Participant       participante (quien recibe una invitación)
+#   Respondent        persona encuestada
+#   Anonymous Survey  encuesta anónima
+#   Invited Survey    encuesta por invitación
+#   Closed            cerrada
+#   Transcript        transcripción
+#   Localization      traducción de la encuesta
+#   Insight Summary   resumen de hallazgos
+#   Sign in           iniciar sesión
+#   Sign-in link      enlace de acceso
+#   Dictate           dictar
+
+
+# ── Todas las páginas ───────────────────────────────────────────────────
+
+[page.title]
+hash = "sha1-860236189c0fa4bed142f97928daf13ce7d340b7"
+other = "{{.Title}} — Earful"
+
+[page.home.label]
+hash = "sha1-70f8bb9a8a5393ef080507a89e4b98d139000d65"
+other = "Inicio"
+
+
+# ── Inicio ──────────────────────────────────────────────────────────────
+
+[home.intro.body]
+hash = "sha1-90d40a419abc1ce60dad4036a76024ecd74bba29"
+other = "Encuestas de código abierto, mejoradas con IA y pensadas para responder con la voz."
+
+[home.sign_in.label]
+hash = "sha1-ada2e9e96fa9ce85430225b412068b5b62b79800"
+other = "Iniciar sesión"
+
+
+# ── Iniciar sesión y crear una cuenta ───────────────────────────────────
+
+[auth.email.label]
+hash = "sha1-c94d3175a6560565410511df2cebab9cda96027e"
+other = "Correo electrónico"
+
+[auth.password.label]
+hash = "sha1-8be3c943b1609fffbfc51aad666d0a04adf83c9d"
+other = "Contraseña"
+
+[login.title]
+hash = "sha1-b9d8b917026fa85b4d81bd84a3061b57d51d5dd8"
+other = "Iniciar sesión — Earful"
+
+[login.heading]
+hash = "sha1-ada2e9e96fa9ce85430225b412068b5b62b79800"
+other = "Iniciar sesión"
+
+[login.submit.label]
+hash = "sha1-ada2e9e96fa9ce85430225b412068b5b62b79800"
+other = "Iniciar sesión"
+
+[login.beta.note_html]
+hash = "sha1-076af5df8942d010c6b9188469f1a5e0c9f88d45"
+other = 'Earful está en beta privada. ¿Tiene un código de invitación? <a href="/signup">Cree su cuenta</a>.'
+
+[login.magic.hint]
+hash = "sha1-47af92701668d979a64f18566a20956ea42d6d8c"
+other = "Sin contraseña ni configuración de cuenta: el enlace inicia su sesión y crea su espacio de trabajo la primera vez que lo usa."
+
+[login.magic.submit.label]
+hash = "sha1-d59a4997e166f0b6aeea6ee25ef9e4f2839af003"
+other = "Enviarme un enlace de acceso"
+
+[login.google.divider]
+hash = "sha1-1758356db21759f7c5a0da9b4dd1db8fd6feab3f"
+other = "o"
+
+[login.google.label]
+hash = "sha1-ccc5b0edaae60940907b703f6736b99d7e357d78"
+other = "Continuar con Google"
+
+[signup.title]
+hash = "sha1-df4b1a1bff083f4ce9ac45f769f3074c017e4860"
+other = "Crear cuenta — Earful"
+
+[signup.heading]
+hash = "sha1-4046b581820876b28716cd727a198c0392e4021c"
+other = "Cree su cuenta"
+
+[signup.note_html]
+hash = "sha1-2c3e70bc36db21f156a9a82a9c51eb6e4710cccb"
+other = 'Earful está en beta privada: un código de invitación crea exactamente una cuenta, y su sesión se inicia de inmediato. ¿Ya tiene una cuenta? <a href="/login">Inicie sesión</a>.'
+
+[signup.code.label]
+hash = "sha1-e91cf27d1adf186b960a4ad507f0b69302246995"
+other = "Código de invitación"
+
+[signup.submit.label]
+hash = "sha1-aaf374479756e0a23623511a5fecf4e3f372b9cc"
+other = "Crear cuenta"
+
+[magic.sent.title]
+hash = "sha1-bfcbb248a898d41753c7cc518f2e65646f41845d"
+other = "Revise su correo — Earful"
+
+[magic.sent.heading]
+hash = "sha1-fab9f40578d875e348418f687879a198cf91d5a3"
+other = "Revise su correo"
+
+[magic.sent.body_html]
+hash = "sha1-f99c03fc7e15cc219a32b43f9c2a70e90c431411"
+other = "Si <strong>{{.Email}}</strong> es una dirección válida, ya va en camino un enlace de acceso. Funciona una sola vez y caduca en 15 minutos."
+
+[magic.sent.retry_html]
+hash = "sha1-a4a84a32c8f478819dbaa437d9e31d0f55cb07f4"
+other = '¿No llega nada? Revise la carpeta de correo no deseado o <a href="/login">solicite otro enlace</a>.'
+
+[magic.confirm.title]
+hash = "sha1-8f047227f19532b3a0cef8e6294b964abf10314c"
+other = "Confirmar inicio de sesión — Earful"
+
+[magic.confirm.heading]
+hash = "sha1-a0cc0d474532d4151d1edbeb669390fa1d7b241e"
+other = "Confirmar inicio de sesión"
+
+[magic.confirm.question_html]
+hash = "sha1-b51ad8c80ad7397c1723718ee86bd92985a64b51"
+other = "¿Iniciar sesión en Earful como <strong>{{.Email}}</strong>?"
+
+[magic.confirm.note]
+hash = "sha1-d426d0a8be86d393880595520653455319332efe"
+other = "¿No fue usted? Cierre esta página: el enlace caduca por sí solo."
+
+[magic.confirm.submit.label]
+hash = "sha1-ada2e9e96fa9ce85430225b412068b5b62b79800"
+other = "Iniciar sesión"
+
+[magic.invalid.title]
+hash = "sha1-56d1a475612fd8aec142b3c2e1dcfb97e481f26c"
+other = "Problema con el enlace de acceso — Earful"
+
+[magic.invalid.heading]
+hash = "sha1-cf5e1a280f6d83bdddd940868ff5c34b4694c0b8"
+other = "Problema con el enlace de acceso"
+
+[magic.invalid.back.label]
+hash = "sha1-e3e4fbd56ea3e6e1c70205132a5cf8cabf894b4c"
+other = "Volver a iniciar sesión"
+
+[goodbye.title]
+hash = "sha1-90bce2a23211f40dff77dd326c936195219b85eb"
+other = "Cuenta eliminada — Earful"
+
+[goodbye.heading]
+hash = "sha1-4b31a1d53cb51952727e0684cb5da6690967cdfb"
+other = "Su cuenta ha sido eliminada"
+
+[goodbye.body]
+hash = "sha1-add29b454ad7f75ca9b76f6c2bbc5d52747e332b"
+other = "Su cuenta y su espacio de trabajo están desactivados y programados para su eliminación definitiva dentro de 30 días. Si fue un error, escriba a soporte dentro de esos 30 días para restaurarlos."
+
+[goodbye.again]
+hash = "sha1-3b88d3287a5179dbde7200ea2c0c1209e30d90d3"
+other = "Puede crear una cuenta nueva con el mismo correo en cualquier momento."

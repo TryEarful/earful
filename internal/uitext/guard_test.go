@@ -26,8 +26,6 @@ import (
 var unmoved = map[string]bool{
 	"admin_templ.go":         true,
 	"app_templ.go":           true,
-	"auth_templ.go":          true,
-	"home_templ.go":          true,
 	"localizations_templ.go": true,
 	"respond_templ.go":       true,
 	"results_templ.go":       true,
@@ -40,6 +38,8 @@ var unmoved = map[string]bool{
 // the same in every language.
 var notWording = map[string]bool{
 	"Earful": true,
+	// The shape of an invite code, which is not a word in any language.
+	"earful-xxxx-xxxx-xxxx": true,
 }
 
 func repoRoot(t *testing.T) string {
