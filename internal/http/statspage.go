@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"io"
 	"net/http"
 	"sort"
@@ -205,12 +206,12 @@ func (s *server) surveyStatsPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render(w, r, http.StatusOK, templates.SurveyStats(info.Email, info.CSRFToken,
-		viewStatsPage(viewSurvey(survey, now), report, now)))
+		viewStatsPage(text(r), viewSurvey(survey, now), report, now)))
 }
 
 // viewStatsPage does every piece of formatting, so the template counts
 // nothing and rounds nothing.
-func viewStatsPage(survey templates.SurveyView, report statsReport, now time.Time) templates.SurveyStatsData {
+func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report statsReport, now time.Time) templates.SurveyStatsData {
 	rng := report.Range
 	data := templates.SurveyStatsData{
 		Survey: survey,
@@ -243,15 +244,15 @@ func viewStatsPage(survey templates.SurveyView, report statsReport, now time.Tim
 	}
 	if n := len(report.Durations); n > 0 {
 		data.TimeToComplete = humanDuration(median(report.Durations))
-		data.TimedNote = fmt.Sprintf("median of %s", timedLabel(n))
+		data.TimedNote = l.N("stats.timed", n)
 	}
 	if lump := report.LumpOpened + report.LumpSubmissions; lump > 0 {
 		if rng.AllTime {
-			data.LumpNote = fmt.Sprintf("Includes %d opens and %d submissions counted before per-day tracking began; those have no date and do not appear on the chart.",
-				report.LumpOpened, report.LumpSubmissions)
+			data.LumpNote = l.T("stats.earlier.included",
+				uitext.Args{"Opened": report.LumpOpened, "Submissions": report.LumpSubmissions})
 		} else {
-			data.LumpNote = fmt.Sprintf("%d opens and %d submissions were counted before per-day tracking began; they have no date and are included in the all-time view only.",
-				report.LumpOpened, report.LumpSubmissions)
+			data.LumpNote = l.T("stats.earlier.excluded",
+				uitext.Args{"Opened": report.LumpOpened, "Submissions": report.LumpSubmissions})
 		}
 	}
 
@@ -283,8 +284,7 @@ func viewStatsPage(survey templates.SurveyView, report statsReport, now time.Tim
 		data.Questions = append(data.Questions, row)
 	}
 	if rng.AllTime && report.LumpStops > 0 {
-		data.StopsNote = fmt.Sprintf("%d earlier submissions were counted by question position before per-day tracking began and are not broken down here.",
-			report.LumpStops)
+		data.StopsNote = l.N("stats.earlier.stops", report.LumpStops)
 	}
 
 	// Audience: undated, suppressed below five, exactly as before.
@@ -296,9 +296,7 @@ func viewStatsPage(survey templates.SurveyView, report statsReport, now time.Tim
 	data.Devices = suppressedBuckets(byMetric[store.MetricDevice])
 	data.Countries = suppressedBuckets(byMetric[store.MetricCountry])
 	data.HasAudience = len(data.Browsers)+len(data.Devices)+len(data.Countries) > 0
-	data.SuppressionNote = fmt.Sprintf(
-		"Groups with fewer than %d responses are hidden, so a small sample can't point at anyone.",
-		audience.SuppressBelow)
+	data.SuppressionNote = l.T("stats.hidden.note", uitext.Args{"Limit": audience.SuppressBelow})
 	return data
 }
 
@@ -332,13 +330,6 @@ func median(sorted []int) int {
 		return sorted[n/2]
 	}
 	return (sorted[n/2-1] + sorted[n/2]) / 2
-}
-
-func timedLabel(n int) string {
-	if n == 1 {
-		return "1 timed response"
-	}
-	return strconv.Itoa(n) + " timed responses"
 }
 
 // surveyStatsCSV is the page as a spreadsheet: one row per day in range,

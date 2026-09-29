@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"sort"
 	"strconv"
@@ -34,9 +35,9 @@ func (s *server) surveyResults(w http.ResponseWriter, r *http.Request) {
 	notice := ""
 	switch r.URL.Query().Get("notice") {
 	case "response_deleted":
-		notice = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
+		notice = say(r, "results.notice.deleted")
 	case "translated":
-		notice = "Answers translated. The originals are untouched — both are shown, and the translation is marked as machine-made."
+		notice = say(r, "results.notice.translated")
 	}
 	s.renderResults(w, r, survey, results, notice)
 }
@@ -67,13 +68,13 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 		templates.SurveyResultsData{
 			Survey:        viewSurvey(survey, s.clock.Now()),
 			ResponseCount: len(results.Responses),
-			Questions:     viewQuestionResults(results, translations),
+			Questions:     viewQuestionResults(text(r), results, translations),
 			CanTranslate:  s.canTranslate(),
 			TranslateLang: lang,
 			TranslateName: domain.LanguageName(lang),
 			Insight:       insight,
 			Notice:        notice,
-			TableHeaders:  tableHeaders(results),
+			TableHeaders:  tableHeaders(text(r), results),
 			Table:         viewResponseTable(results),
 		}))
 }
@@ -81,7 +82,7 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 // viewQuestionResults turns stored answers into what a reader sees: a
 // distribution for anything countable, the answers themselves for text.
 // All formatting decisions live here, so the template holds no logic.
-func viewQuestionResults(results store.Results, translations map[uuid.UUID]store.AnswerTranslation) []templates.QuestionResultsView {
+func viewQuestionResults(l uitext.Localizer, results store.Results, translations map[uuid.UUID]store.AnswerTranslation) []templates.QuestionResultsView {
 	out := make([]templates.QuestionResultsView, 0, len(results.Questions))
 	for _, question := range results.Questions {
 		view := templates.QuestionResultsView{
@@ -90,7 +91,7 @@ func viewQuestionResults(results store.Results, translations map[uuid.UUID]store
 			TypeLabel:   question.Type.Label(),
 			Text:        question.Text,
 			Answered:    len(question.Answers),
-			SkippedNote: skippedNote(len(question.Answers), len(results.Responses)),
+			SkippedNote: skippedNote(l, len(question.Answers), len(results.Responses)),
 		}
 		if question.Reworded() {
 			for _, wording := range question.Wordings {
@@ -114,17 +115,17 @@ func viewQuestionResults(results store.Results, translations map[uuid.UUID]store
 				}
 				if translated, ok := translations[answer.ID]; ok {
 					text.Translation = translated.Text
-					text.TranslationModel = translated.Model
+					text.TranslationModel = modelLabel(l, translated.Model)
 				}
 				view.Texts = append(view.Texts, text)
 			}
 		case domain.SingleChoice, domain.MultipleChoice, domain.Dropdown:
 			view.Distribution = choiceDistribution(question)
 		case domain.YesNo:
-			view.Distribution = yesNoDistribution(question)
+			view.Distribution = yesNoDistribution(l, question)
 		case domain.RatingScale, domain.NPS:
 			view.Distribution = scaleDistribution(question)
-			view.Summary = scaleSummary(question)
+			view.Summary = scaleSummary(l, question)
 		}
 		out = append(out, view)
 	}
@@ -138,15 +139,12 @@ func participantLabel(email *string) string {
 	return *email
 }
 
-func skippedNote(answered, responses int) string {
+func skippedNote(l uitext.Localizer, answered, responses int) string {
 	skipped := responses - answered
 	if skipped <= 0 {
 		return ""
 	}
-	if skipped == 1 {
-		return "1 respondent skipped this"
-	}
-	return fmt.Sprintf("%d respondents skipped this", skipped)
+	return l.N("results.skipped", skipped)
 }
 
 // choiceDistribution counts every option the question has ever offered,
@@ -184,7 +182,8 @@ func choiceDistribution(question store.QuestionResults) []templates.CountView {
 	return toCountViews(labels, counts, total)
 }
 
-func yesNoDistribution(question store.QuestionResults) []templates.CountView {
+func yesNoDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {
+	yes, no := l.T("answer.yes"), l.T("answer.no")
 	counts := map[string]int{}
 	total := 0
 	for _, answer := range question.Answers {
@@ -192,13 +191,13 @@ func yesNoDistribution(question store.QuestionResults) []templates.CountView {
 			continue
 		}
 		if *answer.Value.Bool {
-			counts["Yes"]++
+			counts[yes]++
 		} else {
-			counts["No"]++
+			counts[no]++
 		}
 		total++
 	}
-	return toCountViews([]string{"Yes", "No"}, counts, total)
+	return toCountViews([]string{yes, no}, counts, total)
 }
 
 func scaleDistribution(question store.QuestionResults) []templates.CountView {
@@ -220,7 +219,7 @@ func scaleDistribution(question store.QuestionResults) []templates.CountView {
 
 // scaleSummary is the one-line read: an average, and for NPS the score
 // itself, which is what anyone using NPS actually wants.
-func scaleSummary(question store.QuestionResults) string {
+func scaleSummary(l uitext.Localizer, question store.QuestionResults) string {
 	var sum, count, promoters, detractors int
 	for _, answer := range question.Answers {
 		if answer.Value.Number == nil {
@@ -241,11 +240,16 @@ func scaleSummary(question store.QuestionResults) string {
 	}
 	average := float64(sum) / float64(count)
 	if question.Type != domain.NPS {
-		return fmt.Sprintf("Average %.1f", average)
+		return l.T("results.summary.average", uitext.Args{"Average": fmt.Sprintf("%.1f", average)})
 	}
 	score := (float64(promoters) - float64(detractors)) / float64(count) * 100
-	return fmt.Sprintf("NPS %+.0f · average %.1f · %d promoters, %d detractors, %d passives",
-		score, average, promoters, detractors, count-promoters-detractors)
+	return l.T("results.summary.nps", uitext.Args{
+		"Score":      fmt.Sprintf("%+.0f", score),
+		"Average":    fmt.Sprintf("%.1f", average),
+		"Promoters":  promoters,
+		"Detractors": detractors,
+		"Passives":   count - promoters - detractors,
+	})
 }
 
 func toCountViews(labels []string, counts map[string]int, total int) []templates.CountView {
@@ -269,8 +273,8 @@ func toCountViews(labels []string, counts map[string]int, total int) []templates
 // tableHeaders and viewResponseTable are story 58's tabular view: the
 // same shape as the CSV, so what a creator reads on screen and what they
 // download agree.
-func tableHeaders(results store.Results) []string {
-	headers := []string{"Submitted", "Version"}
+func tableHeaders(l uitext.Localizer, results store.Results) []string {
+	headers := []string{l.T("results.column.submitted"), l.T("results.column.version")}
 	for _, question := range results.Questions {
 		headers = append(headers, question.Text)
 	}

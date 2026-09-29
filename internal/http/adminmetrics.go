@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strconv"
 	"time"
@@ -57,17 +58,17 @@ func (s *server) adminMetricsPage(w http.ResponseWriter, r *http.Request) {
 	data := templates.MetricsData{
 		WindowDays: int(metricsWindow.Hours() / 24),
 		Totals: []templates.MetricTotal{
-			{Label: "Accounts", Value: strconv.FormatInt(totals.Users, 10)},
-			{Label: "Workspaces", Value: strconv.FormatInt(totals.Workspaces, 10)},
-			{Label: "Surveys", Value: strconv.FormatInt(totals.Surveys, 10)},
-			{Label: "Published surveys", Value: strconv.FormatInt(totals.PublishedSurveys, 10)},
-			{Label: "Responses", Value: strconv.FormatInt(totals.Responses, 10)},
-			{Label: "Participants invited", Value: strconv.FormatInt(totals.Participants, 10)},
+			{Label: say(r, "admin.metrics.total.accounts"), Value: strconv.FormatInt(totals.Users, 10)},
+			{Label: say(r, "admin.metrics.total.workspaces"), Value: strconv.FormatInt(totals.Workspaces, 10)},
+			{Label: say(r, "admin.metrics.total.surveys"), Value: strconv.FormatInt(totals.Surveys, 10)},
+			{Label: say(r, "admin.metrics.total.published"), Value: strconv.FormatInt(totals.PublishedSurveys, 10)},
+			{Label: say(r, "admin.metrics.responses"), Value: strconv.FormatInt(totals.Responses, 10)},
+			{Label: say(r, "admin.metrics.total.participants"), Value: strconv.FormatInt(totals.Participants, 10)},
 		},
 	}
 	if rates.Starts > 0 {
 		data.Totals = append(data.Totals, templates.MetricTotal{
-			Label: "Completion rate",
+			Label: say(r, "admin.metrics.total.completion"),
 			Value: fmt.Sprintf("%d%%", int(float64(rates.Completions)/float64(rates.Starts)*100+0.5)),
 		})
 	}
@@ -87,12 +88,12 @@ func (s *server) adminMetricsPage(w http.ResponseWriter, r *http.Request) {
 		totalCost += row.Cost
 		data.AICost = append(data.AICost, templates.MetricPoint{
 			Day:   row.Day.Format(dayLayout),
-			Value: fmt.Sprintf("€%.2f (%d tokens)", row.Cost, row.Tokens),
+			Value: say(r, "admin.metrics.cost.day", uitext.Args{"Cost": fmt.Sprintf("€%.2f", row.Cost), "Tokens": row.Tokens}),
 		})
 	}
 	data.AICostTotal = fmt.Sprintf("€%.2f", totalCost)
-	data.BudgetNote = fmt.Sprintf("Daily breaker: €%.2f. Estimates, not invoices — see docs/metrics.md.",
-		s.cfg.AIDailyBudgetEUR)
+	data.BudgetNote = say(r, "admin.metrics.cost.budget",
+		uitext.Args{"Budget": fmt.Sprintf("€%.2f", s.cfg.AIDailyBudgetEUR)})
 
 	render(w, r, http.StatusOK, templates.AdminMetrics(info.Email, info.CSRFToken, data))
 }

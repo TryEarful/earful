@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strings"
 	"time"
@@ -79,10 +80,9 @@ func (s *server) startExport(job store.ExportJob, workspaceID uuid.UUID, workspa
 		now := s.clock.Now()
 		if err != nil {
 			s.logger.Error("workspace export failed", "error", err)
-			message := "Something went wrong building the export. Try again, or ask support."
+			message := exportFailed
 			if errors.Is(err, errExportTooLarge) {
-				message = "This workspace is too large to export in one archive. " +
-					"Export individual surveys as CSV, or ask support for a copy."
+				message = exportTooLarge
 			}
 			if failErr := s.surveys.FailExportJob(ctx, job.ID, message, now); failErr != nil {
 				s.logger.Error("marking export failed did not work", "error", failErr)
@@ -269,14 +269,14 @@ func (s *server) exportDownload(w http.ResponseWriter, r *http.Request) {
 	info, _ := authFrom(r.Context())
 	jobID, err := uuid.Parse(r.PathValue("jobID"))
 	if err != nil {
-		render(w, r, http.StatusNotFound, templates.ErrorPage("Export not found",
-			"This download link has expired or doesn't belong to your workspace. Start a new export from your account page."))
+		render(w, r, http.StatusNotFound, templates.ErrorPage(say(r, "export.missing.title"),
+			say(r, "export.missing.body")))
 		return
 	}
 	archive, err := s.surveys.ExportArchive(r.Context(), jobID, info.WorkspaceID, s.clock.Now())
 	if errors.Is(err, store.ErrNotFound) {
-		render(w, r, http.StatusNotFound, templates.ErrorPage("Export not found",
-			"This download link has expired or doesn't belong to your workspace. Start a new export from your account page."))
+		render(w, r, http.StatusNotFound, templates.ErrorPage(say(r, "export.missing.title"),
+			say(r, "export.missing.body")))
 		return
 	}
 	if err != nil {
@@ -290,13 +290,34 @@ func (s *server) exportDownload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// exportFailed and exportTooLarge are what is stored with an export that
+// did not finish. An export is built after the request that asked for
+// it has been answered, by a job that has nobody to word anything for,
+// so what it records is a value; exportError words it for whoever reads
+// the account page later, in their language rather than the asker's.
+const (
+	exportFailed   = "Something went wrong building the export. Try again, or ask support."
+	exportTooLarge = "This workspace is too large to export in one archive. " +
+		"Export individual surveys as CSV, or ask support for a copy."
+)
+
+func exportError(l uitext.Localizer, stored string) string {
+	switch stored {
+	case exportFailed:
+		return l.T("export.failed.generic")
+	case exportTooLarge:
+		return l.T("export.failed.large")
+	}
+	return stored
+}
+
 // viewExportJob is what the account page shows about the latest export.
-func viewExportJob(job store.ExportJob, now time.Time) templates.ExportView {
+func viewExportJob(l uitext.Localizer, job store.ExportJob, now time.Time) templates.ExportView {
 	view := templates.ExportView{
 		Status:    job.Status,
 		Building:  job.InProgress(),
 		Failed:    job.Status == store.ExportFailed,
-		Error:     job.Error,
+		Error:     exportError(l, job.Error),
 		SizeLabel: humanBytes(job.SizeBytes),
 	}
 	if job.FinishedAt != nil {

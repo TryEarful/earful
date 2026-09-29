@@ -1,7 +1,7 @@
 package http
 
 import (
-	"fmt"
+	"github.com/TryEarful/earful/internal/uitext"
 	"sort"
 	"time"
 
@@ -60,7 +60,7 @@ func viewVersions(versions []store.Version) []templates.VersionView {
 // auditEntries derives the Audit Log (M3-T4) by merging draft saves and
 // publishes into one reverse-chronological trail — the two halves of "who
 // changed what".
-func auditEntries(revisions []store.Revision, versions []store.Version) []templates.AuditEntry {
+func auditEntries(l uitext.Localizer, revisions []store.Revision, versions []store.Version) []templates.AuditEntry {
 	type dated struct {
 		at    time.Time
 		entry templates.AuditEntry
@@ -70,15 +70,15 @@ func auditEntries(revisions []store.Revision, versions []store.Version) []templa
 	for _, r := range revisions {
 		all = append(all, dated{at: r.SavedAt, entry: templates.AuditEntry{
 			When: r.SavedAt.Format(dateTimeLayout),
-			Who:  orUnknown(r.SavedBy),
-			What: fmt.Sprintf("Saved the draft (%s)", pluralQuestions(r.QuestionCount)),
+			Who:  orUnknown(l, r.SavedBy),
+			What: l.N("audit.entry.saved", r.QuestionCount),
 		}})
 	}
 	for _, v := range versions {
 		all = append(all, dated{at: v.PublishedAt, entry: templates.AuditEntry{
 			When:    v.PublishedAt.Format(dateTimeLayout),
-			Who:     orUnknown(v.PublishedBy),
-			What:    fmt.Sprintf("Published version %d", v.Number),
+			Who:     orUnknown(l, v.PublishedBy),
+			What:    l.T("audit.entry.published", uitext.Args{"Version": v.Number}),
 			Publish: true,
 		}})
 	}
@@ -91,18 +91,11 @@ func auditEntries(revisions []store.Revision, versions []store.Version) []templa
 	return out
 }
 
-func pluralQuestions(n int) string {
-	if n == 1 {
-		return "1 question"
-	}
-	return fmt.Sprintf("%d questions", n)
-}
-
 // orUnknown covers rows whose author was purged (M8): the trail keeps the
 // event even when the person is gone.
-func orUnknown(who string) string {
+func orUnknown(l uitext.Localizer, who string) string {
 	if who == "" {
-		return "a deleted account"
+		return l.T("audit.entry.nobody")
 	}
 	return who
 }

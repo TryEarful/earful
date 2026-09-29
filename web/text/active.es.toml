@@ -1603,3 +1603,142 @@ hash = "sha1-251efcf8ad06aa4671a86255988978111469f5c5"
 one = "{{.Count}} envío"
 many = "{{.Count}} envíos"
 other = "{{.Count}} envíos"
+
+
+# ── Resultados: lo que calcula la página ───────────────────────────────
+
+[results.notice.deleted]
+hash = "sha1-7e6274b8ea1b1aead2622ba3138cfb15f58c3b0a"
+other = "Envío eliminado. Soporte puede restaurarlo durante los próximos 30 días; después se borra."
+
+[results.notice.translated]
+hash = "sha1-10c13d5d41fee5876afe1ead130be2221d655c81"
+other = "Respuestas traducidas. Los originales no se han tocado: se muestran ambos, y la traducción está marcada como automática."
+
+[results.skipped]
+hash = "sha1-5174b1b2162f703da5e73d0a192564333ec51695"
+one = "1 persona se saltó esta pregunta"
+many = "{{.Count}} personas se saltaron esta pregunta"
+other = "{{.Count}} personas se saltaron esta pregunta"
+
+[results.summary.average]
+hash = "sha1-9ece22ab8aacfdb6836aee2bb921083a52c083ba"
+other = "Media: {{.Average}}"
+
+[results.summary.nps]
+hash = "sha1-4fe3573f48b873f249948efa0026fac3dcd0191a"
+other = "NPS {{.Score}} · media {{.Average}} · {{.Promoters}} promotores, {{.Detractors}} detractores, {{.Passives}} pasivos"
+
+[results.column.submitted]
+hash = "sha1-2e00359b9802d1fa28aa05450482d8df1c0cf61f"
+other = "Enviado"
+
+[results.column.version]
+hash = "sha1-2da600bf9404843107a9531694f654e5662959e0"
+other = "Versión"
+
+[answer.yes]
+hash = "sha1-5397e0583f14f6c88de06b1ef28f460a1fb5b0ae"
+other = "Sí"
+
+[answer.no]
+hash = "sha1-816c52fd2bdd94a63cd0944823a6c0aa9384c103"
+other = "No"
+
+
+# ── Estadísticas: lo que calcula la página ─────────────────────────────
+
+[stats.timed]
+hash = "sha1-a516d64d6e4ef2ee6ad1b630c611a9cd40e09e87"
+one = "mediana de 1 envío cronometrado"
+many = "mediana de {{.Count}} envíos cronometrados"
+other = "mediana de {{.Count}} envíos cronometrados"
+
+[stats.earlier.included]
+hash = "sha1-7dfaf91d76c409c05d10a107bceb85739a281b2b"
+other = "Incluye {{.Opened}} aperturas y {{.Submissions}} envíos contados antes de que empezara el recuento por día; no tienen fecha y no aparecen en el gráfico."
+
+[stats.earlier.excluded]
+hash = "sha1-9020d08696591ee17520869b6137e063e15acc2c"
+other = "Se contaron {{.Opened}} aperturas y {{.Submissions}} envíos antes de que empezara el recuento por día; no tienen fecha y solo se incluyen en la vista de todo el periodo."
+
+[stats.earlier.stops]
+hash = "sha1-b96fcb2c6660fe01a512f47d56e79477cce7e436"
+one = "{{.Count}} envío anterior se contó por la posición de la pregunta antes de que empezara el recuento por día y no se desglosa aquí."
+many = "{{.Count}} envíos anteriores se contaron por la posición de la pregunta antes de que empezara el recuento por día y no se desglosan aquí."
+other = "{{.Count}} envíos anteriores se contaron por la posición de la pregunta antes de que empezara el recuento por día y no se desglosan aquí."
+
+[stats.hidden.note]
+hash = "sha1-5354679505a384c19cc9d0280c5b1fa96ee91e62"
+other = "Los grupos con menos de {{.Limit}} envíos se ocultan, para que una muestra pequeña no pueda señalar a nadie."
+
+
+# ── El registro de cambios: sus entradas ───────────────────────────────
+
+[audit.entry.saved]
+hash = "sha1-a3366ee14b0dc1faf1809076ccf93b51e55b409d"
+one = "Se guardó el borrador (1 pregunta)"
+many = "Se guardó el borrador ({{.Count}} preguntas)"
+other = "Se guardó el borrador ({{.Count}} preguntas)"
+
+[audit.entry.published]
+hash = "sha1-691d9cfcfa588ee89f949472fdbae5266c80af9e"
+other = "Se publicó la versión {{.Version}}"
+
+[audit.entry.nobody]
+hash = "sha1-772839b9036a2fdad489b4ce71ffbaf15ffd4d60"
+other = "una cuenta eliminada"
+
+
+# ── Soporte: métricas, las cifras ──────────────────────────────────────
+
+[admin.metrics.total.accounts]
+hash = "sha1-36bae31694f85bd7a5b0ad45e51ef622b95baadb"
+other = "Cuentas"
+
+[admin.metrics.total.workspaces]
+hash = "sha1-205b4561ed36923d5a51de1b34c70044bf82e111"
+other = "Espacios de trabajo"
+
+[admin.metrics.total.surveys]
+hash = "sha1-0762895fdf43e65d386349a557579da462c433e9"
+other = "Encuestas"
+
+[admin.metrics.total.published]
+hash = "sha1-e49a6e77d60b39d02f9bc8837274940f81ecada5"
+other = "Encuestas publicadas"
+
+[admin.metrics.total.participants]
+hash = "sha1-cd7643ff181f47f031b667a5d329f4d9f1818432"
+other = "Participantes invitados"
+
+[admin.metrics.total.completion]
+hash = "sha1-a36008372807c922a809b75df95445c475ea9564"
+other = "Tasa de finalización"
+
+[admin.metrics.cost.day]
+hash = "sha1-643e916702924e241c23f331174ec09a369e518a"
+other = "{{.Cost}} ({{.Tokens}} tokens)"
+
+[admin.metrics.cost.budget]
+hash = "sha1-8b6796e8c55f5ef5d2bc9ce5c3afb8ed3ef182d7"
+other = "Límite diario: {{.Budget}}. Son estimaciones, no facturas; véase docs/metrics.md."
+
+
+# ── La exportación del espacio de trabajo: rechazos ────────────────────
+
+[export.missing.title]
+hash = "sha1-1f18a914f7ccd0f1946b7553c6a18b40be827e85"
+other = "No se encontró la exportación"
+
+[export.missing.body]
+hash = "sha1-0b1818940e3d280b1560a2dd8a7478b2cff7bb1e"
+other = "Este enlace de descarga ha caducado o no pertenece a su espacio de trabajo. Inicie una exportación nueva desde la página de su cuenta."
+
+[export.failed.generic]
+hash = "sha1-364bb2f75608bc69374cb0cfb359690d18d3e16b"
+other = "Algo salió mal al preparar la exportación. Inténtelo de nuevo, o escriba a soporte."
+
+[export.failed.large]
+hash = "sha1-e18d8db9ac1b936659ebfe6be4dd36c9bab32db4"
+other = "Este espacio de trabajo es demasiado grande para exportarlo en un solo archivo. Exporte las encuestas una a una como CSV, o pida una copia a soporte."

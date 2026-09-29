@@ -884,3 +884,82 @@ changed = "The responses have changed since this was written."
 [results.insight.read]
 one = "{{.Count}} responses"
 other = "{{.Count}} responses"
+
+
+# ── Results: what the page works out ───────────────────────────────────
+
+[results.notice]
+deleted = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
+translated = "Answers translated. The originals are untouched — both are shown, and the translation is marked as machine-made."
+
+[results.skipped]
+one = "1 respondent skipped this"
+other = "{{.Count}} respondents skipped this"
+
+[results.summary]
+average = "Average {{.Average}}"
+nps = "NPS {{.Score}} · average {{.Average}} · {{.Promoters}} promoters, {{.Detractors}} detractors, {{.Passives}} passives"
+
+[results.column]
+submitted = "Submitted"
+version = "Version"
+
+[answer]
+yes = "Yes"
+no = "No"
+
+
+# ── Stats: what the page works out ─────────────────────────────────────
+
+[stats.timed]
+one = "median of 1 timed response"
+other = "median of {{.Count}} timed responses"
+
+[stats.earlier]
+included = "Includes {{.Opened}} opens and {{.Submissions}} submissions counted before per-day tracking began; those have no date and do not appear on the chart."
+excluded = "{{.Opened}} opens and {{.Submissions}} submissions were counted before per-day tracking began; they have no date and are included in the all-time view only."
+
+# English has always used the one wording for every number.
+[stats.earlier.stops]
+one = "{{.Count}} earlier submissions were counted by question position before per-day tracking began and are not broken down here."
+other = "{{.Count}} earlier submissions were counted by question position before per-day tracking began and are not broken down here."
+
+[stats.hidden]
+note = "Groups with fewer than {{.Limit}} responses are hidden, so a small sample can't point at anyone."
+
+
+# ── The audit log: its entries ─────────────────────────────────────────
+
+[audit.entry.saved]
+one = "Saved the draft (1 question)"
+other = "Saved the draft ({{.Count}} questions)"
+
+[audit.entry]
+published = "Published version {{.Version}}"
+nobody = "a deleted account"
+
+
+# ── Support: metrics, the figures ──────────────────────────────────────
+
+[admin.metrics.total]
+accounts = "Accounts"
+workspaces = "Workspaces"
+surveys = "Surveys"
+published = "Published surveys"
+participants = "Participants invited"
+completion = "Completion rate"
+
+[admin.metrics.cost]
+day = "{{.Cost}} ({{.Tokens}} tokens)"
+budget = "Daily breaker: {{.Budget}}. Estimates, not invoices — see docs/metrics.md."
+
+
+# ── The workspace export: refusals ─────────────────────────────────────
+
+[export.missing]
+title = "Export not found"
+body = "This download link has expired or doesn't belong to your workspace. Start a new export from your account page."
+
+[export.failed]
+generic = "Something went wrong building the export. Try again, or ask support."
+large = "This workspace is too large to export in one archive. Export individual surveys as CSV, or ask support for a copy."

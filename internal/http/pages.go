@@ -24,7 +24,7 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 	// The latest export's state, if there has ever been one. A missing
 	// row is the normal case, not a problem.
 	if job, err := s.surveys.LatestExportJob(r.Context(), info.WorkspaceID); err == nil {
-		data.Export = viewExportJob(job, s.clock.Now())
+		data.Export = viewExportJob(text(r), job, s.clock.Now())
 	} else if !errors.Is(err, store.ErrNotFound) {
 		s.internalError(w, r, "read latest export", err)
 		return
