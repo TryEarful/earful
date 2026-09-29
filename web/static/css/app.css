@@ -1787,3 +1787,31 @@ th[aria-sort="descending"] .sort-button::after {
   align-items: center;
   gap: 0.75rem;
 }
+
+/* --- the language switcher -------------------------------------------------
+
+   At the foot of the page, in the page's measure: it is for somebody who
+   cannot read the page, so it is where a person looks when nothing else
+   on the page has helped, and it is quiet for everybody else. */
+
+.site-footer {
+  max-width: 40rem;
+  margin: 3rem auto 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.language-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.language-switcher label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+}

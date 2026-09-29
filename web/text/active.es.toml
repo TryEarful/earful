@@ -2720,3 +2720,22 @@ other = "Ahora no"
 [js.voice.consent.accept]
 hash = "sha1-7c5773d723c18bc33cf302d9c5db6056ffb32b25"
 other = "Usar el micrófono"
+
+
+# ── Elegir el idioma de la interfaz ────────────────────────────────────
+
+[switcher.label]
+hash = "sha1-89b86ab0e66f527166d98df92ddbcf5416ed58f6"
+other = "Idioma"
+
+[switcher.submit]
+hash = "sha1-64fbd995d3b6b156ee26ae3c03e6516434c34c12"
+other = "Cambiar"
+
+[switcher.own.en]
+hash = "sha1-649df08a448ee3fa90f3746baaf6b0907df42c91"
+other = "English"
+
+[switcher.own.es]
+hash = "sha1-2001ca082b2d2742765d8ac9182678bfe0374fbf"
+other = "Español"

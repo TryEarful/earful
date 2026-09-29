@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-69101608ddebfcd3d6232e248ed7049c3f9f4a5f9ed3dbaca829c7cbfdead646
+hash: sha256-f858b6ed8fd7cd14abfd9f6ab38efbb0f944f7722e01284c4cd5920b35fdfa1d
 last_update: 2026-09-29
-source_hash: sha256-a8b940f7f78938174f5856b135c7f796edfac786bc982e4456c2456d632e104d
+source_hash: sha256-8523957e7bd32bbea8337d5c0487c55d42a200a5422341204a95a35185f31e0f
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -28,6 +28,10 @@ Quienes crean encuestas sí ven recuentos generales sobre su audiencia (familia 
 ## En la página de una encuesta no se ejecuta nada de terceros
 
 Responder una encuesta no carga analíticas, ni fuentes, ni gestores de etiquetas, ni scripts de una CDN: nada más que esta aplicación. La comprobación contra bots es nuestra, está en la propia página y no identifica a nadie. Una prueba impide publicar el programa si aparece un origen de terceros en una página de encuesta.
+
+## El idioma de la interfaz
+
+Si elige un idioma para la interfaz, su elección se guarda en una cookie de su navegador, llamada `interface_lang`, durante un año. No se crea ni se lee en la página de una encuesta: allí el idioma se elige en la dirección de la página y no se guarda en ningún lugar.
 
 ## Dónde están los datos y quién los toca
 

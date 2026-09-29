@@ -13,6 +13,34 @@ templ Layout(title string) {
 		</head>
 		<body>
 			{ children... }
+			@languageSwitcher()
 		</body>
 	</html>
+}
+
+// languageSwitcher offers the languages the interface is written in,
+// each by the name it gives itself and marked as being in that
+// language, so that a screen reader says "Español" as Spanish. It is
+// drawn only where there is more than one to choose from.
+//
+// It is a form with a button, and works without a script. It is not on
+// a respondent's page, which has no use for a remembered choice: the
+// language of a survey is chosen in its address (story 25).
+templ languageSwitcher() {
+	if len(languages(ctx)) > 1 {
+		<footer class="site-footer">
+			<form method="post" action="/language" class="language-switcher">
+				<input type="hidden" name="next" value={ currentPath(ctx) }/>
+				<label>
+					<span>{ t(ctx, "switcher.label") }</span>
+					<select name="lang">
+						for _, code := range languages(ctx) {
+							<option value={ code } lang={ code } selected?={ code == interfaceLang(ctx) }>{ ownName(ctx, code) }</option>
+						}
+					</select>
+				</label>
+				<button type="submit" class="secondary">{ t(ctx, "switcher.submit") }</button>
+			</form>
+		</footer>
+	}
 }

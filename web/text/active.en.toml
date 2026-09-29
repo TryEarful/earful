@@ -1450,3 +1450,15 @@ title = "Dictate your answer"
 body = "Your browser will ask for microphone access. What you say is turned into text you can read and edit before it becomes your answer. Your voice is never stored — no recording is kept, here or anywhere else. Typing stays available at any time."
 decline = "Not now"
 accept = "Use the microphone"
+
+
+# ── Choosing the language of the interface ─────────────────────────────
+
+[switcher]
+label = "Language"
+submit = "Change"
+
+[switcher.own]
+# A language is offered by the name it gives itself, which is the same whatever language offers it.
+en = "English"
+es = "Español"

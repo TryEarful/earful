@@ -19,6 +19,8 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", s.healthz)
 	mux.HandleFunc("GET /goodbye", s.goodbye)
 	mux.HandleFunc("GET /robots.txt", robotsTxt)
+	// The language switcher. Public: the sign-in page has one.
+	mux.HandleFunc("POST /language", s.chooseLanguage)
 	// The documents in web/pages, the trust page (M8-T4) among them:
 	// public, and served by the instance that actually holds the data
 	// they describe.

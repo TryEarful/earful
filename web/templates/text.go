@@ -48,3 +48,41 @@ func jsText(ctx context.Context, names ...string) templ.Component {
 	l := uitext.From(ctx)
 	return templ.JSONScript("interface-text", scriptText{Lang: l.Lang(), Messages: l.ForScripts(names...)})
 }
+
+type pathKey struct{}
+
+// WithPath returns a context that knows the address of the page being
+// drawn, for the language switcher to come back to.
+func WithPath(ctx context.Context, path string) context.Context {
+	return context.WithValue(ctx, pathKey{}, path)
+}
+
+func currentPath(ctx context.Context) string {
+	path, _ := ctx.Value(pathKey{}).(string)
+	if path == "" {
+		return "/"
+	}
+	return path
+}
+
+// languages are the languages the page can be read in.
+func languages(ctx context.Context) []string {
+	return uitext.From(ctx).Languages()
+}
+
+// OwnName is the message for the name a language gives itself, which
+// is how a language is offered to somebody who may not read the one the
+// page is in.
+func OwnName(lang string) uitext.ID {
+	switch lang {
+	case "en":
+		return "switcher.own.en"
+	case "es":
+		return "switcher.own.es"
+	}
+	return ""
+}
+
+func ownName(ctx context.Context, lang string) string {
+	return Named(uitext.From(ctx), OwnName(lang), lang)
+}

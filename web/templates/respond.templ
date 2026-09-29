@@ -286,7 +286,7 @@ templ respondentDisclosure(data RespondData) {
 			</p>
 		}
 		<p class="muted">
-			<a href="/trust">{ t(ctx, "respond.disclosure.trust") }</a>
+			<a href={ templ.SafeURL(withLang("/trust", data.Lang)) }>{ t(ctx, "respond.disclosure.trust") }</a>
 		</p>
 	</div>
 }

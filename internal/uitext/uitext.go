@@ -241,6 +241,17 @@ func (c *Catalog) Languages() []string {
 	return out
 }
 
+// Serves reports whether lang is a language the interface is offered
+// in, written exactly as Languages writes it.
+func (c *Catalog) Serves(lang string) bool {
+	for _, tag := range c.served {
+		if tag.String() == lang {
+			return true
+		}
+	}
+	return false
+}
+
 // Localizer picks the served language that best suits prefs, which are
 // read in order: each is a language tag or a whole Accept-Language
 // header, and an empty or unreadable one is passed over. With nothing
@@ -270,6 +281,10 @@ type Localizer struct {
 
 // Lang is the language rendered, as a tag: "en", "es".
 func (l Localizer) Lang() string { return l.lang }
+
+// Languages are the languages a reader can choose between, the source
+// first.
+func (l Localizer) Languages() []string { return l.catalog.Languages() }
 
 // T renders a message.
 func (l Localizer) T(id ID, args ...Args) string {

@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-a8b940f7f78938174f5856b135c7f796edfac786bc982e4456c2456d632e104d
+hash: sha256-8523957e7bd32bbea8337d5c0487c55d42a200a5422341204a95a35185f31e0f
 last_update: 2026-09-29
 ---
 
@@ -25,6 +25,10 @@ Survey creators do see coarse counts about their audience — browser family, de
 ## Nothing third-party runs on a survey page
 
 Answering a survey loads no analytics, no fonts, no tag managers and no CDN scripts — nothing but this application. The anti-bot check is our own, in-page, and identifies nobody. A test fails the build if any third-party origin appears on a respondent page.
+
+## The language of the interface
+
+If you choose a language for the interface, your choice is kept in a cookie in your browser, named `interface_lang`, for a year. It is not set or read on a survey page: there the language is chosen in the address of the page and stored nowhere.
 
 ## Where the data lives, and who touches it
 

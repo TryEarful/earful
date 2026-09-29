@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -92,6 +93,11 @@ func (s *server) renderRespondPage(
 			data.VoicePath = "/p/" + data.ParticipantToken + "/voice"
 		} else {
 			data.VoicePath = "/s/" + survey.ID.String() + "/voice"
+		}
+		// What the socket says, it says in the language of the page that
+		// opened it, and the address is where that language is.
+		if version.Lang != "" {
+			data.VoicePath += "?lang=" + url.QueryEscape(version.Lang)
 		}
 		data.VoiceMaxSeconds = s.voiceAnswerSeconds()
 	}
