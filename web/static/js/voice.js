@@ -138,7 +138,8 @@
     // Shift+Space, which respond.js owns, still starts and stops a take.
     // The hint is aria-hidden so the button is named "Dictate", not
     // "Dictate Hold Space".
-    button.appendChild(keyHint("Hold Space"));
+    var micHint = keyHint("Hold Space");
+    button.appendChild(micHint);
 
     function setLabel(text) {
       label.nodeValue = text;
@@ -495,6 +496,7 @@
       recorder = null;
       finishing = null;
       setLabel("Dictate");
+      micHint.textContent = "Hold Space";
       button.classList.remove("recording");
       ui.settled();
     }
@@ -505,6 +507,7 @@
       recorder = null;
       finishing = current;
       setLabel("Dictate");
+      micHint.textContent = "Hold Space";
       button.classList.remove("recording");
       current.stop();
     }
@@ -627,7 +630,13 @@
             }
             handle.mode = mode;
             recorder = handle;
-            setLabel(mode === "hold" ? "Release Space to transcribe" : "Stop");
+            // One label for a live take, however it began: the button
+            // ends it either way. The hint carries the difference. A
+            // held take ends when the key comes up, and says so; a take
+            // begun by a click has no key to release, so it says
+            // nothing rather than something untrue.
+            setLabel("Stop");
+            micHint.textContent = mode === "hold" ? "Release Space" : "";
             button.classList.add("recording");
             ui.recording(handle);
             var device = handle.monitor && handle.monitor.device;

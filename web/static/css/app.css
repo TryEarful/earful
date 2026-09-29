@@ -832,7 +832,7 @@ fieldset {
 
 /* The two buttons share the card's width in equal halves, whatever
    their labels say, so the row does not change shape when "Dictate"
-   becomes "Release Space to transcribe". Where halves would be too
+   becomes "Stop". Where halves would be too
    narrow to hold a label, they stack. */
 .voice-actions {
   display: grid;
@@ -867,10 +867,11 @@ fieldset {
   display: none;
 }
 
-/* While a take is live the label is the instruction — "Release Space
-   to transcribe", "Stop and transcribe" — and the hint for starting one
-   would only contradict it, and wrap the button onto a second line. */
-.voice-button.recording .key-hint {
+/* A hint with nothing to say takes no room: a take begun by a click
+   has no key to release, and an empty badge would be a grey smudge. On
+   the live button the badge keeps its own light ground, so it reads
+   against the red. */
+.voice-button .key-hint:empty {
   display: none;
 }
 

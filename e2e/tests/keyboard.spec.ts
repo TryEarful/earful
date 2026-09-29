@@ -228,6 +228,8 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
   await respondent.keyboard.press("Shift+ ");
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
   await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
+  // A toggled take has no key to release, so the hint says nothing.
+  await expect(respondent.locator(".voice-button .key-hint").first()).toHaveText("");
 
   await respondent.waitForTimeout(1200);
   await respondent.keyboard.press("Shift+ ");
@@ -272,9 +274,14 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   // The bar is there for as long as the hold is only a hold, and gone
   // once it has become a take.
   await respondent.keyboard.down(" ");
+  const hint = respondent.locator(".voice-button .key-hint").first();
+  await expect(hint).toHaveText("Hold Space");
   await expect(holdBar).toBeVisible();
-  await expect(respondent.getByRole("button", { name: "Release Space to transcribe" })).toBeVisible();
+  await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   await expect(holdBar).toBeHidden();
+  // The button says Stop however the take began; the hint is what says
+  // that this one ends when the key comes up.
+  await expect(hint).toHaveText("Release Space");
   await expect(row).toHaveAttribute("data-state", "recording");
   await expect(answer).toHaveClass(/voice-live/);
   await expect(answer).toHaveValue("Plan b"); // the held key typed nothing
@@ -290,6 +297,7 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   await expect(row).toHaveAttribute("data-state", "idle");
   await expect(answer).not.toHaveClass(/voice-live/);
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
+  await expect(hint).toHaveText("Hold Space");
 
   // The reset button is named by its text alone; its icon is decoration.
   await expect(respondent.getByRole("button", { name: "Reset", exact: true })).toHaveCount(1);
@@ -344,7 +352,7 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   // release of the held key types nothing either.
   await answer.click();
   await respondent.keyboard.down(" ");
-  await expect(respondent.getByRole("button", { name: "Release Space to transcribe" })).toBeVisible();
+  await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   await respondent.keyboard.press("Escape");
   await respondent.keyboard.press("Escape");
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();

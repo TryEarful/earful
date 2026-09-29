@@ -92,7 +92,7 @@ textarea the server rendered is the whole interface (story 38).
    and the status line ends with "edit it if it isn't quite right".
 6. **Hold to talk**: with the caret in the textarea, hold Space: a bar
    fills along the foot of the *Dictate* button, and when it is full the
-   button reads *Release Space to transcribe*; the take ends when the
+   button reads *Stop* with the hint *Release Space*; the take ends when the
    key comes up. A quick tap of Space still types a space and shows no
    bar.
 7. **Reset**: press Esc once (the status line asks for a second), then
