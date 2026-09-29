@@ -47,7 +47,7 @@ const Source = "en"
 // checked when the files are loaded and offered to nobody, so that a
 // translation can be written over several changes without a reader ever
 // meeting half of one.
-var Served = []string{Source}
+var Served = []string{Source, "es"}
 
 // HTMLSuffix ends the name of a message that contains markup.
 const HTMLSuffix = "_html"

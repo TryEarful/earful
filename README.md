@@ -262,7 +262,25 @@ A document can state what the instance knows about itself: `{{.Region}}`,
 document that names one that is not there stops the service from
 starting.
 
-## Testing
+### Adding a language
+
+1. Copy `web/text/active.en.toml` to `active.<code>.toml` and translate
+   it, writing each message in full under its whole name, as
+   `active.es.toml` does. `make text-accept` records which English each
+   was made from.
+2. Add the language to `Served` in `internal/uitext/uitext.go`, to
+   `requiredForms` in `internal/uitext/guard_test.go` with the forms it
+   has for a number, and to `OwnName` in `web/templates/text.go` with a
+   `switcher.own.<code>` message for the name it gives itself.
+3. Translate the documents in `web/pages` that should be read in it. One
+   that is not translated is served in English.
+4. `make check`. It fails on a message the translation lacks, and on one
+   that differs from the English in its placeholders, its markup or its
+   forms.
+
+A translation can be written over several changes: a language with a
+file and no place in `Served` is checked and offered to nobody.
+
 ## Testing
 
 See [docs/testing.md](docs/testing.md) for the full test-harness

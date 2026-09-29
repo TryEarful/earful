@@ -171,18 +171,16 @@ func New(t *testing.T, opts Options) *App {
 		Clock:  clock.NewFake(time.Now()),
 	}
 	logger := logging.New(slog.LevelError, os.Stderr)
-	captured := newCapture(t)
-	srv.Config.Handler = captured.wrap(apphttp.NewHandler(cfg, logger, apphttp.Deps{
+	srv.Config.Handler = apphttp.NewHandler(cfg, logger, apphttp.Deps{
 		Pool:   pool,
 		Clock:  app.Clock,
 		Email:  app.Emails,
 		Google: google,
 		AI:     opts.AI,
 		Text:   strictText(t),
-	}))
+	})
 	srv.Start()
 	t.Cleanup(srv.Close)
-	t.Cleanup(func() { captured.emails(app.Emails) })
 	return app
 }
 

@@ -229,6 +229,22 @@ set from script is outside the browser's own history.
   that answer and leaves the answer itself alone, so a history on a
   shared device need not wait for submission or expiry.
 
+### The interface in the reader's language (post-MVP)
+
+83. As a respondent, I want the buttons, hints and messages around a survey to be in my language, so that I am not answering Spanish questions with English buttons — and without what language I read being stored anywhere. [tested](internal/http/language_served_test.go) — the survey language in the address where the interface is written in it, then the browser's, then English; no cookie is set and the switcher's is not read; the whole journey in Spanish in [the e2e suite](e2e/tests/language.spec.ts)
+84. As a creator, or anyone reading a page that is not a survey, I want to choose the language of the interface and have the choice remembered, so that a shared or borrowed browser does not decide it for me. [tested](internal/http/language_served_test.go) — a form at the foot of the page that works without a script; the choice is kept in the `interface_lang` cookie, and outranks the browser
+85. As whoever keeps the wording, I want every sentence the application says in one file per language, so that I can rewrite a sentence or translate one without reading a template. [tested](internal/uitext/guard_test.go) — the build fails on a name with no message, a message nothing uses, wording left in a template or a script, and a translation that differs from its source in placeholders, markup or forms
+
+| Who is asking | Read, in order |
+|---|---|
+| A respondent (`/s/`, `/p/`) | `?lang=`, where the interface is written in that language; `Accept-Language`; English |
+| A reader of a Document | `?lang=`; the `interface_lang` cookie; `Accept-Language`; English |
+| Anyone else | the `interface_lang` cookie; `Accept-Language`; English |
+
+The interface is written in English and Spanish. What is not worded for
+a reader stays as it was: what is sent to a model, what is written to
+the log, and the columns of an export, which are read by programs.
+
 ### Documents (post-MVP)
 
 82. As a reader of the trust page, the terms or a help page, I want to see when it last changed and take a copy of it as Markdown, so that I can keep what I was told and show it to someone else. [tested](internal/http/documents_test.go) — and the copy button, the link that stands in for it without JavaScript, and the axe scan in [the e2e suite](e2e/tests/documents.spec.ts)

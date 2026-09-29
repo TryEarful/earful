@@ -37,6 +37,11 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
+    // The interface follows the browser's language, and the suite finds
+    // what it is looking for by what it says. Said here, the language
+    // does not depend on the machine the suite runs on; language.spec.ts
+    // asks for another where another is the point.
+    locale: "en-US",
     trace: "retain-on-failure",
     extraHTTPHeaders,
     // No --use-fake-device-for-media-capture here: it is a no-op in
