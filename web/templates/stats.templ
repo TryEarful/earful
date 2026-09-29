@@ -161,6 +161,8 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				}
 			</section>
 		</main>
+		@jsText(ctx, "js.stats", "stats.submissions.label", "stats.opened.label")
+		<script src={ static.AssetURL("js/uitext.js") } defer></script>
 		<script src={ static.AssetURL("js/stats.js") } defer></script>
 	}
 }

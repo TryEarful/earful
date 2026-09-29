@@ -252,3 +252,37 @@ func TestTheEmbeddedTextLoads(t *testing.T) {
 		t.Errorf("a context with no language renders %s", got)
 	}
 }
+
+// A script is given messages as they are written, to fill in for
+// itself: one wording as it is, and the forms of one that has several.
+func TestScriptsAreGivenMessagesAsWritten(t *testing.T) {
+	c := load(t, uitext.Options{})
+
+	en := c.Localizer("en").ForScripts("respond.question", "surveys.invites.send", "voice")
+	if got := en["respond.question.position"]; got != "Question {{.Current}} of {{.Total}}" {
+		t.Errorf("a message is filled in before the script has it: %v", got)
+	}
+	forms, ok := en["surveys.invites.send"].(map[string]string)
+	if !ok || forms["one"] != "Send 1 invite" || forms["other"] != "Send {{.Count}} invites" {
+		t.Errorf("forms = %v", en["surveys.invites.send"])
+	}
+	if got := en["voice.stop.label"]; got != "Stop" {
+		t.Errorf("a name that begins the names of several gave %v", got)
+	}
+	if _, ok := en["respond.submit.label"]; ok || len(en) != 3 {
+		t.Errorf("a script was given more than was named: %v", en)
+	}
+
+	// In the language of the page, and in the source where a message
+	// has not been translated.
+	es := c.Localizer("es").ForScripts("respond.submit", "surveys.invites.send", "only.in")
+	if got := es["respond.submit.label"]; got != "Enviar respuestas" {
+		t.Errorf("got %v", got)
+	}
+	if forms, _ := es["surveys.invites.send"].(map[string]string); forms["many"] == "" {
+		t.Errorf("Spanish is given without its form for millions: %v", forms)
+	}
+	if got := es["only.in.english"]; got != "Only in English" {
+		t.Errorf("an untranslated message is given as %v", got)
+	}
+}

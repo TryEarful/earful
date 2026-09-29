@@ -139,6 +139,8 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			@settingsPanel(csrf, data.Survey)
 		</main>
 		if data.AIEnabled {
+			@jsText(ctx, "js.generate")
+			<script src={ static.AssetURL("js/uitext.js") } defer></script>
 			<script src={ static.AssetURL("js/wsclient.js") } defer></script>
 			<script src={ static.AssetURL("js/generate.js") } defer></script>
 		}

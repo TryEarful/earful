@@ -1339,3 +1339,114 @@ title = "Thank you — {{.Survey}}"
 heading = "Thank you"
 body = "Your answers have been recorded."
 anonymous = "This was an anonymous survey: your answers were stored without anything that identifies you."
+
+
+# ── Scripts: the keys they name ────────────────────────────────────────
+
+[js.key]
+esc = "ESC"
+shift = "⇧ Shift"
+enter = "↵ Enter"
+space = "Space"
+# Two keys pressed together.
+combo = "{{.First}} + {{.Second}}"
+# A key to press before the keys that follow.
+then = "{{.Key}} then"
+
+
+# ── Scripts: drafting, the summary, the chart ──────────────────────────
+
+[js.generate]
+working = "Drafting…"
+lost = "Lost the connection — submitting the ordinary way…"
+
+[js.insights]
+working = "Reading the answers…"
+lost = "Lost the connection — running it the ordinary way…"
+
+[js.stats.series]
+label = "Series"
+# As it is said after a number: 3 submissions.
+submissions = "submissions"
+opened = "opened"
+
+[js.stats]
+table = "Show as a table"
+
+[js.stats.chart]
+aria = "{{.Series}} per day; the table below holds the same numbers"
+title = "{{.Series}} per day"
+point = "{{.Day}}: {{.Count}} {{.Series}}"
+
+
+# ── Scripts: answering a survey ────────────────────────────────────────
+
+[js.respond]
+back = "Back"
+next = "Next"
+
+[js.respond.versions]
+title = "Previous versions"
+restore = "Restore"
+restore_from = "Restore the version from {{.When}}"
+clear = "Clear all"
+close = "Close"
+
+
+# ── Scripts: dictation ─────────────────────────────────────────────────
+
+[js.voice]
+title = "Dictation"
+hide = "Hide"
+show = "Show"
+hide_aria = "Hide dictation"
+show_aria = "Show dictation"
+dictate = "Dictate"
+stop = "Stop"
+reset = "Reset"
+cancel = "Cancel"
+recording = "Recording in progress. Your transcription will be shown here."
+cancelled = "Transcription cancelled."
+cleared = "Cleared — type or speak your answer again."
+starting = "Starting…"
+finishing = "Finishing…"
+longest = "That's the longest answer I can take — transcribing."
+lost = "Connection lost — please type your answer."
+unrecognised = "Couldn't recognise that — please type your answer."
+
+[js.voice.hint]
+hold = "Hold {{.Key}}"
+release = "Release {{.Key}}"
+longer = "Hold Space while you speak, and release it when you are done."
+
+[js.voice.idle]
+keyboard = "Press Dictate, or hold Space, to speak your answer."
+touch = "Press Dictate to speak your answer."
+
+[js.voice.listening]
+unnamed = "Listening… speak now."
+named = "Listening on {{.Device}}… speak now."
+
+[js.voice.quiet]
+unnamed = "Nothing is coming through — check which microphone your browser is using, or type your answer."
+named = "Nothing is coming through {{.Device}} — check which microphone your browser is using, or type your answer."
+
+[js.voice.transcribed]
+device = "Transcribed on your device — edit it if it isn't quite right."
+server = "Transcribed — edit it if it isn't quite right."
+
+[js.voice.microphone]
+label = "Microphone"
+grant = "Grant microphone to enable dictation"
+input = "Input: {{.Device}}"
+chosen = "Microphone: {{.Device}}."
+switched = "Switched to {{.Device}} — speak again to use it."
+waiting = "Waiting for microphone access…"
+ready = "Microphone ready."
+unavailable = "Microphone unavailable — please type your answer."
+
+[js.voice.consent]
+title = "Dictate your answer"
+body = "Your browser will ask for microphone access. What you say is turned into text you can read and edit before it becomes your answer. Your voice is never stored — no recording is kept, here or anywhere else. Typing stays available at any time."
+decline = "Not now"
+accept = "Use the microphone"

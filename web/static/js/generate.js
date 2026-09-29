@@ -7,6 +7,12 @@
 (function () {
   "use strict";
 
+  // The wording, which the page carries (uitext.js). Without it there
+  // is nothing to say, and the page is left as it works without a
+  // script.
+  var T = window.EarfulText;
+  if (!T) return;
+
   var form = document.querySelector(".generate-form");
   if (!form) return;
   var path = form.getAttribute("data-generate-path");
@@ -31,8 +37,11 @@
     if (!text) return; // let the server say what it wants said
     event.preventDefault();
 
+    // What the button said, to say again if this does not finish. It
+    // is read from the button, which the page worded.
+    var label = button.textContent;
     button.disabled = true;
-    button.textContent = "Drafting…";
+    button.textContent = T.t("js.generate.working");
     output.hidden = false;
     output.textContent = "";
 
@@ -64,14 +73,14 @@
       },
       onGone: function () {
         // Fall back to the plain form: it does the same thing, slower.
-        output.textContent = "Lost the connection — submitting the ordinary way…";
+        output.textContent = T.t("js.generate.lost");
         form.submit();
       },
     });
 
     function restore() {
       button.disabled = false;
-      button.textContent = "Draft questions";
+      button.textContent = label;
     }
   });
 })();

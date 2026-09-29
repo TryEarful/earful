@@ -183,6 +183,15 @@ templ Respond(data RespondData) {
 				</div>
 			</form>
 		</main>
+		// The wording of the scripts below, and then the script that reads
+		// it, before any that says anything.
+		if data.VoiceEnabled() {
+			@jsText(ctx, "js.key", "js.respond", "respond.question.position",
+				"js.voice", "voice.error.unavailable", "voice.status.transcribing")
+		} else {
+			@jsText(ctx, "js.key", "js.respond", "respond.question.position")
+		}
+		<script src={ static.AssetURL("js/uitext.js") } defer></script>
 		if data.VoiceEnabled() {
 			<script src={ static.AssetURL("js/wsclient.js") } defer></script>
 			<script src={ static.AssetURL("js/voice.js") } defer></script>

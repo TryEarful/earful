@@ -7,6 +7,12 @@
 (function () {
   "use strict";
 
+  // The wording, which the page carries (uitext.js). Without it there
+  // is nothing to say, and the page is left as it works without a
+  // script.
+  var T = window.EarfulText;
+  if (!T) return;
+
   var panel = document.querySelector(".insight");
   if (!panel) return;
   var path = panel.getAttribute("data-insight-path");
@@ -23,8 +29,11 @@
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
+    // What the button said, to say again if this does not finish. It
+    // is read from the button, which the page worded.
+    var label = button.textContent;
     button.disabled = true;
-    button.textContent = "Reading the answers…";
+    button.textContent = T.t("js.insights.working");
     output.hidden = false;
     output.textContent = "";
 
@@ -48,14 +57,14 @@
         socket.close();
       },
       onGone: function () {
-        output.textContent = "Lost the connection — running it the ordinary way…";
+        output.textContent = T.t("js.insights.lost");
         form.submit();
       },
     });
 
     function restore() {
       button.disabled = false;
-      button.textContent = "Analyse the responses";
+      button.textContent = label;
     }
   });
 })();

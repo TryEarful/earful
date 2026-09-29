@@ -11,6 +11,12 @@
 (function () {
   "use strict";
 
+  // The wording, which the page carries (uitext.js). Without it there
+  // is nothing to say, and the page is left as it works without a
+  // script.
+  var T = window.EarfulText;
+  if (!T) return;
+
   // The language picker (M11-T1) submits on change when JavaScript is
   // available; its button is what makes it work when it is not. No
   // inline handler: the CSP forbids them, deliberately.
@@ -78,13 +84,13 @@
   // Each button points the way it goes: the arrow leads the word on
   // Back and follows it on Next, as the paper plane follows Submit.
   backButton.appendChild(
-    buttonLabel([buttonIcon(["M19 12H5", "M12 19l-7-7 7-7"]), document.createTextNode("Back")])
+    buttonLabel([buttonIcon(["M19 12H5", "M12 19l-7-7 7-7"]), document.createTextNode(T.t("js.respond.back"))])
   );
 
   var nextButton = document.createElement("button");
   nextButton.type = "button";
   nextButton.appendChild(
-    buttonLabel([document.createTextNode("Next"), buttonIcon(["M5 12h14", "M12 5l7 7-7 7"])])
+    buttonLabel([document.createTextNode(T.t("js.respond.next")), buttonIcon(["M5 12h14", "M12 5l7 7-7 7"])])
   );
   // The buttons that move — Back, Next, and Submit on the last
   // question — name their keys, read left to right as the keys to
@@ -95,14 +101,15 @@
   // listener above takes focus out of the field).
   var escHints = [];
   function addEnterHints(button, shifted) {
-    var esc = keyCombo([{ key: "ESC" }, "then"]);
+    var esc = keyCombo(T.parts("js.key.then", { Key: { key: T.t("js.key.esc") } }));
     esc.className += " key-esc";
     esc.hidden = true;
     escHints.push(esc);
-    var parts = [esc];
-    if (shifted) parts.push({ key: "⇧ Shift" }, "+");
-    parts.push({ key: "↵ Enter" });
-    button.appendChild(keyCombo(parts));
+    var enter = { key: T.t("js.key.enter") };
+    var keys = shifted
+      ? T.parts("js.key.combo", { First: { key: T.t("js.key.shift") }, Second: enter })
+      : [enter];
+    button.appendChild(keyCombo([esc].concat(keys)));
   }
   function showEsc(on) {
     escHints.forEach(function (hint) {
@@ -277,8 +284,10 @@
       question.hidden = !active;
     });
 
-    progress.textContent =
-      "Question " + (index + 1) + " of " + questions.length;
+    progress.textContent = T.t("respond.question.position", {
+      Current: index + 1,
+      Total: questions.length,
+    });
     backButton.hidden = index === 0;
     nextButton.hidden = index === questions.length - 1;
     actions.hidden = index !== questions.length - 1;
@@ -320,7 +329,7 @@
   // plain text between: "+" for keys pressed together, "then" for keys
   // pressed in turn. Parts are strings (words), { key } (a keycap), or
   // a node already built. As in the template, the whole is aria-hidden:
-  // the button's accessible name must remain "Next", not "Next Enter".
+  // the button's accessible name must remain T.t("js.respond.next"), not "Next Enter".
   function keyCombo(parts) {
     var combo = document.createElement("span");
     combo.className = "key-combo";
@@ -515,6 +524,12 @@ function attachDraft(form) {
 function attachVersions(form) {
   "use strict";
 
+  // The wording, which the page carries (uitext.js). Without it there
+  // is nothing to say, and the page is left as it works without a
+  // script.
+  var T = window.EarfulText;
+  if (!T) return;
+
   var version = form.querySelector('[name="version_id"]');
   var survey = form.getAttribute("action") || location.pathname;
   if (!version || !version.value) return;
@@ -587,7 +602,7 @@ function attachVersions(form) {
     var link = document.createElement("button");
     link.type = "button";
     link.className = "versions-link button-link";
-    link.textContent = "Previous versions";
+    link.textContent = T.t("js.respond.versions.title");
     holder.appendChild(link);
     field.parentNode.insertBefore(holder, field.nextSibling);
 
@@ -637,15 +652,26 @@ function attachVersions(form) {
     }
   }
 
+  // The time is written as the page is worded. A browser set to the
+  // same language writes it its own way, 24 hours or 12, as it always
+  // did; one set to another language is not asked, or the time would be
+  // in a language the rest of the page is not.
+  function locales() {
+    var same = (navigator.languages || []).filter(function (tag) {
+      return tag === T.lang || tag.indexOf(T.lang + "-") === 0;
+    });
+    return same.length ? same : [T.lang];
+  }
+
   function when(time) {
     var date = new Date(time);
     var clock = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
     if (date.toDateString() === new Date().toDateString()) {
-      return date.toLocaleTimeString([], clock);
+      return date.toLocaleTimeString(locales(), clock);
     }
     clock.month = "short";
     clock.day = "numeric";
-    return date.toLocaleString([], clock);
+    return date.toLocaleString(locales(), clock);
   }
 
   function show(field, list, opener, forget) {
@@ -660,7 +686,7 @@ function attachVersions(form) {
 
     var title = document.createElement("h2");
     title.id = "versions-title";
-    title.textContent = "Previous versions";
+    title.textContent = T.t("js.respond.versions.title");
 
     var entries = document.createElement("ol");
     entries.className = "versions-list";
@@ -681,8 +707,8 @@ function attachVersions(form) {
         var restore = document.createElement("button");
         restore.type = "button";
         restore.className = "secondary";
-        restore.textContent = "Restore";
-        restore.setAttribute("aria-label", "Restore the version from " + when(entry.t));
+        restore.textContent = T.t("js.respond.versions.restore");
+        restore.setAttribute("aria-label", T.t("js.respond.versions.restore_from", { When: when(entry.t) }));
         restore.addEventListener("click", function () {
           field.value = entry.v;
           // Announced, so the draft keeps it and the answer it replaces
@@ -711,10 +737,10 @@ function attachVersions(form) {
     var clear = document.createElement("button");
     clear.type = "button";
     clear.className = "secondary";
-    clear.textContent = "Clear all";
+    clear.textContent = T.t("js.respond.versions.clear");
     var done = document.createElement("button");
     done.type = "button";
-    done.textContent = "Close";
+    done.textContent = T.t("js.respond.versions.close");
     actions.appendChild(clear);
     actions.appendChild(done);
 

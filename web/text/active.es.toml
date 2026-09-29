@@ -2452,3 +2452,271 @@ other = "Sus respuestas han quedado registradas."
 [respond.thanks.anonymous]
 hash = "sha1-7d4ee0e3a611ee3405f99470e3a7a6da387221fe"
 other = "Era una encuesta anónima: sus respuestas se guardaron sin nada que le identifique."
+
+
+# ── Scripts: las teclas que nombran ────────────────────────────────────
+
+[js.key.esc]
+hash = "sha1-042b890a506cb1f86b057af9f2065c60f0543326"
+other = "ESC"
+
+[js.key.shift]
+hash = "sha1-e34a263e71aca777dae17a4840e16634cefad370"
+other = "⇧ Mayús"
+
+[js.key.enter]
+hash = "sha1-61e7f153441e19e2f189f3061c2bf3196c715f26"
+other = "↵ Intro"
+
+[js.key.space]
+hash = "sha1-6d8c9b124d521027647b4f270cb2872798f9264e"
+other = "Espacio"
+
+[js.key.combo]
+hash = "sha1-994c5eb3c47e9f53c8978ec6f9f5d0671e5d6bcb"
+other = "{{.First}} + {{.Second}}"
+
+[js.key.then]
+hash = "sha1-dbe0e5f48f1873178a7454029fba64e2eac1c208"
+other = "{{.Key}} y después"
+
+
+# ── Scripts: la redacción, el resumen, el gráfico ──────────────────────
+
+[js.generate.working]
+hash = "sha1-5dbaaaff6432f64894ce32316d15d8c8708f0873"
+other = "Redactando…"
+
+[js.generate.lost]
+hash = "sha1-113937cfd799669bd105b70d20b7aec434aa577a"
+other = "Se perdió la conexión: se envía de la forma habitual…"
+
+[js.insights.working]
+hash = "sha1-1101334d0e79327b1b6d75d08723b14d975932e8"
+other = "Leyendo las respuestas…"
+
+[js.insights.lost]
+hash = "sha1-807a736a12905540feb0e792f2927bfae7029834"
+other = "Se perdió la conexión: se ejecuta de la forma habitual…"
+
+[js.stats.series.label]
+hash = "sha1-40c20d94e78fa142819df8cc9440d30e65329975"
+other = "Serie"
+
+[js.stats.series.submissions]
+hash = "sha1-8729316a873bb7df7d8378377fa62e72a84a636b"
+other = "envíos"
+
+[js.stats.series.opened]
+hash = "sha1-590abaace41bdb1047b7713b47b0a4c3489ca80f"
+other = "aperturas"
+
+[js.stats.table]
+hash = "sha1-cacd8245194177bc2659f50a7e7ce02b21952304"
+other = "Mostrar como tabla"
+
+[js.stats.chart.aria]
+hash = "sha1-e73a1519b9d1f11a3bf39179c201a645d236aa37"
+other = "{{.Series}} por día; la tabla de abajo contiene las mismas cifras"
+
+[js.stats.chart.title]
+hash = "sha1-f85ced0ab4258f982aa030b673b70dc372e499f7"
+other = "{{.Series}} por día"
+
+[js.stats.chart.point]
+hash = "sha1-4d9a002bbcb467a81ef1c2d2bbbff9a4c538c1ad"
+other = "{{.Day}}: {{.Count}} {{.Series}}"
+
+
+# ── Scripts: responder una encuesta ────────────────────────────────────
+
+[js.respond.back]
+hash = "sha1-b52b36b7269fbfc58ec24bb724691951a3decbe8"
+other = "Atrás"
+
+[js.respond.next]
+hash = "sha1-bc981983e7f547dc62e19a1e383acfe00782a6d5"
+other = "Siguiente"
+
+[js.respond.versions.title]
+hash = "sha1-881b867d98d485f2e932ad18ec669da57a9289d1"
+other = "Versiones anteriores"
+
+[js.respond.versions.restore]
+hash = "sha1-3cbe6d6b9a8d1596bb5bca12e14d81c9e108a1a3"
+other = "Restaurar"
+
+[js.respond.versions.restore_from]
+hash = "sha1-994ad5198ef3a58b39aacc1de45012abecc314ad"
+other = "Restaurar la versión de {{.When}}"
+
+[js.respond.versions.clear]
+hash = "sha1-c043160a89ba0acd714977735d49455f662b1c79"
+other = "Borrar todas"
+
+[js.respond.versions.close]
+hash = "sha1-bbfa773e5a63a5ea58c9b6207e608ca0120e592a"
+other = "Cerrar"
+
+
+# ── Scripts: el dictado ────────────────────────────────────────────────
+
+[js.voice.title]
+hash = "sha1-2a7fe421f4bd45dc19fb4f65af90998d8bb1d389"
+other = "Dictado"
+
+[js.voice.hide]
+hash = "sha1-34d8b60fe25332f7b98585e82e753eaf502c3e50"
+other = "Ocultar"
+
+[js.voice.show]
+hash = "sha1-d97d1ee339e4eeaba8cac91dca37c8b4ec8f5501"
+other = "Mostrar"
+
+[js.voice.hide_aria]
+hash = "sha1-614a52765fa3de4590a077a13f5b628d426f5e7a"
+other = "Ocultar el dictado"
+
+[js.voice.show_aria]
+hash = "sha1-94580798b54c497ccd5971973c6a10d56d4b8e26"
+other = "Mostrar el dictado"
+
+[js.voice.dictate]
+hash = "sha1-3eaff69c98447e8e48896a5a1ac26d081ac99411"
+other = "Dictar"
+
+[js.voice.stop]
+hash = "sha1-9e253470c876ee6d5c720eb777aeb82d4c26e28f"
+other = "Detener"
+
+[js.voice.reset]
+hash = "sha1-44c57abd888a66b36d4b7c902134063e4a097223"
+other = "Borrar"
+
+[js.voice.cancel]
+hash = "sha1-77dfd2135f4db726c47299bb55be26f7f4525a46"
+other = "Cancelar"
+
+[js.voice.recording]
+hash = "sha1-38dc15d6fc3889497e5e04aa9f09273df746bdbf"
+other = "Grabación en curso. Su transcripción aparecerá aquí."
+
+[js.voice.cancelled]
+hash = "sha1-dc72783f5a074c46cfa104f38c204fb814053a54"
+other = "Transcripción cancelada."
+
+[js.voice.cleared]
+hash = "sha1-f25d8dc3664ac8164ec9019e34d2d1bf77cf970f"
+other = "Borrado: escriba o diga de nuevo su respuesta."
+
+[js.voice.starting]
+hash = "sha1-e5f58095ac293859b9828a7de675885eba248a65"
+other = "Iniciando…"
+
+[js.voice.finishing]
+hash = "sha1-90218af7b57cf3411b24d04a60d8b193817349da"
+other = "Terminando…"
+
+[js.voice.longest]
+hash = "sha1-b12b55e92d83f1f9404cd5f43adb46c51e323974"
+other = "Es la respuesta más larga que puedo recoger: transcribiendo."
+
+[js.voice.lost]
+hash = "sha1-e270ce5fc787a8e168a2ff96aade2d5e22049946"
+other = "Se perdió la conexión: escriba su respuesta, por favor."
+
+[js.voice.unrecognised]
+hash = "sha1-4d1370f4eacdce260b1a9ee1d4181518b3cf73b7"
+other = "No se pudo reconocer: escriba su respuesta, por favor."
+
+[js.voice.hint.hold]
+hash = "sha1-2b60d4ba76fde03e4ecb1b4399f59c0d8fbf148d"
+other = "Mantenga {{.Key}}"
+
+[js.voice.hint.release]
+hash = "sha1-28658ba9788f6cfd3d1afb8a4cf39206626b8e35"
+other = "Suelte {{.Key}}"
+
+[js.voice.hint.longer]
+hash = "sha1-f917e3174a5fb84ad1c41f8286046c497f59e5f8"
+other = "Mantenga pulsada la barra espaciadora mientras habla, y suéltela cuando termine."
+
+[js.voice.idle.keyboard]
+hash = "sha1-19460454a4b337b0b1251776f7cd3f9148eeb10d"
+other = "Pulse Dictar, o mantenga pulsada la barra espaciadora, para decir su respuesta."
+
+[js.voice.idle.touch]
+hash = "sha1-8c3d92ed429eb64a5adcd8e8d23828ce7670563b"
+other = "Pulse Dictar para decir su respuesta."
+
+[js.voice.listening.unnamed]
+hash = "sha1-6e0954d71e2171140fe5bb41d89589b936a6e111"
+other = "Escuchando… hable ahora."
+
+[js.voice.listening.named]
+hash = "sha1-bfb0044c010a19cf547386aecf289b7070a6aca0"
+other = "Escuchando por {{.Device}}… hable ahora."
+
+[js.voice.quiet.unnamed]
+hash = "sha1-ffe937e04bb92ff74e9bfe3b839d22058039ea1a"
+other = "No llega ningún sonido: compruebe qué micrófono está usando su navegador, o escriba su respuesta."
+
+[js.voice.quiet.named]
+hash = "sha1-7aa90ce681b1b041aab0b92c689172805bee4b4f"
+other = "No llega ningún sonido por {{.Device}}: compruebe qué micrófono está usando su navegador, o escriba su respuesta."
+
+[js.voice.transcribed.device]
+hash = "sha1-1d286050fe4f57376f50b29b54ef8dc327149c99"
+other = "Transcrito en su dispositivo: corríjalo si no es exacto."
+
+[js.voice.transcribed.server]
+hash = "sha1-0eea07259495efadd3dd904743e60b386be4b743"
+other = "Transcrito: corríjalo si no es exacto."
+
+[js.voice.microphone.label]
+hash = "sha1-242805378404a310345cf70839197bf474f74005"
+other = "Micrófono"
+
+[js.voice.microphone.grant]
+hash = "sha1-89563b8e39a82dbf8b92cd79cdf68cd083e79408"
+other = "Permita el micrófono para activar el dictado"
+
+[js.voice.microphone.input]
+hash = "sha1-9bafc6fbb1d928736f243dba381100d3af0f7d0b"
+other = "Entrada: {{.Device}}"
+
+[js.voice.microphone.chosen]
+hash = "sha1-7a3fda55944c9484eb1157f674fe90e5401544dc"
+other = "Micrófono: {{.Device}}."
+
+[js.voice.microphone.switched]
+hash = "sha1-43b5ea13e02ee38634d5d286e35afa20da3b6cbc"
+other = "Se cambió a {{.Device}}: hable de nuevo para usarlo."
+
+[js.voice.microphone.waiting]
+hash = "sha1-87a35e464acdf5b7f169ea60205aa6e9dd5c7d68"
+other = "Esperando el acceso al micrófono…"
+
+[js.voice.microphone.ready]
+hash = "sha1-62869db24d77a67f1ec1d068d7b4e7e9c9c917f9"
+other = "Micrófono listo."
+
+[js.voice.microphone.unavailable]
+hash = "sha1-83059a62ad1b8ed64ee9ab0873a8999dbd214a98"
+other = "Micrófono no disponible: escriba su respuesta, por favor."
+
+[js.voice.consent.title]
+hash = "sha1-f01035c4378d86d973dfdf959c9c8ae1a724dd41"
+other = "Dicte su respuesta"
+
+[js.voice.consent.body]
+hash = "sha1-80cb00c72177c18293a7ab4dab8efd417afb08fe"
+other = "Su navegador le pedirá acceso al micrófono. Lo que diga se convierte en un texto que puede leer y corregir antes de que pase a ser su respuesta. Su voz nunca se guarda: no se conserva ninguna grabación, ni aquí ni en ningún otro lugar. Puede escribir en cualquier momento."
+
+[js.voice.consent.decline]
+hash = "sha1-e45714907316a161b3c502a4678cf42c0f4824d9"
+other = "Ahora no"
+
+[js.voice.consent.accept]
+hash = "sha1-7c5773d723c18bc33cf302d9c5db6056ffb32b25"
+other = "Usar el micrófono"

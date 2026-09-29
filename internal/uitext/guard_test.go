@@ -245,11 +245,142 @@ func hasPrefix[V any](messages map[uitext.ID]V, prefix string) bool {
 	return false
 }
 
+// scriptUse is a name written in a script: EarfulText's t, n and parts.
+var scriptUse = regexp.MustCompile(`\bT\.(?:t|n|parts)\(\s*"([^"]+)"`)
+
+// scripts reads the application's own scripts, by name.
+func scripts(t *testing.T, root string) map[string]string {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join(root, "web", "static", "js", "*.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]string{}
+	for _, path := range paths {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out[filepath.Base(path)] = string(raw)
+	}
+	return out
+}
+
+// scriptUses finds every name written in a script.
+func scriptUses(t *testing.T, root string) []use {
+	t.Helper()
+	var found []use
+	for name, source := range scripts(t, root) {
+		for _, m := range scriptUse.FindAllStringSubmatchIndex(source, -1) {
+			line := 1 + strings.Count(source[:m[0]], "\n")
+			found = append(found, use{name: source[m[2]:m[3]], where: name + ":" + strconv.Itoa(line)})
+		}
+	}
+	return found
+}
+
+// A script is given its messages by the page it runs on. A name the
+// script uses and no page gives it is a message shown by its name.
+func TestEveryNameAScriptUsesIsGivenToIt(t *testing.T) {
+	root := repoRoot(t)
+	fset, files := sourceFiles(t, root)
+	found, _ := uses(fset, files)
+	var given []string
+	for _, u := range found {
+		if u.prefix {
+			given = append(given, u.name)
+		}
+	}
+	source := embedded(t).Written(uitext.Source)
+	for _, u := range scriptUses(t, root) {
+		if _, ok := source[uitext.ID(u.name)]; !ok {
+			t.Errorf("%s: %q has no message in active.%s.toml", u.where, u.name, uitext.Source)
+			continue
+		}
+		ok := false
+		for _, name := range given {
+			if u.name == name || strings.HasPrefix(u.name, name+".") {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			t.Errorf("%s: %q is used by a script and no page gives it to one", u.where, u.name)
+		}
+	}
+}
+
+// A script fills a message in by putting values where it names them. It
+// does not run a template, so a message a script is given says nothing
+// conditionally.
+func TestMessagesForScriptsAreFilledInAndNothingMore(t *testing.T) {
+	c := embedded(t)
+	for _, lang := range append([]string{uitext.Source}, c.Translations()...) {
+		for id, msg := range c.Written(lang) {
+			if !strings.HasPrefix(string(id), "js.") {
+				continue
+			}
+			for form, text := range uitext.Forms(msg) {
+				if rest := placeholder.ReplaceAllString(text, ""); strings.Contains(rest, "{{") {
+					t.Errorf("%s (%s, %s) does more than name its values, which a script cannot follow", id, lang, form)
+				}
+			}
+		}
+	}
+}
+
+// A script names its messages and contains none.
+func TestScriptsContainNoWording(t *testing.T) {
+	quoted := regexp.MustCompile("\"((?:[^\"\\\\\n]|\\\\.)*)\"")
+	comment := regexp.MustCompile(`(?m)^\s*//.*$|\s//\s.*$`)
+	for name, source := range scripts(t, repoRoot(t)) {
+		source = comment.ReplaceAllString(source, "")
+		for _, m := range quoted.FindAllStringSubmatch(source, -1) {
+			if prose(m[1]) && !notScriptWording[m[1]] && !scriptSyntax.MatchString(m[1]) {
+				t.Errorf("%s contains wording, which belongs in web/text: %q", name, m[1])
+			}
+		}
+	}
+}
+
+// scriptSyntax is what a script writes to the browser and not to a
+// reader: a selector, the end of an element's id, the beginning of a
+// storage key, the scheme of an address, a piece of a selector it is
+// putting together.
+var scriptSyntax = regexp.MustCompile(`[\[\]'+]|^-[a-z]+$|^[a-z]+:$|^[a-z]+(\.[a-z]+)*\.$`)
+
+// notScriptWording is what a script writes that reads like wording and
+// is addressed to the browser or to whoever reads the console.
+var notScriptWording = map[string]bool{
+	"use strict":                         true,
+	"TEXTAREA":                           true,
+	"INPUT":                              true,
+	"BUTTON":                             true,
+	"Escape":                             true,
+	"Enter":                              true,
+	"SHA-256":                            true,
+	"no message: ":                       true,
+	"challenge unavailable":              true,
+	"(hover: hover) and (pointer: fine)": true,
+	"(prefers-reduced-motion: reduce)":   true,
+}
+
 // A message nothing names is wording nobody reads, and a translator
 // would still be asked to translate it.
 func TestEveryMessageIsUsed(t *testing.T) {
-	fset, files := sourceFiles(t, repoRoot(t))
+	root := repoRoot(t)
+	fset, files := sourceFiles(t, root)
 	found, _ := uses(fset, files)
+	// A name given to a script is used if the script uses it, and what a
+	// page gives its scripts by the beginning of their names is not, by
+	// that, used.
+	var inGo []use
+	for _, u := range found {
+		if !u.prefix || !strings.HasPrefix(u.name, "js.") {
+			inGo = append(inGo, u)
+		}
+	}
+	found = append(inGo, scriptUses(t, root)...)
 	used := map[string]bool{}
 	var prefixes []string
 	for _, u := range found {

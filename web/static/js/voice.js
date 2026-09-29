@@ -17,6 +17,12 @@
 (function () {
   "use strict";
 
+  // The wording, which the page carries (uitext.js). Without it there
+  // is nothing to say, and the page is left as it works without a
+  // script.
+  var T = window.EarfulText;
+  if (!T) return;
+
   var form = document.querySelector(".respond-form");
   if (!form) return;
   var voicePath = form.getAttribute("data-voice-path");
@@ -26,13 +32,13 @@
   var CONSENT_KEY = "earful-voice-consent";
   var DEVICE_KEY = "earful-voice-device";
   var SAMPLE_RATE = 16000;
-  var RECORDING_HINT = "Recording in progress. Your transcription will be shown here.";
+  var RECORDING_HINT = T.t("js.voice.recording");
   // A Space press longer than this is a hold, not a tap. Long enough for
   // the hold bar to be seen filling, which is the respondent's only sign
   // that holding is doing something before the microphone opens. The
   // stylesheet's voice-hold animation runs to the same figure.
   var HOLD_MS = 400;
-  var HOLD_HINT = ["Hold", { key: "Space" }];
+  var HOLD_HINT = T.parts("js.voice.hint.hold", { Key: { key: T.t("js.key.space") } });
   var COLLAPSE_KEY = "earful-voice-collapsed";
   var SVG_NS = "http://www.w3.org/2000/svg";
   var MIC_ICON = [
@@ -106,14 +112,14 @@
     var title = document.createElement("span");
     title.className = "voice-title";
     title.id = uid + "-title";
-    title.textContent = "Dictation";
+    title.textContent = T.t("js.voice.title");
     var toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "voice-toggle secondary";
     toggle.setAttribute("aria-controls", uid + "-body");
     // A word rather than a glyph: a minus sign beside a title says
     // "remove" as readily as it says "put away".
-    var toggleLabel = document.createTextNode("Hide");
+    var toggleLabel = document.createTextNode(T.t("js.voice.hide"));
     toggle.appendChild(toggleLabel);
     head.appendChild(title);
     head.appendChild(toggle);
@@ -127,11 +133,11 @@
     button.appendChild(icon(MIC_ICON));
     // The label is its own text node so the key hint beside it survives
     // every label change; setting button.textContent would delete it.
-    var label = document.createTextNode("Dictate");
+    var label = document.createTextNode(T.t("js.voice.dictate"));
     button.appendChild(label);
     // Holding Space records for as long as it is held (attachKeys);
     // Shift+Space, which respond.js owns, still starts and stops a take.
-    // The hint is aria-hidden so the button is named "Dictate", not
+    // The hint is aria-hidden so the button is named T.t("js.voice.dictate"), not
     // "Dictate Hold Space".
     var micHint = keyCombo(HOLD_HINT);
     button.appendChild(micHint);
@@ -147,8 +153,10 @@
     resetButton.type = "button";
     resetButton.className = "voice-reset secondary";
     resetButton.appendChild(icon(TRASH_ICON));
-    resetButton.appendChild(document.createTextNode("Reset"));
-    resetButton.appendChild(keyCombo([{ key: "⇧ Shift" }, "+", { key: "ESC" }]));
+    resetButton.appendChild(document.createTextNode(T.t("js.voice.reset")));
+    resetButton.appendChild(
+      keyCombo(T.parts("js.key.combo", { First: { key: T.t("js.key.shift") }, Second: { key: T.t("js.key.esc") } }))
+    );
 
     // The status box heads the card. It always says something — what to
     // do when idle, what is happening otherwise — so the card never
@@ -168,7 +176,7 @@
     // here would be invented, and inventing one on the single screen
     // where this product asks to be trusted is a poor trade for a few
     // seconds of reassurance. aria-hidden because the status line beside
-    // it already announces "Transcribing…"; a screen reader does not
+    // it already announces T.t("voice.status.transcribing"); a screen reader does not
     // need the same fact twice.
     var progress = document.createElement("span");
     progress.className = "voice-progress";
@@ -208,7 +216,7 @@
     var picker = document.createElement("label");
     picker.className = "voice-picker";
     picker.hidden = true;
-    picker.appendChild(document.createTextNode("Microphone "));
+    picker.appendChild(document.createTextNode(T.t("js.voice.microphone.label") + " "));
     var select = document.createElement("select");
     select.className = "voice-device";
     picker.appendChild(select);
@@ -216,7 +224,7 @@
     var grant = document.createElement("button");
     grant.type = "button";
     grant.className = "voice-grant secondary";
-    grant.textContent = "Grant microphone to enable dictation";
+    grant.textContent = T.t("js.voice.microphone.grant");
     grant.hidden = true;
 
     // Fills while Space is held, along the foot of the Dictate button —
@@ -238,7 +246,7 @@
     var cancelLink = document.createElement("button");
     cancelLink.type = "button";
     cancelLink.className = "voice-cancel button-link";
-    cancelLink.textContent = "Cancel";
+    cancelLink.textContent = T.t("js.voice.cancel");
     cancelLink.hidden = true;
     status.appendChild(cancelLink);
     status.appendChild(progress);
@@ -278,16 +286,14 @@
         if (!handle.monitor) return;
         var device = handle.monitor.device;
         var listed = showInputs(handle.inputs || [], handle.monitor.deviceId);
-        input.textContent = device && !listed ? "Input: " + device : "";
+        input.textContent = device && !listed ? T.t("js.voice.microphone.input", { Device: device }) : "";
         // Unhidden before the meter starts, so the canvas has a size to
         // read; a hidden element measures zero by zero.
         monitor.hidden = false;
         spectrum.hidden = false;
         meter = startMeter(handle.monitor.context, handle.monitor.stream, spectrum, function quiet() {
           say(
-            "Nothing is coming through" +
-              (device ? " " + device : "") +
-              " — check which microphone your browser is using, or type your answer."
+            device ? T.t("js.voice.quiet.named", { Device: device }) : T.t("js.voice.quiet.unnamed")
           );
         });
       },
@@ -415,7 +421,7 @@
       if (recorder || starting) return;
       askConsent(function () {
         field.focus();
-        say("Waiting for microphone access…");
+        say(T.t("js.voice.microphone.waiting"));
         openMicrophone().then(
           function (stream) {
             // Listed while the stream is still open: some browsers
@@ -426,7 +432,7 @@
                 track.stop();
               });
               if (showInputs(devices, current)) {
-                say("Microphone ready.");
+                say(T.t("js.voice.microphone.ready"));
                 return;
               }
               // Allowed, but this browser names nothing: there is no
@@ -437,7 +443,7 @@
             });
           },
           function () {
-            disable("Microphone unavailable — please type your answer.");
+            disable(T.t("js.voice.microphone.unavailable"));
           }
         );
       });
@@ -459,10 +465,10 @@
       var name = select.options[select.selectedIndex].textContent;
       if (recorder) {
         stop();
-        say("Switched to " + name + " — speak again to use it.");
+        say(T.t("js.voice.microphone.switched", { Device: name }));
         return;
       }
-      say("Microphone: " + name + ".");
+      say(T.t("js.voice.microphone.chosen", { Device: name }));
     });
 
     // A headset plugged in or pulled out after the list was made.
@@ -495,7 +501,7 @@
     function reset() {
       recorder = null;
       finishing = null;
-      setLabel("Dictate");
+      setLabel(T.t("js.voice.dictate"));
       fillCombo(micHint, HOLD_HINT);
       button.classList.remove("recording");
       ui.settled();
@@ -506,7 +512,7 @@
       var current = recorder;
       recorder = null;
       finishing = current;
-      setLabel("Dictate");
+      setLabel(T.t("js.voice.dictate"));
       fillCombo(micHint, HOLD_HINT);
       button.classList.remove("recording");
       current.stop();
@@ -522,7 +528,7 @@
       recorder = null;
       take.cancel();
       reset();
-      say("Transcription cancelled.");
+      say(T.t("js.voice.cancelled"));
       field.focus();
     }
     cancelLink.addEventListener("click", cancel);
@@ -538,8 +544,8 @@
       body.hidden = on;
       wrap.classList.toggle("collapsed", on);
       toggle.setAttribute("aria-expanded", on ? "false" : "true");
-      toggleLabel.nodeValue = on ? "Show" : "Hide";
-      toggle.setAttribute("aria-label", on ? "Show dictation" : "Hide dictation");
+      toggleLabel.nodeValue = on ? T.t("js.voice.show") : T.t("js.voice.hide");
+      toggle.setAttribute("aria-label", on ? T.t("js.voice.show_aria") : T.t("js.voice.hide_aria"));
     }
     // Not wanting dictation is a fact about the respondent, not about
     // one question, so every card on the page follows and the choice is
@@ -591,14 +597,14 @@
       }
       writeAnswer(field, "");
       reset();
-      say("Cleared — type or speak your answer again.");
+      say(T.t("js.voice.cleared"));
       field.focus();
     }
 
     function start(mode) {
       var pending = { cancelled: null };
       starting = pending;
-      say("Starting…");
+      say(T.t("js.voice.starting"));
       // On-device first, when the browser can prove it (ADR-0004): the
       // respondent's voice then never leaves their machine at all.
       // Otherwise the audio streams to the EU transcription service.
@@ -624,7 +630,7 @@
               handle.abort();
               reset();
               if (pending.cancelled === "released") {
-                say("Hold Space while you speak, and release it when you are done.");
+                say(T.t("js.voice.hint.longer"));
               }
               return;
             }
@@ -635,17 +641,20 @@
             // held take ends when the key comes up, and says so; a take
             // begun by a click has no key to release, so it says
             // nothing rather than something untrue.
-            setLabel("Stop");
-            fillCombo(micHint, mode === "hold" ? ["Release", { key: "Space" }] : []);
+            setLabel(T.t("js.voice.stop"));
+            fillCombo(
+              micHint,
+              mode === "hold" ? T.parts("js.voice.hint.release", { Key: { key: T.t("js.key.space") } }) : []
+            );
             button.classList.add("recording");
             ui.recording(handle);
             var device = handle.monitor && handle.monitor.device;
-            say(device ? "Listening on " + device + "… speak now." : "Listening… speak now.");
+            say(device ? T.t("js.voice.listening.named", { Device: device }) : T.t("js.voice.listening.unnamed"));
           },
           function () {
             starting = null;
             reset();
-            disable("Microphone unavailable — please type your answer.");
+            disable(T.t("js.voice.microphone.unavailable"));
           }
         );
     }
@@ -706,8 +715,8 @@
       typeof window.matchMedia === "function" &&
       window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     return keyboard
-      ? "Press Dictate, or hold Space, to speak your answer."
-      : "Press Dictate to speak your answer.";
+      ? T.t("js.voice.idle.keyboard")
+      : T.t("js.voice.idle.touch");
   }
 
   // As in respond.js: keys drawn as keycaps, with the words around
@@ -986,14 +995,11 @@
 
     var title = document.createElement("h2");
     title.id = "voice-consent-title";
-    title.textContent = "Dictate your answer";
+    title.textContent = T.t("js.voice.consent.title");
 
     var body = document.createElement("p");
     body.textContent =
-      "Your browser will ask for microphone access. What you say is turned into " +
-      "text you can read and edit before it becomes your answer. Your voice is " +
-      "never stored — no recording is kept, here or anywhere else. Typing stays " +
-      "available at any time.";
+      T.t("js.voice.consent.body");
 
     var actions = document.createElement("div");
     actions.className = "voice-consent-actions";
@@ -1001,11 +1007,11 @@
     var cancel = document.createElement("button");
     cancel.type = "button";
     cancel.className = "secondary";
-    cancel.textContent = "Not now";
+    cancel.textContent = T.t("js.voice.consent.decline");
 
     var accept = document.createElement("button");
     accept.type = "button";
-    accept.textContent = "Use the microphone";
+    accept.textContent = T.t("js.voice.consent.accept");
 
     actions.appendChild(cancel);
     actions.appendChild(accept);
@@ -1112,13 +1118,13 @@
     recognition.onerror = function () {
       if (aborted) return;
       failed = true;
-      ui.fail("Couldn't recognise that — please type your answer.");
+      ui.fail(T.t("js.voice.unrecognised"));
     };
     recognition.onend = function () {
       ended = true;
       closeMonitor(monitor);
       if (!failed && !aborted) {
-        say("Transcribed on your device — edit it if it isn't quite right.");
+        say(T.t("js.voice.transcribed.device"));
         field.focus();
       }
       done();
@@ -1143,7 +1149,7 @@
         monitor: monitor,
         stop: function () {
           ui.transcribing();
-          say("Finishing…");
+          say(T.t("js.voice.finishing"));
           recognition.stop();
         },
         // Reset mid-take: whatever was said is dropped, not transcribed.
@@ -1222,7 +1228,7 @@
         // the microphone opens: audio is never queued, so everything
         // spoken before the socket is open is lost, and a stop sent
         // during the handshake would reach a session that has not
-        // started. Until then the respondent sees "Starting…" and no
+        // started. Until then the respondent sees T.t("js.voice.starting") and no
         // stop control. opened settles false when the take ends first.
         var announceOpen;
         var opened = new Promise(function (resolve) {
@@ -1264,18 +1270,18 @@
           },
           onDone: function () {
             if (discarded) return;
-            say("Transcribed — edit it if it isn't quite right.");
+            say(T.t("js.voice.transcribed.server"));
             field.focus();
             cleanup();
           },
           onError: function (message) {
             if (discarded) return;
-            ui.fail(message || "Voice isn't available right now — please type your answer.");
+            ui.fail(message || T.t("voice.error.unavailable"));
             cleanup();
           },
           onGone: function () {
             if (discarded) return;
-            ui.fail("Connection lost — please type your answer.");
+            ui.fail(T.t("js.voice.lost"));
             cleanup();
           },
         });
@@ -1297,7 +1303,7 @@
         }
 
         var stopTimer = window.setTimeout(function () {
-          say("That's the longest answer I can take — transcribing.");
+          say(T.t("js.voice.longest"));
           finish();
         }, maxSeconds * 1000);
 
@@ -1308,7 +1314,7 @@
             track.stop();
           });
           ui.transcribing();
-          say("Transcribing…");
+          say(T.t("voice.status.transcribing"));
         }
 
         // abort is Reset mid-take: the socket is closed without a stop,

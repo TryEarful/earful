@@ -63,6 +63,8 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 			}
 		</main>
 		if data.Insight.Available {
+			@jsText(ctx, "js.insights")
+			<script src={ static.AssetURL("js/uitext.js") } defer></script>
 			<script src={ static.AssetURL("js/wsclient.js") } defer></script>
 			<script src={ static.AssetURL("js/insights.js") } defer></script>
 		}

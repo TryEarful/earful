@@ -11,11 +11,21 @@
 (function () {
   "use strict";
 
+  // The wording, which the page carries (uitext.js). Without it there
+  // is nothing to say, and the page is left as it works without a
+  // script.
+  var T = window.EarfulText;
+  if (!T) return;
+
   // ---- trend chart -------------------------------------------------------
 
+  // A series is named twice: as a heading, and as it is said after a
+  // number. English makes the second from the first by putting it in
+  // lower case, which is not how every language gets from one to the
+  // other.
   var SERIES = [
-    { key: "submissions", label: "Submissions" },
-    { key: "opened", label: "Opened" },
+    { key: "submissions", label: T.t("stats.submissions.label"), counted: T.t("js.stats.series.submissions") },
+    { key: "opened", label: T.t("stats.opened.label"), counted: T.t("js.stats.series.opened") },
   ];
   var SVG = "http://www.w3.org/2000/svg";
 
@@ -35,7 +45,7 @@
 
     // The series picker only exists once there is a chart to switch.
     var select = document.createElement("select");
-    select.setAttribute("aria-label", "Series");
+    select.setAttribute("aria-label", T.t("js.stats.series.label"));
     SERIES.forEach(function (series) {
       var option = document.createElement("option");
       option.value = series.key;
@@ -47,16 +57,16 @@
     // The table keeps every number reachable; it just stops leading.
     var details = document.createElement("details");
     var summary = document.createElement("summary");
-    summary.textContent = "Show as a table";
+    summary.textContent = T.t("js.stats.table");
     details.appendChild(summary);
     table.parentNode.insertBefore(details, table);
     details.appendChild(table);
 
     function render() {
       var key = select.value;
-      var label = SERIES.filter(function (s) { return s.key === key; })[0].label;
-      chart.setAttribute("aria-label", label + " per day; the table below holds the same numbers");
-      chart.replaceChildren(lineChart(points, key, label));
+      var series = SERIES.filter(function (s) { return s.key === key; })[0];
+      chart.setAttribute("aria-label", T.t("js.stats.chart.aria", { Series: series.label }));
+      chart.replaceChildren(lineChart(points, key, series));
     }
     select.addEventListener("change", render);
     render();
@@ -65,7 +75,7 @@
   // lineChart draws one series as a filled line in a fixed viewBox that
   // scales with its container. Text sizes are in viewBox units, chosen
   // so the labels stay readable at phone width.
-  function lineChart(points, key, label) {
+  function lineChart(points, key, series) {
     var width = 640, height = 220;
     var pad = { top: 12, right: 12, bottom: 28, left: 36 };
     var innerW = width - pad.left - pad.right;
@@ -77,7 +87,7 @@
 
     var svg = el("svg", { viewBox: "0 0 " + width + " " + height, class: "trend-svg", role: "presentation" });
     var title = el("title");
-    title.textContent = label + " per day";
+    title.textContent = T.t("js.stats.chart.title", { Series: series.label });
     svg.appendChild(title);
 
     var x = function (i) {
@@ -113,7 +123,7 @@
     points.forEach(function (p, i) {
       var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : 3.5, class: "trend-dot" });
       var t = el("title");
-      t.textContent = p.label + ": " + p[key] + " " + label.toLowerCase();
+      t.textContent = T.t("js.stats.chart.point", { Day: p.label, Count: p[key], Series: series.counted });
       dot.appendChild(t);
       svg.appendChild(dot);
     });
