@@ -718,3 +718,314 @@ other = "Traducción automática"
 [results.answer.translated_by]
 hash = "sha1-9abae5ebb726f05c11f4c5a18f639c6eac44dffc"
 other = "Traducido por {{.Model}}; el original está arriba."
+
+
+# ── Crear una encuesta, y lo que toda encuesta tiene ───────────────────
+
+[survey.new.title]
+hash = "sha1-329bce8660a1edcca39546da074d3eacac587177"
+other = "Nueva encuesta — Earful"
+
+[survey.new.heading]
+hash = "sha1-64504ed4744725ff4b74b5bad54c6d11fc28bf3f"
+other = "Nueva encuesta"
+
+[survey.new.submit.label]
+hash = "sha1-7257e56663856b94c227f6d4150efbe604be3542"
+other = "Crear encuesta"
+
+[survey.new.cancel.label]
+hash = "sha1-77dfd2135f4db726c47299bb55be26f7f4525a46"
+other = "Cancelar"
+
+[survey.name.label]
+hash = "sha1-768e0c1c69573fb588f61f1308a015c11468e05f"
+other = "Título"
+
+[survey.audience.legend]
+hash = "sha1-689c86f19dad8ca5a2d3de2cfbae610ef39ad5fc"
+other = "Quién puede responder"
+
+[survey.audience.permanent]
+hash = "sha1-e316a0e393e2fa9369fbb95cea9b3c7e6b2178fd"
+other = "Esta decisión es permanente. Es una promesa a las personas encuestadas, así que no puede cambiarse nunca: ni usted ni nosotros podemos hacerlo."
+
+[survey.audience.anonymous.name]
+hash = "sha1-f81dc2fb85a1345fd6a6921e620c40934fecab7f"
+other = "Encuesta anónima"
+
+[survey.audience.anonymous.hint]
+hash = "sha1-998c5f02d2d4d2ee41252646225acfb4175c9e35"
+other = "Cualquiera que tenga el enlace puede responder. Con un envío nunca se guardan correo electrónico, dirección IP ni datos del dispositivo."
+
+[survey.audience.invited.name]
+hash = "sha1-840e300b2a83746ebcc7adc2870b95bd79b59a67"
+other = "Encuesta por invitación"
+
+[survey.audience.invited.hint]
+hash = "sha1-4ed0fab7e2ae6b693ff623095f43d5450659c101"
+other = "Solo pueden responder las personas que usted invite por correo, cada una con su propio enlace, y usted ve quién respondió qué."
+
+[survey.close_date.label_html]
+hash = "sha1-718c0aa49fdc466ed7a62978526a853affee0dfa"
+other = 'Fecha de cierre <small class="muted">(opcional)</small>'
+
+
+# ── El editor de encuestas ─────────────────────────────────────────────
+
+[editor.created]
+hash = "sha1-df81d660636fdd6dc98519dbe570016f6d716c09"
+other = "· creada el {{.Date}}"
+
+[editor.live]
+hash = "sha1-0597bf8957121e5b634421a136c3ca99f52d1c65"
+other = "· versión publicada: {{.Version}}"
+
+[editor.preview.label]
+hash = "sha1-c8d9e01f7d2b4a157d10dc369b55dfe59abb1528"
+other = "Vista previa de quien responde"
+
+[editor.questions.heading]
+hash = "sha1-9a1fc1731f624d1f9dbca42b781ff8a60a6594e1"
+other = "Preguntas"
+
+[editor.questions.empty]
+hash = "sha1-2ceb9b5a7f5d47fc4384127a0d783ccb4525f103"
+other = "Todavía no hay preguntas. Añada la primera más abajo."
+
+[editor.question.required]
+hash = "sha1-eed6bfb41051ed5b74447340f3c2e29d11e99a7c"
+other = "Obligatoria"
+
+[editor.question.text]
+hash = "sha1-002ff598115d84595ffeee6219cb5c03d3a1d4a6"
+other = "Pregunta"
+
+[editor.question.options_html]
+hash = "sha1-81f7863a0e856d7515c299ac63fba0c8b24bde5e"
+other = 'Opciones <small class="muted">(una por línea)</small>'
+
+[editor.question.scale_min]
+hash = "sha1-970b06c24133b5049773e5559baa8d11c44d9346"
+other = "La escala empieza en"
+
+[editor.question.scale_max]
+hash = "sha1-f6f535f631b9bc1bec34bfef16eae93dac2d49a4"
+other = "La escala termina en"
+
+[editor.question.save.label]
+hash = "sha1-5d579cd1557554f8ad09207bedb0412f122b8e1c"
+other = "Guardar pregunta"
+
+[editor.question.up.label]
+hash = "sha1-b4f57cd0cd5c7d88461c1718646713dea47a36c9"
+other = "Subir"
+
+[editor.question.down.label]
+hash = "sha1-260ff8ae7182fc851337b6b2fdb25f8cac2b8d47"
+other = "Bajar"
+
+[editor.question.delete.label]
+hash = "sha1-f6fdbe48dc54dd86f63097a03bd24094dedd713a"
+other = "Eliminar"
+
+[editor.generate.heading]
+hash = "sha1-f746e778b0a51164c553dba9cfc5d8ee278b6ff8"
+other = "Redactar preguntas con IA"
+
+[editor.generate.intro]
+hash = "sha1-1138d93a51b8e371ac04232b2af8bc085724b295"
+other = "Describa lo que quiere averiguar y redactaré preguntas en esta encuesta. Llegan como preguntas de borrador corrientes: puede editarlas, reordenarlas o eliminarlas como cualquier otra."
+
+[editor.generate.prompt.label]
+hash = "sha1-0813577c03c94c51333b3002727c4ad2c32b4fcd"
+other = "¿Qué quiere averiguar?"
+
+[editor.generate.prompt.placeholder]
+hash = "sha1-3c1dbae90044ddfc381e3f795f82c9dbd6e5b87a"
+other = "Cómo vivieron su primera semana los clientes nuevos, sobre todo la puesta en marcha y el soporte"
+
+[editor.generate.submit.label]
+hash = "sha1-7e2ed40a5cd1889f2efde3a468a1cfb87557aa2e"
+other = "Redactar preguntas"
+
+[editor.add.heading]
+hash = "sha1-076e5e914317c321fb98e95f5fb429f8cbd6b360"
+other = "Añadir una pregunta"
+
+[editor.add.type]
+hash = "sha1-3deb7456519697ecf4eefc455516c969a3681bae"
+other = "Tipo"
+
+[editor.add.text.placeholder]
+hash = "sha1-01465b0bc68f757c4c71574126f5733c19bd259b"
+other = "¿Qué le gustaría preguntar?"
+
+[editor.add.options_html]
+hash = "sha1-3c0c5965d1f8638b1753874104110ef872c4f777"
+other = 'Opciones <small class="muted">(una por línea; solo para preguntas de selección y listas desplegables)</small>'
+
+[editor.add.scale_min_html]
+hash = "sha1-732ccf42566a9f02de0979e6b233a4018965cb6b"
+other = 'La escala empieza en <small class="muted">(solo para valoraciones)</small>'
+
+[editor.add.scale_max_html]
+hash = "sha1-4f05cea934e0e05a0348205cdb1370af0bb497cc"
+other = 'La escala termina en <small class="muted">(solo para valoraciones)</small>'
+
+[editor.add.submit.label]
+hash = "sha1-377e08d43a6cee44a2f01407550315884bedaefb"
+other = "Añadir pregunta"
+
+[editor.participants.heading]
+hash = "sha1-cd56e0839d06af74923cd6ad99d6fc9e7dab8e3a"
+other = "Participantes"
+
+[editor.participants.empty]
+hash = "sha1-abe51642244546735960bcfae854e566cc46b2f8"
+other = "Todavía no se ha invitado a nadie. Pegue direcciones o suba un archivo CSV; los duplicados se eliminan automáticamente."
+
+[editor.participants.emails_html]
+hash = "sha1-8827dfd0f58c8d7036144d512b17ea12dd2a1e1a"
+other = 'Correos electrónicos <small class="muted">(uno por línea, o separados por comas)</small>'
+
+[editor.participants.csv]
+hash = "sha1-6aef4025c2f1a11850b31a3deb9f8db62ea49c86"
+other = "O un archivo CSV"
+
+[editor.participants.add.label]
+hash = "sha1-952408b9613b86f8cee427cd4c4c30e602d282cd"
+other = "Añadir participantes"
+
+[editor.participants.send]
+hash = "sha1-fc9ac0aa565fdacf259564fec2b64e0a5fddbd8c"
+one = "Enviar 1 invitación"
+many = "Enviar {{.Count}} invitaciones"
+other = "Enviar {{.Count}} invitaciones"
+
+[editor.participants.drip]
+hash = "sha1-f3bd7e8b0d77eddeddbedccf46943fb4d93dc9b5"
+other = "Las invitaciones salen poco a poco, con un límite por hora, para proteger la entrega del correo; lo que supere el límite sale en envíos posteriores."
+
+[editor.publish.heading]
+hash = "sha1-5656400564f25dcbe129f43deea78952060bee36"
+other = "Publicar"
+
+[editor.publish.live]
+hash = "sha1-8de0fafe37bd0008fb60fc3da8be87232d672545"
+other = "La versión {{.Version}} está publicada. Sus cambios se quedan en el borrador hasta que vuelva a publicar; mientras tanto, quienes responden siguen viendo la versión publicada."
+
+[editor.publish.never]
+hash = "sha1-a947640010215e578c6c5a152728248fa3662d66"
+other = "Esta encuesta nunca se ha publicado, así que todavía no acepta envíos. Al publicarla, las preguntas actuales quedan fijadas como versión 1 y la encuesta se abre."
+
+[editor.publish.empty]
+hash = "sha1-90b1704b53866b84e91a5f598079ea5b247d27c6"
+other = "Añada al menos una pregunta para publicar."
+
+[editor.publish.submit.label]
+hash = "sha1-0738a6b7262453b709435a325161405689f38612"
+other = "Publicar la versión {{.Version}}"
+
+[editor.sharing.heading]
+hash = "sha1-78779badeac10e0b28ae85376dc0c9cbe5a11bdb"
+other = "Compartir"
+
+[editor.sharing.open]
+hash = "sha1-1756ef864be05260ececbe5e73e9cceb5059a949"
+other = "Esta encuesta está abierta y acepta envíos. Comparta este enlace:"
+
+[editor.sharing.anonymous]
+hash = "sha1-eb2c6618f61b35e056937894c5e3a01fe20fff41"
+other = "Cualquiera que tenga el enlace puede responder, y las respuestas no llevan nada que identifique a quien las da."
+
+[editor.sharing.invited]
+hash = "sha1-e6d5cb70a89c02889a3eac84b05a3fc14438f12a"
+other = "Solo pueden responder los participantes invitados, cada uno con su propio enlace."
+
+[editor.sharing.close.label]
+hash = "sha1-a26c1b2705bb9633b166898312ffc8272b13eb64"
+other = "Cerrar la encuesta"
+
+[editor.sharing.closed]
+hash = "sha1-965b3a31dff5e4b85fd68d37c82d65b0cef3e24b"
+other = "Esta encuesta está cerrada. No acepta envíos nuevos; los resultados siguen visibles."
+
+[editor.sharing.closed_on]
+hash = "sha1-9decb69efa55628217e44d9453534b9d6f054d1a"
+other = "Esta encuesta se cerró automáticamente en su fecha de cierre ({{.Date}}). No acepta envíos nuevos; los resultados siguen visibles."
+
+[editor.sharing.reopen.label]
+hash = "sha1-babd65e216413d7d096e153ab4d4f4e5a086a675"
+other = "Reabrir la encuesta"
+
+[editor.sharing.reopen.hint]
+hash = "sha1-f98f4cf9ace494eb1f1fbd3429aca117c8d35ae1"
+other = "Al reabrirla también se borra la fecha de cierre que ya pasó."
+
+[editor.versions.heading]
+hash = "sha1-bed3796f40fdbf4c325799f1d38ef1672840794a"
+other = "Versiones publicadas"
+
+[editor.versions.version]
+hash = "sha1-0eea384a7a44319c417bf0b32ecb7d346a52f53b"
+other = "Versión {{.Number}}"
+
+[editor.versions.by]
+hash = "sha1-2981b4eaa1d242994d45eef4989bfd7d566cfb72"
+other = "por {{.Who}}"
+
+[editor.versions.immutable]
+hash = "sha1-9a9c8936bc0f55f9905ea2307c0d12099a966cfc"
+other = "Las versiones publicadas son inmutables: lo que vio una persona encuestada no puede editarse después."
+
+[editor.versions.audit.label]
+hash = "sha1-3cd3c284cc5ab5e1d1f1e6445884b2741bcff6fc"
+other = "Ver el registro de cambios"
+
+[editor.settings.heading]
+hash = "sha1-c7f73bb54d928922c3838bb789ee9fb8a5b1eb37"
+other = "Ajustes"
+
+[editor.settings.close_date_html]
+hash = "sha1-7f51526c5bdaa12e9a05897e949df22b21f515bd"
+other = 'Fecha de cierre <small class="muted">(opcional; déjela vacía para que no se cierre automáticamente)</small>'
+
+[editor.settings.save.label]
+hash = "sha1-913aba9f96cf9e2134b6ab20645d49644c123585"
+other = "Guardar ajustes"
+
+[editor.settings.anonymous]
+hash = "sha1-81ef53b7cba05dff176c4ebd9f24ba17d0dcc364"
+other = "Esta es una encuesta anónima y siempre lo será: la decisión es permanente."
+
+[editor.settings.invited]
+hash = "sha1-4bb219695e28dabc82bd3a74e0e13aaed302a4f0"
+other = "Esta es una encuesta por invitación y siempre lo será: la decisión es permanente."
+
+[editor.settings.delete.label]
+hash = "sha1-bd4ae36fcc807092ad5121e6a143609028e64230"
+other = "Eliminar la encuesta"
+
+[editor.settings.delete.hint]
+hash = "sha1-3d5554a1164abb0dc45cd229a831049fb4fd3f2a"
+other = "Soporte puede recuperarla durante 30 días; después se borra definitivamente."
+
+
+# ── El registro de cambios ─────────────────────────────────────────────
+
+[audit.title]
+hash = "sha1-5f78149d088eed2243f00ab002c431083ad23a67"
+other = "Registro de cambios — {{.Survey}}"
+
+[audit.heading]
+hash = "sha1-3cfc5f1cc987f398078bb799369d4c03588802d9"
+other = "Registro de cambios"
+
+[audit.intro]
+hash = "sha1-0a34d8d3d4de543c0dfe4da0c81ba1fa68173e47"
+other = "Cada guardado del borrador y cada publicación, empezando por lo más reciente."
+
+[audit.empty]
+hash = "sha1-28c972b99a4b35ee0056ca52ad3d08af5e99409c"
+other = "Todavía no se ha guardado nada."

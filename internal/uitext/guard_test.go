@@ -26,7 +26,6 @@ import (
 var unmoved = map[string]bool{
 	"admin_templ.go":   true,
 	"respond_templ.go": true,
-	"surveys_templ.go": true,
 }
 
 // notWording lists what reads like wording and is not: a name that is
@@ -35,6 +34,9 @@ var notWording = map[string]bool{
 	"Earful": true,
 	// The shape of an invite code, which is not a word in any language.
 	"earful-xxxx-xxxx-xxxx": true,
+	// Two addresses to show how addresses are entered; whose they are
+	// makes no difference.
+	"ada@example.org grace@example.org": true,
 }
 
 func repoRoot(t *testing.T) string {
@@ -464,6 +466,10 @@ func wordingIn(written string) []string {
 	return out
 }
 
+// classList is what a class attribute holds: names in lower case, some
+// of them hyphenated, with spaces between.
+var classList = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*( [a-z0-9]+(-[a-z0-9]+)*)+$`)
+
 // prose reports whether a string in the code reads as wording: words
 // with a space between them, or a word that begins a sentence. A class
 // name, a path or a field name does neither.
@@ -473,6 +479,9 @@ func prose(s string) bool {
 		return false
 	}
 	if strings.ContainsAny(s, "/=_{}<>") || strings.HasPrefix(s, "#") {
+		return false
+	}
+	if classList.MatchString(s) && strings.Contains(s, "-") {
 		return false
 	}
 	first := []rune(s)[0]
@@ -571,6 +580,7 @@ func TestTheReadingFindsWording(t *testing.T) {
 		"Original":              true,
 		"one answer":            true,
 		"%d answers":            true,
+		"chip chip-open":        false,
 		"button-link":           false,
 		"q_":                    false,
 		"/surveys/":             false,

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/static"
 )
 
@@ -32,66 +33,68 @@ templ StatusChip(s domain.Status) {
 }
 
 templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) {
-	@Layout("New survey — Earful") {
+	@Layout(t(ctx, "survey.new.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<h1>New survey</h1>
+			<h1>{ t(ctx, "survey.new.heading") }</h1>
 			<form method="post" action="/surveys" class="card">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<label class="field">
-					<span>Title</span>
+					<span>{ t(ctx, "survey.name.label") }</span>
 					<input type="text" name="title" required autofocus maxlength="200"/>
 				</label>
 				<fieldset class="field">
-					<legend>Who can answer</legend>
+					<legend>{ t(ctx, "survey.audience.legend") }</legend>
 					<label class="choice">
 						<input type="radio" name="anonymity" value="anonymous" checked/>
 						<span>
-							<strong>Anonymous survey</strong>
-							<small>Anyone with the link can answer. No email, IP address or device details are ever stored with a response.</small>
+							<strong>{ t(ctx, "survey.audience.anonymous.name") }</strong>
+							<small>{ t(ctx, "survey.audience.anonymous.hint") }</small>
 						</span>
 					</label>
 					<label class="choice">
 						<input type="radio" name="anonymity" value="invited"/>
 						<span>
-							<strong>Invited survey</strong>
-							<small>Only people you invite by email can answer, each through their own link, and you see who answered what.</small>
+							<strong>{ t(ctx, "survey.audience.invited.name") }</strong>
+							<small>{ t(ctx, "survey.audience.invited.hint") }</small>
 						</span>
 					</label>
-					<p class="warn">This choice is permanent. It's a promise to your respondents, so it can never be changed — not by you, not by us.</p>
+					<p class="warn">{ t(ctx, "survey.audience.permanent") }</p>
 				</fieldset>
 				<label class="field">
-					<span>Close date <small class="muted">(optional)</small></span>
+					<span>
+						@thtml(ctx, "survey.close_date.label_html")
+					</span>
 					<input type="date" name="close_at"/>
 				</label>
 				if errMsg != "" {
 					<p class="error-text">{ errMsg }</p>
 				}
-				<button type="submit">Create survey</button>
-				<a class="button secondary" href="/surveys">Cancel</a>
+				<button type="submit">{ t(ctx, "survey.new.submit.label") }</button>
+				<a class="button secondary" href="/surveys">{ t(ctx, "survey.new.cancel.label") }</a>
 			</form>
 		</main>
 	}
 }
 
 templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyEditorData) {
-	@Layout(data.Survey.Title + " — Earful") {
+	@Layout(t(ctx, "page.title", uitext.Args{"Title": data.Survey.Title})) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/surveys">Surveys</a> / { data.Survey.Title }</nav>
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }><a href="/surveys">{ t(ctx, "breadcrumb.surveys") }</a> / { data.Survey.Title }</nav>
 			<div class="title-row">
 				<h1>{ data.Survey.Title }</h1>
 				@StatusChip(data.Survey.Status)
 			</div>
 			<p class="muted">
 				if data.Survey.IsAnonymous {
-					Anonymous survey
+					{ t(ctx, "survey.audience.anonymous.name") }
 				} else {
-					Invited survey
+					{ t(ctx, "survey.audience.invited.name") }
 				}
-				· created { data.Survey.CreatedAt }
+				{ t(ctx, "editor.created", uitext.Args{"Date": data.Survey.CreatedAt}) }
 				if data.Survey.Published() {
-					· live version { fmt.Sprint(data.Survey.LatestVersion) }
+					{ t(ctx, "editor.live", uitext.Args{"Version": data.Survey.LatestVersion}) }
 					· { responseCountLabel(ctx, data.ResponseCount) }
 				}
 			</p>
@@ -104,18 +107,18 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			@lifecyclePanel(csrf, data.Survey)
 			<section class="card">
 				<div class="title-row">
-					<h2>Questions</h2>
+					<h2>{ t(ctx, "editor.questions.heading") }</h2>
 					<div class="button-row">
 						if data.Survey.LatestVersion > 0 {
-							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>Results</a>
-							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") }>Stats</a>
+							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>{ t(ctx, "results.heading") }</a>
+							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") }>{ t(ctx, "stats.heading") }</a>
 						}
-						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>Languages</a>
-						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>Preview as respondent</a>
+						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>{ t(ctx, "languages.heading") }</a>
+						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>{ t(ctx, "editor.preview.label") }</a>
 					</div>
 				</div>
 				if len(data.Questions) == 0 {
-					<p class="muted">No questions yet. Add the first one below.</p>
+					<p class="muted">{ t(ctx, "editor.questions.empty") }</p>
 				} else {
 					<ol class="questions">
 						for i, q := range data.Questions {
@@ -149,30 +152,32 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 				<span class="qtype">{ q.Type.Label() }</span>
 				<span class="qtext">{ q.Text }</span>
 				if q.Required {
-					<span class="chip chip-small">Required</span>
+					<span class="chip chip-small">{ t(ctx, "editor.question.required") }</span>
 				}
 			</summary>
 			<form method="post" action={ templ.SafeURL(fmt.Sprintf("/surveys/%s/questions/%s", surveyID, q.IdentityID)) }>
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<input type="hidden" name="type" value={ string(q.Type) }/>
 				<label class="field">
-					<span>Question</span>
+					<span>{ t(ctx, "editor.question.text") }</span>
 					<input type="text" name="text" value={ q.Text } required maxlength="500"/>
 				</label>
 				if q.Type.NeedsOptions() {
 					<label class="field">
-						<span>Options <small class="muted">(one per line)</small></span>
+						<span>
+							@thtml(ctx, "editor.question.options_html")
+						</span>
 						<textarea name="options" rows="4">{ strings.Join(q.Options, "\n") }</textarea>
 					</label>
 				}
 				if q.Type.NeedsScale() {
 					<div class="field-row">
 						<label class="field">
-							<span>Scale starts at</span>
+							<span>{ t(ctx, "editor.question.scale_min") }</span>
 							<input type="number" name="scale_min" min="0" max="1" value={ fmt.Sprint(q.ScaleMin) }/>
 						</label>
 						<label class="field">
-							<span>Scale ends at</span>
+							<span>{ t(ctx, "editor.question.scale_max") }</span>
 							<input type="number" name="scale_max" min="2" max="10" value={ fmt.Sprint(q.ScaleMax) }/>
 						</label>
 					</div>
@@ -183,28 +188,28 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 					} else {
 						<input type="checkbox" name="required"/>
 					}
-					<span>Required</span>
+					<span>{ t(ctx, "editor.question.required") }</span>
 				</label>
-				<button type="submit">Save question</button>
+				<button type="submit">{ t(ctx, "editor.question.save.label") }</button>
 			</form>
 			<div class="question-actions">
 				if index > 0 {
 					<form method="post" action={ templ.SafeURL(fmt.Sprintf("/surveys/%s/questions/%s/move", surveyID, q.IdentityID)) }>
 						<input type="hidden" name="_csrf" value={ csrf }/>
 						<input type="hidden" name="direction" value="up"/>
-						<button type="submit" class="secondary">Move up</button>
+						<button type="submit" class="secondary">{ t(ctx, "editor.question.up.label") }</button>
 					</form>
 				}
 				if index < total-1 {
 					<form method="post" action={ templ.SafeURL(fmt.Sprintf("/surveys/%s/questions/%s/move", surveyID, q.IdentityID)) }>
 						<input type="hidden" name="_csrf" value={ csrf }/>
 						<input type="hidden" name="direction" value="down"/>
-						<button type="submit" class="secondary">Move down</button>
+						<button type="submit" class="secondary">{ t(ctx, "editor.question.down.label") }</button>
 					</form>
 				}
 				<form method="post" action={ templ.SafeURL(fmt.Sprintf("/surveys/%s/questions/%s/delete", surveyID, q.IdentityID)) }>
 					<input type="hidden" name="_csrf" value={ csrf }/>
-					<button type="submit" class="danger">Delete</button>
+					<button type="submit" class="danger">{ t(ctx, "editor.question.delete.label") }</button>
 				</form>
 			</div>
 		</details>
@@ -216,10 +221,9 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 // generate.js upgrades it to a live stream against the same handler.
 templ generatePanel(csrf string, surveyID string) {
 	<section class="card" id="ai-generate">
-		<h2>Draft questions with AI</h2>
+		<h2>{ t(ctx, "editor.generate.heading") }</h2>
 		<p class="muted">
-			Describe what you want to learn and I'll draft questions into this survey.
-			They arrive as ordinary draft questions — edit, reorder or delete them like any others.
+			{ t(ctx, "editor.generate.intro") }
 		</p>
 		<form
 			method="post"
@@ -229,15 +233,15 @@ templ generatePanel(csrf string, surveyID string) {
 		>
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
-				<span>What do you want to learn?</span>
+				<span>{ t(ctx, "editor.generate.prompt.label") }</span>
 				<textarea
 					name="prompt"
 					rows="3"
 					maxlength="1000"
-					placeholder="How new customers experienced their first week, especially onboarding and support"
+					placeholder={ t(ctx, "editor.generate.prompt.placeholder") }
 				></textarea>
 			</label>
-			<button type="submit">Draft questions</button>
+			<button type="submit">{ t(ctx, "editor.generate.submit.label") }</button>
 		</form>
 		<pre class="generate-output" aria-live="polite" hidden></pre>
 	</section>
@@ -245,49 +249,55 @@ templ generatePanel(csrf string, surveyID string) {
 
 templ addQuestionForm(csrf string, surveyID string) {
 	<section class="card">
-		<h2>Add a question</h2>
+		<h2>{ t(ctx, "editor.add.heading") }</h2>
 		<form method="post" action={ templ.SafeURL("/surveys/" + surveyID + "/questions") }>
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
-				<span>Type</span>
+				<span>{ t(ctx, "editor.add.type") }</span>
 				<select name="type" required>
-					for _, t := range domain.QuestionTypes {
-						<option value={ string(t) }>{ t.Label() } — { t.Hint() }</option>
+					for _, kind := range domain.QuestionTypes {
+						<option value={ string(kind) }>{ kind.Label() } — { kind.Hint() }</option>
 					}
 				</select>
 			</label>
 			<label class="field">
-				<span>Question</span>
-				<input type="text" name="text" required maxlength="500" placeholder="What would you like to ask?"/>
+				<span>{ t(ctx, "editor.question.text") }</span>
+				<input type="text" name="text" required maxlength="500" placeholder={ t(ctx, "editor.add.text.placeholder") }/>
 			</label>
 			<label class="field">
-				<span>Options <small class="muted">(one per line; choice and dropdown questions only)</small></span>
+				<span>
+					@thtml(ctx, "editor.add.options_html")
+				</span>
 				<textarea name="options" rows="3"></textarea>
 			</label>
 			<div class="field-row">
 				<label class="field">
-					<span>Scale starts at <small class="muted">(rating only)</small></span>
+					<span>
+						@thtml(ctx, "editor.add.scale_min_html")
+					</span>
 					<input type="number" name="scale_min" min="0" max="1" value="1"/>
 				</label>
 				<label class="field">
-					<span>Scale ends at <small class="muted">(rating only)</small></span>
+					<span>
+						@thtml(ctx, "editor.add.scale_max_html")
+					</span>
 					<input type="number" name="scale_max" min="2" max="10" value="5"/>
 				</label>
 			</div>
 			<label class="checkbox">
 				<input type="checkbox" name="required"/>
-				<span>Required</span>
+				<span>{ t(ctx, "editor.question.required") }</span>
 			</label>
-			<button type="submit">Add question</button>
+			<button type="submit">{ t(ctx, "editor.add.submit.label") }</button>
 		</form>
 	</section>
 }
 
 templ participantsPanel(csrf string, data SurveyEditorData) {
 	<section class="card">
-		<h2>Participants</h2>
+		<h2>{ t(ctx, "editor.participants.heading") }</h2>
 		if len(data.Participants) == 0 {
-			<p class="muted">Nobody invited yet. Paste addresses or upload a CSV; duplicates are removed automatically.</p>
+			<p class="muted">{ t(ctx, "editor.participants.empty") }</p>
 		} else {
 			<ul class="participants">
 				for _, p := range data.Participants {
@@ -301,50 +311,44 @@ templ participantsPanel(csrf string, data SurveyEditorData) {
 		<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/participants") } enctype="multipart/form-data">
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
-				<span>Email addresses <small class="muted">(one per line, or comma-separated)</small></span>
+				<span>
+					@thtml(ctx, "editor.participants.emails_html")
+				</span>
 				<textarea name="emails" rows="3" placeholder="ada@example.org&#10;grace@example.org"></textarea>
 			</label>
 			<label class="field">
-				<span>Or a CSV file</span>
+				<span>{ t(ctx, "editor.participants.csv") }</span>
 				<input type="file" name="csv" accept=".csv,text/csv"/>
 			</label>
-			<button type="submit" class="secondary">Add participants</button>
+			<button type="submit" class="secondary">{ t(ctx, "editor.participants.add.label") }</button>
 		</form>
 		if data.PendingCount > 0 {
 			<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/participants/send") }>
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<button type="submit">
-					if data.PendingCount == 1 {
-						Send 1 invite
-					} else {
-						Send { fmt.Sprint(data.PendingCount) } invites
-					}
+					{ tn(ctx, "editor.participants.send", data.PendingCount) }
 				</button>
 			</form>
-			<p class="muted">Invites drip out under an hourly cap to protect deliverability; anything over the cap goes out on later runs.</p>
+			<p class="muted">{ t(ctx, "editor.participants.drip") }</p>
 		}
 	</section>
 }
 
 templ publishPanel(csrf string, survey SurveyView, questionCount int) {
 	<section class="card">
-		<h2>Publish</h2>
+		<h2>{ t(ctx, "editor.publish.heading") }</h2>
 		if survey.Published() {
-			<p>Version { fmt.Sprint(survey.LatestVersion) } is live. Your edits stay in the draft until you publish again — respondents keep seeing the published version meanwhile.</p>
+			<p>{ t(ctx, "editor.publish.live", uitext.Args{"Version": survey.LatestVersion}) }</p>
 		} else {
-			<p>This survey has never been published, so it accepts no responses yet. Publishing freezes the current questions into version 1 and opens the survey.</p>
+			<p>{ t(ctx, "editor.publish.never") }</p>
 		}
 		if questionCount == 0 {
-			<p class="muted">Add at least one question to publish.</p>
+			<p class="muted">{ t(ctx, "editor.publish.empty") }</p>
 		} else {
 			<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/publish") }>
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<button type="submit">
-					if survey.Published() {
-						Publish version { fmt.Sprint(survey.LatestVersion + 1) }
-					} else {
-						Publish version 1
-					}
+					{ t(ctx, "editor.publish.submit.label", uitext.Args{"Version": survey.LatestVersion + 1}) }
 				</button>
 			</form>
 		}
@@ -354,32 +358,32 @@ templ publishPanel(csrf string, survey SurveyView, questionCount int) {
 templ lifecyclePanel(csrf string, survey SurveyView) {
 	if survey.Published() {
 		<section class="card">
-			<h2>Sharing</h2>
+			<h2>{ t(ctx, "editor.sharing.heading") }</h2>
 			switch survey.Status {
 				case domain.StatusOpen:
-					<p>This survey is open and accepting responses. Share this link:</p>
+					<p>{ t(ctx, "editor.sharing.open") }</p>
 					<p class="share-link"><a href={ templ.SafeURL(survey.ShareURL()) }>{ survey.ShareURL() }</a></p>
 					if survey.IsAnonymous {
-						<p class="muted">Anyone with the link can answer, and answers carry nothing that identifies them.</p>
+						<p class="muted">{ t(ctx, "editor.sharing.anonymous") }</p>
 					} else {
-						<p class="muted">Only invited participants can answer, each through their own link.</p>
+						<p class="muted">{ t(ctx, "editor.sharing.invited") }</p>
 					}
 					<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/close") }>
 						<input type="hidden" name="_csrf" value={ csrf }/>
-						<button type="submit" class="secondary">Close survey</button>
+						<button type="submit" class="secondary">{ t(ctx, "editor.sharing.close.label") }</button>
 					</form>
 				case domain.StatusClosed:
 					if survey.ManuallyClosed {
-						<p>This survey is closed. It accepts no new responses; results stay visible.</p>
+						<p>{ t(ctx, "editor.sharing.closed") }</p>
 					} else {
-						<p>This survey closed automatically on its close date ({ survey.CloseAtLabel }). It accepts no new responses; results stay visible.</p>
+						<p>{ t(ctx, "editor.sharing.closed_on", uitext.Args{"Date": survey.CloseAtLabel}) }</p>
 					}
 					<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/reopen") }>
 						<input type="hidden" name="_csrf" value={ csrf }/>
-						<button type="submit" class="secondary">Reopen survey</button>
+						<button type="submit" class="secondary">{ t(ctx, "editor.sharing.reopen.label") }</button>
 					</form>
 					if !survey.ManuallyClosed {
-						<p class="muted">Reopening also clears the close date that has already passed.</p>
+						<p class="muted">{ t(ctx, "editor.sharing.reopen.hint") }</p>
 					}
 			}
 		</section>
@@ -389,66 +393,68 @@ templ lifecyclePanel(csrf string, survey SurveyView) {
 templ versionsPanel(survey SurveyView, versions []VersionView) {
 	if len(versions) > 0 {
 		<section class="card">
-			<h2>Published versions</h2>
+			<h2>{ t(ctx, "editor.versions.heading") }</h2>
 			<ul class="versions">
 				for _, v := range versions {
 					<li>
-						<strong>Version { fmt.Sprint(v.Number) }</strong>
+						<strong>{ t(ctx, "editor.versions.version", uitext.Args{"Number": v.Number}) }</strong>
 						<span class="muted">{ v.PublishedAt }</span>
 						if v.PublishedBy != "" {
-							<span class="muted">by { v.PublishedBy }</span>
+							<span class="muted">{ t(ctx, "editor.versions.by", uitext.Args{"Who": v.PublishedBy}) }</span>
 						}
 					</li>
 				}
 			</ul>
-			<p class="muted">Published versions are immutable: what a respondent saw can never be edited afterwards.</p>
-			<p><a href={ templ.SafeURL("/surveys/" + survey.ID + "/audit") }>View audit log</a></p>
+			<p class="muted">{ t(ctx, "editor.versions.immutable") }</p>
+			<p><a href={ templ.SafeURL("/surveys/" + survey.ID + "/audit") }>{ t(ctx, "editor.versions.audit.label") }</a></p>
 		</section>
 	}
 }
 
 templ settingsPanel(csrf string, survey SurveyView) {
 	<section class="card">
-		<h2>Settings</h2>
+		<h2>{ t(ctx, "editor.settings.heading") }</h2>
 		<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/settings") }>
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
-				<span>Title</span>
+				<span>{ t(ctx, "survey.name.label") }</span>
 				<input type="text" name="title" value={ survey.Title } required maxlength="200"/>
 			</label>
 			<label class="field">
-				<span>Close date <small class="muted">(optional; leave empty for no automatic close)</small></span>
+				<span>
+					@thtml(ctx, "editor.settings.close_date_html")
+				</span>
 				<input type="date" name="close_at" value={ survey.CloseAtInput }/>
 			</label>
-			<button type="submit" class="secondary">Save settings</button>
+			<button type="submit" class="secondary">{ t(ctx, "editor.settings.save.label") }</button>
 		</form>
 		<p class="muted">
 			if survey.IsAnonymous {
-				This is an anonymous survey and always will be — the choice is permanent.
+				{ t(ctx, "editor.settings.anonymous") }
 			} else {
-				This is an invited survey and always will be — the choice is permanent.
+				{ t(ctx, "editor.settings.invited") }
 			}
 		</p>
 		<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/delete") } class="danger-zone">
 			<input type="hidden" name="_csrf" value={ csrf }/>
-			<button type="submit" class="danger">Delete survey</button>
-			<span class="muted">Recoverable by support for 30 days, then permanently erased.</span>
+			<button type="submit" class="danger">{ t(ctx, "editor.settings.delete.label") }</button>
+			<span class="muted">{ t(ctx, "editor.settings.delete.hint") }</span>
 		</form>
 	</section>
 }
 
 templ SurveyAudit(email string, workspaceName string, csrf string, data SurveyAuditData) {
-	@Layout("Audit log — " + data.Survey.Title) {
+	@Layout(t(ctx, "audit.title", uitext.Args{"Survey": data.Survey.Title})) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<nav class="breadcrumb" aria-label="Breadcrumb">
-				<a href="/surveys">Surveys</a> /
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> / Audit log
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }>
+				<a href="/surveys">{ t(ctx, "breadcrumb.surveys") }</a> /
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> / { t(ctx, "audit.heading") }
 			</nav>
-			<h1>Audit log</h1>
-			<p class="muted">Every draft save and every publish, newest first.</p>
+			<h1>{ t(ctx, "audit.heading") }</h1>
+			<p class="muted">{ t(ctx, "audit.intro") }</p>
 			if len(data.Entries) == 0 {
-				<p class="muted">Nothing has been saved yet.</p>
+				<p class="muted">{ t(ctx, "audit.empty") }</p>
 			} else {
 				<ol class="audit">
 					for _, e := range data.Entries {

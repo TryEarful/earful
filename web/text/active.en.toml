@@ -434,3 +434,160 @@ empty = "No answers to this question yet."
 [results.answer]
 machine = "Machine translation"
 translated_by = "Translated by {{.Model}}; the original is above."
+
+
+# ── Creating a survey, and what every survey has ───────────────────────
+
+[survey.new]
+title = "New survey — Earful"
+heading = "New survey"
+
+[survey.new.submit]
+label = "Create survey"
+
+[survey.new.cancel]
+label = "Cancel"
+
+[survey.name]
+label = "Title"
+
+[survey.audience]
+legend = "Who can answer"
+permanent = "This choice is permanent. It's a promise to your respondents, so it can never be changed — not by you, not by us."
+
+[survey.audience.anonymous]
+name = "Anonymous survey"
+hint = "Anyone with the link can answer. No email, IP address or device details are ever stored with a response."
+
+[survey.audience.invited]
+name = "Invited survey"
+hint = "Only people you invite by email can answer, each through their own link, and you see who answered what."
+
+[survey.close_date]
+label_html = 'Close date <small class="muted">(optional)</small>'
+
+
+# ── The survey editor ──────────────────────────────────────────────────
+
+[editor]
+created = "· created {{.Date}}"
+live = "· live version {{.Version}}"
+
+[editor.preview]
+label = "Preview as respondent"
+
+[editor.questions]
+heading = "Questions"
+empty = "No questions yet. Add the first one below."
+
+[editor.question]
+required = "Required"
+text = "Question"
+options_html = 'Options <small class="muted">(one per line)</small>'
+scale_min = "Scale starts at"
+scale_max = "Scale ends at"
+
+[editor.question.save]
+label = "Save question"
+
+[editor.question.up]
+label = "Move up"
+
+[editor.question.down]
+label = "Move down"
+
+[editor.question.delete]
+label = "Delete"
+
+[editor.generate]
+heading = "Draft questions with AI"
+intro = "Describe what you want to learn and I'll draft questions into this survey. They arrive as ordinary draft questions — edit, reorder or delete them like any others."
+
+[editor.generate.prompt]
+label = "What do you want to learn?"
+placeholder = "How new customers experienced their first week, especially onboarding and support"
+
+[editor.generate.submit]
+label = "Draft questions"
+
+[editor.add]
+heading = "Add a question"
+type = "Type"
+options_html = 'Options <small class="muted">(one per line; choice and dropdown questions only)</small>'
+scale_min_html = 'Scale starts at <small class="muted">(rating only)</small>'
+scale_max_html = 'Scale ends at <small class="muted">(rating only)</small>'
+
+[editor.add.text]
+placeholder = "What would you like to ask?"
+
+[editor.add.submit]
+label = "Add question"
+
+[editor.participants]
+heading = "Participants"
+empty = "Nobody invited yet. Paste addresses or upload a CSV; duplicates are removed automatically."
+emails_html = 'Email addresses <small class="muted">(one per line, or comma-separated)</small>'
+csv = "Or a CSV file"
+drip = "Invites drip out under an hourly cap to protect deliverability; anything over the cap goes out on later runs."
+
+[editor.participants.add]
+label = "Add participants"
+
+[editor.participants.send]
+one = "Send 1 invite"
+other = "Send {{.Count}} invites"
+
+[editor.publish]
+heading = "Publish"
+live = "Version {{.Version}} is live. Your edits stay in the draft until you publish again — respondents keep seeing the published version meanwhile."
+never = "This survey has never been published, so it accepts no responses yet. Publishing freezes the current questions into version 1 and opens the survey."
+empty = "Add at least one question to publish."
+
+[editor.publish.submit]
+label = "Publish version {{.Version}}"
+
+[editor.sharing]
+heading = "Sharing"
+open = "This survey is open and accepting responses. Share this link:"
+anonymous = "Anyone with the link can answer, and answers carry nothing that identifies them."
+invited = "Only invited participants can answer, each through their own link."
+closed = "This survey is closed. It accepts no new responses; results stay visible."
+closed_on = "This survey closed automatically on its close date ({{.Date}}). It accepts no new responses; results stay visible."
+
+[editor.sharing.close]
+label = "Close survey"
+
+[editor.sharing.reopen]
+label = "Reopen survey"
+hint = "Reopening also clears the close date that has already passed."
+
+[editor.versions]
+heading = "Published versions"
+version = "Version {{.Number}}"
+by = "by {{.Who}}"
+immutable = "Published versions are immutable: what a respondent saw can never be edited afterwards."
+
+[editor.versions.audit]
+label = "View audit log"
+
+[editor.settings]
+heading = "Settings"
+close_date_html = 'Close date <small class="muted">(optional; leave empty for no automatic close)</small>'
+anonymous = "This is an anonymous survey and always will be — the choice is permanent."
+invited = "This is an invited survey and always will be — the choice is permanent."
+
+[editor.settings.save]
+label = "Save settings"
+
+[editor.settings.delete]
+label = "Delete survey"
+hint = "Recoverable by support for 30 days, then permanently erased."
+
+
+# ── The audit log ──────────────────────────────────────────────────────
+
+[audit]
+title = "Audit log — {{.Survey}}"
+heading = "Audit log"
+intro = "Every draft save and every publish, newest first."
+empty = "Nothing has been saved yet."
