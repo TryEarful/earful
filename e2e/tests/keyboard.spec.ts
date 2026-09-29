@@ -396,8 +396,15 @@ test("esc leaves the field so enter moves on, and never clears across questions"
   const first = respondent.locator("textarea");
   const second = respondent.locator('.respond-question input[type="text"]');
   const progress = respondent.locator(".respond-progress");
+  // The Next button names the keys, in the order to press them. Asserted
+  // on the hidden property rather than on visibility: hints are not
+  // drawn at all on a device without a keyboard.
+  const next = respondent.getByRole("button", { name: "Next", exact: true });
+  const hints = next.locator(".key-hint");
+  await expect(hints).toHaveText(["ESC", "Enter ↵"]);
 
   await first.click();
+  await expect(hints.first()).toHaveJSProperty("hidden", false);
   await respondent.keyboard.type("It went well");
   await respondent.keyboard.press("Enter"); // a newline, as ever
   await respondent.keyboard.type("on the whole.");
@@ -405,6 +412,7 @@ test("esc leaves the field so enter moves on, and never clears across questions"
 
   await respondent.keyboard.press("Escape");
   await expect(first).not.toBeFocused();
+  await expect(hints.first()).toHaveJSProperty("hidden", true); // Enter alone will do now
   await expect(first).toHaveValue("It went well\non the whole.");
   await respondent.keyboard.press("Enter");
   await expect(progress).toHaveText("Question 2 of 2");

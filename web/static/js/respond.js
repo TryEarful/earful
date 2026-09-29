@@ -81,7 +81,24 @@
   var nextButton = document.createElement("button");
   nextButton.type = "button";
   nextButton.textContent = "Next";
-  addKeyHint(nextButton, "↵");
+  // Two hints, read left to right as the keys to press. The word beside
+  // the symbol, because ↵ is a picture of a key not every keyboard has
+  // printed on it. ESC is shown only while a textarea has focus: there
+  // Enter is a newline, and the way on is Esc first (the listener above
+  // takes focus out of the field), then Enter.
+  var escHint = addKeyHint(nextButton, "ESC");
+  escHint.hidden = true;
+  addKeyHint(nextButton, "Enter ↵");
+
+  form.addEventListener("focusin", function (event) {
+    escHint.hidden = event.target.tagName !== "TEXTAREA";
+  });
+  // relatedTarget is where focus is going; null when it is going
+  // nowhere, which is what Esc does.
+  form.addEventListener("focusout", function (event) {
+    var next = event.relatedTarget;
+    escHint.hidden = !(next && next.tagName === "TEXTAREA" && form.contains(next));
+  });
 
   nav.appendChild(backButton);
   nav.appendChild(nextButton);
@@ -232,6 +249,7 @@
     hint.setAttribute("aria-hidden", "true");
     hint.textContent = key;
     button.appendChild(hint);
+    return hint;
   }
 
   function focusFirstControl(question) {

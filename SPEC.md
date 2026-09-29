@@ -263,6 +263,12 @@ advancing on Enter would lose a respondent's place mid-paragraph;
 typing a plain way on: `Esc`, then `↵`. It works on every text question,
 with or without voice, and changes nothing in the answer.
 
+**The Next button says which keys**, in the order to press them. Its
+hint reads `Enter ↵`, the word beside the symbol, since the symbol is a
+picture of a key not every keyboard has printed on it. While a textarea
+has focus it reads `ESC` `Enter ↵`, because there Enter alone is a
+newline.
+
 **Esc twice clears the answer**, and the two presses have to belong
 together:
 
