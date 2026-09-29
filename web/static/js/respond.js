@@ -538,11 +538,6 @@ function attachVersions(form) {
     title.id = "versions-title";
     title.textContent = "Previous versions";
 
-    var note = document.createElement("p");
-    note.className = "muted";
-    note.textContent =
-      "Kept in this browser only and never sent anywhere. They are cleared when you submit, and after a day.";
-
     var entries = document.createElement("ol");
     entries.className = "versions-list";
     // Newest first: the version wanted back is nearly always the last
@@ -600,7 +595,6 @@ function attachVersions(form) {
     actions.appendChild(done);
 
     dialog.appendChild(title);
-    dialog.appendChild(note);
     dialog.appendChild(entries);
     dialog.appendChild(actions);
     document.body.appendChild(backdrop);

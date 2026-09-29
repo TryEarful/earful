@@ -181,7 +181,6 @@ test("earlier versions of an answer are kept in the browser and can be restored"
   await link.click();
   const dialog = respondent.getByRole("dialog", { name: "Previous versions" });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText("never sent");
   const items = dialog.locator(".versions-item");
   await expect(items).toHaveCount(2);
   // Newest first, and the newest is what Reset destroyed.
