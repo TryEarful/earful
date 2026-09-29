@@ -248,7 +248,7 @@ letters for choices, digits for scales — rather than inventing one:
 | Not in a text field | `↵` / `⇧↵` | Next / Back |
 | In a textarea | `↵`, `⇧↵` | Newline, untouched |
 | In a textarea | `⌘↵` / `Ctrl↵` | Next |
-| Last question | `↵` (or `⌘↵` from a textarea) | Submit |
+| Last question | `↵`, or `⌘↵` / `Ctrl↵` from a textarea, or `Esc` then `↵` | Submit |
 
 **Letters for choices, digits for scales** is the load-bearing decision.
 Assigning digits to options would collide with rating questions, where a
@@ -263,11 +263,12 @@ advancing on Enter would lose a respondent's place mid-paragraph;
 typing a plain way on: `Esc`, then `↵`. It works on every text question,
 with or without voice, and changes nothing in the answer.
 
-**The Next button says which keys**, in the order to press them. Its
-hint reads `Enter ↵`, the word beside the symbol, since the symbol is a
-picture of a key not every keyboard has printed on it. While a textarea
-has focus it reads `ESC` `Enter ↵`, because there Enter alone is a
-newline.
+**The buttons that move on say which keys**, in the order to press them:
+Next, and Submit answers on the last question. The hint reads `Enter ↵`,
+the word beside the symbol, since the symbol is a picture of a key not
+every keyboard has printed on it. While a textarea has focus it reads
+`ESC` `Enter ↵`, because there Enter alone is a newline. What the hint
+says is what happens: on the last question `Esc` then `↵` submits.
 
 **Esc twice clears the answer**, and the two presses have to belong
 together:

@@ -431,3 +431,87 @@ test("esc leaves the field so enter moves on, and never clears across questions"
 
   await context.close();
 });
+
+// A survey that ends on a long answer: the case where the last thing a
+// respondent does is type into a textarea, and the keys have to get
+// them from there to submitted.
+async function endsOnLongAnswer(page: Page, title: string): Promise<string> {
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill(title);
+  await page.getByRole("button", { name: "Create survey" }).click();
+  const add = page.locator('form[action$="/questions"]');
+  await add.locator('select[name="type"]').selectOption("short_text");
+  await add.locator('input[name="text"]').fill("Your role?");
+  await add.getByRole("button", { name: "Add question" }).click();
+  await add.locator('select[name="type"]').selectOption("long_text");
+  await add.locator('input[name="text"]').fill("Anything else?");
+  await add.getByRole("button", { name: "Add question" }).click();
+  await page.getByRole("button", { name: "Publish version 1" }).click();
+  const share = await page.locator(".share-link a").getAttribute("href");
+  if (!share) throw new Error("no share link after publishing");
+  return share;
+}
+
+// Submit carries the same hints as Next, and they are true: from a
+// textarea on the last question, Esc then Enter submits.
+test("submit names its keys, and esc then enter submits from a textarea", async ({
+  page,
+  browser,
+}) => {
+  const share = await endsOnLongAnswer(page, `E2E keys submit ${Date.now()}`);
+
+  const context = await browser.newContext({ storageState: undefined });
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  await respondent.keyboard.type("Researcher");
+  await respondent.keyboard.press("Enter");
+  await expect(respondent.locator(".respond-progress")).toHaveText("Question 2 of 2");
+
+  const submit = respondent.getByRole("button", { name: "Submit answers", exact: true });
+  const hints = submit.locator(".key-hint");
+  const answer = respondent.locator("textarea");
+  await expect(submit).toBeVisible();
+  await expect(hints).toHaveText(["ESC", "Enter ↵"]);
+  await expect(answer).toBeFocused();
+  await expect(hints.first()).toHaveJSProperty("hidden", false);
+
+  await respondent.keyboard.type("Nothing to add");
+  await respondent.keyboard.press("Enter"); // still a newline
+  await respondent.keyboard.type("except thanks.");
+  await respondent.keyboard.press("Escape");
+  await expect(hints.first()).toHaveJSProperty("hidden", true);
+  await expect(answer).toHaveValue("Nothing to add\nexcept thanks.");
+
+  await minFillWait(respondent);
+  await respondent.keyboard.press("Enter");
+  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
+
+  await context.close();
+});
+
+test("cmd or ctrl with enter submits from a textarea on the last question", async ({
+  page,
+  browser,
+}) => {
+  const share = await endsOnLongAnswer(page, `E2E keys submit mod ${Date.now()}`);
+
+  const context = await browser.newContext({ storageState: undefined });
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  await respondent.keyboard.type("Researcher");
+  await respondent.keyboard.press("Enter");
+  await expect(respondent.locator("textarea")).toBeFocused();
+  await respondent.keyboard.type("Nothing to add.");
+
+  await minFillWait(respondent);
+  await respondent.keyboard.press("ControlOrMeta+Enter");
+  await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
+    timeout: submitTimeout,
+  });
+
+  await context.close();
+});

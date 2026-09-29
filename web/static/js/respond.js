@@ -81,29 +81,44 @@
   var nextButton = document.createElement("button");
   nextButton.type = "button";
   nextButton.textContent = "Next";
-  // Two hints, read left to right as the keys to press. The word beside
-  // the symbol, because ↵ is a picture of a key not every keyboard has
-  // printed on it. ESC is shown only while a textarea has focus: there
-  // Enter is a newline, and the way on is Esc first (the listener above
-  // takes focus out of the field), then Enter.
-  var escHint = addKeyHint(nextButton, "ESC");
-  escHint.hidden = true;
-  addKeyHint(nextButton, "Enter ↵");
+  // The buttons that move on — Next, and Submit on the last question —
+  // carry two hints, read left to right as the keys to press. The word
+  // beside the symbol, because ↵ is a picture of a key not every
+  // keyboard has printed on it. ESC is shown only while a textarea has
+  // focus: there Enter is a newline, and the way on is Esc first (the
+  // listener above takes focus out of the field), then Enter.
+  var escHints = [];
+  function addEnterHints(button) {
+    var esc = addKeyHint(button, "ESC");
+    esc.hidden = true;
+    escHints.push(esc);
+    addKeyHint(button, "Enter ↵");
+  }
+  function showEsc(on) {
+    escHints.forEach(function (hint) {
+      hint.hidden = !on;
+    });
+  }
+  addEnterHints(nextButton);
 
   form.addEventListener("focusin", function (event) {
-    escHint.hidden = event.target.tagName !== "TEXTAREA";
+    showEsc(event.target.tagName === "TEXTAREA");
   });
   // relatedTarget is where focus is going; null when it is going
   // nowhere, which is what Esc does.
   form.addEventListener("focusout", function (event) {
     var next = event.relatedTarget;
-    escHint.hidden = !(next && next.tagName === "TEXTAREA" && form.contains(next));
+    showEsc(!!next && next.tagName === "TEXTAREA" && form.contains(next));
   });
 
   nav.appendChild(backButton);
   nav.appendChild(nextButton);
 
   var actions = form.querySelector(".respond-actions");
+  // The server renders Submit, so that it is there without JavaScript;
+  // its hints are added here because the keys they name are.
+  var submitButton = actions.querySelector('button[type="submit"]');
+  if (submitButton) addEnterHints(submitButton);
   form.insertBefore(progress, form.querySelector(".respond-questions"));
   actions.parentNode.insertBefore(nav, actions);
 
@@ -136,11 +151,13 @@
 
     if (event.altKey || event.metaKey || event.ctrlKey) {
       // Cmd/Ctrl+Enter advances from a textarea, where plain Enter is a
-      // newline. On the last question it falls through to the browser,
-      // which submits the form.
-      if (event.key === "Enter" && current < questions.length - 1) {
+      // newline. On the last question it submits, and says so itself:
+      // a browser submits on Enter from an input, but not on a
+      // modified Enter from a textarea.
+      if (event.key === "Enter") {
         event.preventDefault();
-        show(current + 1);
+        if (current < questions.length - 1) show(current + 1);
+        else submit();
       }
       return;
     }
@@ -163,6 +180,15 @@
       if (current < questions.length - 1) {
         event.preventDefault();
         show(current + 1);
+        return;
+      }
+      // The last question. From an input or an option the browser
+      // submits on Enter by itself, and is left to. With nothing
+      // focused — which is where Esc leaves a respondent — it does
+      // not, so the Enter that would have meant Next means Submit.
+      if (event.target === document.body) {
+        event.preventDefault();
+        submit();
       }
       return;
     }
@@ -207,6 +233,13 @@
       }
     }
   });
+
+  // A click rather than form.submit(): the click runs the browser's
+  // validation and fires the submit event, which is what clears the
+  // draft.
+  function submit() {
+    if (submitButton) submitButton.click();
+  }
 
   function pickByValue(value) {
     var input = questions[current].querySelector(
