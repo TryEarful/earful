@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
 import { createPublishedSurvey, fakeMicrophone, minFillWait, offersVoice, scriptedVoice, submitTimeout } from "./helpers";
 
@@ -140,6 +141,75 @@ test("a new version does not restore the old version's answers", async ({ page, 
 
   await respondent.reload();
   await expect(respondent.locator("textarea")).toHaveValue("");
+
+  await context.close();
+});
+
+// Earlier versions of an answer (SPEC.md story 81). Dictation changes
+// an answer in strokes too large for the browser's own undo, so the
+// answer is remembered as it goes — in this browser, under the draft's
+// rules — and an earlier state can be put back. The case that matters
+// is the one asserted here: a Reset seconds after the last version must
+// not take the text with it.
+test("earlier versions of an answer are kept in the browser and can be restored", async ({
+  page,
+  browser,
+}) => {
+  const share = await createPublishedSurvey(page, `E2E versions ${Date.now()}`);
+
+  const context = await browser.newContext({ storageState: undefined });
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "versions are offered where dictation is, and this instance has none");
+
+  const answer = respondent.locator("textarea");
+  const link = respondent.getByRole("button", { name: "Previous versions" });
+  await expect(link).toBeHidden(); // nothing to look at yet
+
+  // One version per five seconds of editing, taken at the end of the
+  // window.
+  await answer.fill("First thought.");
+  await expect(link).toBeVisible({ timeout: 7000 });
+
+  // Then more, and a Reset before the next window has closed.
+  await answer.fill("First thought. Second thought, which took a while to put into words.");
+  await respondent.getByRole("button", { name: "Reset", exact: true }).click();
+  await expect(answer).toHaveValue("");
+
+  await link.click();
+  const dialog = respondent.getByRole("dialog", { name: "Previous versions" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("never sent");
+  const items = dialog.locator(".versions-item");
+  await expect(items).toHaveCount(2);
+  // Newest first, and the newest is what Reset destroyed.
+  await expect(items.first()).toContainText("Second thought, which took a while");
+  await expect(items.last().locator(".versions-text")).toHaveText("First thought.");
+  await expect(items.first().locator("time")).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
+
+  const scan = await new AxeBuilder({ page: respondent }).include(".versions-dialog").analyze();
+  expect(scan.violations).toEqual([]);
+
+  await items.first().getByRole("button", { name: /Restore/ }).click();
+  await expect(dialog).toBeHidden();
+  await expect(answer).toHaveValue(
+    "First thought. Second thought, which took a while to put into words."
+  );
+
+  // The history is the draft's kind of data: it survives a reload…
+  await respondent.reload();
+  await respondent.getByRole("button", { name: "Previous versions" }).click();
+  await expect(respondent.locator(".versions-item")).toHaveCount(2);
+  await respondent.keyboard.press("Escape");
+  await expect(respondent.getByRole("dialog")).toBeHidden();
+
+  // …and lives in this browser's storage, under the survey version.
+  const stored = await respondent.evaluate(() =>
+    Object.keys(localStorage).filter((name) => name.startsWith("earful.versions."))
+  );
+  expect(stored).toHaveLength(1);
 
   await context.close();
 });

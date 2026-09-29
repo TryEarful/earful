@@ -28,6 +28,8 @@
 
   solveChallenge(form);
   var draft = attachDraft(form);
+  // After the draft, so a restored answer is what the history starts from.
+  attachVersions(form);
 
   var questions = Array.prototype.slice.call(
     form.querySelectorAll(".respond-question")
@@ -368,6 +370,243 @@ function attachDraft(form) {
       return saved.position;
     },
   };
+}
+
+// Earlier versions of a dictated answer (SPEC.md story 81).
+//
+// Dictation changes an answer in large strokes — a take lands a
+// paragraph, Reset removes one — and a stroke made by mistake has no
+// undo: a value set from script is outside the browser's own history.
+// So the answer is remembered as it goes, and any earlier state can be
+// looked at and put back.
+//
+// Kept under the draft's rules, because it is the draft's kind of data:
+// in this browser and nowhere else, scoped to the survey version,
+// expired after a day, cleared on submit. Nothing here is ever sent.
+//
+// One version per GRAIN_MS of editing, taken at the end of the window.
+// The exception is a large deletion, which first puts what it is about
+// to destroy on record: without that, a Reset four seconds after the
+// last version would erase exactly the text this exists to keep.
+function attachVersions(form) {
+  "use strict";
+
+  var version = form.querySelector('[name="version_id"]');
+  var survey = form.getAttribute("action") || location.pathname;
+  if (!version || !version.value) return;
+
+  var key = "earful.versions." + survey + "." + version.value;
+  var MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  var GRAIN_MS = 5000;
+  var KEEP = 40; // per answer; the oldest go first
+  var LARGE_CUT = 20; // characters removed in one stroke
+
+  var store;
+  try {
+    store = window.localStorage;
+    if (!store) return;
+    store.setItem(key + ".probe", "1");
+    store.removeItem(key + ".probe");
+  } catch (err) {
+    return; // private mode, storage disabled, quota: no history, nothing else changes
+  }
+
+  var saved = load();
+
+  // Offered where dictation is, which is where an answer changes in
+  // strokes large enough to regret.
+  Array.prototype.forEach.call(
+    form.querySelectorAll(
+      '.respond-question[data-voice="1"] textarea, .respond-question[data-voice="1"] input[type=text]'
+    ),
+    attach
+  );
+
+  form.addEventListener("submit", function () {
+    try {
+      store.removeItem(key);
+    } catch (err) {
+      /* nothing useful to do */
+    }
+  });
+
+  function load() {
+    try {
+      var raw = store.getItem(key);
+      var found = raw ? JSON.parse(raw) : null;
+      if (found && found.fields && Date.now() - found.at <= MAX_AGE_MS) return found;
+      if (raw) store.removeItem(key);
+    } catch (err) {
+      // Unreadable is the same as absent.
+    }
+    return { at: Date.now(), fields: {} };
+  }
+
+  function save() {
+    saved.at = Date.now();
+    try {
+      store.setItem(key, JSON.stringify(saved));
+    } catch (err) {
+      // A full quota must never break answering.
+    }
+  }
+
+  function attach(field) {
+    if (!field.name) return;
+    var list = saved.fields[field.name] || (saved.fields[field.name] = []);
+    var before = field.value; // what the field held ahead of the change now arriving
+    var timer = 0;
+
+    var holder = document.createElement("p");
+    holder.className = "versions";
+    holder.hidden = list.length === 0;
+    var link = document.createElement("button");
+    link.type = "button";
+    link.className = "versions-link button-link";
+    link.textContent = "Previous versions";
+    holder.appendChild(link);
+    field.parentNode.insertBefore(holder, field.nextSibling);
+
+    field.addEventListener("input", function () {
+      var was = before;
+      var now = field.value;
+      before = now;
+      if (now === was) return;
+      if (was && (!now || was.length - now.length >= LARGE_CUT)) keep(was);
+      if (timer) return;
+      timer = window.setTimeout(function () {
+        timer = 0;
+        keep(field.value);
+      }, GRAIN_MS);
+    });
+
+    // A window still open when the page goes away would be a version
+    // never taken.
+    window.addEventListener("pagehide", function () {
+      if (!timer) return;
+      window.clearTimeout(timer);
+      timer = 0;
+      keep(field.value);
+    });
+
+    link.addEventListener("click", function () {
+      show(field, list, link);
+    });
+
+    function keep(text) {
+      // An empty answer is not a version anyone will want back.
+      if (!text.trim()) return;
+      if (list.length && list[list.length - 1].v === text) return;
+      list.push({ t: Date.now(), v: text });
+      if (list.length > KEEP) list.splice(0, list.length - KEEP);
+      save();
+      holder.hidden = false;
+    }
+  }
+
+  function when(time) {
+    var date = new Date(time);
+    var clock = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+    if (date.toDateString() === new Date().toDateString()) {
+      return date.toLocaleTimeString([], clock);
+    }
+    clock.month = "short";
+    clock.day = "numeric";
+    return date.toLocaleString([], clock);
+  }
+
+  function show(field, list, opener) {
+    var backdrop = document.createElement("div");
+    backdrop.className = "versions-backdrop";
+
+    var dialog = document.createElement("div");
+    dialog.className = "versions-dialog";
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+    dialog.setAttribute("aria-labelledby", "versions-title");
+
+    var title = document.createElement("h2");
+    title.id = "versions-title";
+    title.textContent = "Previous versions";
+
+    var note = document.createElement("p");
+    note.className = "muted";
+    note.textContent =
+      "Kept in this browser only and never sent anywhere. They are cleared when you submit, and after a day.";
+
+    var entries = document.createElement("ol");
+    entries.className = "versions-list";
+    // Newest first: the version wanted back is nearly always the last
+    // one before the mistake.
+    list
+      .slice()
+      .reverse()
+      .forEach(function (entry) {
+        var item = document.createElement("li");
+        item.className = "versions-item";
+
+        var meta = document.createElement("div");
+        meta.className = "versions-meta";
+        var time = document.createElement("time");
+        time.setAttribute("datetime", new Date(entry.t).toISOString());
+        time.textContent = when(entry.t);
+        var restore = document.createElement("button");
+        restore.type = "button";
+        restore.className = "secondary";
+        restore.textContent = "Restore";
+        restore.setAttribute("aria-label", "Restore the version from " + when(entry.t));
+        restore.addEventListener("click", function () {
+          field.value = entry.v;
+          // Announced, so the draft keeps it and the answer it replaces
+          // becomes a version in its turn.
+          field.dispatchEvent(new Event("input", { bubbles: true }));
+          close();
+          field.focus();
+        });
+        meta.appendChild(time);
+        meta.appendChild(restore);
+
+        var text = document.createElement("p");
+        text.className = "versions-text";
+        text.textContent = entry.v;
+
+        item.appendChild(meta);
+        item.appendChild(text);
+        entries.appendChild(item);
+      });
+
+    var actions = document.createElement("div");
+    actions.className = "versions-actions";
+    var done = document.createElement("button");
+    done.type = "button";
+    done.textContent = "Close";
+    actions.appendChild(done);
+
+    dialog.appendChild(title);
+    dialog.appendChild(note);
+    dialog.appendChild(entries);
+    dialog.appendChild(actions);
+    document.body.appendChild(backdrop);
+    document.body.appendChild(dialog);
+    done.focus();
+
+    var closed = false;
+    function close() {
+      if (closed) return;
+      closed = true;
+      document.body.removeChild(dialog);
+      document.body.removeChild(backdrop);
+    }
+    function dismiss() {
+      close();
+      opener.focus();
+    }
+    done.addEventListener("click", dismiss);
+    backdrop.addEventListener("click", dismiss);
+    dialog.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") dismiss();
+    });
+  }
 }
 
 // ALTCHA proof-of-work, first-party (ADR-0006). Instead of vendoring the

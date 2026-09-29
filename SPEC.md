@@ -206,6 +206,26 @@ Consequences that make it honest rather than merely convenient:
 - **An enhancement, like everything else in `web/static/js`**: with
   JavaScript off there is no draft, and the form still works.
 
+### Earlier versions of an answer (post-MVP)
+
+Dictation changes an answer in large strokes: a take lands a paragraph,
+Reset removes one. A stroke made by mistake has no undo, because a value
+set from script is outside the browser's own history.
+
+81. As a respondent, I want to see what my answer said a moment ago and put it back, so that a Reset pressed by mistake, or a take that went wrong, does not cost me what I had.
+
+- **One version per five seconds of editing**, taken at the end of the
+  window, and listed with the time it was taken.
+- **A large deletion first records what it is about to remove.** Without
+  this, a Reset four seconds after the last version would erase exactly
+  the text the history exists to keep.
+- **Under the draft's rules**, because it is the draft's kind of data:
+  in the browser and nowhere else, scoped to the survey version, expired
+  after 24 hours, cleared on submit. Nothing is sent, so nothing is added
+  to the processor table on `/trust`.
+- **Offered where dictation is**, as a small *Previous versions* link
+  under the answer, shown once there is a version to look at.
+
 ### Answering from the keyboard (post-MVP)
 
 80. As a respondent, I want to answer the whole survey from the keyboard, with the key for each answer shown next to it, so that I can move as fast as I think instead of aiming a mouse at every option.
