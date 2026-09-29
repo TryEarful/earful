@@ -9,6 +9,11 @@
   --border: color-mix(in srgb, CanvasText 18%, Canvas);
   --surface: color-mix(in srgb, CanvasText 4%, Canvas);
   --danger: #c0392b;
+  /* What an outlined button's greys are mixed from: a brown, so they
+     come out warm, like stone, where a grey mixed from black comes out
+     like steel. Mixed into the page's own colour, so it follows the
+     page into dark mode. */
+  --button-tone: #6b5540;
 }
 
 /* [hidden] must outrank every author rule below it, or setting .hidden
@@ -105,40 +110,86 @@ input[type="text"] {
   font: inherit;
 }
 
-/* A button's border is twice a card's, and an outlined button's is
-   darker than a card's as well. Cards and outlined buttons are both
-   rounded boxes on the same ground, and at one hairline each the only
-   way to tell them apart was to try clicking. */
+/* A button is told from a card by its face, not its outline. Both are
+   rounded boxes, and a heavier border on the button only made it a
+   heavier box; what a card does not have is a surface that catches the
+   light. The border stays a hairline, darker than a card's. */
 .button,
 button {
   display: inline-block;
   padding: 0.5rem 1rem;
-  border: 2px solid var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 78%, black);
   border-radius: 0.375rem;
-  background: var(--accent);
+  /* A surface that catches light from above: its own colour at the top,
+     a shade darker at the foot, and a bright line along the upper edge.
+     A flat fill is a label; this is a thing with a face, which is what
+     says it can be pressed. It only ever darkens from the button's
+     colour, so the word on it never loses contrast. */
+  background: linear-gradient(
+    to bottom,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 80%, black)
+  );
   color: var(--accent-contrast);
   font: inherit;
   cursor: pointer;
   text-decoration: none;
+  /* Raised a little off the page, and the word pressed a little into
+     the button. Both are kept faint: they are there to be felt, as
+     what makes a button a thing to press, and not to be noticed. On a
+     filled button the word is light, so it is pressed in with a dark
+     edge above it. */
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 18%),
+    inset 0 1px 0 rgb(255 255 255 / 30%);
+  text-shadow: 0 -1px 0 rgb(0 0 0 / 18%);
 }
 
+/* Pressed: the light goes out of the face and a shadow falls inside
+   the top edge. */
+.button:not(.button-link):active,
+button:not(.button-link):active {
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 28%);
+}
+
+/* An outlined button has a ground of its own, a shade darker than the
+   card or page it sits on. Transparent, it was an outline around more
+   of the same surface, and read as a frame rather than a control. The
+   word is dark here, so it is pressed in with a light edge below it;
+   the edge is the page's own colour, which is white on a light page
+   and dark on a dark one. */
 .button.secondary,
 button.secondary {
-  background: transparent;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--button-tone) 7%, Canvas),
+    color-mix(in srgb, var(--button-tone) 27%, Canvas)
+  );
   color: inherit;
-  border-color: color-mix(in srgb, CanvasText 40%, Canvas);
+  border-color: color-mix(in srgb, var(--button-tone) 60%, Canvas);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 16%),
+    inset 0 1px 0 color-mix(in srgb, Canvas 90%, transparent);
+  text-shadow: 0 1px 0 color-mix(in srgb, Canvas 75%, transparent);
 }
 
 .button.danger,
 button.danger {
-  background: var(--danger);
-  border-color: var(--danger);
+  background: linear-gradient(
+    to bottom,
+    var(--danger),
+    color-mix(in srgb, var(--danger) 80%, black)
+  );
+  border-color: color-mix(in srgb, var(--danger) 78%, black);
   color: #fff;
+  text-shadow: 0 -1px 0 rgb(0 0 0 / 18%);
 }
 
 .button-link {
   background: none;
   border: none;
+  box-shadow: none;
+  text-shadow: none;
   padding: 0;
   color: inherit;
   font: inherit;
@@ -509,8 +560,10 @@ fieldset {
    bold, the way shortcuts are written wherever they are documented. The
    colours are mixed from the page's own, so the cap is a light key on a
    light page and a dark key on a dark one, and keeps its own ground on a
-   coloured button. Small: a hint is a footnote to the control it sits
-   on, and must not compete with the control's own word. */
+   coloured button. The cap is lighter than an outlined button's
+   ground, so that on one it is still a key and not a dent. Small: a
+   hint is a footnote to the control it sits on, and must not compete
+   with the control's own word. */
 .key-hint {
   display: none;
   flex: none;
@@ -519,7 +572,8 @@ fieldset {
   padding: 0.08rem 0.36rem;
   border: 1px solid color-mix(in srgb, CanvasText 28%, Canvas);
   border-radius: 0.28rem;
-  background: color-mix(in srgb, CanvasText 9%, Canvas);
+  background: color-mix(in srgb, CanvasText 2%, Canvas);
+  text-shadow: none;
   box-shadow:
     0 1.5px 0 color-mix(in srgb, CanvasText 28%, Canvas),
     inset 0 1px 0 color-mix(in srgb, Canvas 60%, transparent);
@@ -537,7 +591,10 @@ fieldset {
    are the button's own text, smaller; only the keys are keycaps. */
 .key-combo {
   display: none;
-  align-items: center;
+  /* The words and the legends on the keys share a baseline. A cap is
+     padded evenly around its legend, so it sits around that line and
+     needs no centring of its own. */
+  align-items: baseline;
   gap: 0.25rem;
   font-size: 0.68rem;
   font-weight: 400;
@@ -668,8 +725,9 @@ fieldset {
   font-weight: 650;
   line-height: 1.2;
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 14%),
-    0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+    0 1px 2px rgb(0 0 0 / 18%),
+    0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 30%);
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
@@ -677,12 +735,11 @@ fieldset {
 }
 
 /* Back is outlined, not filled, so that it is plainly the lesser of the
-   two — but on a ground of its own, and outlined firmly enough to be
-   seen. */
+   two, and has the plain shadow rather than the coloured one. */
 .respond-nav button.secondary {
-  border-color: color-mix(in srgb, CanvasText 40%, Canvas);
-  background: Canvas;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 16%),
+    inset 0 1px 0 color-mix(in srgb, Canvas 90%, transparent);
 }
 
 .respond-nav button:hover,
@@ -692,9 +749,11 @@ fieldset {
 }
 
 .respond-nav button:active,
+.respond-nav button.secondary:active,
 .respond-submit:active {
   transform: translateY(0);
   filter: brightness(0.97);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 28%);
 }
 
 .respond-nav button:focus-visible,
@@ -1032,18 +1091,21 @@ fieldset {
   gap: 0.6rem;
 }
 
-/* The icon, the word and the keys, centred on one line. Left inline
-   they share a text baseline, and a keycap set smaller than the word
-   beside it sits on that baseline and looks dropped. */
+/* The icon, the word and the keys on one line. Everything that is text
+   stands on one baseline — the button's word, the words of the hint,
+   the legends on the keys — because text set at two sizes and centred
+   on its middle has two baselines, and "Hold" rides above "Dictate".
+   The icon and the live dot are not text, and are centred on the line. */
 .voice-actions button {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
   gap: 0.4rem;
 }
 
 .voice-actions .voice-icon,
 .voice-actions .voice-button.recording::before {
+  align-self: center;
   margin-right: 0;
 }
 
@@ -1056,9 +1118,14 @@ fieldset {
    mistaken for each other at a glance, because the difference is
    whether the microphone is open. */
 .voice-button.recording {
-  border-color: var(--danger);
-  background: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 78%, black);
+  background: linear-gradient(
+    to bottom,
+    var(--danger),
+    color-mix(in srgb, var(--danger) 80%, black)
+  );
   color: var(--accent-contrast);
+  text-shadow: 0 -1px 0 rgb(0 0 0 / 18%);
 }
 
 /* A dot that reads as "live" without relying on colour alone — the
