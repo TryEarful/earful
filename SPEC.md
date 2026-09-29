@@ -132,7 +132,7 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 61. As an operator, I want a purge job that hard-deletes soft-deleted data older than 30 days, expires stale tokens, and trims the abuse log — runnable by hand locally and on a schedule in production, so that retention promises are kept mechanically. [tested](internal/purge/purge_test.go) — including idempotency and a dry run that changes nothing while reporting the real numbers
 62. As a data subject, I want an erasure fast-path that support can trigger immediately (skipping the 30-day wait), so that GDPR requests complete within 24 hours. [tested](internal/http/adminerasure_test.go) — two steps (look up, then confirm), support-only, and honest that anonymous responses are unerasable because they hold nothing personal
 63. As a respondent, I want the survey landing page to disclose who the controller is, whether the survey is anonymous, and how voice is processed, so that I understand before answering. [tested](internal/http/trust_test.go) — the voice sentence appears only where voice is actually on offer
-64. As a privacy-conscious visitor, I want a public trust page listing processors, the no-recordings promise, EU hosting, and the leave-anytime export, so that I can verify the claims. [tested](internal/http/trust_test.go) — including the caveats (CLOUD Act, 30-day backup window) and a processor list that names only the companies the instance actually uses
+64. As a privacy-conscious visitor, I want a public trust page listing processors, the no-recordings promise, EU hosting, and the leave-anytime export, so that I can verify the claims. [tested](internal/http/trust_test.go) — including the caveats (CLOUD Act, 30-day backup window) and a processor list that names only the companies the instance actually uses. The page is a Document (story 82), and what it says about the instance is supplied by the instance
 
 ### Operations (Earful as a service)
 
@@ -228,6 +228,23 @@ set from script is outside the browser's own history.
 - **The respondent can clear it.** *Clear all* drops every version of
   that answer and leaves the answer itself alone, so a history on a
   shared device need not wait for submission or expiry.
+
+### Documents (post-MVP)
+
+82. As a reader of the trust page, the terms or a help page, I want to see when it last changed and take a copy of it as Markdown, so that I can keep what I was told and show it to someone else. [tested](internal/http/documents_test.go) — and the copy button, the link that stands in for it without JavaScript, and the axe scan in [the e2e suite](e2e/tests/documents.spec.ts)
+
+A Document is a Markdown file in `web/pages`, and its place there is its
+address. Its front matter is the whole of its record:
+
+| Line | Says | Written by |
+|---|---|---|
+| `title` | The heading of the page | its writer |
+| `short_title` | The window's title, where the heading is too long for one | its writer |
+| `sections: cards` | Each section is drawn in a card | its writer |
+| `draft: true` | Not ready: served only in development | its writer |
+| `hash` | Which text this is | `make pages` |
+| `last_update` | The day that text replaced the last | `make pages` |
+| `source_hash` | On a translation, which English it was made from | `make text-accept` |
 
 ### Answering from the keyboard (post-MVP)
 

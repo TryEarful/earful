@@ -25,9 +25,11 @@ import (
 	"github.com/TryEarful/earful/internal/config"
 	"github.com/TryEarful/earful/internal/email"
 	"github.com/TryEarful/earful/internal/invites"
+	"github.com/TryEarful/earful/internal/pages"
 	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/internal/voice"
+	webpages "github.com/TryEarful/earful/web/pages"
 )
 
 // Deps carries the runtime dependencies of the handler. Pool is required;
@@ -65,6 +67,9 @@ type server struct {
 
 	// text is the interface's wording, in every language it is served in.
 	text *uitext.Catalog
+	// pages are the documents, rendered with what this instance can say
+	// about itself.
+	pages *pages.Library
 
 	// health caches the DB liveness probe so a flood of unauthenticated
 	// /health hits cannot turn into an unbounded stream of DB round-trips.
@@ -112,6 +117,13 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	if deps.Text == nil {
 		deps.Text = uitext.Embedded()
 	}
+	// The documents are part of the binary, and one that does not render
+	// is a fault in the build: better no service than a trust page that
+	// is missing.
+	documents, err := pages.Load(webpages.FS, pageFacts(cfg))
+	if err != nil {
+		panic(err)
+	}
 	surveys := store.NewSurveys(deps.Pool)
 	authSvc := auth.NewService(deps.Pool, deps.Clock, deps.Email, cfg.BaseURL)
 	// While the private beta is on, no path may create an account except
@@ -129,6 +141,7 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		google:      deps.Google,
 		ai:          deps.AI,
 		text:        deps.Text,
+		pages:       documents,
 		aiMeter: &ai.Meter{
 			Store:                   surveys,
 			Clock:                   deps.Clock,

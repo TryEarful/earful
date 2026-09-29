@@ -131,7 +131,8 @@ install, so you shouldn't need to think about it.
 | `make e2e-smoke` | Playwright + axe suite against the compose stack, at phone/tablet/desktop widths |
 | `make featuretour` | Build the feature-tour PDF from screenshots of the compose stack (see `tools/featuretour/README.md`) |
 | `make featuretour-deck` | Rebuild only the PDF from the last run's screenshots |
-| `make text-status` | List translations in `web/text` made from English wording that has since changed |
+| `make pages` | Stamp the documents in `web/pages` that have changed with the hash of their text and today's date |
+| `make text-status` | List translations, in `web/text` and `web/pages`, made from English wording that has since changed |
 | `make text-accept` | Record those translations as read against the current wording (`ID="a.b.c"` for some, none for all) |
 | `make migrate` | Run `earful migrate` against `DATABASE_URL` |
 | `make purge` | Run `earful purge --dry-run` (retention, reported not applied) |
@@ -221,6 +222,47 @@ AI_PROVIDER=scripted TRANSCRIBE_PROVIDER=scripted earful serve
 No secrets are committed to this repo, and the binary never auto-loads
 `.env` files — see the note at the top of `.env.example`.
 
+## Wording and documents
+
+What the application says is in two places, and neither is a template.
+
+**Interface text** — labels, buttons, messages — is in
+[`web/text/active.en.toml`](web/text/active.en.toml), with a translation
+beside it for each language. Change the text to the right of an `=` and
+rebuild. The top of the file explains names, placeholders and counts.
+
+**Documents** — the trust page, the terms, help — are Markdown in
+[`web/pages`](web/pages), one file per language. A file's place is its
+address: `trust.en.md` is served at `/trust`, `help/voice.en.md` at
+`/help/voice`.
+
+```
+---
+title: Answering by voice
+---
+
+On a survey that offers it, you can speak an answer instead of typing it.
+```
+
+After editing a document, `make pages` stamps it with the hash of its
+text and today's date; `make check` fails on one that was edited and not
+stamped. After editing English of either kind, `make text-status` lists
+the translations made from the old wording.
+
+| In the front matter | Does |
+|---|---|
+| `title` | Heads the page |
+| `short_title` | Names it in the window's title |
+| `sections: cards` | Draws each section in a card; `***` on a line of its own ends the last one |
+| `draft: true` | Keeps it off every instance but one in development |
+
+A document can state what the instance knows about itself: `{{.Region}}`,
+`{{.ContactEmail}}`, `{{if .Brevo}}…{{end}}`. The facts are listed in
+[`internal/http/documents.go`](internal/http/documents.go), and a
+document that names one that is not there stops the service from
+starting.
+
+## Testing
 ## Testing
 
 See [docs/testing.md](docs/testing.md) for the full test-harness

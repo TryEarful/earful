@@ -82,5 +82,9 @@ _Avoid_: copy, strings, localization (reserved for a survey's questions)
 The language the Interface Text is shown in for one request. A respondent's follows the survey language they chose, then their browser; it is never stored. A creator's follows the language switcher, then their browser.
 _Avoid_: locale, workspace language
 
+**Document**:
+A piece of long-form writing the application serves: the trust page, the terms, a help page. Kept as Markdown in `web/pages`, one file per language, and served at the address its place there gives it.
+_Avoid_: page (every screen is a page), article, content
+
 **Insight Summary**:
 AI-generated themes, patterns and representative quotes across a survey's responses, aggregated by Question Identity across versions. Always labelled as AI output; never a substitute for the responses themselves.

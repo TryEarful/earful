@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip text-status text-accept compose-up compose-up-app compose-down docker-build release-check
+.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip text-status text-accept pages compose-up compose-up-app compose-down docker-build release-check
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -50,9 +50,15 @@ GEOIP_CSV ?= /tmp/dbip-country-lite.csv
 geoip:
 	go run ./tools/geoipgen -in $(GEOIP_CSV)
 
-# Translations in web/text made from English that has since been
-# reworded. Reports, never fails. After reading them against the new
-# wording: make text-accept, or make text-accept ID="a.b.c d.e.f".
+# Stamps the documents in web/pages that have changed with the hash of
+# their text and today's date. Run after editing one; make check fails on
+# a document that was edited and not stamped.
+pages:
+	go run ./tools/pages
+
+# Translations, in web/text and web/pages, made from English that has
+# since been reworded. Reports, never fails. After reading them against
+# the new wording: make text-accept, or make text-accept ID="a.b.c help/voice".
 text-status:
 	go run ./tools/textstatus
 

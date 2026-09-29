@@ -12,6 +12,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/nicksnyder/go-i18n/v2 v2.6.1
 	github.com/pressly/goose/v3 v3.24.1
+	github.com/yuin/goldmark v1.8.6
 	golang.org/x/crypto v0.31.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/text v0.40.0

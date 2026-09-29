@@ -1,0 +1,54 @@
+package templates
+
+import (
+	"github.com/TryEarful/earful/internal/uitext"
+	"github.com/TryEarful/earful/web/static"
+)
+
+// DocumentData is one document from web/pages, rendered.
+type DocumentData struct {
+	Title      string
+	ShortTitle string
+	// Lang is the language the document is written in, which is the
+	// source language where it has not been translated.
+	Lang string
+	// HTML is the body, rendered from the document's Markdown with raw
+	// HTML refused, so it is written into the page as it is.
+	HTML string
+	// Updated is the day the document last changed, for a reader.
+	Updated string
+	// Markdown is the document as a reader would take it away, and
+	// MarkdownPath where it is served as a file.
+	Markdown     string
+	MarkdownPath string
+}
+
+// Document draws a document in the respondent's page shell: it is as
+// likely to be reached from a survey as from anywhere, and a reader of
+// the trust page has no account and nothing to sign out of.
+//
+// Copying is an enhancement. The link to the Markdown works without a
+// script; the button is drawn hidden and shown by the script that makes
+// it work.
+templ Document(data DocumentData) {
+	@RespondLayout(t(ctx, "page.title", uitext.Args{"Title": data.ShortTitle}), data.Lang) {
+		<main class="document">
+			<h1>{ data.Title }</h1>
+			<div class="document-body">
+				@templ.Raw(data.HTML)
+			</div>
+			<footer class="document-foot">
+				if data.Updated != "" {
+					<p class="muted">{ t(ctx, "document.updated", uitext.Args{"Date": data.Updated}) }</p>
+				}
+				<p class="document-actions">
+					<button type="button" class="secondary" data-copy-markdown hidden>{ t(ctx, "document.copy.label") }</button>
+					<a href={ templ.SafeURL(data.MarkdownPath) }>{ t(ctx, "document.markdown.label") }</a>
+					<span class="muted" role="status" data-copy-status data-done={ t(ctx, "document.copy.done") } data-failed={ t(ctx, "document.copy.failed") }></span>
+				</p>
+			</footer>
+		</main>
+		@templ.JSONScript("document-markdown", data.Markdown)
+		<script src={ static.AssetURL("js/document.js") } defer></script>
+	}
+}

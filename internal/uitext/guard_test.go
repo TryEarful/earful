@@ -30,7 +30,6 @@ var unmoved = map[string]bool{
 	"results_templ.go":       true,
 	"stats_templ.go":         true,
 	"surveys_templ.go":       true,
-	"trust_templ.go":         true,
 }
 
 // notWording lists what reads like wording and is not: a name that is

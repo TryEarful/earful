@@ -19,9 +19,10 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", s.healthz)
 	mux.HandleFunc("GET /goodbye", s.goodbye)
 	mux.HandleFunc("GET /robots.txt", robotsTxt)
-	// The trust page (M8-T4): public, and served by the instance that
-	// actually holds the data it describes.
-	mux.HandleFunc("GET /trust", s.trustPage)
+	// The documents in web/pages, the trust page (M8-T4) among them:
+	// public, and served by the instance that actually holds the data
+	// they describe.
+	s.registerDocuments(mux)
 
 	// Respondent path (M4). No session, no workspace: the share link is
 	// the credential.

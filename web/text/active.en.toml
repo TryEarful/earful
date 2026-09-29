@@ -236,3 +236,20 @@ body = "Deleting your account deactivates it immediately and permanently erases 
 
 [account.delete.submit]
 label = "Delete my account"
+
+
+# ── Documents: the trust page, the terms, help ──────────────────────────
+#
+# The documents themselves are Markdown, in web/pages. These are the few
+# words the page puts around one.
+
+[document]
+updated = "Last updated {{.Date}}"
+
+[document.copy]
+label = "Copy as Markdown"
+done = "Copied."
+failed = "Couldn't copy. The link opens the Markdown instead."
+
+[document.markdown]
+label = "View as Markdown"

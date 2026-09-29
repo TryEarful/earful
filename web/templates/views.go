@@ -210,28 +210,6 @@ type SubjectView struct {
 	Suppressed    bool
 }
 
-// --- trust page (M8-T4) --------------------------------------------------
-
-// TrustData is the public trust page. Everything on it is a claim the
-// code can be checked against, so the values come from configuration and
-// from the processor list in PLAN.md Appendix B rather than from prose.
-type TrustData struct {
-	InstanceName      string
-	Region            string
-	ContactEmail      string
-	Processors        []ProcessorView
-	GeoAttribution    string
-	GeoAttributionURL string
-}
-
-// ProcessorView is one sub-processor, as disclosed.
-type ProcessorView struct {
-	Name    string
-	Purpose string
-	Data    string
-	Region  string
-}
-
 // InsightView is an Insight Summary as displayed (M10). Every field
 // except Output exists to keep analysis from passing for data: the model
 // that wrote it, when, over how many responses, and whether responses

@@ -338,3 +338,26 @@ other = "Al eliminar su cuenta, esta se desactiva de inmediato y sus datos se bo
 [account.delete.submit.label]
 hash = "sha1-2ae3a019040b2afd5fa5c1c7f7a1766b7c4ae831"
 other = "Eliminar mi cuenta"
+
+
+# ── Documentos: la página de confianza, los términos, la ayuda ──────────
+
+[document.updated]
+hash = "sha1-c57f1386b8b1d464a301b42b66d079e113917aaa"
+other = "Última actualización: {{.Date}}"
+
+[document.copy.label]
+hash = "sha1-8689141e18b6e3791e0815469210993653db7af0"
+other = "Copiar como Markdown"
+
+[document.copy.done]
+hash = "sha1-dd2ce2e2886c93191d9c4239a77c53d3a1acbf9c"
+other = "Copiado."
+
+[document.copy.failed]
+hash = "sha1-66a9652eecb891c51d2ac99d12ed0f92b8709ef4"
+other = "No se pudo copiar. El enlace abre el Markdown."
+
+[document.markdown.label]
+hash = "sha1-06ef85be40ec63efaf506c72834cab035bd82106"
+other = "Ver como Markdown"

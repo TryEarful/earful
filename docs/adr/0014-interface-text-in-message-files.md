@@ -19,6 +19,18 @@ cookie is not read on a respondent's page. This is story 25 and ADR-0003
 carried over from the survey's language to the interface's: what
 language a person reads is a fact about them.
 
+Long-form writing is not a message. The trust page, the terms and the
+help pages are documents: Markdown files in `web/pages`, one per
+language, each served at the address its place in the folder gives it
+(`help/voice.en.md` at `/help/voice`) and, as Markdown, at the same
+address ending in `.md`. A document's front matter carries the hash of
+its body and the day that hash last changed, written by `make pages`.
+
+A document states facts about the instance serving it, and those differ
+from one instance to the next. It names them (`{{.Region}}`,
+`{{if .Brevo}}`) and the instance supplies them, so that every sentence
+is in the file and every fact is the instance's own.
+
 ## Why
 
 Two needs, one mechanism. The interface is to be offered in Spanish and
@@ -47,6 +59,18 @@ that shows it.
 - **One template per language.** No library at all, and every change to
   a page's structure made once per language.
 
+- **The trust page as messages.** Thirty-five paragraphs as thirty-five
+  entries in a TOML file can be translated and cannot be read. A
+  document is written, reviewed and compared with its last version as a
+  whole, which is what Markdown is for.
+- **Rendering documents when they are built**, into HTML kept beside
+  them. What a document says depends on the instance, which is not known
+  until it starts; and a second copy of every document is a second thing
+  to keep in step. They are rendered once, at startup.
+- **The hash of the whole file.** A file cannot contain the hash of
+  itself. The hash is of the body, which also means a new title does not
+  move the date of the text.
+
 ## Consequences
 
 - A message's name is an interface. It says where the message is and
@@ -67,3 +91,15 @@ that shows it.
 - Scripts receive their wording from the page, in a JSON block, because
   the Content-Security-Policy (ADR-0006) allows data there and code
   nowhere inline.
+- HTML written in a document is not passed through, and a fact put into
+  one is escaped first: what an operator configured is text, whatever
+  characters it is spelled with.
+- A document marked `draft` is loaded and checked like any other and
+  given an address only in development. Terms that say "not written yet"
+  are not terms anyone should be shown.
+- A test fails the build on a document whose hash is not the hash of its
+  body, so an edit cannot be released with the date of the text it
+  replaced.
+- The trust page is drawn from its headings rather than from a template,
+  so what a paragraph looks like is decided by where it is. The
+  paragraphs that were set in a quieter colour are now set like the rest.
