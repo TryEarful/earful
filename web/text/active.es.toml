@@ -238,6 +238,10 @@ other = "· aún sin publicar"
 hash = "sha1-a7c49b0bebdb49c2213abc78211ecf60b40d9ce5"
 other = "· cierra el {{.Date}}"
 
+[dashboard.survey.starter]
+hash = "sha1-820730a3118aa28b370afd5f2b1814e747cdcddd"
+other = "Una encuesta de inicio, ya publicada en inglés y en español. Las respuestas que reciba llegan a este espacio de trabajo y a ningún otro lugar. Adáptela a su producto o elimínela."
+
 [dashboard.survey.published]
 hash = "sha1-bb4e4da8fabc1e80f34bd707f3bd81ec9f6452a7"
 one = "· versión {{.Version}} · {{.Count}} pregunta"
@@ -2315,6 +2319,54 @@ other = "Espacio de trabajo personal"
 [workspace.name.of]
 hash = "sha1-76ec7d4bf42e30dcdd8065e0798d45d8dd5cf4ff"
 other = "Espacio de trabajo de {{.Name}}"
+
+
+# ── La encuesta con la que empieza un espacio de trabajo ───────────────
+#
+# El español de cada pregunta se publica con la encuesta: lo lee y lo
+# contesta una persona encuestada.
+
+# El título de una encuesta está en un solo idioma, y el de esta es el
+# inglés: este mensaje no se muestra.
+[starter.title]
+hash = "sha1-e377720d608b2df1a45ffd6b3bf11788c408d412"
+other = "¿Qué tal le va con Earful?"
+
+[starter.heard.text]
+hash = "sha1-b77f61e39ed6aba100217d621dfa9099a03eae75"
+other = "¿Cómo conoció Earful?"
+
+[starter.satisfaction.text]
+hash = "sha1-c9ac99c4caab3864db2c66b3903f070c3e577c12"
+other = "¿Cuál es su grado de satisfacción con Earful hasta ahora, de 1 (ninguno) a 5 (muy alto)?"
+
+[starter.frequency.text]
+hash = "sha1-0b34e9d4423c92654760fe18a316552a65380210"
+other = "¿Con qué frecuencia piensa hacer una encuesta?"
+
+[starter.frequency.weekly]
+hash = "sha1-043058e2050c0345ef7aac78bd9025d3adce099a"
+other = "Cada semana"
+
+[starter.frequency.monthly]
+hash = "sha1-7f3932f9cb96cb99072771c992c0ce3c0b342bfb"
+other = "Cada mes"
+
+[starter.frequency.yearly]
+hash = "sha1-e4814a3761287238ed9991114b9cfa08da1fc498"
+other = "Unas pocas veces al año"
+
+[starter.frequency.once]
+hash = "sha1-15c0a9d94e1aab838df045d4bd1120f5350b1dac"
+other = "Solo esta vez"
+
+[starter.missing.text]
+hash = "sha1-443bacb0c7c19bdcf846bcddf01a6037f1bfc257"
+other = "¿Qué le falta a Earful, o qué debería funcionar de otra manera?"
+
+[starter.recommend.text]
+hash = "sha1-ddded11493df49c54994cf51d1c9bb729cb0f5a0"
+other = "¿Qué probabilidad hay de que recomiende Earful a un amigo o colega?"
 
 
 # ── Responder una encuesta ─────────────────────────────────────────────

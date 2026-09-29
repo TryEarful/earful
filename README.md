@@ -57,7 +57,8 @@ Emails never leave your machine in local development: the compose stack
 delivers them to **mailpit**, a local mail catcher. Open
 [localhost:8025](http://localhost:8025) — that's your inbox for magic
 links and survey invites alike. Click the sign-in link, press **Sign
-in**, and you land on your dashboard with a personal workspace created.
+in**, and you land on your dashboard with a personal workspace created,
+holding one published survey to start from.
 (The link only signs you in on the button press — a plain GET just shows
 a confirmation page, so link-prefetching email scanners can't burn your
 single-use token.)

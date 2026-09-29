@@ -190,12 +190,9 @@ func (s *Service) SignupWithCode(ctx context.Context, address, password, code, i
 		return db.User{}, db.Workspace{}, fmt.Errorf("auth: consume beta code: %w", err)
 	}
 
-	ws, err := qtx.CreateWorkspace(ctx, workspaceNameFor(ctx, addressNorm))
+	ws, err := s.createWorkspace(ctx, qtx, addressNorm, user.ID)
 	if err != nil {
-		return db.User{}, db.Workspace{}, fmt.Errorf("auth: create workspace: %w", err)
-	}
-	if err := qtx.CreateWorkspaceMember(ctx, db.CreateWorkspaceMemberParams{WorkspaceID: ws.ID, UserID: user.ID}); err != nil {
-		return db.User{}, db.Workspace{}, fmt.Errorf("auth: create membership: %w", err)
+		return db.User{}, db.Workspace{}, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {

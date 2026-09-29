@@ -23,6 +23,10 @@ type SurveyView struct {
 	LatestVersion  int
 	QuestionCount  int
 	CreatedAt      string
+	// StarterNote is set for a Starter Survey its owner has not yet
+	// published a version of: the card then says what the survey is and
+	// that it is theirs to change (story 86).
+	StarterNote bool
 }
 
 // Published reports whether a version exists yet.

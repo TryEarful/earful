@@ -175,6 +175,9 @@ anonymous = "Anonymous"
 invited = "Invited"
 unpublished = "· not published yet"
 closes = "· closes {{.Date}}"
+# Shown on the Starter Survey's card until its owner publishes a version
+# of their own.
+starter = "A starter survey, already published in English and Spanish. Answers to it arrive in this workspace and nowhere else. Reword it for your own product, or delete it."
 
 # One question has always been drawn as "1 questions".
 [dashboard.survey.published]
@@ -1276,6 +1279,45 @@ The link is yours alone and works for one submission. If you weren't expecting t
 personal = "Personal workspace"
 # Given once, when the account is made, in the language it was made in.
 of = "{{.Name}}'s workspace"
+
+
+# ── The survey a workspace starts with ─────────────────────────────────
+#
+# A new workspace holds one published survey, written from these. It is
+# written once: what is changed here reaches the workspaces made
+# afterwards, and no survey already made. The Spanish of each question
+# is published with the survey as its Spanish, so it is a translation in
+# a sense the rest of active.es.toml is not: a respondent answers it.
+
+[starter]
+# A survey's title is in one language. This one is always the English.
+title = "How is Earful working for you?"
+
+# Answered in words, and the first thing a respondent meets, so that it
+# can be spoken. It does not say so: not every instance has dictation.
+[starter.heard]
+text = "How did you hear about Earful?"
+
+# A scale of 1 to 5. The numbers carry no labels, so the question says
+# what the ends mean.
+[starter.satisfaction]
+text = "How satisfied are you with Earful so far, from 1 (not at all) to 5 (very)?"
+
+# One of the four is chosen.
+[starter.frequency]
+text = "How often do you expect to run a survey?"
+weekly = "Every week"
+monthly = "Every month"
+yearly = "A few times a year"
+once = "Just this once"
+
+# Answered in words.
+[starter.missing]
+text = "What is missing from Earful, or should work differently?"
+
+# The recommendation question, 0 to 10.
+[starter.recommend]
+text = "How likely are you to recommend Earful to a friend or colleague?"
 
 
 # ── Answering a survey ─────────────────────────────────────────────────

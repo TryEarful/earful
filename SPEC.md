@@ -262,6 +262,46 @@ address. Its front matter is the whole of its record:
 | `last_update` | The day that text replaced the last | `make pages` |
 | `source_hash` | On a translation, which English it was made from | `make text-accept` |
 
+### A survey to start from (post-MVP)
+
+A new workspace showed its owner an empty list. What a respondent sees,
+which is what a creator is there to make, was a title, a question, a
+publish and a link away.
+
+86. As a new creator, I want my Workspace to begin with a published survey that is mine to change, so that I see what my respondents will see before I have written a question. [tested](internal/http/starter_test.go) — by both paths that create a Workspace; what the survey says is tested [where it is written](internal/starter/starter_test.go)
+
+**The Starter Survey is its owner's survey, not Earful's.** It is
+written once, with the Workspace, and from then on nothing treats it
+differently from a survey its owner made: its answers arrive in that
+Workspace and nowhere else, and rewording, closing or deleting it is
+the owner's to do. Earful asks the same five questions of its own
+creators from its own Workspace.
+
+| # | Asks | Answered with | Required |
+|---|---|---|---|
+| 1 | How the respondent heard about Earful | words, which can be spoken | no |
+| 2 | How satisfied they are so far | a scale of 1 to 5 | yes |
+| 3 | How often they expect to run a survey | one of four choices | no |
+| 4 | What is missing or should work differently | words, which can be spoken | no |
+| 5 | How likely they are to recommend Earful | 0 to 10 | yes |
+
+Consequences:
+
+- The first question is one that can be spoken, since a respondent
+  meets one question at a time and dictation is what they should meet
+  first. It does not say so: an instance without a transcriber offers
+  no microphone.
+- The survey is English with a Spanish Localization, whoever signs up,
+  so its address means one survey. Rewording a question therefore
+  calls for the Spanish to be read again before publishing (story 23),
+  or for the language to be removed.
+- The dashboard says what the survey is, on its card, until its owner
+  publishes a version of their own.
+- A deleted Starter Survey does not come back. `earful starter-survey
+  add` gives a Workspace one where its owner asks, and to a Workspace
+  made before this.
+- Workspaces that already exist are not given one.
+
 ### Answering from the keyboard (post-MVP)
 
 80. As a respondent, I want to answer the whole survey from the keyboard, with the key for each answer shown next to it, so that I can move as fast as I think instead of aiming a mouse at every option.

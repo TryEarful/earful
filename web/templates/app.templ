@@ -57,6 +57,9 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 									{ t(ctx, "dashboard.survey.closes", uitext.Args{"Date": s.CloseAtLabel}) }
 								}
 							</p>
+							if s.StarterNote {
+								<p class="muted">{ t(ctx, "dashboard.survey.starter") }</p>
+							}
 						</li>
 					}
 				</ul>

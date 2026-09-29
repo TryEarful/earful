@@ -19,6 +19,10 @@ func viewSurvey(l uitext.Localizer, s store.Survey, now time.Time) templates.Sur
 		LatestVersion:  s.LatestVersion,
 		QuestionCount:  s.QuestionCount,
 		CreatedAt:      l.Day(s.CreatedAt),
+		// Version 1 is the one the workspace was created with. A second
+		// is the owner's own, and the survey needs no introduction to
+		// the person who rewrote it.
+		StarterNote: s.Origin == store.OriginStarter && s.LatestVersion == 1,
 	}
 	if s.CloseAt != nil {
 		// Stored as the exclusive end of the closing day; show the day

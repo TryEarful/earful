@@ -61,7 +61,22 @@ type Service struct {
 	signupIPLimiter    *antibot.Limiter
 	signupEmailLimiter *antibot.Limiter
 	betaMode           bool
+
+	// seed gives a workspace what it starts with (story 86). Nil gives
+	// it nothing.
+	seed WorkspaceSeeder
 }
+
+// WorkspaceSeeder writes what a new workspace starts with, through q,
+// which is bound to the transaction creating the workspace: a failure
+// here is a failure to create it. It is a function handed to the
+// service because what a workspace starts with is a survey, and this
+// package resolves credentials and knows nothing of surveys.
+type WorkspaceSeeder func(ctx context.Context, q *db.Queries, workspaceID, userID uuid.UUID, now time.Time) error
+
+// SetWorkspaceSeeder sets what every workspace created from now on is
+// given.
+func (s *Service) SetWorkspaceSeeder(seed WorkspaceSeeder) { s.seed = seed }
 
 func NewService(pool *pgxpool.Pool, c clock.Clock, sender email.Sender, baseURL string) *Service {
 	return &Service{
@@ -238,12 +253,9 @@ func (s *Service) login(ctx context.Context, address string, googleSub *string) 
 
 	ws, err := qtx.GetWorkspaceForUser(ctx, user.ID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		ws, err = qtx.CreateWorkspace(ctx, workspaceNameFor(ctx, address))
+		ws, err = s.createWorkspace(ctx, qtx, address, user.ID)
 		if err != nil {
-			return db.User{}, db.Workspace{}, fmt.Errorf("auth: create workspace: %w", err)
-		}
-		if err := qtx.CreateWorkspaceMember(ctx, db.CreateWorkspaceMemberParams{WorkspaceID: ws.ID, UserID: user.ID}); err != nil {
-			return db.User{}, db.Workspace{}, fmt.Errorf("auth: create membership: %w", err)
+			return db.User{}, db.Workspace{}, err
 		}
 	} else if err != nil {
 		return db.User{}, db.Workspace{}, fmt.Errorf("auth: get workspace: %w", err)
@@ -330,6 +342,26 @@ func (s *Service) DeleteAccount(ctx context.Context, userID uuid.UUID) error {
 		return fmt.Errorf("auth: commit delete tx: %w", err)
 	}
 	return nil
+}
+
+// createWorkspace makes the personal workspace of a user who has none,
+// with the user as its owner and with what a workspace starts with. Every
+// path that creates a workspace goes through here, so that "every
+// workspace" means every one.
+func (s *Service) createWorkspace(ctx context.Context, qtx *db.Queries, address string, userID uuid.UUID) (db.Workspace, error) {
+	ws, err := qtx.CreateWorkspace(ctx, workspaceNameFor(ctx, address))
+	if err != nil {
+		return db.Workspace{}, fmt.Errorf("auth: create workspace: %w", err)
+	}
+	if err := qtx.CreateWorkspaceMember(ctx, db.CreateWorkspaceMemberParams{WorkspaceID: ws.ID, UserID: userID}); err != nil {
+		return db.Workspace{}, fmt.Errorf("auth: create membership: %w", err)
+	}
+	if s.seed != nil {
+		if err := s.seed(ctx, qtx, ws.ID, userID, s.clock.Now()); err != nil {
+			return db.Workspace{}, fmt.Errorf("auth: seed workspace: %w", err)
+		}
+	}
+	return ws, nil
 }
 
 // workspaceNameFor derives the personal-workspace name from the email's

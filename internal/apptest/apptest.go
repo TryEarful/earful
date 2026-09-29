@@ -13,6 +13,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"html"
 	"io"
 	"log/slog"
 	"net/http"
@@ -37,6 +38,7 @@ import (
 	"github.com/TryEarful/earful/internal/email"
 	apphttp "github.com/TryEarful/earful/internal/http"
 	"github.com/TryEarful/earful/internal/logging"
+	"github.com/TryEarful/earful/internal/starter"
 	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/text"
@@ -463,6 +465,32 @@ func (a *App) QuestionIdentities(t *testing.T, client *http.Client, surveyID str
 		}
 	}
 	return ids
+}
+
+var surveyLinkRe = regexp.MustCompile(`href="/surveys/([0-9a-f-]{36})"[^>]*>([^<]*)<`)
+
+// StarterSurveyID returns the id of the Starter Survey the client's
+// workspace was created with (story 86), read off the dashboard by its
+// title as a creator would find it.
+func (a *App) StarterSurveyID(t *testing.T, client *http.Client) string {
+	t.Helper()
+	title, _, err := starter.Survey(strictText(t))
+	if err != nil {
+		t.Fatalf("apptest: starter survey: %v", err)
+	}
+	resp, err := client.Get(a.Server.URL + "/dashboard")
+	if err != nil {
+		t.Fatalf("apptest: GET dashboard: %v", err)
+	}
+	defer resp.Body.Close()
+	body := ReadBody(t, resp)
+	for _, m := range surveyLinkRe.FindAllStringSubmatch(body, -1) {
+		if html.UnescapeString(m[2]) == title {
+			return m[1]
+		}
+	}
+	t.Fatalf("apptest: no starter survey on the dashboard:\n%s", body)
+	return ""
 }
 
 var questionActionRe = regexp.MustCompile(`/surveys/[0-9a-f-]+/questions/([0-9a-f-]{36})`)

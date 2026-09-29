@@ -26,6 +26,7 @@ import (
 	"github.com/TryEarful/earful/internal/email"
 	"github.com/TryEarful/earful/internal/invites"
 	"github.com/TryEarful/earful/internal/pages"
+	"github.com/TryEarful/earful/internal/starter"
 	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/internal/voice"
@@ -129,6 +130,8 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	// While the private beta is on, no path may create an account except
 	// invite-code signup — this closes the Google/magic side doors (M12).
 	authSvc.SetBetaMode(cfg.BetaMode)
+	// A workspace is created holding its Starter Survey (story 86).
+	authSvc.SetWorkspaceSeeder(starter.Seeder(deps.Text))
 	s := &server{
 		cfg:         cfg,
 		logger:      logger,

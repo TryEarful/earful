@@ -70,6 +70,10 @@ _Avoid_: researcher, author
 **Survey Status**:
 Where a survey stands: Draft (never published), Open (published and accepting responses), or Closed (not accepting; reopenable). Distinct from Survey Versions, which only count publishes.
 
+**Starter Survey**:
+The published Survey a Workspace holds from the moment it is created, written from one definition. An ordinary Survey in every other respect: its owner's to reword, close or delete, and its Responses arrive in that Workspace alone.
+_Avoid_: welcome survey, sample, demo, template
+
 **Localization**:
 The set of creator-reviewed, AI-drafted translations of a version's questions. Frozen into the Survey Version at publish — immutable like the rest of the version.
 _Avoid_: translation (reserved for answer translation)

@@ -51,6 +51,7 @@ func TestAccount_DeletedUserCanSignUpAgain(t *testing.T) {
 	addr := apptest.UniqueEmail("reborn")
 
 	client := app.Login(t, addr)
+	old := app.StarterSurveyID(t, client)
 	csrf := app.CSRFToken(t, client)
 	resp, err := client.PostForm(app.Server.URL+"/account/delete", map[string][]string{"_csrf": {csrf}})
 	if err != nil {
@@ -59,14 +60,27 @@ func TestAccount_DeletedUserCanSignUpAgain(t *testing.T) {
 	resp.Body.Close()
 
 	// Same address, brand-new account: the login flow must complete and
-	// land on a working dashboard. (That the workspace is genuinely a new
-	// one — no surveys carried over — becomes observable at M3, when
-	// workspaces have contents.)
+	// land on a working dashboard.
 	fresh := app.Login(t, addr)
 	body := getBody(t, fresh, app.Server.URL+"/dashboard")
 	local, _, _ := strings.Cut(addr, "@")
 	if !bodyContains(body, local+"'s workspace") {
 		t.Errorf("re-registered user has no workspace:\n%s", body)
+	}
+
+	// The workspace is a new one, holding what a new workspace holds and
+	// nothing of the old: its Starter Survey is another survey, and the
+	// old one's address leads nowhere (story 86).
+	if renewed := app.StarterSurveyID(t, fresh); renewed == old {
+		t.Error("the new account was given the deleted account's survey")
+	}
+	gone, err := http.Get(app.Server.URL + "/s/" + old)
+	if err != nil {
+		t.Fatalf("open the deleted account's survey: %v", err)
+	}
+	gone.Body.Close()
+	if gone.StatusCode != http.StatusNotFound {
+		t.Errorf("the deleted account's survey answered %d, want 404", gone.StatusCode)
 	}
 }
 

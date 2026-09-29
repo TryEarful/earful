@@ -285,6 +285,7 @@ handlers):
 5. Navigate to that link → **"Confirm sign-in"** page. The GET must not
    sign you in; only the button does (email-scanner protection)
 6. Click **Sign in** → `/dashboard`, heading shows `<local-part>'s workspace`
+   and one survey is listed, Open: the Starter Survey (story 86)
 7. Click **Account** → identity and 30-day deletion copy; click **Delete my
    account** → `/goodbye`
 8. Navigate to `/dashboard` → redirected to `/login` (session revoked)

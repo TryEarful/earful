@@ -35,9 +35,11 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | M12 — Private beta gate | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted); turning it off is a manual decision with no date on it |
 | Issue #2 — Stats over time | [x] done | 1/1 · post-MVP, added 2026-09-27 |
 | Interface text | [x] done | 6/6 · post-MVP, added 2026-09-29 (ADR-0014); English and Spanish |
+| Starter Survey | [~] in progress | 1/4 · post-MVP, added 2026-09-29 (ADR-0015) |
 
 ### Status log
 
+- 2026-09-29 — **A workspace is created holding a published survey (story 86, ADR-0015).** The Starter Survey asks five questions about Earful, the first of which can be spoken, and is written in the transaction that creates the workspace, by both paths that create one. It is English with a Spanish Localization for everyone, and its wording is in `web/text` under `starter`. From then on it is its owner's survey: rewording it publishes version 2 once the Spanish has been read again, and deleting it leaves the empty dashboard. `surveys.origin` (migration 00017) tells it from a survey somebody made, and an index allows a workspace one live one. Writing it found that the purge had no step for `question_localizations`, `answer_translations` or `insight_runs`, all added after it: the first deleted survey to have any of them would have failed the whole run thirty days later, and every erasure request for such a creator. Each is now deleted before what it refers to, and a test reads the schema for the tables under a survey and the purge for a DELETE from each.
 - 2026-09-29 — **Dictation listens for the language the respondent is reading.** On a survey nobody had chosen a language for, the recogniser was told English whatever the page was worded in, which was right while every page was in English. A respondent reading Spanish buttons is about to speak Spanish, and a recogniser listening for another language does not fail: it writes down something else. The language is now the survey's where one was chosen and the page's otherwise, and is read when a take begins, so it is what the recogniser on the device is set to and what the server is sent. A survey chosen in a language the interface is not written in is still spoken in that language: what is said follows the questions.
 - 2026-09-29 — **The interface is in Spanish as well as English, and none of its wording is in the code.** About seven hundred messages moved out of ten templates, the handlers, the domain's errors and five scripts into `web/text/active.en.toml`, each with a Spanish translation beside it in `active.es.toml` that was drafted with the move and is waiting to be read by somebody who reads Spanish. English was moved to the letter: the test harness wrote out every page and email it produced, before and after each step, and the two were compared whole. That found what the assertions could not, a space lost between two sentences on the respondent's page when the first became a message with markup in it. Three things did change on purpose: the trust page is drawn from Markdown, dictation takes its language from an attribute of the form, and a survey answered in a chosen language stays in it. The language of a page is chosen for who is asking: a respondent's from the address and the browser, with nothing kept; anyone else's from the switcher's cookie, then the browser. `make text-status` lists the translations made from English that has since been reworded, and four tests that read the source keep the templates, the scripts and the two files in step. The harness's page-writing hook is removed with this entry; it was for the move.
 - 2026-09-29 — **Long-form writing becomes documents, and the trust page is the first.** Moving the trust page's paragraphs into the message file one by one would have made them translatable and unreadable, so documents are Markdown in `web/pages`: one file per language, served at the address its place in the folder gives it, with the hash of its text and the day that text last changed in its front matter. `make pages` writes both; a test fails the build on a document edited and not stamped. The trust page says different things on different instances, so a document names the facts it depends on and the instance supplies them: the conditional processor list, the hosting claim dropped when nobody configured one, the contact address. Its wording was compared with the template's across seven configurations before the template was removed, and is the same to the character. What changed is its dress: paragraphs that were set in the muted colour are set like the rest. Every document has a Copy as Markdown button and, for a browser without scripts, a link to the same Markdown. `/terms` and `/privacy` exist as drafts, which are served only in development.
@@ -86,6 +88,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0013 | The EU pin is Vertex's `eu` multi-region endpoint (documented ML processing in EU member states), not a single region; Gemini 3.8 Flash on it; amends 0011 |
 | 0012 | Flow counters (opened, submitted, where answers stop) carry a UTC day in a second counter table; audience counters never do, because a date range plus suppression still leaks by subtraction; amends 0009 |
 | 0014 | Interface text is named messages in `web/text`, one TOML file per language, served through go-i18n; the interface language is chosen per request, and a respondent's is never stored |
+| 0015 | A workspace is created holding one published survey, the Starter Survey, written in the transaction that creates it and its owner's from then on; English with a Spanish Localization for everyone; `surveys.origin` tells it from a survey somebody made |
 
 ## MVP scope
 
@@ -121,6 +124,7 @@ internal/auth/         Google OIDC, magic links, sessions
 internal/clock/        injectable clock (expiry, close dates, purge windows)
 internal/uitext/       interface text: loads web/text, picks a language, fills messages in
 internal/pages/        documents: renders web/pages with what the instance can say about itself
+internal/starter/      the Starter Survey: what a new workspace's first survey asks (ADR-0015)
 internal/apptest/      application-edge test harness
 internal/oidctest/     fake OIDC issuer for auth tests
 web/templates/         .templ files
@@ -334,6 +338,18 @@ schema one (ADR-0012).
 - [x] **S1 Stats page.** Goal: `/surveys/{id}/stats` beside the results page, with a date range (presets and two date inputs, all-time by default), Big picture (opened, submissions, completion rate, median time to complete with its sample size), a Trends chart of opened or submissions per day, a Question by question table of where answers stop keyed by Question Identity, and the ADR-0009 audience totals stated as undated. A per-range stats CSV; the workspace export gains `stats_daily` (format version 2). AC: a range narrower than the survey's life sums dated rows only and says where the undated counts went; counters from before migration 00016 appear in all-time totals with a note; inserting a question ahead of another in a later version leaves the earlier "stopped here" counts on the right row; the schema guard covers the new table; the export round-trips. Deps: M7-T4
   _Note (2026-09-27): the chart is hand-written SVG from a same-origin script over numbers the page already holds in a JSON block, with the same numbers as a table for a browser without scripts — no library, no endpoint, no CSP change. The Views/Starts split and the per-question Views column in the issue's mockup are not built: both need respondent pages to report behaviour before submit, which M7-T4 declined and ADR-0012 records declining again. The device filter is not built either, for the subtraction reason in the ADR. Two things the tests caught: a pointer into a growing slice (the zero-filled day list) that went stale on reallocation, and the unchallenged-submit limiter quietly dropping a test's sixth response, which the old test never noticed because it counted responses from the table rather than from the counter._
 
+### Starter Survey (added 2026-09-29)
+
+Post-MVP. A workspace is created holding one published survey, which
+shows its owner what a respondent sees and is theirs to reword or delete
+(story 86, ADR-0015). Earful publishes the same survey from its own
+workspace, which is the feedback survey M9-T5 asks for.
+
+- [x] **SS-1 Seeded with the workspace.** Goal: `internal/starter` writes the survey from `web/text`; `auth.WorkspaceSeeder` runs it in the transaction of both signup paths; `surveys.origin` and the one-live-starter index; a line on the dashboard card until the owner publishes a version of their own. AC: a workspace made by sign-in link and one made by invite code each hold one open, anonymous survey that a signed-out visitor can read in English and in Spanish; signing in again adds none; rewording publishes version 2 after the Spanish is read again; deleting it leaves the empty dashboard. Deps: IT-5
+- [ ] **SS-2 Metrics.** Goal: the founder metrics count a Starter Survey from its second version. AC: a signup adds nothing to Surveys or Published surveys; republishing adds one to each. Deps: SS-1
+- [ ] **SS-3 For a workspace that has none.** Goal: `earful starter-survey add <owner-email>`. AC: a workspace made before SS-1 is given the survey and its address is printed; a second run is refused. Deps: SS-1
+- [ ] **SS-4 Feature tour.** Goal: the tour's first dashboard shows the Starter Survey, and the deck is the same from a fresh database and a used one. Deps: SS-3
+
 ### Interface text (added 2026-09-29)
 
 Post-MVP. The interface is offered in Spanish as well as English, and
@@ -361,7 +377,8 @@ workspaces(id, name, created_at, deleted_at)
 workspace_members(workspace_id, user_id, role='owner', created_at)
 surveys(id, workspace_id, title, is_anonymous bool IMMUTABLE, close_at nullable,
         closed_at nullable /*manual close; status Draft|Open|Closed is derived*/,
-        created_by, created_at, deleted_at)
+        created_by, created_at, deleted_at,
+        origin 'creator'|'starter' /*never updated; one live starter per workspace*/)
 survey_drafts(id, survey_id uniq, structure jsonb, updated_by, updated_at)
 draft_revisions(id, draft_id, structure jsonb, saved_by, saved_at)  -- append-only
 survey_versions(id, survey_id, number, published_by, published_at)  -- immutable
