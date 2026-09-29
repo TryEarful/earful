@@ -229,7 +229,7 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
   await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   // A toggled take has no key to release, so the hint says nothing.
-  await expect(respondent.locator(".voice-button .key-hint").first()).toHaveText("");
+  await expect(respondent.locator(".voice-button .key-combo").first()).toBeEmpty();
 
   await respondent.waitForTimeout(1200);
   await respondent.keyboard.press("Shift+ ");
@@ -274,7 +274,7 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   // The bar is there for as long as the hold is only a hold, and gone
   // once it has become a take.
   await respondent.keyboard.down(" ");
-  const hint = respondent.locator(".voice-button .key-hint").first();
+  const hint = respondent.locator(".voice-button .key-combo").first();
   await expect(hint).toHaveText("Hold Space");
   await expect(holdBar).toBeVisible();
   await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
@@ -401,10 +401,12 @@ test("esc leaves the field so enter moves on, and never clears across questions"
   // drawn at all on a device without a keyboard.
   const next = respondent.getByRole("button", { name: "Next", exact: true });
   const hints = next.locator(".key-hint");
-  await expect(hints).toHaveText(["ESC", "Enter ↵"]);
+  const escFirst = next.locator(".key-esc");
+  await expect(hints).toHaveText(["ESC", "↵ Enter"]);
+  await expect(next.locator(".key-combo").first()).toHaveText("ESC then ↵ Enter");
 
   await first.click();
-  await expect(hints.first()).toHaveJSProperty("hidden", false);
+  await expect(escFirst).toHaveJSProperty("hidden", false);
   await respondent.keyboard.type("It went well");
   await respondent.keyboard.press("Enter"); // a newline, as ever
   await respondent.keyboard.type("on the whole.");
@@ -412,10 +414,16 @@ test("esc leaves the field so enter moves on, and never clears across questions"
 
   await respondent.keyboard.press("Escape");
   await expect(first).not.toBeFocused();
-  await expect(hints.first()).toHaveJSProperty("hidden", true); // Enter alone will do now
+  await expect(escFirst).toHaveJSProperty("hidden", true); // Enter alone will do now
   await expect(first).toHaveValue("It went well\non the whole.");
   await respondent.keyboard.press("Enter");
   await expect(progress).toHaveText("Question 2 of 2");
+
+  // Back names its keys the same way: the symbol, then the name, one
+  // cap per key.
+  const back = respondent.getByRole("button", { name: "Back", exact: true });
+  await expect(back.locator(".key-hint")).toHaveText(["ESC", "⇧ Shift", "↵ Enter"]);
+  await expect(back.locator(".key-combo").first()).toHaveText("ESC then ⇧ Shift + ↵ Enter");
 
   // Well inside three seconds of the first Esc, on the next question:
   // a first press again, because Enter came between.
@@ -470,17 +478,18 @@ test("submit names its keys, and esc then enter submits from a textarea", async 
 
   const submit = respondent.getByRole("button", { name: "Submit answers", exact: true });
   const hints = submit.locator(".key-hint");
+  const escFirst = submit.locator(".key-esc");
   const answer = respondent.locator("textarea");
   await expect(submit).toBeVisible();
-  await expect(hints).toHaveText(["ESC", "Enter ↵"]);
+  await expect(hints).toHaveText(["ESC", "↵ Enter"]);
   await expect(answer).toBeFocused();
-  await expect(hints.first()).toHaveJSProperty("hidden", false);
+  await expect(escFirst).toHaveJSProperty("hidden", false);
 
   await respondent.keyboard.type("Nothing to add");
   await respondent.keyboard.press("Enter"); // still a newline
   await respondent.keyboard.type("except thanks.");
   await respondent.keyboard.press("Escape");
-  await expect(hints.first()).toHaveJSProperty("hidden", true);
+  await expect(escFirst).toHaveJSProperty("hidden", true);
   await expect(answer).toHaveValue("Nothing to add\nexcept thanks.");
 
   await minFillWait(respondent);

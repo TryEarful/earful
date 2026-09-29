@@ -76,30 +76,35 @@
   backButton.type = "button";
   backButton.className = "secondary";
   backButton.textContent = "Back";
-  addKeyHint(backButton, "⇧↵");
 
   var nextButton = document.createElement("button");
   nextButton.type = "button";
   nextButton.textContent = "Next";
-  // The buttons that move on — Next, and Submit on the last question —
-  // carry two hints, read left to right as the keys to press. The word
-  // beside the symbol, because ↵ is a picture of a key not every
-  // keyboard has printed on it. ESC is shown only while a textarea has
-  // focus: there Enter is a newline, and the way on is Esc first (the
-  // listener above takes focus out of the field), then Enter.
+  // The buttons that move — Back, Next, and Submit on the last
+  // question — name their keys, read left to right as the keys to
+  // press. Each key is its symbol and then its name, because ↵ and ⇧
+  // are pictures of keys not every keyboard has printed on it. ESC
+  // comes first only while a textarea has focus: there Enter is a
+  // newline, with Shift or without, and the way out is Esc first (the
+  // listener above takes focus out of the field).
   var escHints = [];
-  function addEnterHints(button) {
-    var esc = addKeyHint(button, "ESC");
+  function addEnterHints(button, shifted) {
+    var esc = keyCombo([{ key: "ESC" }, "then"]);
+    esc.className += " key-esc";
     esc.hidden = true;
     escHints.push(esc);
-    addKeyHint(button, "Enter ↵");
+    var parts = [esc];
+    if (shifted) parts.push({ key: "⇧ Shift" }, "+");
+    parts.push({ key: "↵ Enter" });
+    button.appendChild(keyCombo(parts));
   }
   function showEsc(on) {
     escHints.forEach(function (hint) {
       hint.hidden = !on;
     });
   }
-  addEnterHints(nextButton);
+  addEnterHints(backButton, true);
+  addEnterHints(nextButton, false);
 
   form.addEventListener("focusin", function (event) {
     showEsc(event.target.tagName === "TEXTAREA");
@@ -118,7 +123,7 @@
   // The server renders Submit, so that it is there without JavaScript;
   // its hints are added here because the keys they name are.
   var submitButton = actions.querySelector('button[type="submit"]');
-  if (submitButton) addEnterHints(submitButton);
+  if (submitButton) addEnterHints(submitButton, false);
   form.insertBefore(progress, form.querySelector(".respond-questions"));
   actions.parentNode.insertBefore(nav, actions);
 
@@ -273,16 +278,35 @@
     focusFirstControl(questions[index]);
   }
 
-  // Navigation buttons are built here, so their key hints are too. As in
-  // the template, the hint is aria-hidden: the button's accessible name
-  // must remain "Next", not "Next ↵".
-  function addKeyHint(button, key) {
-    var hint = document.createElement("span");
-    hint.className = "key-hint";
-    hint.setAttribute("aria-hidden", "true");
-    hint.textContent = key;
-    button.appendChild(hint);
-    return hint;
+  // Navigation buttons are built here, so their key hints are too. A
+  // combo is keys drawn as keycaps with the words that join them in
+  // plain text between: "+" for keys pressed together, "then" for keys
+  // pressed in turn. Parts are strings (words), { key } (a keycap), or
+  // a node already built. As in the template, the whole is aria-hidden:
+  // the button's accessible name must remain "Next", not "Next Enter".
+  function keyCombo(parts) {
+    var combo = document.createElement("span");
+    combo.className = "key-combo";
+    combo.setAttribute("aria-hidden", "true");
+    fillCombo(combo, parts);
+    return combo;
+  }
+
+  function fillCombo(combo, parts) {
+    while (combo.firstChild) combo.removeChild(combo.firstChild);
+    parts.forEach(function (part, index) {
+      // Laid out by the flex gap; the space is for anything reading the
+      // text, which would otherwise get "HoldSpace".
+      if (index) combo.appendChild(document.createTextNode(" "));
+      if (part.nodeType) {
+        combo.appendChild(part);
+        return;
+      }
+      var piece = document.createElement("span");
+      piece.className = typeof part === "string" ? "key-word" : "key-hint";
+      piece.textContent = typeof part === "string" ? part : part.key;
+      combo.appendChild(piece);
+    });
   }
 
   function focusFirstControl(question) {

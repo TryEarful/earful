@@ -39,6 +39,7 @@
   // and a respondent who pressed it for that must not find a later Esc
   // clearing their answer.
   var ESC_WINDOW_MS = 3000;
+  var HOLD_HINT = ["Hold", { key: "Space" }];
   var ARMED_MESSAGE = "Press ESC again to clear this answer.";
   var COLLAPSE_KEY = "earful-voice-collapsed";
   var SVG_NS = "http://www.w3.org/2000/svg";
@@ -140,7 +141,7 @@
     // Shift+Space, which respond.js owns, still starts and stops a take.
     // The hint is aria-hidden so the button is named "Dictate", not
     // "Dictate Hold Space".
-    var micHint = keyHint("Hold Space");
+    var micHint = keyCombo(HOLD_HINT);
     button.appendChild(micHint);
 
     function setLabel(text) {
@@ -155,7 +156,7 @@
     resetButton.className = "voice-reset secondary";
     resetButton.appendChild(icon(TRASH_ICON));
     resetButton.appendChild(document.createTextNode("Reset"));
-    resetButton.appendChild(keyHint("Press ESC twice"));
+    resetButton.appendChild(keyCombo(["Press", { key: "ESC" }, "twice"]));
 
     // The status box heads the card. It always says something — what to
     // do when idle, what is happening otherwise — so the card never
@@ -498,7 +499,7 @@
       recorder = null;
       finishing = null;
       setLabel("Dictate");
-      micHint.textContent = "Hold Space";
+      fillCombo(micHint, HOLD_HINT);
       button.classList.remove("recording");
       ui.settled();
     }
@@ -509,7 +510,7 @@
       recorder = null;
       finishing = current;
       setLabel("Dictate");
-      micHint.textContent = "Hold Space";
+      fillCombo(micHint, HOLD_HINT);
       button.classList.remove("recording");
       current.stop();
     }
@@ -638,7 +639,7 @@
             // begun by a click has no key to release, so it says
             // nothing rather than something untrue.
             setLabel("Stop");
-            micHint.textContent = mode === "hold" ? "Release Space" : "";
+            fillCombo(micHint, mode === "hold" ? ["Release", { key: "Space" }] : []);
             button.classList.add("recording");
             ui.recording(handle);
             var device = handle.monitor && handle.monitor.device;
@@ -729,14 +730,33 @@
       : "Press Dictate to speak your answer.";
   }
 
-  // As in respond.js and the template: the hint is aria-hidden, so it
-  // never joins the button's accessible name.
-  function keyHint(text) {
-    var hint = document.createElement("span");
-    hint.className = "key-hint";
-    hint.setAttribute("aria-hidden", "true");
-    hint.textContent = text;
-    return hint;
+  // As in respond.js: keys drawn as keycaps, with the words around
+  // them in plain text. Parts are strings (words) or { key } (a
+  // keycap). The whole is aria-hidden, so it never joins the button's
+  // accessible name.
+  function keyCombo(parts) {
+    var combo = document.createElement("span");
+    combo.className = "key-combo";
+    combo.setAttribute("aria-hidden", "true");
+    fillCombo(combo, parts);
+    return combo;
+  }
+
+  function fillCombo(combo, parts) {
+    while (combo.firstChild) combo.removeChild(combo.firstChild);
+    parts.forEach(function (part, index) {
+      // Laid out by the flex gap; the space is for anything reading the
+      // text, which would otherwise get "HoldSpace".
+      if (index) combo.appendChild(document.createTextNode(" "));
+      if (part.nodeType) {
+        combo.appendChild(part);
+        return;
+      }
+      var piece = document.createElement("span");
+      piece.className = typeof part === "string" ? "key-word" : "key-hint";
+      piece.textContent = typeof part === "string" ? part : part.key;
+      combo.appendChild(piece);
+    });
   }
 
   // --- keys: hold Space, Esc Esc (story 80) ------------------------------

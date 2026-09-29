@@ -263,12 +263,23 @@ advancing on Enter would lose a respondent's place mid-paragraph;
 typing a plain way on: `Esc`, then `↵`. It works on every text question,
 with or without voice, and changes nothing in the answer.
 
-**The buttons that move on say which keys**, in the order to press them:
-Next, and Submit answers on the last question. The hint reads `Enter ↵`,
-the word beside the symbol, since the symbol is a picture of a key not
-every keyboard has printed on it. While a textarea has focus it reads
-`ESC` `Enter ↵`, because there Enter alone is a newline. What the hint
-says is what happens: on the last question `Esc` then `↵` submits.
+**The buttons that move say which keys**, in the order to press them:
+Back, Next, and Submit answers on the last question.
+
+- **A key is drawn as a keycap**, the way shortcuts are written wherever
+  they are documented, and one cap is one key. Keys pressed together
+  are joined by `+`; keys pressed in turn, by "then".
+- **The symbol, then the name**: `↵ Enter`, `⇧ Shift`. The symbol is a
+  picture of a key not every keyboard has printed on it, so it never
+  stands alone. Keys with no symbol in common use are named: `ESC`,
+  `Space`.
+- Next and Submit read `↵ Enter`; Back reads `⇧ Shift` + `↵ Enter`.
+- While a textarea has focus each is preceded by `ESC` "then", because
+  there Enter is a newline, with Shift or without.
+- What the hint says is what happens: on the last question `Esc` then
+  `↵` submits.
+- The words around a key are plain text: "Hold" `Space`, "Press" `ESC`
+  "twice".
 
 **Esc twice clears the answer**, and the two presses have to belong
 together:

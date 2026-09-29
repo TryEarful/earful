@@ -499,20 +499,45 @@ fieldset {
    Hidden by default, and shown only when two conditions hold: JavaScript
    has upgraded the form (respond.js adds .paged, and the shortcuts do not
    exist without it) and the device reports a keyboard. Displaying a
-   shortcut that cannot be pressed misleads the reader. */
+   shortcut that cannot be pressed misleads the reader.
+
+   A key is drawn as a keycap: a raised, bordered tile with the legend in
+   bold, the way shortcuts are written wherever they are documented. The
+   colours are mixed from the page's own, so the cap is a light key on a
+   light page and a dark key on a dark one, and keeps its own ground on a
+   coloured button. */
 .key-hint {
   display: none;
   flex: none;
-  min-width: 1.5rem;
-  padding: 0.05rem 0.3rem;
-  border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  background: var(--surface);
-  color: var(--muted);
+  box-sizing: border-box;
+  min-width: 1.6rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid color-mix(in srgb, CanvasText 28%, Canvas);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, CanvasText 9%, Canvas);
+  box-shadow:
+    0 2px 0 color-mix(in srgb, CanvasText 28%, Canvas),
+    inset 0 1px 0 color-mix(in srgb, Canvas 60%, transparent);
+  color: CanvasText;
   font-size: 0.8rem;
-  line-height: 1.5;
+  font-weight: 600;
+  line-height: 1.4;
   text-align: center;
+  white-space: nowrap;
   font-variant: tabular-nums;
+}
+
+/* Keys with the words that join them: "+" for keys pressed together,
+   "then" for keys pressed in turn, "Hold" and "twice" for how. The words
+   are the button's own text, smaller; only the keys are keycaps. */
+.key-combo {
+  display: none;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -520,10 +545,21 @@ fieldset {
     display: inline-block;
   }
 
+  .paged .key-combo {
+    display: inline-flex;
+  }
+
   /* On a button the hint follows the label rather than sitting in the
      flex row an option uses. */
-  .paged button > .key-hint {
-    margin-left: 0.5rem;
+  .paged button > .key-hint,
+  .paged button > .key-combo {
+    margin-left: 0.6rem;
+  }
+
+  /* A combo with nothing to say takes no room: a take begun by a click
+     has no key to release. */
+  .paged .key-combo:empty {
+    display: none;
   }
 }
 
@@ -580,12 +616,27 @@ fieldset {
   margin: 1.5rem 0;
 }
 
+/* Moving through the survey is the main thing a respondent does, so the
+   buttons for it are the size of Submit, which they turn into on the
+   last question. Back is outlined, not filled, so that it is plainly
+   the lesser of the two — but outlined firmly enough to be seen. */
+.respond-nav button {
+  padding: 0.65rem 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.respond-nav button.secondary {
+  border-color: color-mix(in srgb, CanvasText 45%, Canvas);
+}
+
 .respond-actions {
   margin-top: 1.5rem;
 }
 
 .respond-submit {
   font-size: 1.05rem;
+  font-weight: 600;
   padding: 0.65rem 1.5rem;
 }
 
@@ -864,14 +915,6 @@ fieldset {
 }
 
 .voice-button.recording .voice-icon {
-  display: none;
-}
-
-/* A hint with nothing to say takes no room: a take begun by a click
-   has no key to release, and an empty badge would be a grey smudge. On
-   the live button the badge keeps its own light ground, so it reads
-   against the red. */
-.voice-button .key-hint:empty {
   display: none;
 }
 
