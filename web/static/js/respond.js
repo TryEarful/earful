@@ -77,13 +77,15 @@
   backButton.className = "secondary";
   // Each button points the way it goes: the arrow leads the word on
   // Back and follows it on Next, as the paper plane follows Submit.
-  backButton.appendChild(buttonIcon(["M19 12H5", "M12 19l-7-7 7-7"]));
-  backButton.appendChild(document.createTextNode("Back"));
+  backButton.appendChild(
+    buttonLabel([buttonIcon(["M19 12H5", "M12 19l-7-7 7-7"]), document.createTextNode("Back")])
+  );
 
   var nextButton = document.createElement("button");
   nextButton.type = "button";
-  nextButton.appendChild(document.createTextNode("Next"));
-  nextButton.appendChild(buttonIcon(["M5 12h14", "M12 5l7 7-7 7"]));
+  nextButton.appendChild(
+    buttonLabel([document.createTextNode("Next"), buttonIcon(["M5 12h14", "M12 5l7 7-7 7"])])
+  );
   // The buttons that move — Back, Next, and Submit on the last
   // question — name their keys, read left to right as the keys to
   // press. Each key is its symbol and then its name, because ↵ and ⇧
@@ -283,6 +285,18 @@
 
     if (draft) draft.rememberPosition(index);
     focusFirstControl(questions[index]);
+  }
+
+  // buttonLabel keeps a button's word and its icon together as one
+  // piece, so that in a narrow column the keys are what goes to the
+  // next line and the icon never does.
+  function buttonLabel(parts) {
+    var label = document.createElement("span");
+    label.className = "button-label";
+    parts.forEach(function (part) {
+      label.appendChild(part);
+    });
+    return label;
   }
 
   // buttonIcon draws a line icon from SVG path data. Decoration: the

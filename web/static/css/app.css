@@ -698,6 +698,23 @@ fieldset {
   outline-offset: 2px;
 }
 
+/* A button's word and its icon, as one piece that does not break. */
+.button-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  white-space: nowrap;
+}
+
+/* Half a phone's width will not hold "Submit answers" at this size, so
+   on a narrow page Back takes the width of its word and the forward
+   button has the rest. */
+@media (max-width: 34rem) {
+  .respond-nav {
+    grid-template-columns: auto 1fr;
+  }
+}
+
 .button-icon {
   flex: none;
   width: 1.1em;
