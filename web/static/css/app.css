@@ -620,6 +620,8 @@ fieldset {
    when idle, danger while the microphone is open, accent while the
    model is working, and danger all round when something has failed. */
 .voice-status {
+  position: relative;
+  overflow: hidden;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--border);
   border-left: 4px solid var(--border);
@@ -627,6 +629,44 @@ fieldset {
   background: Canvas;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+/* The hold bar: fills along the foot of the status box while Space is
+   held, and is full at the moment the hold counts and the microphone
+   is asked for. Absolutely placed, so a tapped space — which shows and
+   hides it within a keystroke — never moves the page. It waits 120 ms
+   before appearing for the same reason: ordinary typing releases the
+   key sooner than that, and must not flicker. The two durations add up
+   to HOLD_MS in voice.js. */
+.voice-hold {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 4px;
+  background: var(--border);
+  opacity: 0;
+  animation: voice-hold-show 1ms linear 120ms forwards;
+}
+
+.voice-hold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--danger);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: voice-hold-fill 280ms linear 120ms forwards;
+}
+
+@keyframes voice-hold-show {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes voice-hold-fill {
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .voice[data-state="recording"] .voice-status {
@@ -747,6 +787,12 @@ input.voice-live {
   min-width: 0;
 }
 
+/* Stands where the picker would, until the browser will name its
+   microphones. */
+.voice-grant {
+  flex: 1 1 14rem;
+}
+
 .voice-device {
   flex: 1 1 auto;
   width: auto;
@@ -821,6 +867,12 @@ input.voice-live {
 
   .voice-button.recording::before {
     animation: none;
+  }
+
+  /* The bar is feedback, not decoration, so it stays; it arrives full
+     when the hold counts instead of sweeping there. */
+  .voice-hold::after {
+    animation: voice-hold-fill 1ms linear 400ms forwards;
   }
 }
 

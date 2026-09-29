@@ -84,15 +84,17 @@ textarea the server rendered is the whole interface (story 38).
    dialog and it says the voice is never stored. Decline → nothing
    happens, typing still works. Accept → the browser's own microphone
    prompt appears.
-4. **Recording**: the button becomes *Stop and transcribe*, solid red with
+4. **Recording**: the button becomes *Stop*, solid red with
    a pulsing dot, and the textarea gets a red outline; the status box at
    the top of the card announces "Listening…" and its left edge turns
    red. With reduced motion on, the dot is still.
 5. **Transcript**: stopping streams text into the textarea, word by word,
    and the status line ends with "edit it if it isn't quite right".
-6. **Hold to talk**: with the caret in the textarea, hold Space: the
-   button reads *Release Space to transcribe* and the take ends when the
-   key comes up. A quick tap of Space still types a space.
+6. **Hold to talk**: with the caret in the textarea, hold Space: a bar
+   fills along the foot of the status box, and when it is full the
+   button reads *Release Space to transcribe*; the take ends when the
+   key comes up. A quick tap of Space still types a space and shows no
+   bar.
 7. **Reset**: press Esc once (the status line asks for a second), then
    again: the textarea empties, and a reload does not bring the answer
    back. Do the same while holding Space: the take is dropped and nothing
@@ -104,15 +106,19 @@ textarea the server rendered is the whole interface (story 38).
 10. **Refusal**: with `AI_WORKSPACE_DAILY_TOKENS=1`, the status line reads
    "Voice isn't available right now — please type your answer", boxed in
    red, and typing still submits.
-11. **Choosing a microphone**: once a take has started, a *Microphone*
-   dropdown lists the inputs and marks the one in use. Pick another
+11. **Choosing a microphone**: in a browser that already has permission,
+   a *Microphone* dropdown lists the inputs from the start and marks the
+   one in use. In one that does not (a private window), *Grant
+   microphone access* stands in its place: it shows the consent dialog,
+   then the browser's prompt, then the dropdown, and records nothing.
+   Pick another
    while recording: the take ends and transcribes, and the next take uses
    the new device (check the meter moves). Reload: the choice is kept.
    Unplug the chosen device and record again: the browser's default is
    used and the choice is forgotten, not "microphone unavailable".
 12. **No microphone**: deny the browser's microphone prompt (or unplug the
    device). Both buttons grey out, the boxed error reads "Microphone
-   unavailable", Space types a space and Esc Esc does nothing; typing
+   unavailable", Space types a space and ESC twice does nothing; typing
    still submits. A reload offers the mic again.
 13. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.

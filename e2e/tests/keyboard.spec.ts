@@ -227,7 +227,7 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
   // click on the mic, not the promise made before it opens.
   await respondent.keyboard.press("Shift+ ");
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
-  await expect(respondent.getByRole("button", { name: "Stop and transcribe" })).toBeVisible();
+  await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
 
   await respondent.waitForTimeout(1200);
   await respondent.keyboard.press("Shift+ ");
@@ -263,12 +263,18 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   const row = respondent.locator(".voice").first();
   await expect(row).toHaveAttribute("data-state", "idle");
 
+  const holdBar = respondent.locator(".voice-hold").first();
   await answer.click();
   await respondent.keyboard.type("Plan b");
   await expect(answer).toHaveValue("Plan b");
+  await expect(holdBar).toBeHidden(); // a tap leaves nothing behind
 
+  // The bar is there for as long as the hold is only a hold, and gone
+  // once it has become a take.
   await respondent.keyboard.down(" ");
+  await expect(holdBar).toBeVisible();
   await expect(respondent.getByRole("button", { name: "Release Space to transcribe" })).toBeVisible();
+  await expect(holdBar).toBeHidden();
   await expect(row).toHaveAttribute("data-state", "recording");
   await expect(answer).toHaveClass(/voice-live/);
   await expect(answer).toHaveValue("Plan b"); // the held key typed nothing
@@ -315,7 +321,7 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   await answer.click();
   await respondent.keyboard.type("Wrong answer");
   await respondent.keyboard.press("Escape");
-  await expect(status).toHaveText(/Press Esc again/);
+  await expect(status).toHaveText(/Press ESC again/);
   await expect(answer).toHaveValue("Wrong answer");
   await respondent.keyboard.press("Escape");
   await expect(answer).toHaveValue("");

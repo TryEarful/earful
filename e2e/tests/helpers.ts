@@ -112,6 +112,7 @@ async function latestLinkViaLogging(addr: string, pattern: RegExp): Promise<stri
 // the way a browser does when permission is denied or no device exists.
 export async function noMicrophone(context: BrowserContext): Promise<void> {
   await context.addInitScript(() => {
+    navigator.mediaDevices.enumerateDevices = async () => [];
     navigator.mediaDevices.getUserMedia = async () => {
       throw new DOMException("Permission denied", "NotAllowedError");
     };
@@ -123,17 +124,37 @@ export const FAKE_INPUTS = [
   { deviceId: "usb-1", kind: "audioinput", label: "USB Headset", groupId: "g2" },
 ];
 
-export async function fakeMicrophone(context: BrowserContext): Promise<void> {
+//
+// granted: false starts the page where a first-time visitor starts: the
+// inputs are listed without names until getUserMedia has been called,
+// which is how a browser behaves before permission is given.
+export async function fakeMicrophone(
+  context: BrowserContext,
+  options: { granted?: boolean } = {}
+): Promise<void> {
   const wav = readFileSync(path.join(__dirname, "..", "..", "testdata", "jfk.wav")).toString(
     "base64"
   );
   await context.addInitScript(
-    ({ encoded, inputs }: { encoded: string; inputs: typeof FAKE_INPUTS }) => {
+    ({
+      encoded,
+      inputs,
+      granted,
+    }: {
+      encoded: string;
+      inputs: typeof FAKE_INPUTS;
+      granted: boolean;
+    }) => {
       const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+      let allowed = granted;
       (window as any).__earfulMicRequests = [];
       navigator.mediaDevices.enumerateDevices = async () =>
-        inputs.map((input) => ({ ...input, toJSON: () => input })) as MediaDeviceInfo[];
+        inputs.map((input) => {
+          const seen = allowed ? input : { ...input, deviceId: "", label: "" };
+          return { ...seen, toJSON: () => seen };
+        }) as MediaDeviceInfo[];
       navigator.mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+        allowed = true;
         (window as any).__earfulMicRequests.push(constraints ?? null);
         // An AudioContext created without a user gesture starts suspended
         // and a suspended graph produces nothing; this always runs inside
@@ -150,7 +171,7 @@ export async function fakeMicrophone(context: BrowserContext): Promise<void> {
         return sink.stream;
       };
     },
-    { encoded: wav, inputs: FAKE_INPUTS }
+    { encoded: wav, inputs: FAKE_INPUTS, granted: options.granted ?? true }
   );
 }
 

@@ -307,10 +307,10 @@ class Story {
             locator: page.getByRole("dialog"),
         });
         await page.getByRole("button", { name: "Use the microphone" }).click();
-        await page.getByRole("button", { name: "Stop and transcribe" }).waitFor();
+        await page.getByRole("button", { name: "Stop", exact: true }).waitFor();
         await page.waitForTimeout(2500);
         await shoot(manifest, page, "voice-recording", { kind: "viewport", locator: step });
-        await page.getByRole("button", { name: "Stop and transcribe" }).click();
+        await page.getByRole("button", { name: "Stop", exact: true }).click();
         await page.waitForFunction(
             () => [...document.querySelectorAll("textarea")].some((t) => t.value.length > 20),
             null,

@@ -81,7 +81,7 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
 
   // Recording starts; the button says how to end it.
-  const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
+  const stop = respondent.getByRole("button", { name: "Stop", exact: true });
   await expect(stop).toBeVisible();
 
   // The field itself says something is happening, not only the status
@@ -194,6 +194,7 @@ test("without a microphone the voice controls are disabled and the error is boxe
   await expect(status).toHaveClass(/voice-error/);
   await expect(mic).toBeDisabled();
   await expect(reset).toBeDisabled();
+  await expect(respondent.getByRole("button", { name: "Grant microphone access" })).toBeDisabled();
   await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "unavailable");
 
   // Typing is untouched: a tap of Space is the browser's own space, and
@@ -243,7 +244,7 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
   await respondent.reload();
 
   const mic = respondent.getByRole("button", { name: "Dictate" });
-  const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
+  const stop = respondent.getByRole("button", { name: "Stop", exact: true });
   const picker = respondent.getByLabel("Microphone");
   const status = respondent.locator(".voice-status").first();
   const lastRequest = () =>
@@ -252,13 +253,14 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
       return requests[requests.length - 1];
     });
 
-  // Hidden until a take reveals the device names; then the browser's
-  // default is the one marked, and the first request asked for no
-  // device in particular.
-  await expect(picker).toBeHidden();
+  // There from the start, since this browser already has permission,
+  // with the browser's default marked; and the first request asked for
+  // no device in particular.
+  await expect(picker).toBeVisible();
+  await expect(picker).toHaveValue("default");
+  await expect(respondent.getByRole("button", { name: "Grant microphone access" })).toBeHidden();
   await mic.click();
   await expect(stop).toBeVisible();
-  await expect(picker).toBeVisible();
   await expect(picker).toHaveValue("default");
   expect((await lastRequest()).audio.deviceId).toBeUndefined();
 
@@ -315,7 +317,7 @@ test("a take on a slow connection is still transcribed", async ({ page, browser 
   await respondent.reload();
 
   const mic = respondent.getByRole("button", { name: "Dictate" });
-  const stop = respondent.getByRole("button", { name: "Stop and transcribe" });
+  const stop = respondent.getByRole("button", { name: "Stop", exact: true });
   const status = respondent.locator(".voice-status").first();
 
   await mic.click();
@@ -325,6 +327,51 @@ test("a take on a slow connection is still transcribed", async ({ page, browser 
   await stop.click();
   await expect(status).toHaveText(/Transcribed/, { timeout: aiTimeout });
   await expect(respondent.locator("textarea")).not.toBeEmpty();
+
+  await context.close();
+});
+
+// A browser names its microphones only once it has been allowed to use
+// one. Until then the picker has nothing to list, so a button stands in
+// its place and asks — after the consent dialog, which precedes every
+// first use of the microphone — and the picker replaces it. Granting
+// access records nothing.
+test("without permission the picker is a button that asks for it", async ({ page, browser }) => {
+  const share = await createPublishedSurvey(page, `E2E voice grant ${Date.now()}`);
+
+  const context = await browser.newContext({
+    storageState: undefined,
+    permissions: ["microphone"],
+  });
+  await fakeMicrophone(context, { granted: false });
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  const offered = await offersVoice(respondent);
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  const grant = respondent.getByRole("button", { name: "Grant microphone access" });
+  const picker = respondent.getByLabel("Microphone");
+  await expect(grant).toBeVisible();
+  await expect(picker).toBeHidden();
+
+  await grant.click();
+  const consent = respondent.getByRole("dialog");
+  await expect(consent).toContainText("never stored");
+  await respondent.getByRole("button", { name: "Use the microphone" }).click();
+
+  await expect(picker).toBeVisible();
+  await expect(picker).toHaveValue("default");
+  await expect(grant).toBeHidden();
+  await expect(respondent.locator(".voice-status").first()).toHaveText(/Microphone ready/);
+
+  // Allowed and named, and that is all: no take was started.
+  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
+  await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
+  await expect(respondent.locator("textarea")).toHaveValue("");
+
+  const scan = await new AxeBuilder({ page: respondent }).analyze();
+  expect(scan.violations).toEqual([]);
 
   await context.close();
 });

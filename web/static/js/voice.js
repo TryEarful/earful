@@ -27,7 +27,11 @@
   var DEVICE_KEY = "earful-voice-device";
   var SAMPLE_RATE = 16000;
   var RECORDING_HINT = "Recording in progress. Your transcription will be shown here.";
-  var HOLD_MS = 250; // a Space press longer than this is a hold, not a tap
+  // A Space press longer than this is a hold, not a tap. Long enough for
+  // the hold bar to be seen filling, which is the respondent's only sign
+  // that holding is doing something before the microphone opens. The
+  // stylesheet's voice-hold animation runs to the same figure.
+  var HOLD_MS = 400;
   var ESC_WINDOW_MS = 700; // two Esc presses this close together clear the answer
   var SVG_NS = "http://www.w3.org/2000/svg";
   var MIC_ICON = [
@@ -70,6 +74,7 @@
   if (!canRecord) return;
 
   var localRecognition = detectLocalRecognition(window);
+  var engineAtLoad = null; // chooseEngine's answer when the page opened, shared by every mic
 
   var mics = [];
   Array.prototype.slice
@@ -114,7 +119,7 @@
     resetButton.className = "voice-reset secondary";
     resetButton.appendChild(icon(TRASH_ICON));
     resetButton.appendChild(document.createTextNode("Reset"));
-    resetButton.appendChild(keyHint("Esc Esc"));
+    resetButton.appendChild(keyHint("Press ESC twice"));
 
     // The status box heads the card. It always says something — what to
     // do when idle, what is happening otherwise — so the card never
@@ -164,8 +169,9 @@
     // picks the input silently, and the only sign of a wrong pick is a
     // flat meter and an empty transcript; here the pick is changeable.
     // The browser reveals device names only once permission has been
-    // granted, so the picker stays hidden until the first take opens
-    // the microphone and fills it in.
+    // granted. Where it already has been, the picker is there from the
+    // start; where it has not, a button asks for it in the picker's
+    // place, so the row never shows a list it cannot fill.
     var picker = document.createElement("label");
     picker.className = "voice-picker";
     picker.hidden = true;
@@ -174,15 +180,32 @@
     select.className = "voice-device";
     picker.appendChild(select);
 
+    var grant = document.createElement("button");
+    grant.type = "button";
+    grant.className = "voice-grant secondary";
+    grant.textContent = "Grant microphone access";
+    grant.hidden = true;
+
+    // Fills while Space is held, along the foot of the status box: until
+    // the hold is long enough to count, nothing else on the page says
+    // that holding is the right thing to be doing. Decoration as far as
+    // a screen reader is concerned; the status line announces the take.
+    var holdBar = document.createElement("span");
+    holdBar.className = "voice-hold";
+    holdBar.setAttribute("aria-hidden", "true");
+    holdBar.hidden = true;
+
     // The card, top to bottom: the status box (with the transcription
     // bar along its foot), the two buttons, then the microphone and its
     // meter side by side.
     status.appendChild(progress);
+    status.appendChild(holdBar);
     var actions = document.createElement("div");
     actions.className = "voice-actions";
     actions.appendChild(button);
     actions.appendChild(resetButton);
     monitor.appendChild(picker);
+    monitor.appendChild(grant);
     monitor.appendChild(input);
     monitor.appendChild(spectrum);
     wrap.appendChild(status);
@@ -198,6 +221,7 @@
     var meter = null;
     var ui = {
       recording: function (handle) {
+        holdBar.hidden = true;
         wrap.setAttribute("data-state", "recording");
         // The box the words land in lights up too: on a long answer the
         // button can be scrolled out of view while the microphone is
@@ -233,6 +257,7 @@
         status.classList.add("voice-error");
       },
       settled: function () {
+        holdBar.hidden = true;
         wrap.setAttribute("data-state", "idle");
         field.classList.remove("voice-live");
         if (placeholder === null) field.removeAttribute("placeholder");
@@ -249,7 +274,7 @@
     function stopMeter() {
       if (meter) meter.stop();
       meter = null;
-      monitor.hidden = picker.hidden;
+      monitor.hidden = picker.hidden && grant.hidden;
       if (picker.hidden) input.textContent = "";
     }
 
@@ -279,12 +304,6 @@
       statusText.textContent = message || idleHint();
     }
 
-    // A microphone that cannot be opened — permission refused, no
-    // device, an insecure page — greys out both controls rather than
-    // inviting a second attempt at the same failure, and the keys stop
-    // claiming Space and Esc so typing is exactly what it always was.
-    // A reload is the way back once permission is granted or a device
-    // is plugged in.
     // showInputs fills the picker with the microphones the browser will
     // let this page use and marks the one in use. It returns whether
     // there was anything to show: a browser that withholds names, or a
@@ -312,8 +331,64 @@
         }
       }
       picker.hidden = false;
+      grant.hidden = true;
       return true;
     }
+
+    // The microphone row from the start. Names come back only where
+    // permission was granted on an earlier visit; without them the row
+    // offers to ask. On-device recognition opens its own input and
+    // cannot be pointed at one, so where that engine would be used the
+    // row offers neither. Having the API is not the test — most
+    // browsers that have it still lack the model — so the question is
+    // put to chooseEngine, once for the page.
+    if (!engineAtLoad) engineAtLoad = chooseEngine();
+    engineAtLoad
+      .then(function (engine) {
+        return engine === "server" ? listInputs() : null;
+      })
+      .then(function (devices) {
+        if (!devices || recorder || starting) return; // a take got there first and fills the row itself
+        if (!showInputs(devices, "")) grant.hidden = false;
+        monitor.hidden = false;
+      });
+
+    // Granting access is its own act, separate from dictating: the
+    // microphone is opened only long enough to be allowed and named,
+    // and nothing is recorded or sent. Consent comes first here too —
+    // it precedes every first use of the microphone, whichever button
+    // that is.
+    grant.addEventListener("click", function () {
+      if (recorder || starting) return;
+      askConsent(function () {
+        field.focus();
+        say("Waiting for microphone access…");
+        openMicrophone().then(
+          function (stream) {
+            // Listed while the stream is still open: some browsers
+            // withhold the names again the moment it closes.
+            return listInputs().then(function (devices) {
+              var current = currentDeviceId(stream);
+              stream.getTracks().forEach(function (track) {
+                track.stop();
+              });
+              if (showInputs(devices, current)) {
+                say("Microphone ready.");
+                return;
+              }
+              // Allowed, but this browser names nothing: there is no
+              // list to show and nothing left to ask for.
+              grant.hidden = true;
+              monitor.hidden = true;
+              say("");
+            });
+          },
+          function () {
+            disable("Microphone unavailable — please type your answer.");
+          }
+        );
+      });
+    });
 
     function hasOption(value) {
       for (var i = 0; i < select.options.length; i++) {
@@ -347,12 +422,19 @@
       });
     }
 
+    // A microphone that cannot be opened — permission refused, no
+    // device, an insecure page — greys out both controls rather than
+    // inviting a second attempt at the same failure, and the keys stop
+    // claiming Space and Esc so typing is exactly what it always was.
+    // A reload is the way back once permission is granted or a device
+    // is plugged in.
     var disabled = false;
     function disable(message) {
       disabled = true;
       button.disabled = true;
       resetButton.disabled = true;
       select.disabled = true;
+      grant.disabled = true;
       wrap.setAttribute("data-state", "unavailable");
       ui.fail(message);
     }
@@ -450,7 +532,7 @@
             }
             handle.mode = mode;
             recorder = handle;
-            setLabel(mode === "hold" ? "Release Space to transcribe" : "Stop and transcribe");
+            setLabel(mode === "hold" ? "Release Space to transcribe" : "Stop");
             button.classList.add("recording");
             ui.recording(handle);
             var device = handle.monitor && handle.monitor.device;
@@ -477,6 +559,12 @@
       },
       isDisabled: function () {
         return disabled;
+      },
+      // pressing shows the hold bar for a Space press in flight. A take
+      // already running has nothing to start, so it shows nothing.
+      pressing: function (on) {
+        if (on && (recorder || starting)) return;
+        holdBar.hidden = !on;
       },
     };
   }
@@ -599,6 +687,7 @@
       if (target !== mic.field && target !== document.body && !isVoiceControl(mic, target)) return;
       event.preventDefault();
       press = { mic: mic, target: target, held: false, timer: 0 };
+      mic.pressing(true);
       press.timer = window.setTimeout(function () {
         press.held = true;
         mic.hold();
@@ -609,6 +698,7 @@
       var current = press;
       press = null;
       window.clearTimeout(current.timer);
+      current.mic.pressing(false);
       if (current.held) {
         current.mic.release();
         return;
@@ -654,7 +744,7 @@
       }
       disarm();
       armed = { mic: mic, timer: window.setTimeout(disarm, ESC_WINDOW_MS) };
-      mic.say("Press Esc again to clear this answer.");
+      mic.say("Press ESC again to clear this answer.");
     }
 
     function disarm() {

@@ -100,7 +100,7 @@ test("a spoken answer is kept across a reload too", async ({ page, browser }) =>
   await respondent.getByRole("button", { name: "Dictate" }).click();
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
   await respondent.waitForTimeout(1500);
-  await respondent.getByRole("button", { name: "Stop and transcribe" }).click();
+  await respondent.getByRole("button", { name: "Stop", exact: true }).click();
 
   // Wait for the stream to finish before reading: chunks arrive one after
   // another, and a value read mid-transcription is shorter than what the
