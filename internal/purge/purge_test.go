@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -135,6 +136,115 @@ func TestPurge_ErasesSoftDeletedSurveysAfterThirtyDays(t *testing.T) {
 	}
 	if n := countRows(t, pool, `SELECT count(*) FROM responses WHERE survey_id = $1`, keep); n != 1 {
 		t.Error("purge removed a live survey's responses")
+	}
+}
+
+// TestPurge_ErasesWhatRefersToASurveysRows covers the rows that point
+// at a question, an answer or a survey rather than hang beneath one in
+// the schema's main line: a Localization, a translation of an answer,
+// an Insight Summary. Each must go before the row it refers to, or the
+// database refuses the purge and nothing at all is erased.
+func TestPurge_ErasesWhatRefersToASurveysRows(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	ctx := context.Background()
+	creator := app.Login(t, apptest.UniqueEmail("purge-references"))
+
+	id := seedAnsweredSurvey(t, app, creator, "Doomed, with translations")
+
+	// Written directly: what is tested is that the purge removes these
+	// rows, and how the application comes to write them is tested where
+	// it does.
+	for _, insert := range []string{
+		`INSERT INTO question_localizations (version_id, question_id, lang, text)
+		 SELECT q.version_id, q.id, 'es', '¿Qué pasó?'
+		 FROM questions q JOIN survey_versions v ON v.id = q.version_id
+		 WHERE v.survey_id = $1`,
+		`INSERT INTO answer_translations (answer_id, lang, text, model)
+		 SELECT a.id, 'es', 'Una respuesta', 'test-model'
+		 FROM answers a JOIN responses r ON r.id = a.response_id
+		 WHERE r.survey_id = $1`,
+		`INSERT INTO insight_runs (survey_id, response_count, model, output)
+		 VALUES ($1, 1, 'test-model', 'A reading of the answers')`,
+	} {
+		tag, err := pool.Exec(ctx, insert, id)
+		if err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+		if tag.RowsAffected() != 1 {
+			t.Fatalf("seed wrote %d rows, want 1:\n%s", tag.RowsAffected(), insert)
+		}
+	}
+
+	app.PostForm(t, creator, "/surveys/"+id+"/delete", nil).Body.Close()
+	app.Clock.Advance(31 * 24 * time.Hour)
+	if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+
+	for _, check := range []struct {
+		what  string
+		query string
+	}{
+		{"the survey", `SELECT count(*) FROM surveys WHERE id = $1`},
+		{"localizations", `SELECT count(*) FROM question_localizations l JOIN survey_versions v ON v.id = l.version_id WHERE v.survey_id = $1`},
+		{"insights", `SELECT count(*) FROM insight_runs WHERE survey_id = $1`},
+	} {
+		if n := countRows(t, pool, check.query, id); n != 0 {
+			t.Errorf("%s survived the purge (%d rows)", check.what, n)
+		}
+	}
+	// The answers are gone, so a translation can only be counted as one
+	// that refers to no answer.
+	if n := countRows(t, pool, `SELECT count(*) FROM answer_translations t WHERE NOT EXISTS (SELECT 1 FROM answers a WHERE a.id = t.answer_id)`); n != 0 {
+		t.Errorf("%d answer translations outlived their answers", n)
+	}
+}
+
+// TestPurge_ReachesEveryTableUnderASurvey reads the schema for the
+// tables that refer to a survey or to anything a survey is made of, and
+// the purge for a DELETE from each. A table added later and not given
+// one makes the purge fail on the first survey that uses it, which is
+// found out thirty days after the survey was deleted.
+func TestPurge_ReachesEveryTableUnderASurvey(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+
+	source, err := os.ReadFile("purge.go")
+	if err != nil {
+		t.Fatalf("read purge.go: %v", err)
+	}
+
+	rows, err := pool.Query(context.Background(), `
+SELECT DISTINCT child.relname
+FROM pg_constraint c
+JOIN pg_class child ON child.oid = c.conrelid
+JOIN pg_class parent ON parent.oid = c.confrelid
+WHERE c.contype = 'f'
+  AND parent.relname IN ('surveys', 'survey_versions', 'survey_drafts',
+                         'questions', 'responses', 'answers')
+ORDER BY 1`)
+	if err != nil {
+		t.Fatalf("read schema: %v", err)
+	}
+	defer rows.Close()
+
+	var tables int
+	for rows.Next() {
+		var table string
+		if err := rows.Scan(&table); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
+		tables++
+		if !strings.Contains(string(source), "DELETE FROM "+table+" ") {
+			t.Errorf("%s refers to a survey's rows and the purge never deletes from it", table)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("read schema: %v", err)
+	}
+	if tables == 0 {
+		t.Fatal("the schema lists no table under a survey: the query no longer finds them")
 	}
 }
 

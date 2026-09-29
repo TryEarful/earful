@@ -9,8 +9,9 @@
 //
 // Two design points worth knowing before reading the SQL:
 //
-//   - Published versions, questions, draft revisions and answers are
-//     immutable by database trigger (ADR-0001). Purging is the one
+//   - Published versions, questions, their localizations, draft
+//     revisions, answers and insight runs are immutable by database
+//     trigger (ADR-0001). Purging is the one
 //     legitimate exception, and it is granted narrowly: the transaction
 //     sets `earful.purging = 'on'`, which the triggers accept for DELETE
 //     and for nothing else.
@@ -140,6 +141,14 @@ WITH doomed AS (
 
 	return []step{
 		// --- responses deleted on their own (M8-T1) ---
+		// A translation of an answer says what the answer said, so it
+		// goes when the answer does, and before it: it refers to it.
+		{name: "answer_translations_of_deleted_responses", args: []any{cutoff}, sql: `
+DELETE FROM answer_translations WHERE answer_id IN (
+    SELECT a.id FROM answers a
+    JOIN responses r ON r.id = a.response_id
+    WHERE r.deleted_at IS NOT NULL AND r.deleted_at < $1
+)`},
 		{name: "answers_of_deleted_responses", args: []any{cutoff}, sql: `
 DELETE FROM answers WHERE response_id IN (
     SELECT id FROM responses WHERE deleted_at IS NOT NULL AND deleted_at < $1
@@ -148,12 +157,25 @@ DELETE FROM answers WHERE response_id IN (
 DELETE FROM responses WHERE deleted_at IS NOT NULL AND deleted_at < $1`},
 
 		// --- surveys, and everything under them ---
+		{name: "answer_translations_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
+DELETE FROM answer_translations WHERE answer_id IN (
+    SELECT a.id FROM answers a
+    JOIN responses r ON r.id = a.response_id
+    WHERE r.survey_id IN (SELECT id FROM doomed)
+)`},
 		{name: "answers_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM answers WHERE response_id IN (
     SELECT id FROM responses WHERE survey_id IN (SELECT id FROM doomed)
 )`},
 		{name: "responses_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM responses WHERE survey_id IN (SELECT id FROM doomed)`},
+		// An Insight Summary quotes the answers it read.
+		{name: "insights_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
+DELETE FROM insight_runs WHERE survey_id IN (SELECT id FROM doomed)`},
+		{name: "localizations_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
+DELETE FROM question_localizations WHERE version_id IN (
+    SELECT id FROM survey_versions WHERE survey_id IN (SELECT id FROM doomed)
+)`},
 		{name: "questions_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM questions WHERE version_id IN (
     SELECT id FROM survey_versions WHERE survey_id IN (SELECT id FROM doomed)
@@ -294,6 +316,13 @@ UPDATE surveys SET deleted_at = $2 WHERE workspace_id IN (
 ) AND deleted_at IS NULL`},
 		// A participant in someone else's survey: their responses are
 		// personal data, so they go, and the participant row with them.
+		{name: "erase_participant_answer_translations", args: []any{email}, sql: `
+DELETE FROM answer_translations WHERE answer_id IN (
+    SELECT a.id FROM answers a
+    JOIN responses r ON r.id = a.response_id
+    JOIN participants p ON p.id = r.participant_id
+    WHERE lower(p.email) = lower($1)
+)`},
 		{name: "erase_participant_answers", args: []any{email}, sql: `
 DELETE FROM answers WHERE response_id IN (
     SELECT r.id FROM responses r
