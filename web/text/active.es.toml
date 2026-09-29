@@ -183,3 +183,158 @@ other = "Su cuenta y su espacio de trabajo están desactivados y programados par
 [goodbye.again]
 hash = "sha1-3b88d3287a5179dbde7200ea2c0c1209e30d90d3"
 other = "Puede crear una cuenta nueva con el mismo correo en cualquier momento."
+
+
+# ── La cabecera de una página con sesión iniciada ───────────────────────
+
+[header.nav.aria]
+hash = "sha1-62bce9422ff2d14f69ab80a154510232fc8a9afd"
+other = "Principal"
+
+[header.dashboard.label]
+hash = "sha1-d87f47b47e4d5794d53fe0734c49417bd046cde0"
+other = "Panel"
+
+[header.account.label]
+hash = "sha1-85dfa32c97d8618d1bea083609e2c8a29845abe5"
+other = "Cuenta"
+
+[header.sign_out.label]
+hash = "sha1-dc1649a16c1496db3e4073be6a73faf5121aeae7"
+other = "Cerrar sesión"
+
+
+# ── Panel ───────────────────────────────────────────────────────────────
+
+[dashboard.title]
+hash = "sha1-9591943bd5a9e8aaa2bc37a7e20841c6cc8377f9"
+other = "Panel — Earful"
+
+[dashboard.new.label]
+hash = "sha1-64504ed4744725ff4b74b5bad54c6d11fc28bf3f"
+other = "Nueva encuesta"
+
+[dashboard.empty.heading]
+hash = "sha1-17f9b0d5c605fc0b2f9658f4aa23bcad838fa976"
+other = "Todavía no hay encuestas"
+
+[dashboard.empty.body]
+hash = "sha1-fb0ed20b0ad7fec9c86d9015ac163f91c0d1056a"
+other = "Cree su primera encuesta, añada preguntas y publíquela cuando esté lista."
+
+[dashboard.survey.anonymous]
+hash = "sha1-9bed5104004c5fe4e3e46673da174472bff1360a"
+other = "Anónima"
+
+[dashboard.survey.invited]
+hash = "sha1-53469df1c48ff6abdcf1b528fd8c8ac2baf05099"
+other = "Por invitación"
+
+[dashboard.survey.unpublished]
+hash = "sha1-f87de2cdcf6b516e327a3dfc61f2b7f96385ed06"
+other = "· aún sin publicar"
+
+[dashboard.survey.closes]
+hash = "sha1-a7c49b0bebdb49c2213abc78211ecf60b40d9ce5"
+other = "· cierra el {{.Date}}"
+
+[dashboard.survey.published]
+hash = "sha1-bb4e4da8fabc1e80f34bd707f3bd81ec9f6452a7"
+one = "· versión {{.Version}} · {{.Count}} pregunta"
+many = "· versión {{.Version}} · {{.Count}} preguntas"
+other = "· versión {{.Version}} · {{.Count}} preguntas"
+
+
+# ── Cuenta ──────────────────────────────────────────────────────────────
+
+[account.title]
+hash = "sha1-db4f18d19529f1b163fdfcf2d9950f09340494cd"
+other = "Cuenta — Earful"
+
+[account.heading]
+hash = "sha1-85dfa32c97d8618d1bea083609e2c8a29845abe5"
+other = "Cuenta"
+
+[account.signed_in_html]
+hash = "sha1-0c77d8500e13b58d0c188170017ffbadcc07661e"
+other = "Sesión iniciada como <strong>{{.Email}}</strong>"
+
+[account.workspace_html]
+hash = "sha1-8868c6263df17d359fe13e13b6274ea390c7a748"
+other = "Espacio de trabajo: <strong>{{.Workspace}}</strong>"
+
+[account.admin.beta.label]
+hash = "sha1-942cb0d41bb8fcfa7672fed4dd6525a7574de64b"
+other = "Administración de la beta privada"
+
+[account.admin.metrics.label]
+hash = "sha1-ddf6a1f0ce8cfffc5cd8f14230ab1fecd0f34953"
+other = "Métricas"
+
+[account.admin.erasure.label]
+hash = "sha1-cc97232186fc110e9d13df208419db5eeb551872"
+other = "Solicitudes de supresión"
+
+[account.email.heading]
+hash = "sha1-8f1514b56ee016d4c49a8b4e2e98348f023dc82e"
+other = "Cambiar el correo electrónico"
+
+[account.email.hint]
+hash = "sha1-aba0c0b20f36adfcdcbbae8226f26d007f498cf5"
+other = "El cambio se aplica de inmediato: a partir de ahora iniciará sesión con la nueva dirección."
+
+[account.email.new.label]
+hash = "sha1-321c2a947d73eed9d19da5b24e94971b96aa18f5"
+other = "Nuevo correo electrónico"
+
+[account.email.password.label]
+hash = "sha1-19dff4dad0a7214ece14624f8c4c9fb206a1cfdd"
+other = "Contraseña actual"
+
+[account.email.submit.label]
+hash = "sha1-8f1514b56ee016d4c49a8b4e2e98348f023dc82e"
+other = "Cambiar el correo electrónico"
+
+[account.export.heading]
+hash = "sha1-7089c1cc58f636f02a9cefef91cd2f966da150c1"
+other = "Exportar todo"
+
+[account.export.body]
+hash = "sha1-1b2926098b5c4efeedf7f43f0c91f235f2aa05aa"
+other = "Descargue todas las encuestas, versiones, preguntas y envíos de este espacio de trabajo: un archivo JSON documentado y un CSV por encuesta. Son los mismos datos que guarda Earful, en un formato que puede importar en su propia instalación."
+
+[account.export.building]
+hash = "sha1-a02ced5f0a2630c1e067a1b2849d4473e40aeda2"
+other = "Preparando su exportación… vuelva a cargar esta página en un momento."
+
+[account.export.selfhost_html]
+hash = "sha1-0faa598588019c333e9fe8235561576652ae9d80"
+other = "Earful tiene licencia AGPL-3.0 y puede alojarlo usted mismo: <code>docker compose --profile app up</code> le da la misma aplicación de la que salió esta exportación."
+
+[account.export.ready]
+hash = "sha1-82bfc2bfac53175e09f7cfa1365f56a14fc0aee0"
+other = "Lista{{if .Size}} ({{.Size}}){{end}}{{if .Built}}, preparada el {{.Built}}{{end}}. El enlace caduca el {{.Expires}}."
+
+[account.export.download.label]
+hash = "sha1-85d0f617efe910ee3781a14d518d35194eec7078"
+other = "Descargar el archivo"
+
+[account.export.again.label]
+hash = "sha1-93c749f0aa4b2a8961532808fca682c540a45e33"
+other = "Preparar una exportación nueva"
+
+[account.export.submit.label]
+hash = "sha1-710ded0c0194129c6ee0778cc60c927c6a30cdb1"
+other = "Exportar mi espacio de trabajo"
+
+[account.delete.heading]
+hash = "sha1-1753c2061c676db8dd89101b51b92f09a277f51c"
+other = "Eliminar la cuenta"
+
+[account.delete.body]
+hash = "sha1-365dd4d83a754ade5d0e3e7b3eb1911bfe8ba8cf"
+other = "Al eliminar su cuenta, esta se desactiva de inmediato y sus datos se borran definitivamente pasados 30 días. Durante esos 30 días, soporte puede restaurarla."
+
+[account.delete.submit.label]
+hash = "sha1-2ae3a019040b2afd5fa5c1c7f7a1766b7c4ae831"
+other = "Eliminar mi cuenta"

@@ -25,7 +25,6 @@ import (
 // and the list is empty when the move is done.
 var unmoved = map[string]bool{
 	"admin_templ.go":         true,
-	"app_templ.go":           true,
 	"localizations_templ.go": true,
 	"respond_templ.go":       true,
 	"results_templ.go":       true,

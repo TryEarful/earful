@@ -1,6 +1,6 @@
 package templates
 
-import "fmt"
+import "github.com/TryEarful/earful/internal/uitext"
 
 // AuthedHeader is the shared chrome for signed-in pages: brand, nav, and
 // the sign-out button (a real POST form carrying the CSRF token — no
@@ -8,31 +8,31 @@ import "fmt"
 templ AuthedHeader(email string, csrf string) {
 	<header class="site-header">
 		<a class="brand" href="/dashboard">Earful</a>
-		<nav aria-label="Main">
-			<a href="/dashboard">Dashboard</a>
-			<a href="/account">Account</a>
+		<nav aria-label={ t(ctx, "header.nav.aria") }>
+			<a href="/dashboard">{ t(ctx, "header.dashboard.label") }</a>
+			<a href="/account">{ t(ctx, "header.account.label") }</a>
 			<span class="muted">{ email }</span>
 			<form method="post" action="/logout">
 				<input type="hidden" name="_csrf" value={ csrf }/>
-				<button type="submit" class="button-link">Sign out</button>
+				<button type="submit" class="button-link">{ t(ctx, "header.sign_out.label") }</button>
 			</form>
 		</nav>
 	</header>
 }
 
 templ Dashboard(email string, workspaceName string, csrf string, data SurveyListData) {
-	@Layout("Dashboard — Earful") {
+	@Layout(t(ctx, "dashboard.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
 			<div class="title-row">
 				<h1>{ workspaceName }</h1>
-				<a class="button" href="/surveys/new">New survey</a>
+				<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 			</div>
 			if len(data.Surveys) == 0 {
 				<div class="card">
-					<h2>No surveys yet</h2>
-					<p>Create your first survey, add questions, and publish it when it's ready.</p>
-					<p><a class="button" href="/surveys/new">New survey</a></p>
+					<h2>{ t(ctx, "dashboard.empty.heading") }</h2>
+					<p>{ t(ctx, "dashboard.empty.body") }</p>
+					<p><a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a></p>
 				</div>
 			} else {
 				<ul class="survey-list">
@@ -44,17 +44,17 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 							</div>
 							<p class="muted">
 								if s.IsAnonymous {
-									Anonymous
+									{ t(ctx, "dashboard.survey.anonymous") }
 								} else {
-									Invited
+									{ t(ctx, "dashboard.survey.invited") }
 								}
 								if s.Published() {
-									· version { fmt.Sprint(s.LatestVersion) } · { fmt.Sprint(s.QuestionCount) } questions
+									{ tn(ctx, "dashboard.survey.published", s.QuestionCount, uitext.Args{"Version": s.LatestVersion}) }
 								} else {
-									· not published yet
+									{ t(ctx, "dashboard.survey.unpublished") }
 								}
 								if s.CloseAtLabel != "" {
-									· closes { s.CloseAtLabel }
+									{ t(ctx, "dashboard.survey.closes", uitext.Args{"Date": s.CloseAtLabel}) }
 								}
 							</p>
 						</li>
@@ -70,28 +70,19 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 // point of it is that it is easy to find.
 templ workspaceExport(csrf string, export ExportView) {
 	<div class="card">
-		<h2>Export everything</h2>
+		<h2>{ t(ctx, "account.export.heading") }</h2>
 		<p>
-			Download every survey, version, question and response in this workspace — a documented
-			JSON file plus a CSV per survey. It's the same data Earful holds, in a format you can
-			import into your own instance.
+			{ t(ctx, "account.export.body") }
 		</p>
 		if export.Building {
 			<p class="notice" role="status">
-				Building your export… reload this page in a moment.
+				{ t(ctx, "account.export.building") }
 			</p>
 		} else if export.Ready {
 			<p class="notice">
-				Ready
-				if export.SizeLabel != "" {
-					{ " (" + export.SizeLabel + ")" }
-				}
-				if export.FinishedAt != "" {
-					{ ", built " + export.FinishedAt }
-				}
-				{ ". The link expires " + export.ExpiresAt + "." }
+				{ t(ctx, "account.export.ready", uitext.Args{"Size": export.SizeLabel, "Built": export.FinishedAt, "Expires": export.ExpiresAt}) }
 			</p>
-			<p><a class="button" href={ templ.SafeURL(export.DownloadPath) } download>Download the archive</a></p>
+			<p><a class="button" href={ templ.SafeURL(export.DownloadPath) } download>{ t(ctx, "account.export.download.label") }</a></p>
 		} else if export.Failed && export.Error != "" {
 			<p class="notice error-text">{ export.Error }</p>
 		}
@@ -99,64 +90,67 @@ templ workspaceExport(csrf string, export ExportView) {
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<button type="submit" class="secondary">
 				if export.Ready {
-					Build a fresh export
+					{ t(ctx, "account.export.again.label") }
 				} else {
-					Export my workspace
+					{ t(ctx, "account.export.submit.label") }
 				}
 			</button>
 		</form>
 		<p class="muted">
-			Earful is AGPL-3.0 and self-hostable: <code>docker compose --profile app up</code> gives you the same
-			application this export came from.
+			@thtml(ctx, "account.export.selfhost_html")
 		</p>
 	</div>
 }
 
 templ Account(email string, workspaceName string, csrf string, data AccountData) {
-	@Layout("Account — Earful") {
+	@Layout(t(ctx, "account.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<h1>Account</h1>
+			<h1>{ t(ctx, "account.heading") }</h1>
 			<div class="card">
-				<p>Signed in as <strong>{ email }</strong></p>
-				<p>Workspace: <strong>{ workspaceName }</strong></p>
+				<p>
+					@thtml(ctx, "account.signed_in_html", uitext.Args{"Email": email})
+				</p>
+				<p>
+					@thtml(ctx, "account.workspace_html", uitext.Args{"Workspace": workspaceName})
+				</p>
 				if data.IsSuperAdmin {
 					<p>
-						<a href="/admin/beta-codes">Private beta admin</a> ·
-						<a href="/admin/metrics">Metrics</a> ·
-						<a href="/admin/erasure">Erasure requests</a>
+						<a href="/admin/beta-codes">{ t(ctx, "account.admin.beta.label") }</a> ·
+						<a href="/admin/metrics">{ t(ctx, "account.admin.metrics.label") }</a> ·
+						<a href="/admin/erasure">{ t(ctx, "account.admin.erasure.label") }</a>
 					</p>
 				}
 			</div>
 			<div class="card">
-				<h2>Change email</h2>
+				<h2>{ t(ctx, "account.email.heading") }</h2>
 				if data.EmailNotice != "" {
 					<p class="notice">{ data.EmailNotice }</p>
 				}
 				<form method="post" action="/account/email">
 					<input type="hidden" name="_csrf" value={ csrf }/>
 					<label class="field">
-						<span>New email address</span>
+						<span>{ t(ctx, "account.email.new.label") }</span>
 						<input type="email" name="email" required autocomplete="email"/>
 					</label>
 					<label class="field">
-						<span>Current password</span>
+						<span>{ t(ctx, "account.email.password.label") }</span>
 						<input type="password" name="password" required autocomplete="current-password"/>
 					</label>
 					if data.EmailError != "" {
 						<p class="error-text">{ data.EmailError }</p>
 					}
-					<button type="submit">Change email</button>
+					<button type="submit">{ t(ctx, "account.email.submit.label") }</button>
 				</form>
-				<p class="muted">The change applies immediately — you'll sign in with the new address from now on.</p>
+				<p class="muted">{ t(ctx, "account.email.hint") }</p>
 			</div>
 			@workspaceExport(csrf, data.Export)
 			<div class="card">
-				<h2>Delete account</h2>
-				<p>Deleting your account deactivates it immediately and permanently erases your data after 30 days. Within those 30 days, support can restore it.</p>
+				<h2>{ t(ctx, "account.delete.heading") }</h2>
+				<p>{ t(ctx, "account.delete.body") }</p>
 				<form method="post" action="/account/delete">
 					<input type="hidden" name="_csrf" value={ csrf }/>
-					<button type="submit" class="danger">Delete my account</button>
+					<button type="submit" class="danger">{ t(ctx, "account.delete.submit.label") }</button>
 				</form>
 			</div>
 		</main>

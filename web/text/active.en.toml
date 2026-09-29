@@ -141,3 +141,98 @@ title = "Account deleted — Earful"
 heading = "Your account is deleted"
 body = "Your account and workspace are now deactivated and scheduled for permanent deletion after 30 days. If this was a mistake, contact support within those 30 days to restore it."
 again = "You can create a fresh account with the same email at any time."
+
+
+# ── The header of a signed-in page ──────────────────────────────────────
+
+[header.nav]
+aria = "Main"
+
+[header.dashboard]
+label = "Dashboard"
+
+[header.account]
+label = "Account"
+
+[header.sign_out]
+label = "Sign out"
+
+
+# ── Dashboard ───────────────────────────────────────────────────────────
+
+[dashboard]
+title = "Dashboard — Earful"
+
+[dashboard.new]
+label = "New survey"
+
+[dashboard.empty]
+heading = "No surveys yet"
+body = "Create your first survey, add questions, and publish it when it's ready."
+
+[dashboard.survey]
+anonymous = "Anonymous"
+invited = "Invited"
+unpublished = "· not published yet"
+closes = "· closes {{.Date}}"
+
+# One question has always been drawn as "1 questions".
+[dashboard.survey.published]
+one = "· version {{.Version}} · {{.Count}} questions"
+other = "· version {{.Version}} · {{.Count}} questions"
+
+
+# ── Account ─────────────────────────────────────────────────────────────
+
+[account]
+title = "Account — Earful"
+heading = "Account"
+signed_in_html = "Signed in as <strong>{{.Email}}</strong>"
+workspace_html = "Workspace: <strong>{{.Workspace}}</strong>"
+
+[account.admin.beta]
+label = "Private beta admin"
+
+[account.admin.metrics]
+label = "Metrics"
+
+[account.admin.erasure]
+label = "Erasure requests"
+
+[account.email]
+heading = "Change email"
+hint = "The change applies immediately — you'll sign in with the new address from now on."
+
+[account.email.new]
+label = "New email address"
+
+[account.email.password]
+label = "Current password"
+
+[account.email.submit]
+label = "Change email"
+
+[account.export]
+heading = "Export everything"
+body = "Download every survey, version, question and response in this workspace — a documented JSON file plus a CSV per survey. It's the same data Earful holds, in a format you can import into your own instance."
+building = "Building your export… reload this page in a moment."
+selfhost_html = "Earful is AGPL-3.0 and self-hostable: <code>docker compose --profile app up</code> gives you the same application this export came from."
+# Size and Built are left out when they are not known. The spaces before
+# the comma and the full stop are as the page has always drawn them.
+ready = "Ready {{if .Size}} ({{.Size}}) {{end}}{{if .Built}}, built {{.Built}} {{end}}. The link expires {{.Expires}}."
+
+[account.export.download]
+label = "Download the archive"
+
+[account.export.again]
+label = "Build a fresh export"
+
+[account.export.submit]
+label = "Export my workspace"
+
+[account.delete]
+heading = "Delete account"
+body = "Deleting your account deactivates it immediately and permanently erases your data after 30 days. Within those 30 days, support can restore it."
+
+[account.delete.submit]
+label = "Delete my account"
