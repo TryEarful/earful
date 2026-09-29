@@ -96,7 +96,7 @@ Earful: an open-source (AGPL-3.0) survey platform, hosted in the EU (europe-west
 37. As a respondent, I want a clear consent moment before first microphone use stating that my voice is never stored, so that I can decide informed. [tested](e2e/tests/voice.spec.ts) — including an axe scan of the dialog
 38. As a respondent, I want typing always available as an alternative, so that voice is a convenience, never a requirement. [tested](internal/http/voice_test.go) — the mic is built by JavaScript, so a browser that cannot record never renders one
 39. As a respondent who exceeds the voice quota, I want a graceful fallback to typing with a clear message, so that I can still finish. [tested](internal/http/voice_test.go)
-40. As a respondent answering in my chosen language, I want speech recognition to use that language, so that my words are transcribed correctly. [tested](internal/http/voice_test.go) — the hint reaches the provider; the respondent-facing language picker arrives with M11-T1
+40. As a respondent answering in my chosen language, I want speech recognition to use that language, so that my words are transcribed correctly. [tested](internal/http/voice_test.go) — the hint reaches the provider; the respondent-facing language picker arrives with M11-T1. The language is the one the respondent is reading: the survey's where they chose one, and otherwise the one the page is worded in, sent when a take begins ([the e2e suite](e2e/tests/language.spec.ts) reads it off the socket)
 
 ### Anonymous surveys
 

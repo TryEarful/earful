@@ -1071,11 +1071,12 @@
     );
   }
 
-  // The language dictation listens for is an attribute of the form, the
-  // language of the survey. The page's own declaration is what it is
-  // worded in where no survey language was chosen, which says nothing
-  // about what a respondent is about to say; it is read only by a page
-  // served before the attribute existed.
+  // The language dictation listens for is the one the respondent is
+  // reading: the language of the survey where they chose one, and
+  // otherwise the language the page is worded in. The form says which,
+  // and it is read when a take begins, so it is what the recogniser on
+  // the device is set to and what the server is sent. The page's own
+  // declaration is read only by a page served before the form said.
   function voiceLanguage() {
     var declared = form.getAttribute("data-voice-lang");
     if (declared !== null) return declared;

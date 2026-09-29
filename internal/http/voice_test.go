@@ -145,8 +145,9 @@ func TestVoice_SpokenAnswerBecomesAnEditableTranscript(t *testing.T) {
 		t.Fatalf("provider calls = %d, want 1", len(fake.TranscribeCalls))
 	}
 	call := fake.TranscribeCalls[0]
-	// The page's language reaches the model. On an untranslated survey
-	// that is "en"; M11-T3's test covers a respondent who chose another.
+	// The page's language reaches the model. For a browser that asks
+	// for no language, on a survey nobody chose a language for, that is
+	// "en"; the tests below cover a respondent who is reading another.
 	if call.Language != "en" {
 		t.Errorf("language hint = %q, want the page's language", call.Language)
 	}
@@ -325,5 +326,62 @@ func TestVoice_InvitedSurveysSpeakThroughTheirPersonalLink(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("public voice socket on an invited survey = %d, want 404", resp.StatusCode)
+	}
+}
+
+// TestVoice_ListensForTheLanguageBeingRead: a respondent who is reading
+// Spanish is about to speak Spanish, whether they chose it for the
+// survey or their browser chose it for the page. A recogniser listening
+// for another language does not fail; it writes down something else.
+func TestVoice_ListensForTheLanguageBeingRead(t *testing.T) {
+	t.Parallel()
+	fake := &ai.Fake{
+		TranslateScript:  [][]string{{"¿Cómo fue?"}, {"Hoe was het?"}},
+		TranscribeScript: [][]string{{"fue estupendo"}, {"fue estupendo"}, {"het was prima"}},
+	}
+	app := apptest.New(t, apptest.Options{AI: fake})
+	creator := app.Login(t, apptest.UniqueEmail("voice-read"))
+
+	id := app.CreateSurvey(t, creator, "Spoken as read", true)
+	app.AddQuestion(t, creator, id, "long_text", "How was it?", nil)
+	identity := app.QuestionIdentities(t, creator, id)[0]
+	for lang, text := range map[string]string{"es": "¿Cómo fue?", "nl": "Hoe was het?"} {
+		app.PostForm(t, creator, "/surveys/"+id+"/localizations", url.Values{"lang": {lang}}).Body.Close()
+		app.PostForm(t, creator, "/surveys/"+id+"/localizations/"+lang, url.Values{
+			"t_" + identity: {text},
+		}).Body.Close()
+	}
+	app.Publish(t, creator, id)
+
+	for _, tc := range []struct {
+		name, address, browser, want string
+	}{
+		// Nothing chosen for the survey: the language the page is in,
+		// which came from the browser.
+		{"the browser's", "/s/" + id, "es-MX,es;q=0.9,en;q=0.8", "es"},
+		// Chosen for the survey, by a browser that asks for English.
+		{"the survey's", "/s/" + id + "?lang=es", "en", "es"},
+		// Chosen for the survey in a language the interface is not
+		// written in: what is spoken is what the questions are in.
+		{"the survey's, over the browser's", "/s/" + id + "?lang=nl", "es", "nl"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, page := reading(t, &http.Client{}, app.Server.URL+tc.address, tc.browser)
+			if !strings.Contains(page, `data-voice-lang="`+tc.want+`"`) {
+				t.Fatalf("the form does not say dictation listens for %s:\n%s", tc.want, page)
+			}
+			before := len(fake.TranscribeCalls)
+			conn := dialVoice(t, app, "/s/"+id+"/voice", page)
+			speak(t, conn, 1)
+			if _, frame := readVoice(t, conn); frame.Type != "done" {
+				t.Fatalf("last frame %+v", frame)
+			}
+			if len(fake.TranscribeCalls) != before+1 {
+				t.Fatalf("transcribe calls = %d, want %d", len(fake.TranscribeCalls), before+1)
+			}
+			if got := fake.TranscribeCalls[before].Language; got != tc.want {
+				t.Errorf("the transcriber was told %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

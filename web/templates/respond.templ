@@ -97,15 +97,19 @@ func htmlLang(ctx context.Context, lang string) string {
 // separates them is the space templ adds after it.
 const sentenceGap = ""
 
-// voiceLang is the language dictation listens for (M11-T3): the
-// language of the survey, and English where none was chosen. It is an
-// attribute of its own and not read off the page's declaration, because
-// the declaration follows the wording of the page where no language was
-// chosen, and what a respondent is about to say is not known from what
-// language the buttons are in.
-func voiceLang(lang string) string {
+// voiceLang is the language dictation listens for (M11-T3): the one the
+// respondent is reading. That is the language of the survey where they
+// chose one, and otherwise the language the page is worded in, which
+// was chosen for them from what their browser asked for. Somebody
+// reading Spanish buttons is more likely to speak Spanish than English,
+// and a recogniser listening for the wrong language writes nonsense.
+//
+// It is the same answer as the page's declaration gives today. It is an
+// attribute of its own all the same, so that what a screen reader is
+// told and what a recogniser is told can be decided apart.
+func voiceLang(ctx context.Context, lang string) string {
 	if lang == "" {
-		return "en"
+		return interfaceLang(ctx)
 	}
 	return lang
 }
@@ -147,7 +151,7 @@ templ Respond(data RespondData) {
 				}
 				if data.VoiceEnabled() {
 					data-voice-path={ data.VoicePath }
-					data-voice-lang={ voiceLang(data.Lang) }
+					data-voice-lang={ voiceLang(ctx, data.Lang) }
 					data-voice-max-seconds={ strconv.Itoa(data.VoiceMaxSeconds) }
 				}
 				novalidate

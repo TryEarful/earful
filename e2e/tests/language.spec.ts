@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { createPublishedSurvey, minFillWait, offersVoice, submitTimeout } from "./helpers";
+import {
+  aiTimeout,
+  createPublishedSurvey,
+  fakeMicrophone,
+  minFillWait,
+  offersVoice,
+  scriptedVoice,
+  submitTimeout,
+} from "./helpers";
 
 // The interface in another language (ADR-0014). The rest of the suite
 // runs in English and finds things by what they say; this is the same
@@ -55,6 +63,56 @@ test("dictation asks for the microphone in Spanish", async ({ page, browser }) =
   await expect(dialog.getByText("Su voz nunca se guarda")).toBeVisible();
   await dialog.getByRole("button", { name: "Ahora no" }).click();
   await expect(dialog).toHaveCount(0);
+  await context.close();
+});
+
+// What the recogniser listens for is decided when a take begins, from
+// what the respondent is reading. Here nobody chose a language for the
+// survey, so it is the language the browser asked for and the page is
+// worded in.
+test("dictation listens for the language the respondent is reading", async ({ page, browser }) => {
+  // Never against a real transcriber: see voice.spec.ts.
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+  const share = await createPublishedSurvey(page, `E2E escucha ${Date.now()}`);
+
+  const context = await browser.newContext({
+    storageState: undefined,
+    locale: "es-ES",
+    permissions: ["microphone"],
+  });
+  await fakeMicrophone(context);
+  const respondent = await context.newPage();
+
+  // Every take the page begins, as the server is told of it.
+  const begun: string[] = [];
+  respondent.on("websocket", (socket) => {
+    socket.on("framesent", (frame) => {
+      if (typeof frame.payload !== "string") return;
+      try {
+        const message = JSON.parse(frame.payload);
+        if (message.action === "start") begun.push(message.params.lang);
+      } catch {
+        // Not a control message.
+      }
+    });
+  });
+
+  await respondent.goto(share);
+  test.skip(!(await offersVoice(respondent)), "this instance offers no voice");
+  await expect(respondent.locator("form.respond-form")).toHaveAttribute("data-voice-lang", "es");
+
+  await respondent.getByRole("button", { name: "Dictar" }).click();
+  await respondent.getByRole("button", { name: "Usar el micrófono" }).click();
+  const stop = respondent.getByRole("button", { name: "Detener", exact: true });
+  await expect(stop).toBeVisible();
+  await respondent.waitForTimeout(1500); // a second of speech to transcribe
+  await stop.click();
+  await expect(respondent.locator("textarea")).not.toBeEmpty({ timeout: aiTimeout });
+
+  expect(begun).toEqual(["es"]);
   await context.close();
 });
 
