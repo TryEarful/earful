@@ -154,26 +154,29 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The form is read back, and shown again, in the language it was
+	// rendered in; what is validated and stored is the creator's wording.
+	shown := s.shownVersion(r, version)
+	asSubmitted := parseSubmission(r, shown.Questions)
+
 	// The signed render timestamp gives the no-JS path its bot check: a
 	// form answered faster than a person can read it is automation.
 	switch err := s.formTokens.Check(surveyID.String(), r.PostFormValue("form_ts"), minFillTime); {
 	case errors.Is(err, antibot.ErrFormTooFast):
 		s.logAbuse(r, "too_fast")
-		submission := parseSubmission(r, version.Questions)
-		s.renderRespondPage(w, r, survey, version, submission, nil,
+		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
 			"That was quick! Take a moment to review your answers, then submit again.")
 		return
 	case err != nil:
 		s.logAbuse(r, "bad_form_token")
-		submission := parseSubmission(r, version.Questions)
-		s.renderRespondPage(w, r, survey, version, submission, nil,
+		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
 			"This form had been open a while. Your answers are still here — review and submit again.")
 		return
 	}
 
-	submission := parseSubmission(r, version.Questions)
+	submission := canonicalAnswers(asSubmitted, shown.Questions, version.Questions)
 	if problems := submission.Validate(version.Questions); len(problems) > 0 {
-		s.renderRespondWithErrors(w, r, survey, version, submission, problems, false)
+		s.renderRespondWithErrors(w, r, survey, shown, asSubmitted, problems, false)
 		return
 	}
 

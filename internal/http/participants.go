@@ -110,6 +110,7 @@ func (s *server) participantRespondPage(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
+	s.applyLanguage(r, &version)
 	s.recordStart(r, survey.ID)
 	s.renderRespondPage(w, r, survey, version,
 		domain.Submission{Answers: map[string]domain.AnswerValue{}}, nil, "",
@@ -148,22 +149,27 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 		s.internalError(w, r, "load served version", err)
 		return
 	}
+	// As on the anonymous path: read and re-shown in the language the
+	// form was rendered in, validated and stored in the creator's wording.
+	shown := s.shownVersion(r, version)
+	asSubmitted := parseSubmission(r, shown.Questions)
+
 	switch err := s.formTokens.Check(survey.ID.String(), r.PostFormValue("form_ts"), minFillTime); {
 	case errors.Is(err, antibot.ErrFormTooFast):
 		s.logAbuse(r, "too_fast")
-		s.renderRespondPage(w, r, survey, version, parseSubmission(r, version.Questions), nil,
+		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
 			"That was quick! Take a moment to review your answers, then submit again.", asParticipant)
 		return
 	case err != nil:
 		s.logAbuse(r, "bad_form_token")
-		s.renderRespondPage(w, r, survey, version, parseSubmission(r, version.Questions), nil,
+		s.renderRespondPage(w, r, survey, shown, asSubmitted, nil,
 			"This form had been open a while. Your answers are still here — review and submit again.", asParticipant)
 		return
 	}
 
-	submission := parseSubmission(r, version.Questions)
+	submission := canonicalAnswers(asSubmitted, shown.Questions, version.Questions)
 	if problems := submission.Validate(version.Questions); len(problems) > 0 {
-		s.renderRespondPage(w, r, survey, version, submission, problems, "", asParticipant)
+		s.renderRespondPage(w, r, survey, shown, asSubmitted, problems, "", asParticipant)
 		return
 	}
 

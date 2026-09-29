@@ -300,6 +300,65 @@ func (s *server) applyLanguage(r *http.Request, version *store.ServedVersion) {
 	version.Lang = chosen
 }
 
+// shownVersion is the version as the respondent saw it: in the language
+// their address names, or as written when it names none. The version
+// passed in is left as the creator wrote it, because that is what an
+// answer is validated against and stored as.
+func (s *server) shownVersion(r *http.Request, version store.ServedVersion) store.ServedVersion {
+	shown := version
+	s.applyLanguage(r, &shown)
+	return shown
+}
+
+// canonicalAnswers turns choices made on a localized form back into the
+// options as the creator wrote them. A form posts the option text it
+// displayed, so without this a Dutch answer would fail validation against
+// English options, or be counted as a different answer from its English
+// twin. Position identifies the option: a localized option set is only
+// served when it is complete and in the creator's order. A value that
+// matches nothing shown is passed through for validation to refuse.
+func canonicalAnswers(submitted domain.Submission, shown, original []domain.Question) domain.Submission {
+	written := make(map[string][]string, len(original))
+	for _, q := range original {
+		written[q.IdentityID] = q.Options
+	}
+	canonical := func(q domain.Question, choice string) string {
+		options := written[q.IdentityID]
+		if len(options) != len(q.Options) {
+			return choice
+		}
+		for i, opt := range q.Options {
+			if opt == choice {
+				return options[i]
+			}
+		}
+		return choice
+	}
+
+	answers := make(map[string]domain.AnswerValue, len(submitted.Answers))
+	for identity, value := range submitted.Answers {
+		answers[identity] = value
+	}
+	for _, q := range shown {
+		value, ok := answers[q.IdentityID]
+		if !ok {
+			continue
+		}
+		if value.Choice != "" {
+			value.Choice = canonical(q, value.Choice)
+		}
+		if len(value.Choices) > 0 {
+			choices := make([]string, len(value.Choices))
+			for i, choice := range value.Choices {
+				choices[i] = canonical(q, choice)
+			}
+			value.Choices = choices
+		}
+		answers[q.IdentityID] = value
+	}
+	return domain.Submission{Answers: answers}
+}
+
 // viewLanguageChoices offers the languages this version was published
 // with, ordered so the browser's own preference comes first — suggested,
 // never chosen for them, and never remembered.

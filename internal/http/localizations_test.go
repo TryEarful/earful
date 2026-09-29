@@ -175,6 +175,130 @@ func TestLocalization_RespondentChoiceIsStoredNowhere(t *testing.T) {
 	}
 }
 
+// dutchChoiceSurvey publishes a survey with a choice question and a
+// required text question, both reviewed in Dutch, and returns its id.
+func dutchChoiceSurvey(t *testing.T, app *apptest.App, creator *http.Client, title string, anonymous bool) string {
+	t.Helper()
+	id := app.CreateSurvey(t, creator, title, anonymous)
+	app.AddQuestion(t, creator, id, "single_choice", "How often?", url.Values{
+		"options": {"Weekly\nMonthly"},
+	})
+	app.AddQuestion(t, creator, id, "short_text", "Why?", url.Values{"required": {"on"}})
+	identities := app.QuestionIdentities(t, creator, id)
+	app.PostForm(t, creator, "/surveys/"+id+"/localizations", url.Values{"lang": {"nl"}}).Body.Close()
+	app.PostForm(t, creator, "/surveys/"+id+"/localizations/nl", url.Values{
+		"t_" + identities[0]: {"Hoe vaak?"},
+		"o_" + identities[0]: {"Wekelijks\nMaandelijks"},
+		"t_" + identities[1]: {"Waarom?"},
+	}).Body.Close()
+	if body := app.Publish(t, creator, id); !bodyContains(body, "Published version 1") {
+		t.Fatalf("publish refused:\n%s", body)
+	}
+	return id
+}
+
+// TestLocalization_ChoicesAreStoredAsTheCreatorWrote is what makes a
+// localized survey countable: an option picked in Dutch is the same
+// answer as its English original, not a second option beside it.
+func TestLocalization_ChoicesAreStoredAsTheCreatorWrote(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{AI: translatorFake()})
+	creator := app.Login(t, apptest.UniqueEmail("choice-lang"))
+	id := dutchChoiceSurvey(t, app, creator, "Dutch choices", true)
+
+	respondent := &http.Client{}
+	page := mustGet(t, respondent, app.Server.URL+"/s/"+id+"?lang=nl")
+	if !strings.Contains(page, `action="/s/`+id+`?lang=nl"`) {
+		t.Fatalf("the form does not keep the chosen language on its address:\n%s", page)
+	}
+	fields := extractAnswerFields(t, page)
+	form := respondForm(t, page)
+	form.Set("q_"+fields[0], "Maandelijks")
+	form.Set("q_"+fields[1], "Omdat het kan")
+	_, thanks := submitAfterReadingTo(t, app, respondent, "/s/"+id+"?lang=nl", form)
+	if !bodyContains(thanks, "Thank you") {
+		t.Fatalf("an answer chosen in Dutch was refused:\n%s", thanks)
+	}
+
+	results := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
+	if !bodyContains(results, "Monthly") {
+		t.Errorf("the choice is not counted under the creator's option:\n%s", results)
+	}
+	if bodyContains(results, "Maandelijks") {
+		t.Errorf("the choice was stored in the respondent's language:\n%s", results)
+	}
+}
+
+// TestLocalization_CorrectionsComeBackInTheChosenLanguage: a respondent
+// who has to fix an answer is still reading the language they chose,
+// with what they had already picked still picked.
+func TestLocalization_CorrectionsComeBackInTheChosenLanguage(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{AI: translatorFake()})
+	creator := app.Login(t, apptest.UniqueEmail("correct-lang"))
+	id := dutchChoiceSurvey(t, app, creator, "Dutch corrections", true)
+
+	respondent := &http.Client{}
+	page := mustGet(t, respondent, app.Server.URL+"/s/"+id+"?lang=nl")
+	form := respondForm(t, page)
+	form.Set("q_"+extractAnswerFields(t, page)[0], "Maandelijks")
+	resp, again := submitAfterReadingTo(t, app, respondent, "/s/"+id+"?lang=nl", form)
+
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want the form back for correction", resp.StatusCode)
+	}
+	if !bodyContains(again, "Hoe vaak?") || !bodyContains(again, "Waarom?") {
+		t.Errorf("the form came back in another language:\n%s", again)
+	}
+	if !strings.Contains(again, `<html lang="nl">`) {
+		t.Errorf("the page no longer declares its language:\n%s", again[:200])
+	}
+	if !strings.Contains(again, `value="Maandelijks" checked`) {
+		t.Errorf("the choice already made was lost:\n%s", again)
+	}
+	if !strings.Contains(again, `action="/s/`+id+`?lang=nl"`) {
+		t.Errorf("the corrected form would post without its language:\n%s", again)
+	}
+}
+
+// TestLocalization_PersonalLinksOfferTheLanguageToo: an invited
+// participant gets the same choice of language as anyone with the share
+// link, carried the same way.
+func TestLocalization_PersonalLinksOfferTheLanguageToo(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{AI: translatorFake()})
+	creator := app.Login(t, apptest.UniqueEmail("invite-lang"))
+	id := dutchChoiceSurvey(t, app, creator, "Dutch invitation", false)
+
+	addr := apptest.UniqueEmail("deelnemer")
+	app.PostForm(t, creator, "/surveys/"+id+"/participants", url.Values{"emails": {addr}}).Body.Close()
+	sendInvites(t, app, creator, id)
+	link := inviteLinkTo(t, app, addr)
+	token := link[strings.LastIndex(link, "/")+1:]
+
+	participant := &http.Client{}
+	page := mustGet(t, participant, link+"?lang=nl")
+	if !bodyContains(page, "Hoe vaak?") {
+		t.Fatalf("the personal link ignores the chosen language:\n%s", page)
+	}
+	if !strings.Contains(page, `action="/p/`+token+`?lang=nl"`) {
+		t.Errorf("the form does not keep the chosen language on its address:\n%s", page)
+	}
+
+	fields := extractAnswerFields(t, page)
+	form := respondForm(t, page)
+	form.Set("q_"+fields[0], "Wekelijks")
+	form.Set("q_"+fields[1], "Omdat het kan")
+	_, thanks := submitAfterReadingTo(t, app, participant, "/p/"+token+"?lang=nl", form)
+	if !bodyContains(thanks, "Thank you") {
+		t.Fatalf("a participant's Dutch answer was refused:\n%s", thanks)
+	}
+	results := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
+	if !bodyContains(results, "Weekly") || bodyContains(results, "Wekelijks") {
+		t.Errorf("the choice is not counted under the creator's option:\n%s", results)
+	}
+}
+
 // TestAnswerTranslation_KeepsTheOriginal is stories 26 and 27: a creator
 // can read a global audience without the product ever replacing what
 // somebody actually said.

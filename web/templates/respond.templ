@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 
 	"github.com/TryEarful/earful/internal/domain"
@@ -174,10 +175,21 @@ func respondAction(data RespondData) string {
 	case data.Preview:
 		return "/surveys/" + data.SurveyID + "/preview"
 	case data.ParticipantToken != "":
-		return "/p/" + data.ParticipantToken
+		return withLang("/p/"+data.ParticipantToken, data.Lang)
 	default:
-		return "/s/" + data.SurveyID
+		return withLang("/s/"+data.SurveyID, data.Lang)
 	}
+}
+
+// withLang keeps the respondent's chosen language on the address the form
+// posts to. The address is the only place the choice lives (story 25), so
+// a form that dropped it would come back in another language the moment
+// an answer needed correcting.
+func withLang(path string, lang string) string {
+	if lang == "" {
+		return path
+	}
+	return path + "?lang=" + url.QueryEscape(lang)
 }
 
 func pluralAnswers(n int) string {
