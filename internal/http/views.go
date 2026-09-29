@@ -9,14 +9,7 @@ import (
 	"github.com/TryEarful/earful/web/templates"
 )
 
-// Formatting for creator-facing pages. Dates are rendered in one place so
-// every screen agrees.
-const (
-	dayLayout      = "2 January 2006"
-	dateTimeLayout = "2 Jan 2006, 15:04"
-)
-
-func viewSurvey(s store.Survey, now time.Time) templates.SurveyView {
+func viewSurvey(l uitext.Localizer, s store.Survey, now time.Time) templates.SurveyView {
 	v := templates.SurveyView{
 		ID:             s.ID.String(),
 		Title:          s.Title,
@@ -25,32 +18,32 @@ func viewSurvey(s store.Survey, now time.Time) templates.SurveyView {
 		ManuallyClosed: s.ClosedAt != nil,
 		LatestVersion:  s.LatestVersion,
 		QuestionCount:  s.QuestionCount,
-		CreatedAt:      s.CreatedAt.Format(dayLayout),
+		CreatedAt:      l.Day(s.CreatedAt),
 	}
 	if s.CloseAt != nil {
 		// Stored as the exclusive end of the closing day; show the day
 		// itself, which is what the creator entered.
 		day := s.CloseAt.Add(-time.Second)
 		v.CloseAtInput = day.Format(closeDateLayout)
-		v.CloseAtLabel = day.Format(dayLayout)
+		v.CloseAtLabel = l.Day(day)
 	}
 	return v
 }
 
-func viewSurveys(surveys []store.Survey, now time.Time) []templates.SurveyView {
+func viewSurveys(l uitext.Localizer, surveys []store.Survey, now time.Time) []templates.SurveyView {
 	out := make([]templates.SurveyView, 0, len(surveys))
 	for _, s := range surveys {
-		out = append(out, viewSurvey(s, now))
+		out = append(out, viewSurvey(l, s, now))
 	}
 	return out
 }
 
-func viewVersions(versions []store.Version) []templates.VersionView {
+func viewVersions(l uitext.Localizer, versions []store.Version) []templates.VersionView {
 	out := make([]templates.VersionView, 0, len(versions))
 	for _, v := range versions {
 		out = append(out, templates.VersionView{
 			Number:      v.Number,
-			PublishedAt: v.PublishedAt.Format(dateTimeLayout),
+			PublishedAt: l.DateTime(v.PublishedAt),
 			PublishedBy: v.PublishedBy,
 		})
 	}
@@ -69,14 +62,14 @@ func auditEntries(l uitext.Localizer, revisions []store.Revision, versions []sto
 
 	for _, r := range revisions {
 		all = append(all, dated{at: r.SavedAt, entry: templates.AuditEntry{
-			When: r.SavedAt.Format(dateTimeLayout),
+			When: l.DateTime(r.SavedAt),
 			Who:  orUnknown(l, r.SavedBy),
 			What: l.N("audit.entry.saved", r.QuestionCount),
 		}})
 	}
 	for _, v := range versions {
 		all = append(all, dated{at: v.PublishedAt, entry: templates.AuditEntry{
-			When:    v.PublishedAt.Format(dateTimeLayout),
+			When:    l.DateTime(v.PublishedAt),
 			Who:     orUnknown(l, v.PublishedBy),
 			What:    l.T("audit.entry.published", uitext.Args{"Version": v.Number}),
 			Publish: true,

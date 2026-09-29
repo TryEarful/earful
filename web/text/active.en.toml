@@ -1187,3 +1187,61 @@ name = "Vietnamese"
 
 [language.zh]
 name = "Chinese"
+
+
+# ── Dates ──────────────────────────────────────────────────────────────
+
+[format.date]
+# In full: 2 January 2006.
+day = "{{.Day}} {{.Month}} {{.Year}}"
+# In brief, with the time: 2 Jan 2006, 15:04.
+time = "{{.Day}} {{.Month}} {{.Year}}, {{.Time}}"
+# Beneath a chart: 2 Jan.
+short = "{{.Day}} {{.Month}}"
+
+[format.month.long]
+january = "January"
+february = "February"
+march = "March"
+april = "April"
+may = "May"
+june = "June"
+july = "July"
+august = "August"
+september = "September"
+october = "October"
+november = "November"
+december = "December"
+
+[format.month.short]
+january = "Jan"
+february = "Feb"
+march = "Mar"
+april = "Apr"
+may = "May"
+june = "Jun"
+july = "Jul"
+august = "Aug"
+september = "Sep"
+october = "Oct"
+november = "Nov"
+december = "Dec"
+
+
+# ── Numbers ────────────────────────────────────────────────────────────
+
+[format]
+# What separates the whole of a number from its fraction.
+decimal = "."
+percent = "{{.Value}}%"
+
+[format.money]
+euro = "€{{.Value}}"
+
+[format.size]
+kilobytes = "{{.Value}} KB"
+megabytes = "{{.Value}} MB"
+
+[format.duration]
+seconds = "{{.Seconds}}s"
+minutes = "{{.Minutes}}m {{.Seconds}}s"

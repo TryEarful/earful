@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"sort"
@@ -66,7 +65,7 @@ func (s *server) renderResults(w http.ResponseWriter, r *http.Request,
 	}
 	render(w, r, http.StatusOK, templates.SurveyResults(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyResultsData{
-			Survey:        viewSurvey(survey, s.clock.Now()),
+			Survey:        viewSurvey(text(r), survey, s.clock.Now()),
 			ResponseCount: len(results.Responses),
 			Questions:     viewQuestionResults(text(r), results, translations),
 			CanTranslate:  s.canTranslate(),
@@ -108,7 +107,7 @@ func viewQuestionResults(l uitext.Localizer, results store.Results, translations
 				text := templates.TextAnswerView{
 					Text:          answer.Value.Text,
 					VersionLabel:  "v" + strconv.Itoa(answer.VersionNumber),
-					SubmittedAt:   answer.SubmittedAt.Format(dateTimeLayout),
+					SubmittedAt:   l.DateTime(answer.SubmittedAt),
 					Participant:   participantLabel(answer.ParticipantEmail),
 					ResponseID:    answer.ResponseID.String(),
 					AnswerLongish: len(answer.Value.Text) > 240,
@@ -120,11 +119,11 @@ func viewQuestionResults(l uitext.Localizer, results store.Results, translations
 				view.Texts = append(view.Texts, text)
 			}
 		case domain.SingleChoice, domain.MultipleChoice, domain.Dropdown:
-			view.Distribution = choiceDistribution(question)
+			view.Distribution = choiceDistribution(l, question)
 		case domain.YesNo:
 			view.Distribution = yesNoDistribution(l, question)
 		case domain.RatingScale, domain.NPS:
-			view.Distribution = scaleDistribution(question)
+			view.Distribution = scaleDistribution(l, question)
 			view.Summary = scaleSummary(l, question)
 		}
 		out = append(out, view)
@@ -150,7 +149,7 @@ func skippedNote(l uitext.Localizer, answered, responses int) string {
 // choiceDistribution counts every option the question has ever offered,
 // including options that only existed in an earlier version — dropping
 // them would silently discard real answers.
-func choiceDistribution(question store.QuestionResults) []templates.CountView {
+func choiceDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {
 	counts := map[string]int{}
 	total := 0
 	for _, answer := range question.Answers {
@@ -179,7 +178,7 @@ func choiceDistribution(question store.QuestionResults) []templates.CountView {
 	sort.Strings(extra)
 	labels = append(labels, extra...)
 
-	return toCountViews(labels, counts, total)
+	return toCountViews(l, labels, counts, total)
 }
 
 func yesNoDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {
@@ -197,10 +196,10 @@ func yesNoDistribution(l uitext.Localizer, question store.QuestionResults) []tem
 		}
 		total++
 	}
-	return toCountViews([]string{yes, no}, counts, total)
+	return toCountViews(l, []string{yes, no}, counts, total)
 }
 
-func scaleDistribution(question store.QuestionResults) []templates.CountView {
+func scaleDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {
 	counts := map[string]int{}
 	total := 0
 	for _, answer := range question.Answers {
@@ -214,7 +213,7 @@ func scaleDistribution(question store.QuestionResults) []templates.CountView {
 	for _, point := range question.AsQuestion().ScalePoints() {
 		labels = append(labels, strconv.Itoa(point))
 	}
-	return toCountViews(labels, counts, total)
+	return toCountViews(l, labels, counts, total)
 }
 
 // scaleSummary is the one-line read: an average, and for NPS the score
@@ -240,19 +239,19 @@ func scaleSummary(l uitext.Localizer, question store.QuestionResults) string {
 	}
 	average := float64(sum) / float64(count)
 	if question.Type != domain.NPS {
-		return l.T("results.summary.average", uitext.Args{"Average": fmt.Sprintf("%.1f", average)})
+		return l.T("results.summary.average", uitext.Args{"Average": l.Decimal(average, 1)})
 	}
 	score := (float64(promoters) - float64(detractors)) / float64(count) * 100
 	return l.T("results.summary.nps", uitext.Args{
-		"Score":      fmt.Sprintf("%+.0f", score),
-		"Average":    fmt.Sprintf("%.1f", average),
+		"Score":      l.Signed(score, 0),
+		"Average":    l.Decimal(average, 1),
 		"Promoters":  promoters,
 		"Detractors": detractors,
 		"Passives":   count - promoters - detractors,
 	})
 }
 
-func toCountViews(labels []string, counts map[string]int, total int) []templates.CountView {
+func toCountViews(l uitext.Localizer, labels []string, counts map[string]int, total int) []templates.CountView {
 	out := make([]templates.CountView, 0, len(labels))
 	for _, label := range labels {
 		count := counts[label]
@@ -264,7 +263,7 @@ func toCountViews(labels []string, counts map[string]int, total int) []templates
 			Label:   label,
 			Count:   count,
 			Percent: percent,
-			Share:   strconv.Itoa(percent) + "%",
+			Share:   l.Percent(percent),
 		})
 	}
 	return out
@@ -286,7 +285,7 @@ func viewResponseTable(l uitext.Localizer, results store.Results) []templates.Re
 	for _, response := range results.Responses {
 		row := templates.ResponseRowView{
 			ID:           response.ID.String(),
-			SubmittedAt:  response.SubmittedAt.Format(dateTimeLayout),
+			SubmittedAt:  l.DateTime(response.SubmittedAt),
 			VersionLabel: "v" + strconv.Itoa(response.VersionNumber),
 			Participant:  participantLabel(response.ParticipantEmail),
 		}
@@ -399,7 +398,7 @@ func suppressedBuckets(l uitext.Localizer, stats []store.SurveyStat) []templates
 		}
 		out = append(out, templates.CountView{
 			Label: audienceGroup(l, stat.Metric, stat.Bucket), Count: stat.Count,
-			Percent: percent, Share: strconv.Itoa(percent) + "%",
+			Percent: percent, Share: l.Percent(percent),
 		})
 	}
 	return out
@@ -411,15 +410,4 @@ func truncateLabel(text string) string {
 		return text
 	}
 	return text[:limit-1] + "…"
-}
-
-func humanDuration(seconds int) string {
-	switch {
-	case seconds <= 0:
-		return ""
-	case seconds < 60:
-		return strconv.Itoa(seconds) + "s"
-	default:
-		return fmt.Sprintf("%dm %02ds", seconds/60, seconds%60)
-	}
 }

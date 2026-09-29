@@ -27,7 +27,7 @@ func (s *server) surveyList(w http.ResponseWriter, r *http.Request) {
 	}
 	render(w, r, http.StatusOK, templates.Dashboard(
 		info.Email, info.WorkspaceName, info.CSRFToken,
-		templates.SurveyListData{Surveys: viewSurveys(surveys, s.clock.Now())},
+		templates.SurveyListData{Surveys: viewSurveys(text(r), surveys, s.clock.Now())},
 	))
 }
 
@@ -88,9 +88,9 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 	}
 
 	data := templates.SurveyEditorData{
-		Survey:        viewSurvey(survey, s.clock.Now()),
+		Survey:        viewSurvey(text(r), survey, s.clock.Now()),
 		Questions:     draft.Questions,
-		Versions:      viewVersions(versions),
+		Versions:      viewVersions(text(r), versions),
 		ResponseCount: responses,
 		AIEnabled:     s.canGenerate(),
 		Error:         errMsg,
@@ -284,9 +284,9 @@ func (s *server) surveyAudit(w http.ResponseWriter, r *http.Request) {
 	}
 	render(w, r, http.StatusOK, templates.SurveyAudit(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.SurveyAuditData{
-			Survey:   viewSurvey(survey, s.clock.Now()),
+			Survey:   viewSurvey(text(r), survey, s.clock.Now()),
 			Entries:  auditEntries(text(r), revisions, versions),
-			Versions: viewVersions(versions),
+			Versions: viewVersions(text(r), versions),
 		}))
 }
 

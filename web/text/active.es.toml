@@ -2131,3 +2131,145 @@ other = "vietnamita"
 [language.zh.name]
 hash = "sha1-15dc18865567bcc98554a72a8036e1b64a8b85d5"
 other = "chino"
+
+
+# ── Fechas ─────────────────────────────────────────────────────────────
+
+[format.date.day]
+hash = "sha1-d9e8bd0158b8563da8c9d857b92ed6ce4393d7dc"
+other = "{{.Day}} de {{.Month}} de {{.Year}}"
+
+[format.date.time]
+hash = "sha1-a1abe0af29595825183a455d074af34f0c3bb4b6"
+other = "{{.Day}} {{.Month}} {{.Year}}, {{.Time}}"
+
+[format.date.short]
+hash = "sha1-ce34918c27131f5909230482d307d122c46acc33"
+other = "{{.Day}} {{.Month}}"
+
+[format.month.long.january]
+hash = "sha1-7a22d73d336abd6281d4dd71080220a230cb79de"
+other = "enero"
+
+[format.month.long.february]
+hash = "sha1-5c3a35ef85f22d508f90171bdcb2e6d820731d20"
+other = "febrero"
+
+[format.month.long.march]
+hash = "sha1-433632ea5cd64cd163c3a390d5e531d33da3c5e5"
+other = "marzo"
+
+[format.month.long.april]
+hash = "sha1-a0393902db1f516ef5f95f6830938558a88fb23c"
+other = "abril"
+
+[format.month.long.may]
+hash = "sha1-c94f479833c5d401cffdfa7afe6c9c2d56448019"
+other = "mayo"
+
+[format.month.long.june]
+hash = "sha1-a9db906761699b31567727716eaa6fd19ae5f5d5"
+other = "junio"
+
+[format.month.long.july]
+hash = "sha1-df97a42549e5c0e1753b985126565531cc9f3c56"
+other = "julio"
+
+[format.month.long.august]
+hash = "sha1-69d97c5797dc7d211aaa4e9229db5c8466d4edef"
+other = "agosto"
+
+[format.month.long.september]
+hash = "sha1-1c542e79c9b4257e640ccf72974d61fd590a5c26"
+other = "septiembre"
+
+[format.month.long.october]
+hash = "sha1-87206ae2363483496c099f8c3aac5b4a8ae2a66a"
+other = "octubre"
+
+[format.month.long.november]
+hash = "sha1-3c5bf776f5efcaa22d6e0fd4839db7d2b83e52be"
+other = "noviembre"
+
+[format.month.long.december]
+hash = "sha1-65640c6577c9c72497525e656127b5bd1deb6f85"
+other = "diciembre"
+
+[format.month.short.january]
+hash = "sha1-efed3690ea2243f5f1ac77cbb0987e5335440258"
+other = "ene"
+
+[format.month.short.february]
+hash = "sha1-dc8415ccfe52505f1d0a74025c76b3c26c88c59d"
+other = "feb"
+
+[format.month.short.march]
+hash = "sha1-c4ba0822462e0c373aadd5360a69f205c2a7d036"
+other = "mar"
+
+[format.month.short.april]
+hash = "sha1-befde54a108cb9dc6ad6e0ebd28720531a6855e6"
+other = "abr"
+
+[format.month.short.may]
+hash = "sha1-c94f479833c5d401cffdfa7afe6c9c2d56448019"
+other = "may"
+
+[format.month.short.june]
+hash = "sha1-6d90df3be4d0d43b08e3fb47f55e09b5b06dae3e"
+other = "jun"
+
+[format.month.short.july]
+hash = "sha1-b737558468d75ca55b2d9185c0b55eacaea627a0"
+other = "jul"
+
+[format.month.short.august]
+hash = "sha1-75629af51d7c7f120dbb5b462013bfa48af33285"
+other = "ago"
+
+[format.month.short.september]
+hash = "sha1-fdd289e370bd5cc575f48a16947d05c144ec474b"
+other = "sept"
+
+[format.month.short.october]
+hash = "sha1-51327aef9866e85ef5b5b2294a28494d2715ae59"
+other = "oct"
+
+[format.month.short.november]
+hash = "sha1-bb9bfefd5391f52be54267e2a938a126661b0ff7"
+other = "nov"
+
+[format.month.short.december]
+hash = "sha1-997f59bc99b2a57280179c3ce09ba8ab57cbdf44"
+other = "dic"
+
+
+# ── Números ────────────────────────────────────────────────────────────
+
+[format.decimal]
+hash = "sha1-3a52ce780950d4d969792a2559cd519d7ee8c727"
+other = ","
+
+[format.percent]
+hash = "sha1-0ad7dae9dab4350512d1448d56779e1e5add904f"
+other = "{{.Value}} %"
+
+[format.money.euro]
+hash = "sha1-9417b1990d685dfdd3cd1480b5370f2a6d28c96f"
+other = "{{.Value}} €"
+
+[format.size.kilobytes]
+hash = "sha1-b7f27377baca2d69949efadf3828c708b793a241"
+other = "{{.Value}} kB"
+
+[format.size.megabytes]
+hash = "sha1-67005ab894c624310373868430bba647972aff6b"
+other = "{{.Value}} MB"
+
+[format.duration.seconds]
+hash = "sha1-0e056967d3acc415103521a75a7a178ef2d7e888"
+other = "{{.Seconds}} s"
+
+[format.duration.minutes]
+hash = "sha1-d5ec82dce6e73bd0eade7389542d3488eb359dcc"
+other = "{{.Minutes}} min {{.Seconds}} s"

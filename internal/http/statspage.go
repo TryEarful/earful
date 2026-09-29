@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
 	"github.com/TryEarful/earful/internal/uitext"
 	"io"
 	"net/http"
@@ -206,7 +205,7 @@ func (s *server) surveyStatsPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render(w, r, http.StatusOK, templates.SurveyStats(info.Email, info.CSRFToken,
-		viewStatsPage(text(r), viewSurvey(survey, now), report, now)))
+		viewStatsPage(text(r), viewSurvey(text(r), survey, now), report, now)))
 }
 
 // viewStatsPage does every piece of formatting, so the template counts
@@ -220,7 +219,7 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 			ToInput:   rng.To.Format(rangeInputLayout),
 			MinInput:  rng.From.Format(rangeInputLayout),
 			MaxInput:  store.DayOf(now).Format(rangeInputLayout),
-			Label:     rangeLabel(rng),
+			Label:     rangeLabel(l, rng),
 			Preset:    rng.Preset,
 			AllTime:   rng.AllTime,
 		},
@@ -240,10 +239,10 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 	data.Opened = strconv.Itoa(opened)
 	data.Submissions = strconv.Itoa(report.Submissions)
 	if opened > 0 {
-		data.CompletionRate = fmt.Sprintf("%d%%", int(float64(report.Submissions)/float64(opened)*100+0.5))
+		data.CompletionRate = l.Percent(int(float64(report.Submissions)/float64(opened)*100 + 0.5))
 	}
 	if n := len(report.Durations); n > 0 {
-		data.TimeToComplete = humanDuration(median(report.Durations))
+		data.TimeToComplete = l.Duration(median(report.Durations))
 		data.TimedNote = l.N("stats.timed", n)
 	}
 	if lump := report.LumpOpened + report.LumpSubmissions; lump > 0 {
@@ -260,7 +259,7 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 	// something on them (a two-year survey has 730 days and most are 0).
 	for _, day := range report.Days {
 		point := templates.TrendPoint{
-			Day: day.Day.Format(rangeInputLayout), Label: day.Day.Format("2 Jan"),
+			Day: day.Day.Format(rangeInputLayout), Label: l.ShortDay(day.Day),
 			Opened: day.Opened, Submissions: day.Submissions,
 		}
 		data.Trend = append(data.Trend, point)
@@ -280,7 +279,7 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 		if report.InRangeSubmissions > 0 {
 			row.Percent = int(float64(stop.Stopped)/float64(report.InRangeSubmissions)*100 + 0.5)
 		}
-		row.Share = strconv.Itoa(row.Percent) + "%"
+		row.Share = l.Percent(row.Percent)
 		data.Questions = append(data.Questions, row)
 	}
 	if rng.AllTime && report.LumpStops > 0 {
@@ -300,11 +299,11 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 	return data
 }
 
-func rangeLabel(rng statsRange) string {
+func rangeLabel(l uitext.Localizer, rng statsRange) string {
 	if rng.From.Equal(rng.To) {
-		return rng.From.Format(dayLayout)
+		return l.Day(rng.From)
 	}
-	return rng.From.Format(dayLayout) + " – " + rng.To.Format(dayLayout)
+	return l.Day(rng.From) + " – " + l.Day(rng.To)
 }
 
 // rangeQuery reproduces the range as a query string, so the CSV link

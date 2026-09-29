@@ -37,7 +37,7 @@ func (s *server) renderLocalizations(w http.ResponseWriter, r *http.Request, err
 	}
 	render(w, r, http.StatusOK, templates.Localizations(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.LocalizationsData{
-			Survey:       viewSurvey(survey, s.clock.Now()),
+			Survey:       viewSurvey(text(r), survey, s.clock.Now()),
 			Languages:    viewLanguages(text(r), draft),
 			Questions:    draft.Questions,
 			CanTranslate: s.canTranslate(),

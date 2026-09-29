@@ -103,7 +103,7 @@ func (s *server) document(address string) http.HandlerFunc {
 			MarkdownPath: "/" + address + ".md",
 		}
 		if !page.LastUpdate.IsZero() {
-			data.Updated = page.LastUpdate.Format(dayLayout)
+			data.Updated = text(r).Day(page.LastUpdate)
 		}
 		render(w, r, http.StatusOK, templates.Document(data))
 	}

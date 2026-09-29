@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strconv"
@@ -69,31 +68,31 @@ func (s *server) adminMetricsPage(w http.ResponseWriter, r *http.Request) {
 	if rates.Starts > 0 {
 		data.Totals = append(data.Totals, templates.MetricTotal{
 			Label: say(r, "admin.metrics.total.completion"),
-			Value: fmt.Sprintf("%d%%", int(float64(rates.Completions)/float64(rates.Starts)*100+0.5)),
+			Value: text(r).Percent(int(float64(rates.Completions)/float64(rates.Starts)*100 + 0.5)),
 		})
 	}
 
 	for _, row := range signups {
 		data.Signups = append(data.Signups, templates.MetricPoint{
-			Day: row.Day.Format(dayLayout), Value: strconv.FormatInt(row.Count, 10),
+			Day: text(r).Day(row.Day), Value: strconv.FormatInt(row.Count, 10),
 		})
 	}
 	for _, row := range responses {
 		data.Responses = append(data.Responses, templates.MetricPoint{
-			Day: row.Day.Format(dayLayout), Value: strconv.FormatInt(row.Count, 10),
+			Day: text(r).Day(row.Day), Value: strconv.FormatInt(row.Count, 10),
 		})
 	}
 	var totalCost float64
 	for _, row := range cost {
 		totalCost += row.Cost
 		data.AICost = append(data.AICost, templates.MetricPoint{
-			Day:   row.Day.Format(dayLayout),
-			Value: say(r, "admin.metrics.cost.day", uitext.Args{"Cost": fmt.Sprintf("€%.2f", row.Cost), "Tokens": row.Tokens}),
+			Day:   text(r).Day(row.Day),
+			Value: say(r, "admin.metrics.cost.day", uitext.Args{"Cost": text(r).Euros(row.Cost), "Tokens": row.Tokens}),
 		})
 	}
-	data.AICostTotal = fmt.Sprintf("€%.2f", totalCost)
+	data.AICostTotal = text(r).Euros(totalCost)
 	data.BudgetNote = say(r, "admin.metrics.cost.budget",
-		uitext.Args{"Budget": fmt.Sprintf("€%.2f", s.cfg.AIDailyBudgetEUR)})
+		uitext.Args{"Budget": text(r).Euros(s.cfg.AIDailyBudgetEUR)})
 
 	render(w, r, http.StatusOK, templates.AdminMetrics(info.Email, info.CSRFToken, data))
 }

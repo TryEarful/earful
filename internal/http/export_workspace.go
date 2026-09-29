@@ -318,26 +318,15 @@ func viewExportJob(l uitext.Localizer, job store.ExportJob, now time.Time) templ
 		Building:  job.InProgress(),
 		Failed:    job.Status == store.ExportFailed,
 		Error:     exportError(l, job.Error),
-		SizeLabel: humanBytes(job.SizeBytes),
+		SizeLabel: l.Size(job.SizeBytes),
 	}
 	if job.FinishedAt != nil {
-		view.FinishedAt = job.FinishedAt.Format(dateTimeLayout)
+		view.FinishedAt = l.DateTime(*job.FinishedAt)
 	}
 	if job.Downloadable(now) {
 		view.Ready = true
-		view.ExpiresAt = job.ExpiresAt.Format(dateTimeLayout)
+		view.ExpiresAt = l.DateTime(*job.ExpiresAt)
 		view.DownloadPath = "/exports/" + job.ID.String()
 	}
 	return view
-}
-
-func humanBytes(size int64) string {
-	switch {
-	case size <= 0:
-		return ""
-	case size < 1<<20:
-		return fmt.Sprintf("%d KB", size/1024+1)
-	default:
-		return fmt.Sprintf("%.1f MB", float64(size)/(1<<20))
-	}
 }

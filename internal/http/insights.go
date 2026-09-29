@@ -322,7 +322,7 @@ func viewInsight(l uitext.Localizer, run store.InsightRun, results store.Results
 	view.Present = true
 	view.Output = run.Output
 	view.Model = modelLabel(l, run.Model)
-	view.GeneratedAt = run.CreatedAt.Format(dateTimeLayout)
+	view.GeneratedAt = l.DateTime(run.CreatedAt)
 	view.ResponseCount = run.ResponseCount
 	view.Stale = !run.Fresh(watermark, count)
 	if view.Stale {
