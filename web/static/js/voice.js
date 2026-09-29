@@ -32,15 +32,7 @@
   // that holding is doing something before the microphone opens. The
   // stylesheet's voice-hold animation runs to the same figure.
   var HOLD_MS = 400;
-  // A second Esc this long after the first still clears the answer.
-  // After that the first is forgotten and the status line goes back to
-  // what it said before. Short, because the first Esc has a use of its
-  // own — it leaves the field, so that Enter moves on (respond.js) —
-  // and a respondent who pressed it for that must not find a later Esc
-  // clearing their answer.
-  var ESC_WINDOW_MS = 3000;
   var HOLD_HINT = ["Hold", { key: "Space" }];
-  var ARMED_MESSAGE = "Press ESC again to clear this answer.";
   var COLLAPSE_KEY = "earful-voice-collapsed";
   var SVG_NS = "http://www.w3.org/2000/svg";
   var MIC_ICON = [
@@ -148,7 +140,7 @@
       label.nodeValue = text;
     }
 
-    // Starting over. Two presses of Esc do the same, so a respondent who
+    // Starting over. Shift+Esc does the same, so a respondent who
     // dictated the wrong thing is one gesture from a blank field rather
     // than a paragraph of deleting.
     var resetButton = document.createElement("button");
@@ -156,7 +148,7 @@
     resetButton.className = "voice-reset secondary";
     resetButton.appendChild(icon(TRASH_ICON));
     resetButton.appendChild(document.createTextNode("Reset"));
-    resetButton.appendChild(keyCombo(["Press", { key: "ESC" }, "twice"]));
+    resetButton.appendChild(keyCombo([{ key: "⇧ Shift" }, "+", { key: "ESC" }]));
 
     // The status box heads the card. It always says something — what to
     // do when idle, what is happening otherwise — so the card never
@@ -332,7 +324,6 @@
 
     var recorder = null; // the live take, once the microphone is open
     var finishing = null; // a take that has stopped and is being transcribed
-    var armedFrom = null; // what the status line said before a first Esc
     var starting = null; // a start() still opening the microphone
 
     button.addEventListener("click", function () {
@@ -664,7 +655,7 @@
       clear: clear,
       say: say,
       collapse: collapse,
-      // A take being transcribed counts: Esc twice must reach it
+      // A take being transcribed counts: Shift+Esc must reach it
       // wherever focus is, or the transcript lands in a cleared field.
       isRecording: function () {
         return recorder !== null || finishing !== null;
@@ -672,23 +663,6 @@
       // Put away is unavailable as far as the keys are concerned.
       isDisabled: function () {
         return disabled || collapsed;
-      },
-      // A first Esc says what a second would do; giving up puts back
-      // whatever the status line said before, unless something newer
-      // has been said since.
-      armReset: function () {
-        armedFrom = {
-          text: statusText.textContent,
-          error: status.classList.contains("voice-error"),
-        };
-        say(ARMED_MESSAGE);
-      },
-      giveUpReset: function () {
-        if (armedFrom && statusText.textContent === ARMED_MESSAGE) {
-          statusText.textContent = armedFrom.text;
-          status.classList.toggle("voice-error", armedFrom.error);
-        }
-        armedFrom = null;
       },
       // pressing shows the hold bar for a Space press in flight. A take
       // already running has nothing to start, so it shows nothing.
@@ -776,7 +750,6 @@
   // tapped space lands on release rather than on press.
   function attachKeys(mics) {
     var press = null; // the Space press in flight: { mic, target, timer, held }
-    var armed = null; // after a first Esc: { mic, timer }
 
     // micFor finds the mic a key event is about: the one whose question
     // holds the focused element, or — with focus on <body>, which is
@@ -807,17 +780,17 @@
     }
 
     document.addEventListener("keydown", function (event) {
-      // Esc twice means twice running. Any other key in between is the
-      // respondent doing something else — Enter, to move on, most of
-      // all — and the Esc after it is a first press again, on whatever
-      // question that turns out to be. Auto-repeat is not a key press:
-      // a held Space repeats for as long as a take lasts.
-      if (event.key !== "Escape" && !event.repeat) disarm(true);
-      if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      if (event.altKey || event.metaKey || event.ctrlKey) return;
       var target = event.target;
       if (!target || insideConsent(target)) return;
+      // Shift+Esc resets. Esc alone is not claimed here: it leaves the
+      // field (respond.js), and that is all it does.
+      if (event.key === "Escape") {
+        if (event.shiftKey) onReset(event, target);
+        return;
+      }
+      if (event.shiftKey) return; // Shift+Space belongs to respond.js
       if (event.key === " ") onSpaceDown(event, target);
-      else if (event.key === "Escape") onEscape(event, target);
     });
 
     document.addEventListener("keyup", function (event) {
@@ -880,23 +853,13 @@
       field.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
-    // Esc twice clears the answer. A first press applies to the field
+    // Shift+Esc clears the answer, in one press. A chord, because Esc by
+    // itself has a use — it leaves the field — and a key that leaves on
+    // one press must not destroy on the next. It applies to the field
     // and the voice controls, to the page body when one voice question
-    // is in view, and to a live take wherever focus happens to be —
-    // while recording, the take is what the respondent is interacting
-    // with. It arms and says so; a second inside the window clears.
-    //
-    // The second press follows the first, not the focus. The first Esc
-    // also takes focus out of the field (respond.js), so by the time
-    // the second arrives there is nothing focused to go by.
-    function onEscape(event, target) {
-      if (armed) {
-        var waiting = armed.mic;
-        disarm(false);
-        event.preventDefault();
-        waiting.clear();
-        return;
-      }
+    // is in view (which is where Esc leaves a respondent), and to a take
+    // that is live or being transcribed wherever focus happens to be.
+    function onReset(event, target) {
       var mic = null;
       for (var i = 0; i < mics.length; i++) {
         if (mics[i].isRecording()) mic = mics[i];
@@ -908,23 +871,7 @@
       }
       if (mic.isDisabled()) return;
       event.preventDefault();
-      armed = {
-        mic: mic,
-        timer: window.setTimeout(function () {
-          disarm(true);
-        }, ESC_WINDOW_MS),
-      };
-      mic.armReset();
-    }
-
-    // disarm forgets a first Esc. Giving up — the window ran out, or the
-    // respondent pressed something else — puts the status line back;
-    // a second Esc does not, since clearing has its own thing to say.
-    function disarm(givingUp) {
-      if (!armed) return;
-      window.clearTimeout(armed.timer);
-      if (givingUp) armed.mic.giveUpReset();
-      armed = null;
+      mic.clear();
     }
   }
 

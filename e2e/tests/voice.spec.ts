@@ -199,12 +199,11 @@ test("without a microphone the voice controls are disabled and the error is boxe
   await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "unavailable");
 
   // Typing is untouched: a tap of Space is the browser's own space, and
-  // Esc twice clears nothing, because the keys no longer claim them.
+  // Shift+Esc clears nothing, because the keys are no longer claimed.
   const answer = respondent.locator("textarea");
   await answer.click();
   await respondent.keyboard.type("typed instead, then");
-  await respondent.keyboard.press("Escape");
-  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Shift+Escape");
   await expect(answer).toHaveValue("typed instead, then");
   await expect(status).toHaveText(/Microphone unavailable/);
 
@@ -399,7 +398,7 @@ async function dictating(page: Page, browser: Browser, title: string, muted = fa
 
 // The card names itself, and a respondent who is going to type can put
 // it away — on every question, and for next time. Put away, it claims
-// no keys: Space is a space and Esc clears nothing.
+// no keys: Space is a space and Shift+Esc clears nothing.
 test("the dictation card is named and can be put away", async ({ page, browser }) => {
   const { context, respondent, offered } = await dictating(
     page,
@@ -422,8 +421,7 @@ test("the dictation card is named and can be put away", async ({ page, browser }
   const answer = respondent.locator("textarea");
   await answer.click();
   await respondent.keyboard.type("typed, not said");
-  await respondent.keyboard.press("Escape");
-  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Shift+Escape");
   await expect(answer).toHaveValue("typed, not said");
 
   const scan = await new AxeBuilder({ page: respondent }).analyze();
@@ -472,9 +470,9 @@ test("a transcription in flight can be cancelled", async ({ page, browser }) => 
   await context.close();
 });
 
-// Esc twice reaches a transcription in flight as well: the take is
+// Shift+Esc reaches a transcription in flight as well: the take is
 // dropped and the answer cleared, and nothing arrives afterwards.
-test("esc twice cancels a transcription in flight and clears the answer", async ({
+test("shift+esc cancels a transcription in flight and clears the answer", async ({
   page,
   browser,
 }) => {
@@ -498,8 +496,7 @@ test("esc twice cancels a transcription in flight and clears the answer", async 
   await respondent.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(card).toHaveAttribute("data-state", "transcribing");
 
-  await respondent.keyboard.press("Escape");
-  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Shift+Escape");
   await expect(card).toHaveAttribute("data-state", "idle");
   await expect(respondent.locator(".voice-status").first()).toHaveText(/Cleared/);
   await expect(answer).toHaveValue("");

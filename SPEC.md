@@ -244,7 +244,7 @@ letters for choices, digits for scales — rather than inventing one:
 | Text question offering voice | `Space`, held | Record while held; transcribe on release |
 | Text question offering voice | `⇧Space` | Start, then stop recording |
 | In a text field | `Esc` | Leave the field, so that `↵` moves on; the answer is untouched |
-| Text question offering voice, or while recording | `Esc` `Esc`, within 3 seconds | Clear the answer; a live take is dropped, not transcribed |
+| Text question offering voice, or while recording or transcribing | `⇧Esc` | Clear the answer; a take is dropped, not transcribed |
 | Not in a text field | `↵` / `⇧↵` | Next / Back |
 | In a textarea | `↵`, `⇧↵` | Newline, untouched |
 | In a textarea | `⌘↵` / `Ctrl↵` | Next |
@@ -278,22 +278,26 @@ Back, Next, and Submit answers on the last question.
   there Enter is a newline, with Shift or without.
 - What the hint says is what happens: on the last question `Esc` then
   `↵` submits.
-- The words around a key are plain text: "Hold" `Space`, "Press" `ESC`
-  "twice".
+- The words around a key are plain text: "Hold" `Space`.
+- Reset reads `⇧ Shift` + `ESC`.
+- **Back, Next and Submit are the largest controls on the page**, and
+  each points the way it goes: an arrow leading the word on Back, one
+  following it on Next, a paper plane following Submit. On the last
+  question Submit takes Next's place in the row, beside Back.
 
-**Esc twice clears the answer**, and the two presses have to belong
-together:
+**Shift+Esc clears the answer**, in one press. It is a chord rather than
+a second `Esc` because `Esc` has a use of its own, and a key that leaves
+the field on one press must not destroy the answer on the next: however
+often `Esc` is pressed, nothing is cleared.
 
-- The first says what a second would do, on the status line, and waits
-  **3 seconds**. After that it is forgotten, the status line says what
-  it said before, and the next `Esc` is a first press again.
-- **Any other key in between forgets it too.** `Esc`, `↵`, `Esc` is
-  leaving one question and then leaving the next; it must never clear
-  either.
-- The second press follows the first, not the focus: the first has
-  already taken focus out of the field.
+- It works from the field, from the dictation controls, and with nothing
+  focused, which is where `Esc` leaves a respondent.
+- A take that is recording or being transcribed is dropped with it.
 - Clearing puts focus back in the field, empty and ready to be typed
-  into.
+  into, and what was cleared is kept as a previous version (story 81).
+- Some browsers bind `⇧Esc` to a process or task manager of their own.
+  The page claims the key when it acts on it, and the *Reset* button
+  does the same thing for a respondent whose browser gets there first.
 
 Consequences:
 

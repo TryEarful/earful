@@ -310,7 +310,10 @@ test("holding space records, releasing it transcribes, and a tap still types", a
 
 // Reset means "start this answer over": the field, its draft, and any
 // take that is still live — which is thrown away, not transcribed.
-test("esc twice clears the answer, its draft, and a live take", async ({ page, browser }) => {
+// Shift+Esc does it from the keyboard, in one press. Esc alone never
+// does, however often it is pressed: it leaves the field, and a key
+// that leaves on one press must not destroy on the next.
+test("shift+esc clears the answer, its draft, and a live take", async ({ page, browser }) => {
   test.skip(
     !scriptedVoice,
     "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
@@ -324,29 +327,24 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
 
   const answer = respondent.locator("textarea");
   const status = respondent.locator(".voice-status").first();
+  const reset = respondent.getByRole("button", { name: "Reset", exact: true });
 
-  // One Esc only arms, and says so; the answer is untouched. It also
-  // leaves the field. Left alone for three seconds it gives up, and the
-  // status line says what it said before.
+  // The button names the chord, one cap per key.
+  await expect(reset.locator(".key-hint")).toHaveText(["⇧ Shift", "ESC"]);
+  await expect(reset.locator(".key-combo")).toHaveText("⇧ Shift + ESC");
+
+  // Esc leaves the field and changes nothing, twice as much as once.
   await answer.click();
   await respondent.keyboard.type("Wrong answer");
   await respondent.keyboard.press("Escape");
-  await expect(status).toHaveText(/Press ESC again/);
   await expect(answer).not.toBeFocused();
-  // Still armed shortly before the window closes…
-  await respondent.waitForTimeout(2000);
-  await expect(status).toHaveText(/Press ESC again/);
-  // …and not after it.
-  await respondent.waitForTimeout(1300);
+  await respondent.keyboard.press("Escape");
+  await expect(answer).toHaveValue("Wrong answer");
   await expect(status).toHaveText(/Press Dictate/);
-  await expect(answer).toHaveValue("Wrong answer");
 
-  // So the next Esc is a first one again, though nothing is focused
-  // now; and the second follows it, clears, and hands the field back.
-  await respondent.keyboard.press("Escape");
-  await expect(status).toHaveText(/Press ESC again/);
-  await expect(answer).toHaveValue("Wrong answer");
-  await respondent.keyboard.press("Escape");
+  // Shift+Esc clears, from where Esc left the focus, and hands the
+  // field back empty.
+  await respondent.keyboard.press("Shift+Escape");
   await expect(answer).toHaveValue("");
   await expect(status).toHaveText(/Cleared/);
   await expect(answer).toBeFocused();
@@ -360,8 +358,7 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   await answer.click();
   await respondent.keyboard.down(" ");
   await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
-  await respondent.keyboard.press("Escape");
-  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Shift+Escape");
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
   await expect(status).toHaveText(/Cleared/);
   await respondent.keyboard.up(" ");
@@ -369,10 +366,13 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   await expect(answer).toHaveValue("");
   await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
 
-  // The button does the same as the keys.
+  // From inside the field too, and the button does the same as the keys.
   await respondent.keyboard.type("x");
   await expect(answer).toHaveValue("x");
-  await respondent.getByRole("button", { name: "Reset", exact: true }).click();
+  await respondent.keyboard.press("Shift+Escape");
+  await expect(answer).toHaveValue("");
+  await respondent.keyboard.type("y");
+  await reset.click();
   await expect(answer).toHaveValue("");
 
   await context.close();
@@ -380,10 +380,9 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
 
 // Esc leaves a text field, which is what gives a respondent who has
 // finished typing a plain way on: inside a textarea Enter is a newline,
-// outside it Enter is Next. The answer is untouched. And because Esc
-// twice clears an answer, the two must be kept apart: Esc, Enter, Esc
-// is leaving one question and then the next, and clears neither.
-test("esc leaves the field so enter moves on, and never clears across questions", async ({
+// outside it Enter is Next. The answer is untouched, on this question
+// and the next: Esc, Enter, Esc is leaving one and then the other.
+test("esc leaves the field so enter moves on, and clears nothing", async ({
   page,
   browser,
 }) => {
@@ -425,8 +424,7 @@ test("esc leaves the field so enter moves on, and never clears across questions"
   await expect(back.locator(".key-hint")).toHaveText(["ESC", "⇧ Shift", "↵ Enter"]);
   await expect(back.locator(".key-combo").first()).toHaveText("ESC then ⇧ Shift + ↵ Enter");
 
-  // Well inside three seconds of the first Esc, on the next question:
-  // a first press again, because Enter came between.
+  // And again on the next question, straight away.
   await expect(second).toBeFocused();
   await respondent.keyboard.type("Researcher");
   await respondent.keyboard.press("Escape");

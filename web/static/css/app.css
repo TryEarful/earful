@@ -610,34 +610,143 @@ fieldset {
   margin-bottom: 1rem;
 }
 
+/* Two columns, back on the left and forward on the right, whichever
+   button that is: Next, or Submit on the last question. The forward
+   button is therefore always in the same place, including on the first
+   question, where there is nothing to go back to and the left column
+   is empty. Equal halves, so the row is the same shape on every
+   question whatever the buttons say. */
 .respond-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-  margin: 1.5rem 0;
+  margin: 1.75rem 0;
 }
 
-/* Moving through the survey is the main thing a respondent does, so the
-   buttons for it are the size of Submit, which they turn into on the
-   last question. Back is outlined, not filled, so that it is plainly
-   the lesser of the two — but outlined firmly enough to be seen. */
-.respond-nav button {
-  padding: 0.65rem 1.5rem;
-  font-size: 1.05rem;
-  font-weight: 600;
+.respond-nav > * {
+  grid-row: 1;
+  grid-column: 2;
 }
 
-.respond-nav button.secondary {
-  border-color: color-mix(in srgb, CanvasText 45%, Canvas);
+.respond-nav > button.secondary {
+  grid-column: 1;
 }
 
 .respond-actions {
   margin-top: 1.5rem;
 }
 
+/* On a paged survey Submit sits in the row, in Next's place, and fills
+   its column as Next does. */
+.respond-nav .respond-actions {
+  display: grid;
+  margin: 0;
+}
+
+/* Back, Next and Submit. Moving through the survey and sending it are
+   what a respondent is here to do, so these are the largest controls on
+   the page and the only ones with depth.
+
+   Laid out as a row of their own — the word, the icon, the keys — and
+   centred: left inline, a keycap sits on the text baseline and rides
+   low beside a word set larger than it is. */
+.respond-nav button,
 .respond-submit {
-  font-size: 1.05rem;
-  font-weight: 600;
-  padding: 0.65rem 1.5rem;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.6rem;
+  font-size: 1.2rem;
+  font-weight: 650;
+  line-height: 1.2;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 14%),
+    0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+
+/* Back is outlined, not filled, so that it is plainly the lesser of the
+   two — but on a ground of its own, and outlined firmly enough to be
+   seen. */
+.respond-nav button.secondary {
+  border-color: color-mix(in srgb, CanvasText 40%, Canvas);
+  background: Canvas;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
+.respond-nav button:hover,
+.respond-submit:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.respond-nav button:active,
+.respond-submit:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+
+.respond-nav button:focus-visible,
+.respond-submit:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, Canvas);
+  outline-offset: 2px;
+}
+
+.button-icon {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 120ms ease;
+}
+
+/* The icon leans the way the button goes. */
+.respond-nav button:hover .button-icon {
+  transform: translateX(3px);
+}
+
+.respond-nav button.secondary:hover .button-icon {
+  transform: translateX(-3px);
+}
+
+.respond-nav .respond-submit:hover .button-icon,
+.respond-submit:hover .button-icon {
+  transform: translate(2px, -2px);
+}
+
+/* The keys go under the word, on a line of their own, in all three. Back
+   has too many to sit beside its word in half a row, and a row where
+   one button is two lines and its neighbour one reads as two kinds of
+   button. */
+.paged .respond-nav button > .key-combo {
+  flex-basis: 100%;
+  justify-content: center;
+  margin-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .respond-nav button,
+  .respond-submit,
+  .button-icon {
+    transition: none;
+  }
+
+  .respond-nav button:hover,
+  .respond-submit:hover,
+  .respond-nav button:hover .button-icon,
+  .respond-submit:hover .button-icon {
+    transform: none;
+  }
 }
 
 /* The honeypot must be unreachable for people (including screen reader

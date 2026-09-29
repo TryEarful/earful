@@ -36,7 +36,7 @@
   // key that moves on; Esc gives them one, since from outside the field
   // Enter means Next. Attached to every respondent page, not only the
   // paged ones, so the key does one thing everywhere. The answer is
-  // not touched: clearing it takes a second Esc, which voice.js owns.
+  // not touched: clearing it takes Shift+Esc, which voice.js owns.
   form.addEventListener("keydown", function (event) {
     if (event.key !== "Escape") return;
     if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
@@ -75,11 +75,15 @@
   var backButton = document.createElement("button");
   backButton.type = "button";
   backButton.className = "secondary";
-  backButton.textContent = "Back";
+  // Each button points the way it goes: the arrow leads the word on
+  // Back and follows it on Next, as the paper plane follows Submit.
+  backButton.appendChild(buttonIcon(["M19 12H5", "M12 19l-7-7 7-7"]));
+  backButton.appendChild(document.createTextNode("Back"));
 
   var nextButton = document.createElement("button");
   nextButton.type = "button";
-  nextButton.textContent = "Next";
+  nextButton.appendChild(document.createTextNode("Next"));
+  nextButton.appendChild(buttonIcon(["M5 12h14", "M12 5l7 7-7 7"]));
   // The buttons that move — Back, Next, and Submit on the last
   // question — name their keys, read left to right as the keys to
   // press. Each key is its symbol and then its name, because ↵ and ⇧
@@ -126,6 +130,9 @@
   if (submitButton) addEnterHints(submitButton, false);
   form.insertBefore(progress, form.querySelector(".respond-questions"));
   actions.parentNode.insertBefore(nav, actions);
+  // Submit takes Next's place on the last question, so it takes its
+  // place in the row as well, beside Back rather than under it.
+  nav.appendChild(actions);
 
   backButton.addEventListener("click", function () {
     show(current - 1);
@@ -276,6 +283,22 @@
 
     if (draft) draft.rememberPosition(index);
     focusFirstControl(questions[index]);
+  }
+
+  // buttonIcon draws a line icon from SVG path data. Decoration: the
+  // button's word is its name.
+  function buttonIcon(paths) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "button-icon");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    paths.forEach(function (d) {
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+    });
+    return svg;
   }
 
   // Navigation buttons are built here, so their key hints are too. A

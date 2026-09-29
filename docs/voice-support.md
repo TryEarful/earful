@@ -95,14 +95,15 @@ textarea the server rendered is the whole interface (story 38).
    button reads *Stop* with the hint *Release Space*; the take ends when the
    key comes up. A quick tap of Space still types a space and shows no
    bar.
-7. **Reset**: press Esc once (the status line asks for a second), then
-   again: the textarea empties, and a reload does not bring the answer
-   back. Press Esc once and wait three seconds: the prompt goes away,
-   the status line says what it said before, and one more Esc only
-   prompts again. Esc also takes focus out of the field, so Esc then
-   Enter moves to the next question with the answer intact; Esc, Enter,
-   Esc clears nothing. Do the same while holding Space: the take is dropped and nothing
-   is transcribed. The *Reset* button does the same on click.
+7. **Reset**: press Shift+Esc: the textarea empties, focus stays in it,
+   and a reload does not bring the answer back. Do the same while
+   holding Space: the take is dropped and nothing is transcribed. The
+   *Reset* button does the same on click. Esc by itself clears nothing,
+   however often it is pressed: it takes focus out of the field, so Esc
+   then Enter moves to the next question with the answer intact. In a
+   browser that binds Shift+Esc to its own task manager (Chrome on
+   Windows and Linux, Firefox), check whether the page or the browser
+   gets the key, and note it in the matrix above.
 8. **Edit and submit**: change a word, submit, confirm the stored answer
    is the edited text.
 9. **Cap**: keep talking past `VOICE_MAX_SECONDS_PER_ANSWER`; the take
@@ -122,7 +123,7 @@ textarea the server rendered is the whole interface (story 38).
    used and the choice is forgotten, not "microphone unavailable".
 12. **Cancelling**: while the status box says "Transcribing…", *Cancel*
    beside it calls the transcription off and the answer is what it was
-   before the take. Esc twice does the same and clears the answer too.
+   before the take. Shift+Esc does the same and clears the answer too.
    (With the scripted provider the moment is brief; a real model gives
    time to try it.)
 13. **Putting it away**: *Hide* in the card's corner collapses every
@@ -136,7 +137,7 @@ textarea the server rendered is the whole interface (story 38).
    browser's network panel shows no request for any of this.
 15. **No microphone**: deny the browser's microphone prompt (or unplug the
    device). Both buttons grey out, the boxed error reads "Microphone
-   unavailable", Space types a space and ESC twice does nothing; typing
+   unavailable", Space types a space and Shift+Esc does nothing; typing
    still submits. A reload offers the mic again.
 16. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.
