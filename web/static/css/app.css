@@ -644,9 +644,13 @@ fieldset {
   color: inherit;
 }
 
+/* The two buttons share the card's width in equal halves, whatever
+   their labels say, so the row does not change shape when "Dictate"
+   becomes "Release Space to transcribe". Where halves would be too
+   narrow to hold a label, they stack. */
 .voice-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 0.6rem;
 }
 
@@ -674,6 +678,13 @@ fieldset {
 }
 
 .voice-button.recording .voice-icon {
+  display: none;
+}
+
+/* While a take is live the label is the instruction — "Release Space
+   to transcribe", "Stop and transcribe" — and the hint for starting one
+   would only contradict it, and wrap the button onto a second line. */
+.voice-button.recording .key-hint {
   display: none;
 }
 
