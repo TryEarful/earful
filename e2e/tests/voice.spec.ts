@@ -124,6 +124,8 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   await expect(respondent.locator(".voice-progress")).toBeHidden();
   await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
   await expect(respondent.getByLabel("Microphone")).toBeVisible();
+  // The meter is there only while there is something to meter.
+  await expect(respondent.locator(".voice-spectrum")).toBeHidden();
 
   await context.close();
 });

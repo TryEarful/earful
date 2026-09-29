@@ -190,6 +190,10 @@
     // The status line announces the device name; the bars only repeat
     // what a sighted respondent can already hear.
     spectrum.setAttribute("aria-hidden", "true");
+    // There only while there is something to show. An empty meter
+    // beside the picker is a blank box that looks like a field, and it
+    // takes room the device's name can use.
+    spectrum.hidden = true;
 
     var input = document.createElement("span");
     input.className = "voice-input";
@@ -278,6 +282,7 @@
         // Unhidden before the meter starts, so the canvas has a size to
         // read; a hidden element measures zero by zero.
         monitor.hidden = false;
+        spectrum.hidden = false;
         meter = startMeter(handle.monitor.context, handle.monitor.stream, spectrum, function quiet() {
           say(
             "Nothing is coming through" +
@@ -318,6 +323,7 @@
     function stopMeter() {
       if (meter) meter.stop();
       meter = null;
+      spectrum.hidden = true;
       monitor.hidden = picker.hidden && grant.hidden;
       if (picker.hidden) input.textContent = "";
     }
