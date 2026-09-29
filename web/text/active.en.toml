@@ -8,6 +8,8 @@
 #
 #   Change the text to the right of the `=` and rebuild. Nothing else
 #   refers to the wording, so a sentence can be rewritten freely.
+#   `make text-status` then lists the translations that were made from
+#   the old wording, to be read against the new.
 #
 # Names
 #

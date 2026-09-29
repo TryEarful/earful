@@ -131,6 +131,8 @@ install, so you shouldn't need to think about it.
 | `make e2e-smoke` | Playwright + axe suite against the compose stack, at phone/tablet/desktop widths |
 | `make featuretour` | Build the feature-tour PDF from screenshots of the compose stack (see `tools/featuretour/README.md`) |
 | `make featuretour-deck` | Rebuild only the PDF from the last run's screenshots |
+| `make text-status` | List translations in `web/text` made from English wording that has since changed |
+| `make text-accept` | Record those translations as read against the current wording (`ID="a.b.c"` for some, none for all) |
 | `make migrate` | Run `earful migrate` against `DATABASE_URL` |
 | `make purge` | Run `earful purge --dry-run` (retention, reported not applied) |
 | `make geoip` | Rebuild the embedded country table from a DB-IP CSV |

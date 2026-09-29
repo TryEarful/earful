@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip compose-up compose-up-app compose-down docker-build release-check
+.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip text-status text-accept compose-up compose-up-app compose-down docker-build release-check
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -49,6 +49,15 @@ generate:
 GEOIP_CSV ?= /tmp/dbip-country-lite.csv
 geoip:
 	go run ./tools/geoipgen -in $(GEOIP_CSV)
+
+# Translations in web/text made from English that has since been
+# reworded. Reports, never fails. After reading them against the new
+# wording: make text-accept, or make text-accept ID="a.b.c d.e.f".
+text-status:
+	go run ./tools/textstatus
+
+text-accept:
+	go run ./tools/textstatus -accept $(ID)
 
 dev:
 	go run ./cmd/earful serve
