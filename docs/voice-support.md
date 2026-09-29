@@ -91,13 +91,14 @@ textarea the server rendered is the whole interface (story 38).
 5. **Transcript**: stopping streams text into the textarea, word by word,
    and the status line ends with "edit it if it isn't quite right".
 6. **Hold to talk**: with the caret in the textarea, hold Space: a bar
-   fills along the foot of the status box, and when it is full the
+   fills along the foot of the *Dictate* button, and when it is full the
    button reads *Release Space to transcribe*; the take ends when the
    key comes up. A quick tap of Space still types a space and shows no
    bar.
 7. **Reset**: press Esc once (the status line asks for a second), then
    again: the textarea empties, and a reload does not bring the answer
-   back. Do the same while holding Space: the take is dropped and nothing
+   back. Press Esc once and wait six seconds: the prompt goes away and
+   the status line says what it said before. Do the same while holding Space: the take is dropped and nothing
    is transcribed. The *Reset* button does the same on click.
 8. **Edit and submit**: change a word, submit, confirm the stored answer
    is the edited text.
@@ -109,18 +110,26 @@ textarea the server rendered is the whole interface (story 38).
 11. **Choosing a microphone**: in a browser that already has permission,
    a *Microphone* dropdown lists the inputs from the start and marks the
    one in use. In one that does not (a private window), *Grant
-   microphone access* stands in its place: it shows the consent dialog,
+   microphone to enable dictation* stands in its place: it shows the consent dialog,
    then the browser's prompt, then the dropdown, and records nothing.
    Pick another
    while recording: the take ends and transcribes, and the next take uses
    the new device (check the meter moves). Reload: the choice is kept.
    Unplug the chosen device and record again: the browser's default is
    used and the choice is forgotten, not "microphone unavailable".
-12. **No microphone**: deny the browser's microphone prompt (or unplug the
+12. **Cancelling**: while the status box says "Transcribing…", *Cancel*
+   beside it calls the transcription off and the answer is what it was
+   before the take. Esc twice does the same and clears the answer too.
+   (With the scripted provider the moment is brief; a real model gives
+   time to try it.)
+13. **Putting it away**: the minus in the card's corner collapses every
+   *Dictation* card on the page to its title. Space and Esc are then
+   ordinary keys. A reload keeps it collapsed; the plus brings it back.
+14. **No microphone**: deny the browser's microphone prompt (or unplug the
    device). Both buttons grey out, the boxed error reads "Microphone
    unavailable", Space types a space and ESC twice does nothing; typing
    still submits. A reload offers the mic again.
-13. **Screen reader**: the status line is `aria-live="polite"`; the button
+15. **Screen reader**: the status line is `aria-live="polite"`; the button
    label changes with state, so state is never colour-only.
 
 ## Notes

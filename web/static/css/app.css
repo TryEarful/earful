@@ -603,25 +603,64 @@ fieldset {
 
 /* --- voice answering (M5) ------------------------------------------- */
 
-/* One card under the answer field, top to bottom: the status box, the
-   two buttons, then the microphone and its meter side by side. */
+/* One card under the answer field, top to bottom: its name and the
+   control that puts it away, then the status box, the two buttons, and
+   the microphone with its meter beside it. */
 .voice {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   margin-top: 0.6rem;
-  padding: 0.75rem;
+  padding: 0.6rem 0.75rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--surface);
+}
+
+/* Put away, the card is its name and the control that brings it back. */
+.voice.collapsed {
+  padding-bottom: 0.6rem;
+}
+
+.voice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.voice-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.voice-toggle {
+  padding: 0.2rem 0.4rem;
+  line-height: 1;
+}
+
+.voice-toggle .voice-icon {
+  margin-right: 0;
+}
+
+.voice-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 /* The status box. Its left edge says which state the card is in: quiet
    when idle, danger while the microphone is open, accent while the
    model is working, and danger all round when something has failed. */
 .voice-status {
-  position: relative;
-  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: 0.75rem;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--border);
   border-left: 4px solid var(--border);
@@ -631,13 +670,25 @@ fieldset {
   font-size: 0.9rem;
 }
 
-/* The hold bar: fills along the foot of the status box while Space is
-   held, and is full at the moment the hold counts and the microphone
+/* Sits at the end of the status line while a transcription is in
+   flight, in the line's own size and colour. */
+.voice-cancel {
+  flex: none;
+  font-size: inherit;
+}
+
+/* The hold bar: fills along the foot of the Dictate button while Space
+   is held, and is full at the moment the hold counts and the microphone
    is asked for. Absolutely placed, so a tapped space — which shows and
    hides it within a keystroke — never moves the page. It waits 120 ms
    before appearing for the same reason: ordinary typing releases the
    key sooner than that, and must not flicker. The two durations add up
    to HOLD_MS in voice.js. */
+.voice-button {
+  position: relative;
+  overflow: hidden;
+}
+
 .voice-hold {
   position: absolute;
   inset: auto 0 0 0;
@@ -828,6 +879,7 @@ input.voice-live {
    "working" and claims nothing else. */
 .voice-progress {
   display: block;
+  flex-basis: 100%;
   margin-top: 0.5rem;
   height: 3px;
   border-radius: 3px;

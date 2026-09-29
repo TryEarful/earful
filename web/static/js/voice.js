@@ -32,7 +32,15 @@
   // that holding is doing something before the microphone opens. The
   // stylesheet's voice-hold animation runs to the same figure.
   var HOLD_MS = 400;
-  var ESC_WINDOW_MS = 700; // two Esc presses this close together clear the answer
+  // A second Esc this long after the first still clears the answer.
+  // After that the first is forgotten and the status line goes back to
+  // what it said before: long enough to read the prompt and decide,
+  // short enough that a stray Esc does not stay armed.
+  var ESC_WINDOW_MS = 6000;
+  var ARMED_MESSAGE = "Press ESC again to clear this answer.";
+  var COLLAPSE_KEY = "earful-voice-collapsed";
+  var MINUS_ICON = ["M5 12h14"];
+  var PLUS_ICON = ["M5 12h14", "M12 5v14"];
   var SVG_NS = "http://www.w3.org/2000/svg";
   var MIC_ICON = [
     "M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z",
@@ -92,6 +100,33 @@
     // the browser suite can both read, instead of inferring the state
     // from which pieces happen to be hidden.
     wrap.setAttribute("data-state", "idle");
+
+    // The card says what it is, so the status box, the buttons and the
+    // microphone row read as one feature rather than as loose controls
+    // under the answer; and it can be put away by a respondent who is
+    // going to type, which takes the keys away with it.
+    var uid = "voice-" + (field.name || "answer");
+    wrap.setAttribute("role", "group");
+    wrap.setAttribute("aria-labelledby", uid + "-title");
+    var head = document.createElement("div");
+    head.className = "voice-head";
+    var title = document.createElement("span");
+    title.className = "voice-title";
+    title.id = uid + "-title";
+    title.textContent = "Dictation";
+    var toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "voice-toggle secondary";
+    toggle.setAttribute("aria-controls", uid + "-body");
+    var minus = icon(MINUS_ICON);
+    var plus = icon(PLUS_ICON);
+    toggle.appendChild(minus);
+    toggle.appendChild(plus);
+    head.appendChild(title);
+    head.appendChild(toggle);
+    var body = document.createElement("div");
+    body.className = "voice-body";
+    body.id = uid + "-body";
 
     var button = document.createElement("button");
     button.type = "button";
@@ -183,13 +218,14 @@
     var grant = document.createElement("button");
     grant.type = "button";
     grant.className = "voice-grant secondary";
-    grant.textContent = "Grant microphone access";
+    grant.textContent = "Grant microphone to enable dictation";
     grant.hidden = true;
 
-    // Fills while Space is held, along the foot of the status box: until
-    // the hold is long enough to count, nothing else on the page says
-    // that holding is the right thing to be doing. Decoration as far as
-    // a screen reader is concerned; the status line announces the take.
+    // Fills while Space is held, along the foot of the Dictate button —
+    // the control the key is standing in for. Until the hold is long
+    // enough to count, nothing else on the page says that holding is
+    // the right thing to be doing. Decoration as far as a screen reader
+    // is concerned; the status line announces the take.
     var holdBar = document.createElement("span");
     holdBar.className = "voice-hold";
     holdBar.setAttribute("aria-hidden", "true");
@@ -198,8 +234,17 @@
     // The card, top to bottom: the status box (with the transcription
     // bar along its foot), the two buttons, then the microphone and its
     // meter side by side.
+    // Transcription can be called off while it is in flight. A link
+    // rather than a third button: it exists for a few seconds at a time
+    // and belongs to the sentence it sits beside.
+    var cancelLink = document.createElement("button");
+    cancelLink.type = "button";
+    cancelLink.className = "voice-cancel button-link";
+    cancelLink.textContent = "Cancel";
+    cancelLink.hidden = true;
+    status.appendChild(cancelLink);
     status.appendChild(progress);
-    status.appendChild(holdBar);
+    button.appendChild(holdBar);
     var actions = document.createElement("div");
     actions.className = "voice-actions";
     actions.appendChild(button);
@@ -208,9 +253,11 @@
     monitor.appendChild(grant);
     monitor.appendChild(input);
     monitor.appendChild(spectrum);
-    wrap.appendChild(status);
-    wrap.appendChild(actions);
-    wrap.appendChild(monitor);
+    body.appendChild(status);
+    body.appendChild(actions);
+    body.appendChild(monitor);
+    wrap.appendChild(head);
+    wrap.appendChild(body);
     field.parentNode.insertBefore(wrap, field.nextSibling);
     say("");
 
@@ -222,6 +269,7 @@
     var ui = {
       recording: function (handle) {
         holdBar.hidden = true;
+        cancelLink.hidden = true;
         wrap.setAttribute("data-state", "recording");
         // The box the words land in lights up too: on a long answer the
         // button can be scrolled out of view while the microphone is
@@ -249,6 +297,7 @@
         field.classList.remove("voice-live");
         stopMeter();
         progress.hidden = false;
+        cancelLink.hidden = false;
       },
       // fail is the status line for something that went wrong: the same
       // line, boxed and bordered, so it is not read as a progress update.
@@ -258,6 +307,7 @@
       },
       settled: function () {
         holdBar.hidden = true;
+        cancelLink.hidden = true;
         wrap.setAttribute("data-state", "idle");
         field.classList.remove("voice-live");
         if (placeholder === null) field.removeAttribute("placeholder");
@@ -279,6 +329,8 @@
     }
 
     var recorder = null; // the live take, once the microphone is open
+    var finishing = null; // a take that has stopped and is being transcribed
+    var armedFrom = null; // what the status line said before a first Esc
     var starting = null; // a start() still opening the microphone
 
     button.addEventListener("click", function () {
@@ -286,7 +338,9 @@
         stop();
         return;
       }
-      if (starting) return;
+      // Shift+Space presses this button from respond.js whether or not
+      // it can be seen; a card that has been put away stays put away.
+      if (starting || collapsed) return;
       askConsent(function () {
         // The consent dialog took focus and is now gone. Put it back on
         // the field the words are about to land in, so the respondent
@@ -441,6 +495,7 @@
 
     function reset() {
       recorder = null;
+      finishing = null;
       setLabel("Dictate");
       button.classList.remove("recording");
       ui.settled();
@@ -450,16 +505,63 @@
       if (!recorder) return;
       var current = recorder;
       recorder = null;
+      finishing = current;
       setLabel("Dictate");
       button.classList.remove("recording");
       current.stop();
     }
 
+    // cancel calls off a transcription in flight. What the take had
+    // already written is taken back, so the answer is what it was
+    // before the take; anything typed or dictated earlier is untouched.
+    function cancel() {
+      var take = finishing || recorder;
+      if (!take) return;
+      finishing = null;
+      recorder = null;
+      take.cancel();
+      reset();
+      say("Transcription cancelled.");
+      field.focus();
+    }
+    cancelLink.addEventListener("click", cancel);
+
+    // collapse puts the card away or brings it back. The microphone is
+    // never left open behind a closed card: a live take is stopped, and
+    // what was said is still transcribed.
+    var collapsed = false;
+    function collapse(on) {
+      if (on && starting) starting.cancelled = "cleared";
+      if (on && recorder) stop();
+      collapsed = on;
+      body.hidden = on;
+      wrap.classList.toggle("collapsed", on);
+      toggle.setAttribute("aria-expanded", on ? "false" : "true");
+      toggle.setAttribute("aria-label", on ? "Expand dictation" : "Collapse dictation");
+      if (on) {
+        minus.setAttribute("hidden", "");
+        plus.removeAttribute("hidden");
+      } else {
+        plus.setAttribute("hidden", "");
+        minus.removeAttribute("hidden");
+      }
+    }
+    // Not wanting dictation is a fact about the respondent, not about
+    // one question, so every card on the page follows and the choice is
+    // remembered.
+    toggle.addEventListener("click", function () {
+      var on = !collapsed;
+      rememberCollapsed(on);
+      mics.forEach(function (mic) {
+        mic.collapse(on);
+      });
+    });
+
     // hold and release are the two ends of a held Space. A take begun
     // this way ends when the key comes up; one begun by a click or
     // Shift+Space is a toggle and pays the key no attention.
     function hold() {
-      if (recorder || starting) return;
+      if (recorder || starting || collapsed) return;
       // Consent is asked at most once per browser, and never answered by
       // a key release: if the dialog has to appear, the hold is over by
       // the time it is accepted, and the take then runs as a toggle.
@@ -486,9 +588,10 @@
     // untranscribed: Reset means "start this answer over".
     function clear() {
       if (starting) starting.cancelled = "cleared";
-      if (recorder) {
-        var live = recorder;
+      var live = recorder || finishing;
+      if (live) {
         recorder = null;
+        finishing = null;
         live.abort();
       }
       writeAnswer(field, "");
@@ -546,6 +649,8 @@
         );
     }
 
+    collapse(collapsedPreference());
+
     return {
       question: question,
       field: field,
@@ -554,11 +659,32 @@
       release: release,
       clear: clear,
       say: say,
+      collapse: collapse,
+      // A take being transcribed counts: Esc twice must reach it
+      // wherever focus is, or the transcript lands in a cleared field.
       isRecording: function () {
-        return recorder !== null;
+        return recorder !== null || finishing !== null;
       },
+      // Put away is unavailable as far as the keys are concerned.
       isDisabled: function () {
-        return disabled;
+        return disabled || collapsed;
+      },
+      // A first Esc says what a second would do; giving up puts back
+      // whatever the status line said before, unless something newer
+      // has been said since.
+      armReset: function () {
+        armedFrom = {
+          text: statusText.textContent,
+          error: status.classList.contains("voice-error"),
+        };
+        say(ARMED_MESSAGE);
+      },
+      giveUpReset: function () {
+        if (armedFrom && statusText.textContent === ARMED_MESSAGE) {
+          statusText.textContent = armedFrom.text;
+          status.classList.toggle("voice-error", armedFrom.error);
+        }
+        armedFrom = null;
       },
       // pressing shows the hold bar for a Space press in flight. A take
       // already running has nothing to start, so it shows nothing.
@@ -738,18 +864,27 @@
       if (mic.isDisabled()) return;
       event.preventDefault();
       if (armed && armed.mic === mic) {
-        disarm();
+        disarm(false);
         mic.clear();
         return;
       }
-      disarm();
-      armed = { mic: mic, timer: window.setTimeout(disarm, ESC_WINDOW_MS) };
-      mic.say("Press ESC again to clear this answer.");
+      disarm(true);
+      armed = {
+        mic: mic,
+        timer: window.setTimeout(function () {
+          disarm(true);
+        }, ESC_WINDOW_MS),
+      };
+      mic.armReset();
     }
 
-    function disarm() {
+    // disarm forgets a first Esc. Giving up — the window ran out, or the
+    // respondent moved to another question — puts the status line back;
+    // a second Esc does not, since clearing has its own thing to say.
+    function disarm(givingUp) {
       if (!armed) return;
       window.clearTimeout(armed.timer);
+      if (givingUp) armed.mic.giveUpReset();
       armed = null;
     }
   }
@@ -759,6 +894,23 @@
   // The choice is remembered per browser, like consent. A device id is
   // an opaque, per-origin token the browser mints; it names nothing
   // outside this page and is sent nowhere.
+  function collapsedPreference() {
+    try {
+      return window.localStorage.getItem(COLLAPSE_KEY) === "yes";
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function rememberCollapsed(on) {
+    try {
+      if (on) window.localStorage.setItem(COLLAPSE_KEY, "yes");
+      else window.localStorage.removeItem(COLLAPSE_KEY);
+    } catch (err) {
+      // Harmless: the card opens expanded next time.
+    }
+  }
+
   function preferredDevice() {
     try {
       return window.localStorage.getItem(DEVICE_KEY) || "";
@@ -996,6 +1148,12 @@
           aborted = true;
           recognition.abort();
         },
+        // Results here land while the respondent is still speaking, and
+        // were read as they did; there is nothing in flight to take back.
+        cancel: function () {
+          aborted = true;
+          recognition.abort();
+        },
       };
     });
   }
@@ -1052,6 +1210,7 @@
   function startRecording(field, say, ui, done) {
     var spoken = false; // has this take put anything in the field yet?
     var discarded = false; // reset mid-take: ignore whatever still arrives
+    var written = ""; // what this take has put in the field, separator included
     return openMicrophone().then(function (stream) {
         var context = new (window.AudioContext || window.webkitAudioContext)({
           sampleRate: SAMPLE_RATE,
@@ -1092,9 +1251,12 @@
             // — which is what a respondent saw in production.
             if (!spoken) {
               spoken = true;
-              writeAnswer(field, joinTakes(field.value, text));
+              var joined = joinTakes(field.value, text);
+              written = joined.slice(field.value.length);
+              writeAnswer(field, joined);
               return;
             }
+            written += text;
             writeAnswer(field, field.value + text);
           },
           onDone: function () {
@@ -1156,6 +1318,18 @@
           cleanup();
         }
 
+        // cancel is abort that tidies up after itself: the part of the
+        // transcript that had already arrived is taken back, provided it
+        // is still the end of the answer. If the respondent has edited
+        // past it, their edit wins and the text stays.
+        function cancel() {
+          var value = field.value;
+          abort();
+          if (written && value.slice(-written.length) === written) {
+            writeAnswer(field, value.slice(0, value.length - written.length));
+          }
+        }
+
         // The device list is fetched alongside the capture graph, not
         // before it: names are only available once this stream is open.
         // On-device recognition (startLocalRecognition) opens its own
@@ -1169,6 +1343,7 @@
           return {
             stop: finish,
             abort: abort,
+            cancel: cancel,
             inputs: results[1],
             monitor: {
               context: context,

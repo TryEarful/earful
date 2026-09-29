@@ -222,6 +222,34 @@ export async function slowSockets(context: BrowserContext, delayMs: number): Pro
   }, delayMs);
 }
 
+// mutedSockets stops the page hearing the server once it has sent stop,
+// so a take stays "Transcribing…" for as long as a test needs it to:
+// the scripted provider otherwise answers before anything can be
+// clicked. Everything up to the stop is untouched.
+export async function mutedSockets(context: BrowserContext): Promise<void> {
+  await context.addInitScript(() => {
+    const Native = window.WebSocket;
+    class MutedSocket extends Native {
+      private stopped = false;
+      send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+        if (typeof data === "string" && data.includes('"stop"')) this.stopped = true;
+        super.send(data);
+      }
+      get onmessage() {
+        return super.onmessage;
+      }
+      set onmessage(handler: ((this: WebSocket, event: MessageEvent) => any) | null) {
+        super.onmessage = handler
+          ? (event: MessageEvent) => {
+              if (!this.stopped) handler.call(this, event);
+            }
+          : null;
+      }
+    }
+    (window as any).WebSocket = MutedSocket;
+  });
+}
+
 // --- What this instance offers -------------------------------------
 //
 // "An absent capability is an absent feature" (SPEC.md Appendix D): an

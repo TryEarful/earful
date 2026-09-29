@@ -1,9 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Browser, Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {
   aiTimeout,
   createPublishedSurvey,
   fakeMicrophone,
+  mutedSockets,
   noMicrophone,
   offersVoice,
   scriptedVoice,
@@ -194,7 +195,7 @@ test("without a microphone the voice controls are disabled and the error is boxe
   await expect(status).toHaveClass(/voice-error/);
   await expect(mic).toBeDisabled();
   await expect(reset).toBeDisabled();
-  await expect(respondent.getByRole("button", { name: "Grant microphone access" })).toBeDisabled();
+  await expect(respondent.getByRole("button", { name: "Grant microphone to enable dictation" })).toBeDisabled();
   await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "unavailable");
 
   // Typing is untouched: a tap of Space is the browser's own space, and
@@ -258,7 +259,7 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
   // no device in particular.
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue("default");
-  await expect(respondent.getByRole("button", { name: "Grant microphone access" })).toBeHidden();
+  await expect(respondent.getByRole("button", { name: "Grant microphone to enable dictation" })).toBeHidden();
   await mic.click();
   await expect(stop).toBeVisible();
   await expect(picker).toHaveValue("default");
@@ -350,7 +351,7 @@ test("without permission the picker is a button that asks for it", async ({ page
   const offered = await offersVoice(respondent);
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
-  const grant = respondent.getByRole("button", { name: "Grant microphone access" });
+  const grant = respondent.getByRole("button", { name: "Grant microphone to enable dictation" });
   const picker = respondent.getByLabel("Microphone");
   await expect(grant).toBeVisible();
   await expect(picker).toBeHidden();
@@ -372,6 +373,136 @@ test("without permission the picker is a button that asks for it", async ({ page
 
   const scan = await new AxeBuilder({ page: respondent }).analyze();
   expect(scan.violations).toEqual([]);
+
+  await context.close();
+});
+
+// A respondent with a fake microphone and consent already given, on a
+// survey of their own.
+async function dictating(page: Page, browser: Browser, title: string, muted = false) {
+  const share = await createPublishedSurvey(page, title);
+  const context = await browser.newContext({
+    storageState: undefined,
+    permissions: ["microphone"],
+  });
+  await fakeMicrophone(context);
+  if (muted) await mutedSockets(context);
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+  const offered = await offersVoice(respondent);
+  if (offered) {
+    await respondent.evaluate(() => localStorage.setItem("earful-voice-consent", "yes"));
+    await respondent.reload();
+  }
+  return { context, respondent, offered };
+}
+
+// The card names itself, and a respondent who is going to type can put
+// it away — on every question, and for next time. Put away, it claims
+// no keys: Space is a space and Esc clears nothing.
+test("the dictation card is named and can be put away", async ({ page, browser }) => {
+  const { context, respondent, offered } = await dictating(
+    page,
+    browser,
+    `E2E voice collapse ${Date.now()}`
+  );
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  const card = respondent.getByRole("group", { name: "Dictation" }).first();
+  const dictate = respondent.getByRole("button", { name: "Dictate" });
+  await expect(card).toBeVisible();
+  await expect(dictate).toBeVisible();
+
+  await respondent.getByRole("button", { name: "Collapse dictation" }).first().click();
+  await expect(dictate).toBeHidden();
+  await expect(card).toBeVisible(); // the name and the way back remain
+  const expand = respondent.getByRole("button", { name: "Expand dictation" }).first();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+
+  const answer = respondent.locator("textarea");
+  await answer.click();
+  await respondent.keyboard.type("typed, not said");
+  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Escape");
+  await expect(answer).toHaveValue("typed, not said");
+
+  const scan = await new AxeBuilder({ page: respondent }).analyze();
+  expect(scan.violations).toEqual([]);
+
+  await respondent.reload();
+  await expect(respondent.getByRole("button", { name: "Dictate" })).toBeHidden();
+  await respondent.getByRole("button", { name: "Expand dictation" }).first().click();
+  await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
+
+  await context.close();
+});
+
+// A transcription can be called off while it is in flight, and the
+// answer is then what it was before the take.
+test("a transcription in flight can be cancelled", async ({ page, browser }) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+  const { context, respondent, offered } = await dictating(
+    page,
+    browser,
+    `E2E voice cancel ${Date.now()}`,
+    true
+  );
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  const answer = respondent.locator("textarea");
+  const card = respondent.locator(".voice").first();
+  const cancel = respondent.getByRole("button", { name: "Cancel", exact: true });
+  await answer.fill("Typed before the take.");
+  await expect(cancel).toBeHidden();
+
+  await respondent.getByRole("button", { name: "Dictate" }).click();
+  await respondent.getByRole("button", { name: "Stop", exact: true }).click();
+  await expect(card).toHaveAttribute("data-state", "transcribing");
+  await expect(cancel).toBeVisible();
+
+  await cancel.click();
+  await expect(card).toHaveAttribute("data-state", "idle");
+  await expect(cancel).toBeHidden();
+  await expect(respondent.locator(".voice-status").first()).toHaveText(/cancelled/);
+  await expect(answer).toHaveValue("Typed before the take.");
+
+  await context.close();
+});
+
+// Esc twice reaches a transcription in flight as well: the take is
+// dropped and the answer cleared, and nothing arrives afterwards.
+test("esc twice cancels a transcription in flight and clears the answer", async ({
+  page,
+  browser,
+}) => {
+  test.skip(
+    !scriptedVoice,
+    "refusing to send synthesized audio to a real transcriber (E2E_VOICE_MODE is not scripted)"
+  );
+  const { context, respondent, offered } = await dictating(
+    page,
+    browser,
+    `E2E voice esc ${Date.now()}`,
+    true
+  );
+  test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
+
+  const answer = respondent.locator("textarea");
+  const card = respondent.locator(".voice").first();
+  await answer.fill("Typed before the take.");
+
+  await respondent.getByRole("button", { name: "Dictate" }).click();
+  await respondent.getByRole("button", { name: "Stop", exact: true }).click();
+  await expect(card).toHaveAttribute("data-state", "transcribing");
+
+  await respondent.keyboard.press("Escape");
+  await respondent.keyboard.press("Escape");
+  await expect(card).toHaveAttribute("data-state", "idle");
+  await expect(respondent.locator(".voice-status").first()).toHaveText(/Cleared/);
+  await expect(answer).toHaveValue("");
 
   await context.close();
 });

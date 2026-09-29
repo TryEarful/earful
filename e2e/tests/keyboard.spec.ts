@@ -317,9 +317,18 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   const answer = respondent.locator("textarea");
   const status = respondent.locator(".voice-status").first();
 
-  // One Esc only arms, and says so; the answer is untouched.
+  // One Esc only arms, and says so; the answer is untouched. Left
+  // alone for six seconds it gives up, and the status line says what it
+  // said before.
   await answer.click();
   await respondent.keyboard.type("Wrong answer");
+  await respondent.keyboard.press("Escape");
+  await expect(status).toHaveText(/Press ESC again/);
+  await respondent.waitForTimeout(6300);
+  await expect(status).toHaveText(/Press Dictate/);
+  await expect(answer).toHaveValue("Wrong answer");
+
+  // …so the next Esc is a first one again.
   await respondent.keyboard.press("Escape");
   await expect(status).toHaveText(/Press ESC again/);
   await expect(answer).toHaveValue("Wrong answer");
