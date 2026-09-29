@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strconv"
 	"strings"
@@ -212,7 +213,7 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 	version, err := s.surveys.Publish(r.Context(), info.WorkspaceID, survey.ID, info.UserID, s.clock.Now())
 	switch {
 	case errors.Is(err, store.ErrNothingToPublish):
-		s.renderSurveyPage(w, r, "", "Nothing to publish — the draft matches the version that's already live.")
+		s.renderSurveyPage(w, r, "", say(r, "editor.notice.unchanged"))
 		return
 	case isUserError(err):
 		s.renderSurveyPage(w, r, err.Error(), "")
@@ -221,7 +222,7 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "publish survey", err)
 		return
 	}
-	s.renderSurveyPage(w, r, "", "Published version "+strconv.Itoa(version.Number)+". Respondents now see this version.")
+	s.renderSurveyPage(w, r, "", say(r, "editor.notice.published", uitext.Args{"Version": version.Number}))
 }
 
 func (s *server) surveyClose(w http.ResponseWriter, r *http.Request) {
@@ -336,14 +337,14 @@ func (s *server) saveDraftAndRedirect(w http.ResponseWriter, r *http.Request, su
 // space into an oracle for other customers' data.
 func (s *server) surveyNotFound(w http.ResponseWriter, r *http.Request) {
 	render(w, r, http.StatusNotFound, templates.ErrorPage(
-		"Survey not found",
-		"This survey doesn't exist, or it isn't in your workspace."))
+		say(r, "error.survey.title"),
+		say(r, "error.survey.body")))
 }
 
 func (s *server) internalError(w http.ResponseWriter, r *http.Request, what string, err error) {
 	s.logger.Error(what+" failed", "error", err)
 	render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-		"Something went wrong", "We couldn't complete that action. Please try again."))
+		say(r, "error.generic.title"), say(r, "error.generic.body")))
 }
 
 // isUserError distinguishes validation problems — which belong inline on

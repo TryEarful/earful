@@ -677,3 +677,102 @@ empty = "Nothing yet."
 [admin.metrics.spend]
 heading = "AI spend (estimated)"
 total_html = "<strong>{{.Cost}}</strong> over the last {{.Days}} days."
+
+
+# ── When something goes wrong ──────────────────────────────────────────
+
+[error.generic]
+title = "Something went wrong"
+body = "We couldn't complete that action. Please try again."
+
+[error.csrf]
+title = "Request blocked"
+body = "This form was missing its security token. Go back, reload the page, and try again."
+
+[error.survey]
+title = "Survey not found"
+body = "This survey doesn't exist, or it isn't in your workspace."
+
+[error.attempts]
+title = "Too many attempts"
+
+
+# ── Signing in: notices and refusals ───────────────────────────────────
+
+[auth.error]
+email = "That doesn't look like an email address — check it and try again."
+
+[login.notice]
+signed_out = "You've been signed out."
+google_failed = "Google sign-in didn't complete. Try again, or use your email instead."
+
+[login.error]
+credentials = "Invalid email or password."
+failed = "We couldn't sign you in. Please try again."
+paused = "Sign-in is temporarily paused for this address. Wait a little while and try again."
+incomplete = "We couldn't complete your sign-in. Please try again."
+
+[login.error.blocked]
+title = "Sign-in blocked"
+state = "The sign-in attempt could not be verified (state mismatch). Start again from the login page."
+nonce = "The sign-in attempt could not be verified. Start again from the login page."
+
+[signup.error]
+code = "That invite code isn't valid — it may already be used. Check it, or ask for a fresh one."
+password = "Passwords need at least 8 characters."
+exists = "An account with that email already exists — sign in instead."
+failed = "We couldn't create your account. Please try again."
+paused = "Sign-up is temporarily paused for this address. Wait a little while and try again."
+
+[magic.limited]
+title = "Too many sign-in requests"
+body = "We've sent several links recently. Wait a little while, check your inbox for an earlier link, then try again."
+
+[magic.error]
+send = "We couldn't send your sign-in link. Please try again."
+login = "We couldn't complete your sign-in. Please request a fresh link."
+
+[magic.invalid.reason]
+incomplete = "The sign-in link is incomplete. Use the full link from your email."
+expired = "This sign-in link has expired (links last 15 minutes). Request a fresh one."
+used = "This sign-in link was already used. Request a fresh one to sign in again."
+invalid = "This sign-in link isn't valid. Request a fresh one."
+
+
+# ── Account: notices and refusals ──────────────────────────────────────
+
+[account.notice]
+email_changed = "Your email address has been changed."
+export_started = "Building your export."
+export_running = "An export is already being built."
+
+[account.error.email]
+password = "That password isn't right. Your email is unchanged."
+taken = "Another account already uses that address."
+google = "This account signs in with Google and has no password. Ask an admin to set one first."
+failed = "We couldn't change your email. Please try again."
+
+[account.error]
+delete = "We couldn't delete your account. Please try again or contact support."
+
+
+# ── Support: refusals, and the state of a code ─────────────────────────
+
+[admin.beta.error]
+list = "Couldn't load the code list."
+mint = "Couldn't mint codes. Please try again."
+account = "No account with that email."
+reset = "Couldn't reset the password. Please try again."
+
+[admin.beta.state]
+unused = "unused"
+used = "used"
+used_by = "used by {{.Email}}"
+revoked = "revoked"
+
+
+# ── The survey editor: notices ─────────────────────────────────────────
+
+[editor.notice]
+unchanged = "Nothing to publish — the draft matches the version that's already live."
+published = "Published version {{.Version}}. Respondents now see this version."

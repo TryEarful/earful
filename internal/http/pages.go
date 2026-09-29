@@ -15,11 +15,11 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 	data := templates.AccountData{IsSuperAdmin: info.IsSuperAdmin}
 	switch r.URL.Query().Get("notice") {
 	case "email_changed":
-		data.EmailNotice = "Your email address has been changed."
+		data.EmailNotice = say(r, "account.notice.email_changed")
 	case "export_started":
-		data.Notice = "Building your export."
+		data.Notice = say(r, "account.notice.export_started")
 	case "export_running":
-		data.Notice = "An export is already being built."
+		data.Notice = say(r, "account.notice.export_running")
 	}
 	// The latest export's state, if there has ever been one. A missing
 	// row is the normal case, not a problem.
@@ -37,7 +37,7 @@ func (s *server) accountDelete(w http.ResponseWriter, r *http.Request) {
 	if err := s.auth.DeleteAccount(r.Context(), info.UserID); err != nil {
 		s.logger.Error("account deletion failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't delete your account. Please try again or contact support."))
+			say(r, "error.generic.title"), say(r, "account.error.delete")))
 		return
 	}
 	s.clearSessionCookie(w)

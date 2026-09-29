@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strconv"
 
@@ -41,24 +42,24 @@ func (s *server) signupSubmit(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, auth.ErrRateLimited):
 		render(w, r, http.StatusTooManyRequests, templates.ErrorPage(
-			"Too many attempts",
-			"Sign-up is temporarily paused for this address. Wait a little while and try again."))
+			say(r, "error.attempts.title"),
+			say(r, "signup.error.paused")))
 	case errors.Is(err, auth.ErrInvalidCode):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Signup("That invite code isn't valid — it may already be used. Check it, or ask for a fresh one."))
+			templates.Signup(say(r, "signup.error.code")))
 	case errors.Is(err, auth.ErrInvalidEmail):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Signup("That doesn't look like an email address — check it and try again."))
+			templates.Signup(say(r, "auth.error.email")))
 	case errors.Is(err, auth.ErrWeakPassword):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Signup("Passwords need at least 8 characters."))
+			templates.Signup(say(r, "signup.error.password")))
 	case errors.Is(err, auth.ErrEmailTaken):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Signup("An account with that email already exists — sign in instead."))
+			templates.Signup(say(r, "signup.error.exists")))
 	case err != nil:
 		s.logger.Error("beta signup failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't create your account. Please try again."))
+			say(r, "error.generic.title"), say(r, "signup.error.failed")))
 	default:
 		s.startSession(w, r, user.ID)
 	}
@@ -73,15 +74,15 @@ func (s *server) passwordLogin(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, auth.ErrRateLimited):
 		render(w, r, http.StatusTooManyRequests, templates.ErrorPage(
-			"Too many attempts",
-			"Sign-in is temporarily paused for this address. Wait a little while and try again."))
+			say(r, "error.attempts.title"),
+			say(r, "login.error.paused")))
 	case errors.Is(err, auth.ErrBadCredentials):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Login(s.google != nil, s.cfg.BetaMode, "Invalid email or password.", ""))
+			templates.Login(s.google != nil, s.cfg.BetaMode, say(r, "login.error.credentials"), ""))
 	case err != nil:
 		s.logger.Error("password login failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't sign you in. Please try again."))
+			say(r, "error.generic.title"), say(r, "login.error.failed")))
 	default:
 		s.startSession(w, r, user.ID)
 	}
@@ -101,17 +102,17 @@ func (s *server) accountEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case errors.Is(err, auth.ErrInvalidEmail):
-		rerender("That doesn't look like an email address — check it and try again.")
+		rerender(say(r, "auth.error.email"))
 	case errors.Is(err, auth.ErrBadCredentials):
-		rerender("That password isn't right. Your email is unchanged.")
+		rerender(say(r, "account.error.email.password"))
 	case errors.Is(err, auth.ErrEmailTaken):
-		rerender("Another account already uses that address.")
+		rerender(say(r, "account.error.email.taken"))
 	case errors.Is(err, auth.ErrNoPassword):
-		rerender("This account signs in with Google and has no password. Ask an admin to set one first.")
+		rerender(say(r, "account.error.email.google"))
 	case err != nil:
 		s.logger.Error("email change failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't change your email. Please try again."))
+			say(r, "error.generic.title"), say(r, "account.error.email.failed")))
 	default:
 		http.Redirect(w, r, "/account?notice=email_changed", http.StatusSeeOther)
 	}
@@ -125,7 +126,7 @@ func (s *server) adminBetaCodesPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Error("list beta codes failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "Couldn't load the code list."))
+			say(r, "error.generic.title"), say(r, "admin.beta.error.list")))
 		return
 	}
 	render(w, r, http.StatusOK,
@@ -145,7 +146,7 @@ func (s *server) adminBetaCodesMint(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Error("mint beta codes failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "Couldn't mint codes. Please try again."))
+			say(r, "error.generic.title"), say(r, "admin.beta.error.mint")))
 		return
 	}
 	rows, _ := s.betaCodeRows(r)
@@ -174,11 +175,11 @@ func (s *server) adminResetPassword(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, auth.ErrUserNotFound):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.BetaCodesAdmin(info.Email, info.CSRFToken, nil, "", "", rows, "No account with that email."))
+			templates.BetaCodesAdmin(info.Email, info.CSRFToken, nil, "", "", rows, say(r, "admin.beta.error.account")))
 	case err != nil:
 		s.logger.Error("admin password reset failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "Couldn't reset the password. Please try again."))
+			say(r, "error.generic.title"), say(r, "admin.beta.error.reset")))
 	default:
 		render(w, r, http.StatusOK,
 			templates.BetaCodesAdmin(info.Email, info.CSRFToken, nil, address, temp, rows, ""))
@@ -192,14 +193,14 @@ func (s *server) betaCodeRows(r *http.Request) ([]templates.BetaCodeRow, error) 
 	}
 	rows := make([]templates.BetaCodeRow, 0, len(list))
 	for _, c := range list {
-		status := "unused"
+		status := say(r, "admin.beta.state.unused")
 		switch {
 		case c.RevokedAt != nil:
-			status = "revoked"
+			status = say(r, "admin.beta.state.revoked")
 		case c.UsedAt != nil:
-			status = "used"
+			status = say(r, "admin.beta.state.used")
 			if c.UsedByEmail != nil {
-				status = "used by " + *c.UsedByEmail
+				status = say(r, "admin.beta.state.used_by", uitext.Args{"Email": *c.UsedByEmail})
 			}
 		}
 		rows = append(rows, templates.BetaCodeRow{

@@ -126,8 +126,8 @@ func (s *server) requireCSRF(next http.Handler) http.Handler {
 		}
 		if subtle.ConstantTimeCompare([]byte(token), []byte(info.CSRFToken)) != 1 {
 			render(w, r, http.StatusForbidden, templates.ErrorPage(
-				"Request blocked",
-				"This form was missing its security token. Go back, reload the page, and try again."))
+				say(r, "error.csrf.title"),
+				say(r, "error.csrf.body")))
 			return
 		}
 		next.ServeHTTP(w, r)

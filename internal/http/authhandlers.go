@@ -3,6 +3,7 @@ package http
 import (
 	"crypto/subtle"
 	"errors"
+	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -13,9 +14,19 @@ import (
 
 // notices are fixed strings keyed by ?notice= codes so redirects can
 // carry a message without reflecting arbitrary query text into the page.
-var notices = map[string]string{
-	"signed_out":    "You've been signed out.",
-	"google_failed": "Google sign-in didn't complete. Try again, or use your email instead.",
+var notices = map[string]uitext.ID{
+	"signed_out":    "login.notice.signed_out",
+	"google_failed": "login.notice.google_failed",
+}
+
+// notice is the message a ?notice= code stands for, or nothing for a
+// code that stands for none.
+func notice(r *http.Request, code string) string {
+	id, ok := notices[code]
+	if !ok {
+		return ""
+	}
+	return say(r, id)
 }
 
 func (s *server) loginPage(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +36,7 @@ func (s *server) loginPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	render(w, r, http.StatusOK, templates.Login(s.google != nil, s.cfg.BetaMode, "", notices[r.URL.Query().Get("notice")]))
+	render(w, r, http.StatusOK, templates.Login(s.google != nil, s.cfg.BetaMode, "", notice(r, r.URL.Query().Get("notice"))))
 }
 
 func (s *server) magicRequest(w http.ResponseWriter, r *http.Request) {
@@ -40,15 +51,15 @@ func (s *server) magicRequest(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, auth.ErrInvalidEmail):
 		render(w, r, http.StatusUnprocessableEntity,
-			templates.Login(s.google != nil, false, "That doesn't look like an email address — check it and try again.", ""))
+			templates.Login(s.google != nil, false, say(r, "auth.error.email"), ""))
 	case errors.Is(err, auth.ErrRateLimited):
 		render(w, r, http.StatusTooManyRequests, templates.ErrorPage(
-			"Too many sign-in requests",
-			"We've sent several links recently. Wait a little while, check your inbox for an earlier link, then try again."))
+			say(r, "magic.limited.title"),
+			say(r, "magic.limited.body")))
 	case err != nil:
 		s.logger.Error("magic link request failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't send your sign-in link. Please try again."))
+			say(r, "error.generic.title"), say(r, "magic.error.send")))
 	default:
 		render(w, r, http.StatusOK, templates.MagicSent(address))
 	}
@@ -60,12 +71,12 @@ func (s *server) magicRequest(w http.ResponseWriter, r *http.Request) {
 func (s *server) magicVerifyPage(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		render(w, r, http.StatusBadRequest, templates.MagicInvalid("The sign-in link is incomplete. Use the full link from your email."))
+		render(w, r, http.StatusBadRequest, templates.MagicInvalid(say(r, "magic.invalid.reason.incomplete")))
 		return
 	}
 	address, err := s.auth.PeekMagicToken(r.Context(), token)
 	if err != nil {
-		render(w, r, http.StatusBadRequest, templates.MagicInvalid(magicErrorMessage(err)))
+		render(w, r, http.StatusBadRequest, templates.MagicInvalid(say(r, magicErrorMessage(err))))
 		return
 	}
 	render(w, r, http.StatusOK, templates.MagicConfirm(address, token))
@@ -75,27 +86,27 @@ func (s *server) magicVerifyConsume(w http.ResponseWriter, r *http.Request) {
 	token := r.PostFormValue("token")
 	address, err := s.auth.ConsumeMagicToken(r.Context(), token)
 	if err != nil {
-		render(w, r, http.StatusBadRequest, templates.MagicInvalid(magicErrorMessage(err)))
+		render(w, r, http.StatusBadRequest, templates.MagicInvalid(say(r, magicErrorMessage(err))))
 		return
 	}
 	user, _, err := s.auth.LoginByEmail(r.Context(), address)
 	if err != nil {
 		s.logger.Error("magic login failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't complete your sign-in. Please request a fresh link."))
+			say(r, "error.generic.title"), say(r, "magic.error.login")))
 		return
 	}
 	s.startSession(w, r, user.ID)
 }
 
-func magicErrorMessage(err error) string {
+func magicErrorMessage(err error) uitext.ID {
 	switch {
 	case errors.Is(err, auth.ErrExpiredToken):
-		return "This sign-in link has expired (links last 15 minutes). Request a fresh one."
+		return "magic.invalid.reason.expired"
 	case errors.Is(err, auth.ErrUsedToken):
-		return "This sign-in link was already used. Request a fresh one to sign in again."
+		return "magic.invalid.reason.used"
 	default:
-		return "This sign-in link isn't valid. Request a fresh one."
+		return "magic.invalid.reason.invalid"
 	}
 }
 
@@ -129,13 +140,13 @@ func (s *server) googleCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil || stateCookie.Value == "" ||
 		subtle.ConstantTimeCompare([]byte(stateCookie.Value), []byte(r.URL.Query().Get("state"))) != 1 {
 		render(w, r, http.StatusForbidden, templates.ErrorPage(
-			"Sign-in blocked", "The sign-in attempt could not be verified (state mismatch). Start again from the login page."))
+			say(r, "login.error.blocked.title"), say(r, "login.error.blocked.state")))
 		return
 	}
 	nonceCookie, err := r.Cookie(oauthNonceCookie)
 	if err != nil || nonceCookie.Value == "" {
 		render(w, r, http.StatusForbidden, templates.ErrorPage(
-			"Sign-in blocked", "The sign-in attempt could not be verified. Start again from the login page."))
+			say(r, "login.error.blocked.title"), say(r, "login.error.blocked.nonce")))
 		return
 	}
 
@@ -149,7 +160,7 @@ func (s *server) googleCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Error("google login failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't complete your sign-in. Please try again."))
+			say(r, "error.generic.title"), say(r, "login.error.incomplete")))
 		return
 	}
 	s.startSession(w, r, user.ID)
@@ -163,7 +174,7 @@ func (s *server) startSession(w http.ResponseWriter, r *http.Request, userID uui
 	if err != nil {
 		s.logger.Error("create session failed", "error", err)
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
-			"Something went wrong", "We couldn't complete your sign-in. Please try again."))
+			say(r, "error.generic.title"), say(r, "login.error.incomplete")))
 		return
 	}
 	s.setSessionCookie(w, raw, sess.ExpiresAt)

@@ -91,6 +91,7 @@ var namePattern = regexp.MustCompile(`^[a-z0-9_]+(\.[a-z0-9_]+)+$`)
 // arguments it is.
 var takesName = map[string]int{
 	"t": 1, "tn": 1, "thtml": 1,
+	"say": 1, "sayN": 1,
 	"T": 0, "N": 0, "HTML": 0,
 }
 

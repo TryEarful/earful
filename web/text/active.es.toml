@@ -1218,3 +1218,210 @@ other = "Gasto en IA (estimado)"
 [admin.metrics.spend.total_html]
 hash = "sha1-f2ad585f1143222f875799003c28f65bd84eab3e"
 other = "<strong>{{.Cost}}</strong> en los últimos {{.Days}} días."
+
+
+# ── Cuando algo sale mal ───────────────────────────────────────────────
+
+[error.generic.title]
+hash = "sha1-8d886c0ba6f2b683daba5f19568a316226ce3e4c"
+other = "Algo salió mal"
+
+[error.generic.body]
+hash = "sha1-a983593525b53f5b2e2e5a73c9681ba9cf9101b2"
+other = "No pudimos completar esa acción. Inténtelo de nuevo."
+
+[error.csrf.title]
+hash = "sha1-5177f5f09288ed72e5a928bad37846fd31ea27a2"
+other = "Solicitud bloqueada"
+
+[error.csrf.body]
+hash = "sha1-dbc8b59184b89dd3f1ac5005c4ab50fdb5d7f73c"
+other = "A este formulario le faltaba su código de seguridad. Vuelva atrás, recargue la página e inténtelo de nuevo."
+
+[error.survey.title]
+hash = "sha1-fd601ec01fe3c175a5a0ce3bcf1f579a19327a66"
+other = "No se encontró la encuesta"
+
+[error.survey.body]
+hash = "sha1-24d6ef7caf7e448e2f0115457959c1f6494a5b69"
+other = "Esta encuesta no existe, o no está en su espacio de trabajo."
+
+[error.attempts.title]
+hash = "sha1-3a29f9eaa43cfa172df27e2691e3237d0a7fe107"
+other = "Demasiados intentos"
+
+
+# ── Iniciar sesión: avisos y rechazos ──────────────────────────────────
+
+[auth.error.email]
+hash = "sha1-e3149e625a7876e1c7a1bdfdaf30bd440fba5702"
+other = "Eso no parece un correo electrónico: revíselo e inténtelo de nuevo."
+
+[login.notice.signed_out]
+hash = "sha1-6d78b9cbbce42ac4f830d262ab4439eabe3ba4c2"
+other = "Ha cerrado la sesión."
+
+[login.notice.google_failed]
+hash = "sha1-b18189cf80afb4d9d13fad894269831316737463"
+other = "El inicio de sesión con Google no se completó. Inténtelo de nuevo, o use su correo electrónico."
+
+[login.error.credentials]
+hash = "sha1-01126f54afac9b3005dd042f7b6983486fb712eb"
+other = "Correo electrónico o contraseña no válidos."
+
+[login.error.failed]
+hash = "sha1-efe875d594d48b4ce2a4fb18b052d9f85e87d774"
+other = "No pudimos iniciar su sesión. Inténtelo de nuevo."
+
+[login.error.paused]
+hash = "sha1-78d3dfcb02c2d47bc3821b24ef5b1f67590c305f"
+other = "El inicio de sesión está en pausa temporalmente para esta dirección. Espere un poco e inténtelo de nuevo."
+
+[login.error.blocked.title]
+hash = "sha1-7ca8f54b38133b1612db5363ffe88ecaa8033a48"
+other = "Inicio de sesión bloqueado"
+
+[login.error.blocked.state]
+hash = "sha1-75223d0728337599ce551cc7018bfd9b81a704db"
+other = "No se pudo verificar el intento de inicio de sesión (el estado no coincide). Empiece de nuevo desde la página de inicio de sesión."
+
+[login.error.blocked.nonce]
+hash = "sha1-cc27ef36d9f336d593942924bb99610314699986"
+other = "No se pudo verificar el intento de inicio de sesión. Empiece de nuevo desde la página de inicio de sesión."
+
+[login.error.incomplete]
+hash = "sha1-418d73721042c340222cd9a25fd1a553648cf554"
+other = "No pudimos completar su inicio de sesión. Inténtelo de nuevo."
+
+[signup.error.code]
+hash = "sha1-ff2d71f80f923c69f821383d34c99703fa542c9a"
+other = "Ese código de invitación no es válido; puede que ya se haya usado. Revíselo, o pida uno nuevo."
+
+[signup.error.password]
+hash = "sha1-57362bf1d880cbe56d3c0efea29ee3bef7794a36"
+other = "La contraseña debe tener al menos 8 caracteres."
+
+[signup.error.exists]
+hash = "sha1-fd0e8e56818aee177a9ff6a1fb32e6c898c315fd"
+other = "Ya existe una cuenta con ese correo: inicie sesión."
+
+[signup.error.failed]
+hash = "sha1-84a4da0394a0aec8fa428143c8620ca30a833bd5"
+other = "No pudimos crear su cuenta. Inténtelo de nuevo."
+
+[signup.error.paused]
+hash = "sha1-693fde6faceddd43a5dcd74e499ce2ca8f71e207"
+other = "El registro está en pausa temporalmente para esta dirección. Espere un poco e inténtelo de nuevo."
+
+[magic.limited.title]
+hash = "sha1-431563f0620c70bf8168efb3f8d9fb4ae1ba5ba6"
+other = "Demasiadas solicitudes de acceso"
+
+[magic.limited.body]
+hash = "sha1-2de00ad8f3f1e11029e0e8ec4a86cc4c9c4d329c"
+other = "Hemos enviado varios enlaces hace poco. Espere un poco, busque en su bandeja de entrada un enlace anterior y vuelva a intentarlo."
+
+[magic.error.send]
+hash = "sha1-f2b0ddd0804811e33736acdc0523185f98e3a407"
+other = "No pudimos enviar su enlace de acceso. Inténtelo de nuevo."
+
+[magic.error.login]
+hash = "sha1-99d64e4dffe02c48c05511c82331852349b26e8a"
+other = "No pudimos completar su inicio de sesión. Solicite un enlace nuevo."
+
+[magic.invalid.reason.incomplete]
+hash = "sha1-e2467d731193855a8c242ada46fae5a4ba23462d"
+other = "El enlace de acceso está incompleto. Use el enlace entero de su correo."
+
+[magic.invalid.reason.expired]
+hash = "sha1-de198f6e5ef2bbaabb816156a98f65afc21a128e"
+other = "Este enlace de acceso ha caducado (los enlaces duran 15 minutos). Solicite uno nuevo."
+
+[magic.invalid.reason.used]
+hash = "sha1-f10398865762350b013dde5f2ad9dda58b37a510"
+other = "Este enlace de acceso ya se usó. Solicite uno nuevo para volver a iniciar sesión."
+
+[magic.invalid.reason.invalid]
+hash = "sha1-a9f1927e37fdbd491cd4252932f141a8ba2c6bad"
+other = "Este enlace de acceso no es válido. Solicite uno nuevo."
+
+
+# ── Cuenta: avisos y rechazos ──────────────────────────────────────────
+
+[account.notice.email_changed]
+hash = "sha1-84b4678cf1df4a15a1d29c5698e2357c590e42e9"
+other = "Su correo electrónico se ha cambiado."
+
+[account.notice.export_started]
+hash = "sha1-480ecade2305ce00e36e6d1b3a4da4d1b1ad838e"
+other = "Preparando su exportación."
+
+[account.notice.export_running]
+hash = "sha1-32eb4a0813fb8053ed688707a4cfe78a9c707e30"
+other = "Ya se está preparando una exportación."
+
+[account.error.email.password]
+hash = "sha1-93c50039d6941ea271660e200540a5261efc6f01"
+other = "Esa contraseña no es correcta. Su correo no ha cambiado."
+
+[account.error.email.taken]
+hash = "sha1-f1401993f41ebf2124d41324bd85ab7d647f74f3"
+other = "Otra cuenta ya usa esa dirección."
+
+[account.error.email.google]
+hash = "sha1-e5a09601d8b12ebf56869ec7684d80c2c2a598e6"
+other = "Esta cuenta inicia sesión con Google y no tiene contraseña. Pida antes a un administrador que le asigne una."
+
+[account.error.email.failed]
+hash = "sha1-489db92c995e46379b7ef9d468b5e49e31afb5e2"
+other = "No pudimos cambiar su correo. Inténtelo de nuevo."
+
+[account.error.delete]
+hash = "sha1-9c3c1331f63b8bd901a305353555fe425de36854"
+other = "No pudimos eliminar su cuenta. Inténtelo de nuevo o escriba a soporte."
+
+
+# ── Soporte: rechazos, y el estado de un código ────────────────────────
+
+[admin.beta.error.list]
+hash = "sha1-c5e88cd5418c1ed4c6727fb786b612b73cf2ea53"
+other = "No se pudo cargar la lista de códigos."
+
+[admin.beta.error.mint]
+hash = "sha1-43727369d12a91a64ac937d468917388764caf57"
+other = "No se pudieron generar los códigos. Inténtelo de nuevo."
+
+[admin.beta.error.account]
+hash = "sha1-f8151c09de3d9380c9491d2572fc02d57a06be59"
+other = "No hay ninguna cuenta con ese correo."
+
+[admin.beta.error.reset]
+hash = "sha1-175c1071fa39079d6f9a1398728de689514c5527"
+other = "No se pudo restablecer la contraseña. Inténtelo de nuevo."
+
+[admin.beta.state.unused]
+hash = "sha1-ce7501007f04a6529e650f1f1b3fc0586d1d94eb"
+other = "sin usar"
+
+[admin.beta.state.used]
+hash = "sha1-192a56759d36454cc0b8c812e31845e9ed10b130"
+other = "usado"
+
+[admin.beta.state.used_by]
+hash = "sha1-133b64a96fdb2b550cf6aa344b672de0c32e07df"
+other = "usado por {{.Email}}"
+
+[admin.beta.state.revoked]
+hash = "sha1-8375cdf2758cf48c9c9ab140326bdaef30f59406"
+other = "revocado"
+
+
+# ── El editor de encuestas: avisos ─────────────────────────────────────
+
+[editor.notice.unchanged]
+hash = "sha1-2324428fbd30cad2a9e16e887aafd31a59488bb0"
+other = "No hay nada que publicar: el borrador coincide con la versión ya publicada."
+
+[editor.notice.published]
+hash = "sha1-84065ea23b0268b6f060c21a2cb010bb32443c64"
+other = "Se publicó la versión {{.Version}}. Quienes respondan verán ahora esta versión."
