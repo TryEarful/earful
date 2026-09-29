@@ -203,10 +203,11 @@ func (s *server) betaCodeRows(r *http.Request) ([]templates.BetaCodeRow, error) 
 			}
 		}
 		rows = append(rows, templates.BetaCodeRow{
-			ID:      c.ID.String(),
-			Label:   c.Label,
-			Created: c.CreatedAt.Format("2006-01-02"),
-			Status:  status,
+			ID:        c.ID.String(),
+			Label:     c.Label,
+			Created:   c.CreatedAt.Format("2006-01-02"),
+			Status:    status,
+			Revocable: c.RevokedAt == nil && c.UsedAt == nil,
 		})
 	}
 	return rows, nil

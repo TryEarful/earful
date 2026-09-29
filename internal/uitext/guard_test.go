@@ -24,7 +24,6 @@ import (
 // A template leaves the list when its wording has moved to web/text,
 // and the list is empty when the move is done.
 var unmoved = map[string]bool{
-	"admin_templ.go":   true,
 	"respond_templ.go": true,
 }
 

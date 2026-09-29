@@ -591,3 +591,89 @@ title = "Audit log — {{.Survey}}"
 heading = "Audit log"
 intro = "Every draft save and every publish, newest first."
 empty = "Nothing has been saved yet."
+
+
+# ── Support: invite codes and passwords ────────────────────────────────
+
+[admin.beta]
+title = "Private beta admin — Earful"
+heading = "Private beta admin"
+
+[admin.beta.minted]
+heading = "New invite codes — copy them now"
+note = "This is the only time they are shown; the database stores hashes."
+
+[admin.beta.reset]
+shown = "Temporary password for {{.Email}}"
+note = "Shown once. Every session for that account has been signed out; pass the password on out-of-band and suggest they change it."
+heading = "Reset a user's password"
+email = "Account email"
+hint = '''The beta's answer to "I forgot my password" — there is no email to send a reset link to yet.'''
+
+[admin.beta.reset.submit]
+label = "Reset password"
+
+[admin.beta.mint]
+heading = "Mint invite codes"
+count = "How many"
+
+[admin.beta.mint.submit]
+label = "Mint codes"
+
+[admin.beta.mint.name]
+label = "Label"
+placeholder = "e.g. first-wave friends"
+
+[admin.beta.codes]
+heading = "All codes"
+empty_html = "No codes yet — mint some above, or via <code>earful beta-codes add</code>."
+created = "Created"
+status = "Status"
+
+[admin.beta.codes.revoke]
+label = "Revoke"
+
+
+# ── Support: erasing a person's data ───────────────────────────────────
+
+[admin.erasure]
+title = "Erasure — Earful"
+heading = "Erase a person's data"
+intro = "For a GDPR erasure request. This skips the 30-day window: what it removes is gone immediately and cannot be restored."
+done = "Erasure complete — {{.Rows}} rows removed."
+record = "Record the request and this completion in your own log; Earful deliberately keeps no record naming the person erased."
+
+[admin.erasure.find]
+heading = "Find the subject"
+
+[admin.erasure.find.submit]
+label = "Look up"
+
+[admin.erasure.found]
+heading = "What would be erased"
+nothing_html = "Nothing found for <strong>{{.Email}}</strong>."
+account = "Their account, and every session and sign-in token it has"
+workspaces = "{{.Workspaces}} workspace(s), with {{.Surveys}} survey(s) and every response to them"
+invitations = "Their invitations to {{.Surveys}} survey(s) run by others, and the {{.Responses}} response(s) they submitted there"
+suppressed = "Their entry on the email suppression list"
+anonymous = "Anonymous responses are not listed and cannot be: they carry no email, no IP and no device details, so there is no way to tell which are theirs — and nothing personal in them to erase. That is the anonymity promise working as intended, and it is worth saying so in your reply to the request."
+
+[admin.erasure.submit]
+label = "Erase this data now"
+
+
+# ── Support: metrics ───────────────────────────────────────────────────
+
+[admin.metrics]
+title = "Metrics — Earful"
+heading = "Metrics"
+intro_html = "From our own database. Nothing is added to respondent pages to produce these, and completion rate comes from unlinked survey counters, never from anything joined to a response. Definitions: <code>docs/metrics.md</code>."
+totals = "Totals"
+signups = "Signups"
+responses = "Responses"
+window = "Last {{.Days}} days."
+empty = "Nothing yet."
+
+[admin.metrics.spend]
+heading = "AI spend (estimated)"
+total_html = "<strong>{{.Cost}}</strong> over the last {{.Days}} days."

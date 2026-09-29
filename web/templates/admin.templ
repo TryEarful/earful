@@ -1,6 +1,6 @@
 package templates
 
-import "fmt"
+import "github.com/TryEarful/earful/internal/uitext"
 
 // M12: the super-admin surface — invite-code minting/revocation and
 // out-of-band password resets. Reachable only through requireSuperAdmin
@@ -13,20 +13,24 @@ type BetaCodeRow struct {
 	Label   string
 	Created string
 	Status  string // "unused", "used by <email>", "revoked"
+	// Revocable is true of a code nobody has used and nobody has
+	// revoked. It is a field of its own because Status is wording, and
+	// wording is not something to decide by.
+	Revocable bool
 }
 
 templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail string, resetTemp string, codes []BetaCodeRow, errMsg string) {
-	@Layout("Private beta admin — Earful") {
+	@Layout(t(ctx, "admin.beta.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<h1>Private beta admin</h1>
+			<h1>{ t(ctx, "admin.beta.heading") }</h1>
 			if errMsg != "" {
 				<p class="error-text">{ errMsg }</p>
 			}
 			if len(minted) > 0 {
 				<div class="card">
-					<h2>New invite codes — copy them now</h2>
-					<p class="muted">This is the only time they are shown; the database stores hashes.</p>
+					<h2>{ t(ctx, "admin.beta.minted.heading") }</h2>
+					<p class="muted">{ t(ctx, "admin.beta.minted.note") }</p>
 					<ul class="code-list">
 						for _, c := range minted {
 							<li><code>{ c }</code></li>
@@ -36,47 +40,49 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 			}
 			if resetTemp != "" {
 				<div class="card">
-					<h2>Temporary password for { resetEmail }</h2>
+					<h2>{ t(ctx, "admin.beta.reset.shown", uitext.Args{"Email": resetEmail}) }</h2>
 					<p><code>{ resetTemp }</code></p>
-					<p class="muted">Shown once. Every session for that account has been signed out; pass the password on out-of-band and suggest they change it.</p>
+					<p class="muted">{ t(ctx, "admin.beta.reset.note") }</p>
 				</div>
 			}
 			<div class="card">
-				<h2>Mint invite codes</h2>
+				<h2>{ t(ctx, "admin.beta.mint.heading") }</h2>
 				<form method="post" action="/admin/beta-codes">
 					<input type="hidden" name="_csrf" value={ csrf }/>
 					<label class="field">
-						<span>How many</span>
+						<span>{ t(ctx, "admin.beta.mint.count") }</span>
 						<input type="number" name="count" value="1" min="1" max="50" required/>
 					</label>
 					<label class="field">
-						<span>Label</span>
-						<input type="text" name="label" placeholder="e.g. first-wave friends"/>
+						<span>{ t(ctx, "admin.beta.mint.name.label") }</span>
+						<input type="text" name="label" placeholder={ t(ctx, "admin.beta.mint.name.placeholder") }/>
 					</label>
-					<button type="submit">Mint codes</button>
+					<button type="submit">{ t(ctx, "admin.beta.mint.submit.label") }</button>
 				</form>
 			</div>
 			<div class="card">
-				<h2>Reset a user's password</h2>
+				<h2>{ t(ctx, "admin.beta.reset.heading") }</h2>
 				<form method="post" action="/admin/reset-password">
 					<input type="hidden" name="_csrf" value={ csrf }/>
 					<label class="field">
-						<span>Account email</span>
+						<span>{ t(ctx, "admin.beta.reset.email") }</span>
 						<input type="email" name="email" required/>
 					</label>
-					<button type="submit" class="danger">Reset password</button>
+					<button type="submit" class="danger">{ t(ctx, "admin.beta.reset.submit.label") }</button>
 				</form>
-				<p class="muted">The beta's answer to "I forgot my password" — there is no email to send a reset link to yet.</p>
+				<p class="muted">{ t(ctx, "admin.beta.reset.hint") }</p>
 			</div>
 			<div class="card">
-				<h2>All codes</h2>
+				<h2>{ t(ctx, "admin.beta.codes.heading") }</h2>
 				if len(codes) == 0 {
-					<p class="muted">No codes yet — mint some above, or via <code>earful beta-codes add</code>.</p>
+					<p class="muted">
+						@thtml(ctx, "admin.beta.codes.empty_html")
+					</p>
 				} else {
 					<div class="table-scroll">
 						<table>
 							<thead>
-								<tr><th>Label</th><th>Created</th><th>Status</th><th></th></tr>
+								<tr><th>{ t(ctx, "admin.beta.mint.name.label") }</th><th>{ t(ctx, "admin.beta.codes.created") }</th><th>{ t(ctx, "admin.beta.codes.status") }</th><th></th></tr>
 							</thead>
 							<tbody>
 								for _, c := range codes {
@@ -85,11 +91,11 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 										<td>{ c.Created }</td>
 										<td>{ c.Status }</td>
 										<td>
-											if c.Status == "unused" {
+											if c.Revocable {
 												<form method="post" action="/admin/beta-codes/revoke">
 													<input type="hidden" name="_csrf" value={ csrf }/>
 													<input type="hidden" name="id" value={ c.ID }/>
-													<button type="submit" class="button-link">Revoke</button>
+													<button type="submit" class="button-link">{ t(ctx, "admin.beta.codes.revoke.label") }</button>
 												</form>
 											}
 										</td>
@@ -109,70 +115,66 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 // else under /admin — a non-admin gets a 404 from the route, so this
 // page does not exist as far as they can tell.
 templ AdminErasure(email string, csrf string, data ErasureData) {
-	@Layout("Erasure — Earful") {
+	@Layout(t(ctx, "admin.erasure.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<h1>Erase a person's data</h1>
+			<h1>{ t(ctx, "admin.erasure.heading") }</h1>
 			<p class="muted">
-				For a GDPR erasure request. This skips the 30-day window: what it removes is gone
-				immediately and cannot be restored.
+				{ t(ctx, "admin.erasure.intro") }
 			</p>
 
 			if data.Done {
 				<div class="card">
-					<p class="notice">Erasure complete — { fmt.Sprint(data.ErasedRow) } rows removed.</p>
+					<p class="notice">{ t(ctx, "admin.erasure.done", uitext.Args{"Rows": data.ErasedRow}) }</p>
 					<p class="muted">
-						Record the request and this completion in your own log; Earful deliberately keeps
-						no record naming the person erased.
+						{ t(ctx, "admin.erasure.record") }
 					</p>
 				</div>
 			}
 
 			<div class="card">
-				<h2>Find the subject</h2>
+				<h2>{ t(ctx, "admin.erasure.find.heading") }</h2>
 				<form method="get" action="/admin/erasure">
 					<label class="field">
-						<span>Email address</span>
+						<span>{ t(ctx, "auth.email.label") }</span>
 						<input type="email" name="email" required autocomplete="off" value={ data.Subject.Email }/>
 					</label>
-					<button type="submit" class="secondary">Look up</button>
+					<button type="submit" class="secondary">{ t(ctx, "admin.erasure.find.submit.label") }</button>
 				</form>
 			</div>
 
 			if data.Searched {
 				<div class="card">
-					<h2>What would be erased</h2>
+					<h2>{ t(ctx, "admin.erasure.found.heading") }</h2>
 					if !data.Subject.Found {
-						<p>Nothing found for <strong>{ data.Subject.Email }</strong>.</p>
+						<p>
+							@thtml(ctx, "admin.erasure.found.nothing_html", uitext.Args{"Email": data.Subject.Email})
+						</p>
 					} else {
 						<ul>
 							if data.Subject.HasAccount {
-								<li>Their account, and every session and sign-in token it has</li>
+								<li>{ t(ctx, "admin.erasure.found.account") }</li>
 							}
 							if data.Subject.Workspaces > 0 {
-								<li>{ fmt.Sprint(data.Subject.Workspaces) } workspace(s), with { fmt.Sprint(data.Subject.Surveys) } survey(s) and every response to them</li>
+								<li>{ t(ctx, "admin.erasure.found.workspaces", uitext.Args{"Workspaces": data.Subject.Workspaces, "Surveys": data.Subject.Surveys}) }</li>
 							}
 							if data.Subject.ParticipantIn > 0 {
 								<li>
-									Their invitations to { fmt.Sprint(data.Subject.ParticipantIn) } survey(s) run by others,
-									and the { fmt.Sprint(data.Subject.Responses) } response(s) they submitted there
+									{ t(ctx, "admin.erasure.found.invitations", uitext.Args{"Surveys": data.Subject.ParticipantIn, "Responses": data.Subject.Responses}) }
 								</li>
 							}
 							if data.Subject.Suppressed {
-								<li>Their entry on the email suppression list</li>
+								<li>{ t(ctx, "admin.erasure.found.suppressed") }</li>
 							}
 						</ul>
 						<form method="post" action="/admin/erasure">
 							<input type="hidden" name="_csrf" value={ csrf }/>
 							<input type="hidden" name="email" value={ data.Subject.Email }/>
-							<button type="submit" class="danger">Erase this data now</button>
+							<button type="submit" class="danger">{ t(ctx, "admin.erasure.submit.label") }</button>
 						</form>
 					}
 					<p class="muted">
-						Anonymous responses are not listed and cannot be: they carry no email, no IP and no
-						device details, so there is no way to tell which are theirs — and nothing personal in
-						them to erase. That is the anonymity promise working as intended, and it is worth
-						saying so in your reply to the request.
+						{ t(ctx, "admin.erasure.found.anonymous") }
 					</p>
 				</div>
 			}
@@ -184,18 +186,16 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 // of which cost a respondent anything. Deliberately plain — this is a
 // place to read six figures, not a dashboard to admire.
 templ AdminMetrics(email string, csrf string, data MetricsData) {
-	@Layout("Metrics — Earful") {
+	@Layout(t(ctx, "admin.metrics.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
-			<h1>Metrics</h1>
+			<h1>{ t(ctx, "admin.metrics.heading") }</h1>
 			<p class="muted">
-				From our own database. Nothing is added to respondent pages to produce these, and
-				completion rate comes from unlinked survey counters, never from anything joined to a
-				response. Definitions: <code>docs/metrics.md</code>.
+				@thtml(ctx, "admin.metrics.intro_html")
 			</p>
 
 			<section class="card">
-				<h2>Totals</h2>
+				<h2>{ t(ctx, "admin.metrics.totals") }</h2>
 				<dl class="stat-grid">
 					for _, total := range data.Totals {
 						<div>
@@ -206,13 +206,15 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 				</dl>
 			</section>
 
-			@metricSeries("Signups", data.Signups, data.WindowDays)
-			@metricSeries("Responses", data.Responses, data.WindowDays)
+			@metricSeries(t(ctx, "admin.metrics.signups"), data.Signups, data.WindowDays)
+			@metricSeries(t(ctx, "admin.metrics.responses"), data.Responses, data.WindowDays)
 
 			<section class="card">
-				<h2>AI spend (estimated)</h2>
+				<h2>{ t(ctx, "admin.metrics.spend.heading") }</h2>
 				<p class="muted">{ data.BudgetNote }</p>
-				<p><strong>{ data.AICostTotal }</strong> over the last { fmt.Sprint(data.WindowDays) } days.</p>
+				<p>
+					@thtml(ctx, "admin.metrics.spend.total_html", uitext.Args{"Cost": data.AICostTotal, "Days": data.WindowDays})
+				</p>
 				@metricRows(data.AICost)
 			</section>
 		</main>
@@ -222,14 +224,14 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 templ metricSeries(title string, points []MetricPoint, windowDays int) {
 	<section class="card">
 		<h2>{ title }</h2>
-		<p class="muted">Last { fmt.Sprint(windowDays) } days.</p>
+		<p class="muted">{ t(ctx, "admin.metrics.window", uitext.Args{"Days": windowDays}) }</p>
 		@metricRows(points)
 	</section>
 }
 
 templ metricRows(points []MetricPoint) {
 	if len(points) == 0 {
-		<p class="muted">Nothing yet.</p>
+		<p class="muted">{ t(ctx, "admin.metrics.empty") }</p>
 	} else {
 		<div class="table-scroll">
 			<table class="responses">

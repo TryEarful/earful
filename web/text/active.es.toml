@@ -1029,3 +1029,192 @@ other = "Cada guardado del borrador y cada publicación, empezando por lo más r
 [audit.empty]
 hash = "sha1-28c972b99a4b35ee0056ca52ad3d08af5e99409c"
 other = "Todavía no se ha guardado nada."
+
+
+# ── Soporte: códigos de invitación y contraseñas ───────────────────────
+
+[admin.beta.title]
+hash = "sha1-be7f9be137e8e62f12b12d5391e70f63f6f75b31"
+other = "Administración de la beta privada — Earful"
+
+[admin.beta.heading]
+hash = "sha1-942cb0d41bb8fcfa7672fed4dd6525a7574de64b"
+other = "Administración de la beta privada"
+
+[admin.beta.minted.heading]
+hash = "sha1-6dc779a10ec029001d2c7ee0d87978c6714f3f04"
+other = "Códigos de invitación nuevos: cópielos ahora"
+
+[admin.beta.minted.note]
+hash = "sha1-50cbfa0d35d5c6da9ce5a75ed737c4aae75727ab"
+other = "Es la única vez que se muestran; la base de datos guarda solo sus resúmenes criptográficos."
+
+[admin.beta.reset.shown]
+hash = "sha1-bbd943318b138d17724f7dadf0e6f0d9b0bd2599"
+other = "Contraseña temporal de {{.Email}}"
+
+[admin.beta.reset.note]
+hash = "sha1-381e5941800e15599bab1767df3b4ffdc497a672"
+other = "Se muestra una sola vez. Se han cerrado todas las sesiones de esa cuenta; entregue la contraseña por otro medio y sugiera que la cambien."
+
+[admin.beta.reset.heading]
+hash = "sha1-30027f15c3b9e230b21d6bea753d10bd6b46055f"
+other = "Restablecer la contraseña de un usuario"
+
+[admin.beta.reset.email]
+hash = "sha1-d705c691c0878598da5795ca6cc0d2a0bc850778"
+other = "Correo de la cuenta"
+
+[admin.beta.reset.hint]
+hash = "sha1-58a1ed823c5704bc76448907d12e714f63f110e4"
+other = "La respuesta de la beta a «olvidé mi contraseña»: todavía no hay correo al que enviar un enlace para restablecerla."
+
+[admin.beta.reset.submit.label]
+hash = "sha1-5c4bc97ee5d0ac344829dbcef02d7302feb098a8"
+other = "Restablecer contraseña"
+
+[admin.beta.mint.heading]
+hash = "sha1-6a19a467b8dac51cc510f4ef368a5aac9a59713a"
+other = "Generar códigos de invitación"
+
+[admin.beta.mint.count]
+hash = "sha1-503ce86651fc27a22819028f135c7291cae0434b"
+other = "Cuántos"
+
+[admin.beta.mint.submit.label]
+hash = "sha1-9af7c43642114efd7032372ccbbe67e7bf808902"
+other = "Generar códigos"
+
+[admin.beta.mint.name.label]
+hash = "sha1-74341e3c271df3c784e595b804b1f90be0f80429"
+other = "Etiqueta"
+
+[admin.beta.mint.name.placeholder]
+hash = "sha1-da148321636782ffac479d65e708aaabd335cbb9"
+other = "p. ej., amigos de la primera tanda"
+
+[admin.beta.codes.heading]
+hash = "sha1-6eebfe0d4495ec6c187cf160df0e22e2cc874a1a"
+other = "Todos los códigos"
+
+[admin.beta.codes.empty_html]
+hash = "sha1-62b47bf1de58dbf924d45c42267c1de6843aa8c5"
+other = "Todavía no hay códigos: genere algunos arriba, o con <code>earful beta-codes add</code>."
+
+[admin.beta.codes.created]
+hash = "sha1-accf40c89baa4fa88e6a7ff11e1f805beecafd3f"
+other = "Creado"
+
+[admin.beta.codes.status]
+hash = "sha1-bae7d5be70820ed56467bd9a63744e23b47bd711"
+other = "Estado"
+
+[admin.beta.codes.revoke.label]
+hash = "sha1-0be720759ff04d13c5706881d5d227a2621f91a6"
+other = "Revocar"
+
+
+# ── Soporte: borrar los datos de una persona ───────────────────────────
+
+[admin.erasure.title]
+hash = "sha1-184d33374fd5e19e16998ff4c727459db30eacff"
+other = "Supresión — Earful"
+
+[admin.erasure.heading]
+hash = "sha1-b20d72dd4d22313008af01ed66cc875a970179bc"
+other = "Borrar los datos de una persona"
+
+[admin.erasure.intro]
+hash = "sha1-783d69f7942504283386fa788425765e9fe84e8e"
+other = "Para una solicitud de supresión conforme al RGPD. Se salta el plazo de 30 días: lo que elimina desaparece de inmediato y no puede restaurarse."
+
+[admin.erasure.done]
+hash = "sha1-9c0dfaa9082ff9e71277048e2edc86dff9d3923c"
+other = "Supresión completada: {{.Rows}} filas eliminadas."
+
+[admin.erasure.record]
+hash = "sha1-a122e1a5e6d59f97411c6d77a2dde7c25fd3dd59"
+other = "Anote la solicitud y su cumplimiento en su propio registro; Earful, a propósito, no guarda ningún registro que nombre a la persona borrada."
+
+[admin.erasure.find.heading]
+hash = "sha1-f9b007d81ddfbd252af2c412f5959efa5d614d69"
+other = "Buscar a la persona"
+
+[admin.erasure.find.submit.label]
+hash = "sha1-6d7049b88568d8f67d8482c3e0db4726e9bd8036"
+other = "Buscar"
+
+[admin.erasure.found.heading]
+hash = "sha1-d6b14af5c7108717aa79a6043a1883b5c0ec34ed"
+other = "Qué se borraría"
+
+[admin.erasure.found.nothing_html]
+hash = "sha1-4d9e6969a621603a34901b2ca24cf55f80b07af8"
+other = "No se encontró nada de <strong>{{.Email}}</strong>."
+
+[admin.erasure.found.account]
+hash = "sha1-aed43a2883893f223ea5a2d69d24f0a64c766e40"
+other = "Su cuenta, con todas sus sesiones y enlaces de acceso"
+
+[admin.erasure.found.workspaces]
+hash = "sha1-b76a552ba8a2d5bb19ea2a4fb6e36a4ed645b991"
+other = "{{.Workspaces}} espacio(s) de trabajo, con {{.Surveys}} encuesta(s) y todos sus envíos"
+
+[admin.erasure.found.invitations]
+hash = "sha1-27337264b64a48e10338352f90ea673376ad5d6b"
+other = "Sus invitaciones a {{.Surveys}} encuesta(s) de otras personas, y los {{.Responses}} envío(s) que hizo en ellas"
+
+[admin.erasure.found.suppressed]
+hash = "sha1-60ab12dbd6a7e70d1eeab3fcf76edc1747e9d224"
+other = "Su entrada en la lista de supresión de correo"
+
+[admin.erasure.found.anonymous]
+hash = "sha1-68c98f0ccfecf7f0db7b62b8b06aeb55351d12ff"
+other = "Los envíos anónimos no aparecen ni pueden aparecer: no llevan correo, ni IP, ni datos del dispositivo, así que no hay forma de saber cuáles son suyos, ni nada personal que borrar en ellos. Es la promesa de anonimato funcionando como debe, y conviene decirlo en su respuesta a la solicitud."
+
+[admin.erasure.submit.label]
+hash = "sha1-b95924fbeee1244e0ac0e24f202759e216e6b999"
+other = "Borrar estos datos ahora"
+
+
+# ── Soporte: métricas ──────────────────────────────────────────────────
+
+[admin.metrics.title]
+hash = "sha1-337abd921237d581e9efc41786f64ee8b951a60a"
+other = "Métricas — Earful"
+
+[admin.metrics.heading]
+hash = "sha1-ddf6a1f0ce8cfffc5cd8f14230ab1fecd0f34953"
+other = "Métricas"
+
+[admin.metrics.intro_html]
+hash = "sha1-433286002e904ae6170c69d02c5294ad4d29bf50"
+other = "De nuestra propia base de datos. No se añade nada a las páginas de las encuestas para obtenerlas, y la tasa de finalización sale de contadores de la encuesta sin vínculo, nunca de algo unido a un envío. Definiciones: <code>docs/metrics.md</code>."
+
+[admin.metrics.totals]
+hash = "sha1-65222d7991f9e7382b74e8ff980f6ebabdf1cb5a"
+other = "Totales"
+
+[admin.metrics.signups]
+hash = "sha1-09c26725abca4f5f770be1e26e44b5ee79b7a7bd"
+other = "Altas"
+
+[admin.metrics.responses]
+hash = "sha1-633f6e8b851aad01759e04e23cfe5188859a4d5b"
+other = "Envíos"
+
+[admin.metrics.window]
+hash = "sha1-e576abc3af81563d0673e73bc290584dab3104b9"
+other = "Últimos {{.Days}} días."
+
+[admin.metrics.empty]
+hash = "sha1-dbf1d192c8ea5845f149e8e73218e029cf828cc4"
+other = "Todavía nada."
+
+[admin.metrics.spend.heading]
+hash = "sha1-374951120706aba7b0c0e600cd94724c5b8ddf53"
+other = "Gasto en IA (estimado)"
+
+[admin.metrics.spend.total_html]
+hash = "sha1-f2ad585f1143222f875799003c28f65bd84eab3e"
+other = "<strong>{{.Cost}}</strong> en los últimos {{.Days}} días."
