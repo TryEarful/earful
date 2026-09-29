@@ -77,8 +77,21 @@ func (s *Surveys) Create(ctx context.Context, workspaceID, userID uuid.UUID, tit
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
 
-	qtx := s.q.WithTx(tx)
-	row, err := qtx.CreateSurvey(ctx, db.CreateSurveyParams{
+	row, err := createSurvey(ctx, s.q.WithTx(tx), workspaceID, userID, title, isAnonymous, closeAt)
+	if err != nil {
+		return Survey{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return Survey{}, fmt.Errorf("store: commit create survey: %w", err)
+	}
+	return surveyFromRow(row, 0, 0), nil
+}
+
+// createSurvey inserts a survey and its empty draft through q. The caller
+// owns the transaction q is bound to: the two rows belong together, and
+// only the caller knows what else must land with them.
+func createSurvey(ctx context.Context, q *db.Queries, workspaceID, userID uuid.UUID, title string, isAnonymous bool, closeAt *time.Time) (db.Survey, error) {
+	row, err := q.CreateSurvey(ctx, db.CreateSurveyParams{
 		WorkspaceID: workspaceID,
 		Title:       title,
 		IsAnonymous: isAnonymous,
@@ -86,23 +99,20 @@ func (s *Surveys) Create(ctx context.Context, workspaceID, userID uuid.UUID, tit
 		CreatedBy:   userID,
 	})
 	if err != nil {
-		return Survey{}, fmt.Errorf("store: create survey: %w", err)
+		return db.Survey{}, fmt.Errorf("store: create survey: %w", err)
 	}
 	empty, err := domain.Draft{}.Encode()
 	if err != nil {
-		return Survey{}, err
+		return db.Survey{}, err
 	}
-	if _, err := qtx.CreateDraft(ctx, db.CreateDraftParams{
+	if _, err := q.CreateDraft(ctx, db.CreateDraftParams{
 		SurveyID:  row.ID,
 		Structure: empty,
 		UpdatedBy: uuid.NullUUID{UUID: userID, Valid: true},
 	}); err != nil {
-		return Survey{}, fmt.Errorf("store: create draft: %w", err)
+		return db.Survey{}, fmt.Errorf("store: create draft: %w", err)
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return Survey{}, fmt.Errorf("store: commit create survey: %w", err)
-	}
-	return surveyFromRow(row, 0, 0), nil
+	return row, nil
 }
 
 // Get loads one survey, scoped to the workspace.
@@ -172,19 +182,26 @@ func (s *Surveys) Draft(ctx context.Context, surveyID uuid.UUID) (domain.Draft, 
 // same transaction — the two cannot diverge, so the audit trail is
 // complete by construction (M3-T2).
 func (s *Surveys) SaveDraft(ctx context.Context, surveyID, userID uuid.UUID, draft domain.Draft, now time.Time) error {
-	encoded, err := draft.Encode()
-	if err != nil {
-		return err
-	}
-
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store: begin save draft: %w", err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
 
-	qtx := s.q.WithTx(tx)
-	updated, err := qtx.UpdateDraftStructure(ctx, db.UpdateDraftStructureParams{
+	if err := saveDraft(ctx, s.q.WithTx(tx), surveyID, userID, draft, now); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// saveDraft writes the working copy and its revision through q, inside
+// the caller's transaction.
+func saveDraft(ctx context.Context, q *db.Queries, surveyID, userID uuid.UUID, draft domain.Draft, now time.Time) error {
+	encoded, err := draft.Encode()
+	if err != nil {
+		return err
+	}
+	updated, err := q.UpdateDraftStructure(ctx, db.UpdateDraftStructureParams{
 		SurveyID:  surveyID,
 		Structure: encoded,
 		UpdatedBy: uuid.NullUUID{UUID: userID, Valid: true},
@@ -196,7 +213,7 @@ func (s *Surveys) SaveDraft(ctx context.Context, surveyID, userID uuid.UUID, dra
 	if err != nil {
 		return fmt.Errorf("store: update draft: %w", err)
 	}
-	if err := qtx.CreateDraftRevision(ctx, db.CreateDraftRevisionParams{
+	if err := q.CreateDraftRevision(ctx, db.CreateDraftRevisionParams{
 		DraftID:   updated.ID,
 		Structure: encoded,
 		SavedBy:   uuid.NullUUID{UUID: userID, Valid: true},
@@ -204,7 +221,7 @@ func (s *Surveys) SaveDraft(ctx context.Context, surveyID, userID uuid.UUID, dra
 	}); err != nil {
 		return fmt.Errorf("store: append revision: %w", err)
 	}
-	return tx.Commit(ctx)
+	return nil
 }
 
 // Version is a published snapshot as the audit log lists it.
@@ -257,10 +274,23 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
 
-	qtx := s.q.WithTx(tx)
+	version, err := publishDraft(ctx, s.q.WithTx(tx), surveyID, userID, draft, now)
+	if err != nil {
+		return Version{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return Version{}, fmt.Errorf("store: commit publish: %w", err)
+	}
+	return Version{ID: version.ID, Number: int(version.Number), PublishedAt: version.PublishedAt}, nil
+}
+
+// publishDraft freezes draft as the survey's next version through q,
+// inside the caller's transaction. It checks nothing about the draft:
+// whether it may be published is the caller's to decide before calling.
+func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UUID, draft domain.Draft, now time.Time) (db.SurveyVersion, error) {
 	next, err := qtx.NextVersionNumber(ctx, surveyID)
 	if err != nil {
-		return Version{}, fmt.Errorf("store: next version number: %w", err)
+		return db.SurveyVersion{}, fmt.Errorf("store: next version number: %w", err)
 	}
 	version, err := qtx.CreateVersion(ctx, db.CreateVersionParams{
 		SurveyID:    surveyID,
@@ -269,22 +299,22 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 		PublishedAt: now,
 	})
 	if err != nil {
-		return Version{}, fmt.Errorf("store: create version: %w", err)
+		return db.SurveyVersion{}, fmt.Errorf("store: create version: %w", err)
 	}
 
 	for i, q := range draft.Questions {
 		identityID, err := uuid.Parse(q.IdentityID)
 		if err != nil {
-			return Version{}, fmt.Errorf("store: question %d has an invalid identity: %w", i+1, err)
+			return db.SurveyVersion{}, fmt.Errorf("store: question %d has an invalid identity: %w", i+1, err)
 		}
 		if err := qtx.EnsureQuestionIdentity(ctx, db.EnsureQuestionIdentityParams{
 			ID: identityID, SurveyID: surveyID,
 		}); err != nil {
-			return Version{}, fmt.Errorf("store: ensure identity: %w", err)
+			return db.SurveyVersion{}, fmt.Errorf("store: ensure identity: %w", err)
 		}
 		options, err := json.Marshal(q.Options)
 		if err != nil {
-			return Version{}, fmt.Errorf("store: encode options: %w", err)
+			return db.SurveyVersion{}, fmt.Errorf("store: encode options: %w", err)
 		}
 		// Scale bounds are frozen alongside the wording: a later version
 		// may rescale a question, and a response must be read back against
@@ -306,7 +336,7 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 			ScaleMax:           scaleMax,
 		})
 		if err != nil {
-			return Version{}, fmt.Errorf("store: create question: %w", err)
+			return db.SurveyVersion{}, fmt.Errorf("store: create question: %w", err)
 		}
 
 		// Localizations freeze with the question they translate: what a
@@ -319,7 +349,7 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 			}
 			options, err := json.Marshal(translated.Options)
 			if err != nil {
-				return Version{}, fmt.Errorf("store: encode localized options: %w", err)
+				return db.SurveyVersion{}, fmt.Errorf("store: encode localized options: %w", err)
 			}
 			if err := qtx.CreateQuestionLocalization(ctx, db.CreateQuestionLocalizationParams{
 				VersionID:  version.ID,
@@ -328,15 +358,11 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 				Text:       translated.Text,
 				Options:    options,
 			}); err != nil {
-				return Version{}, fmt.Errorf("store: create localization: %w", err)
+				return db.SurveyVersion{}, fmt.Errorf("store: create localization: %w", err)
 			}
 		}
 	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return Version{}, fmt.Errorf("store: commit publish: %w", err)
-	}
-	return Version{ID: version.ID, Number: int(version.Number), PublishedAt: version.PublishedAt}, nil
+	return version, nil
 }
 
 // LatestQuestions returns the questions of the most recent published
