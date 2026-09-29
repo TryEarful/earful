@@ -22,6 +22,9 @@ type Querier interface {
 	ClearParticipantInvited(ctx context.Context, id uuid.UUID) error
 	ConsumeBetaCode(ctx context.Context, arg ConsumeBetaCodeParams) (uuid.UUID, error)
 	ConsumeMagicLinkToken(ctx context.Context, arg ConsumeMagicLinkTokenParams) (MagicLinkToken, error)
+	// The index surveys_one_live_starter_idx refuses a second one; this lets
+	// a caller say so in words before the database says it in an error.
+	CountLiveStarterSurveys(ctx context.Context, workspaceID uuid.UUID) (int64, error)
 	CountRecentMagicLinksForEmail(ctx context.Context, arg CountRecentMagicLinksForEmailParams) (int64, error)
 	CountResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) (int64, error)
 	CreateAnswer(ctx context.Context, arg CreateAnswerParams) error

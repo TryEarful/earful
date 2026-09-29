@@ -51,7 +51,16 @@ type Survey struct {
 	CreatedAt     time.Time
 	LatestVersion int // 0 when never published
 	QuestionCount int
+	// Origin is OriginCreator or OriginStarter: how the survey came to
+	// exist, never how it behaves.
+	Origin string
 }
+
+// The origins a survey can have (migration 00017).
+const (
+	OriginCreator = "creator"
+	OriginStarter = "starter"
+)
 
 // State reduces a survey to the facts Status is derived from.
 func (s Survey) State() domain.SurveyState {
@@ -77,7 +86,7 @@ func (s *Surveys) Create(ctx context.Context, workspaceID, userID uuid.UUID, tit
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
 
-	row, err := createSurvey(ctx, s.q.WithTx(tx), workspaceID, userID, title, isAnonymous, closeAt)
+	row, err := createSurvey(ctx, s.q.WithTx(tx), workspaceID, userID, title, isAnonymous, closeAt, OriginCreator)
 	if err != nil {
 		return Survey{}, err
 	}
@@ -90,13 +99,14 @@ func (s *Surveys) Create(ctx context.Context, workspaceID, userID uuid.UUID, tit
 // createSurvey inserts a survey and its empty draft through q. The caller
 // owns the transaction q is bound to: the two rows belong together, and
 // only the caller knows what else must land with them.
-func createSurvey(ctx context.Context, q *db.Queries, workspaceID, userID uuid.UUID, title string, isAnonymous bool, closeAt *time.Time) (db.Survey, error) {
+func createSurvey(ctx context.Context, q *db.Queries, workspaceID, userID uuid.UUID, title string, isAnonymous bool, closeAt *time.Time, origin string) (db.Survey, error) {
 	row, err := q.CreateSurvey(ctx, db.CreateSurveyParams{
 		WorkspaceID: workspaceID,
 		Title:       title,
 		IsAnonymous: isAnonymous,
 		CloseAt:     closeAt,
 		CreatedBy:   userID,
+		Origin:      origin,
 	})
 	if err != nil {
 		return db.Survey{}, fmt.Errorf("store: create survey: %w", err)
@@ -157,6 +167,7 @@ func (s *Surveys) List(ctx context.Context, workspaceID uuid.UUID) ([]Survey, er
 			ID: r.ID, WorkspaceID: r.WorkspaceID, Title: r.Title,
 			IsAnonymous: r.IsAnonymous, CloseAt: r.CloseAt, ClosedAt: r.ClosedAt,
 			CreatedBy: r.CreatedBy, CreatedAt: r.CreatedAt, DeletedAt: r.DeletedAt,
+			Origin: r.Origin,
 		}, int(r.LatestVersion), int(r.LatestQuestionCount)))
 	}
 	return out, nil
@@ -502,6 +513,7 @@ func surveyFromRow(r db.Survey, latestVersion, questionCount int) Survey {
 		ID: r.ID, WorkspaceID: r.WorkspaceID, Title: r.Title,
 		IsAnonymous: r.IsAnonymous, CloseAt: r.CloseAt, ClosedAt: r.ClosedAt,
 		CreatedAt: r.CreatedAt, LatestVersion: latestVersion, QuestionCount: questionCount,
+		Origin: r.Origin,
 	}
 }
 

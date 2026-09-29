@@ -12,6 +12,20 @@ import (
 	"github.com/google/uuid"
 )
 
+const countLiveStarterSurveys = `-- name: CountLiveStarterSurveys :one
+SELECT count(*) FROM surveys
+WHERE workspace_id = $1 AND origin = 'starter' AND deleted_at IS NULL
+`
+
+// The index surveys_one_live_starter_idx refuses a second one; this lets
+// a caller say so in words before the database says it in an error.
+func (q *Queries) CountLiveStarterSurveys(ctx context.Context, workspaceID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countLiveStarterSurveys, workspaceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createDraft = `-- name: CreateDraft :one
 INSERT INTO survey_drafts (survey_id, structure, updated_by)
 VALUES ($1, $2, $3)
@@ -108,9 +122,9 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 
 const createSurvey = `-- name: CreateSurvey :one
 
-INSERT INTO surveys (workspace_id, title, is_anonymous, close_at, created_by)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, workspace_id, title, is_anonymous, close_at, closed_at, created_by, created_at, deleted_at
+INSERT INTO surveys (workspace_id, title, is_anonymous, close_at, created_by, origin)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, workspace_id, title, is_anonymous, close_at, closed_at, created_by, created_at, deleted_at, origin
 `
 
 type CreateSurveyParams struct {
@@ -119,6 +133,7 @@ type CreateSurveyParams struct {
 	IsAnonymous bool       `json:"is_anonymous"`
 	CloseAt     *time.Time `json:"close_at"`
 	CreatedBy   uuid.UUID  `json:"created_by"`
+	Origin      string     `json:"origin"`
 }
 
 // M3: surveys, drafts, revisions, versions, questions.
@@ -133,6 +148,7 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (Sur
 		arg.IsAnonymous,
 		arg.CloseAt,
 		arg.CreatedBy,
+		arg.Origin,
 	)
 	var i Survey
 	err := row.Scan(
@@ -145,6 +161,7 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (Sur
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.Origin,
 	)
 	return i, err
 }
@@ -234,7 +251,7 @@ func (q *Queries) GetLatestVersion(ctx context.Context, surveyID uuid.UUID) (Sur
 }
 
 const getSurveyForWorkspace = `-- name: GetSurveyForWorkspace :one
-SELECT id, workspace_id, title, is_anonymous, close_at, closed_at, created_by, created_at, deleted_at FROM surveys
+SELECT id, workspace_id, title, is_anonymous, close_at, closed_at, created_by, created_at, deleted_at, origin FROM surveys
 WHERE id = $1 AND workspace_id = $2 AND deleted_at IS NULL
 `
 
@@ -256,6 +273,7 @@ func (q *Queries) GetSurveyForWorkspace(ctx context.Context, arg GetSurveyForWor
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.Origin,
 	)
 	return i, err
 }
@@ -358,7 +376,7 @@ func (q *Queries) ListQuestionsForVersion(ctx context.Context, versionID uuid.UU
 }
 
 const listSurveysForWorkspace = `-- name: ListSurveysForWorkspace :many
-SELECT s.id, s.workspace_id, s.title, s.is_anonymous, s.close_at, s.closed_at, s.created_by, s.created_at, s.deleted_at,
+SELECT s.id, s.workspace_id, s.title, s.is_anonymous, s.close_at, s.closed_at, s.created_by, s.created_at, s.deleted_at, s.origin,
        -- coalesce+cast so sqlc infers a concrete type (a bare max() over
        -- no rows is untyped NULL to it); 0 means never published.
        coalesce((SELECT max(v.number) FROM survey_versions v WHERE v.survey_id = s.id), 0)::int AS latest_version,
@@ -382,6 +400,7 @@ type ListSurveysForWorkspaceRow struct {
 	CreatedBy           uuid.UUID  `json:"created_by"`
 	CreatedAt           time.Time  `json:"created_at"`
 	DeletedAt           *time.Time `json:"deleted_at"`
+	Origin              string     `json:"origin"`
 	LatestVersion       int32      `json:"latest_version"`
 	LatestQuestionCount int64      `json:"latest_question_count"`
 }
@@ -405,6 +424,7 @@ func (q *Queries) ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.
 			&i.CreatedBy,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.Origin,
 			&i.LatestVersion,
 			&i.LatestQuestionCount,
 		); err != nil {

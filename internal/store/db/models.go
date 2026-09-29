@@ -169,6 +169,8 @@ type Survey struct {
 	CreatedBy   uuid.UUID  `json:"created_by"`
 	CreatedAt   time.Time  `json:"created_at"`
 	DeletedAt   *time.Time `json:"deleted_at"`
+	// How the survey came to exist: made by a creator, or seeded with the workspace (ADR-0015). Never updated.
+	Origin string `json:"origin"`
 }
 
 type SurveyDraft struct {

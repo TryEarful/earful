@@ -5,9 +5,15 @@
 -- the query will not compile without it.
 
 -- name: CreateSurvey :one
-INSERT INTO surveys (workspace_id, title, is_anonymous, close_at, created_by)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO surveys (workspace_id, title, is_anonymous, close_at, created_by, origin)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
+
+-- name: CountLiveStarterSurveys :one
+-- The index surveys_one_live_starter_idx refuses a second one; this lets
+-- a caller say so in words before the database says it in an error.
+SELECT count(*) FROM surveys
+WHERE workspace_id = $1 AND origin = 'starter' AND deleted_at IS NULL;
 
 -- name: GetSurveyForWorkspace :one
 SELECT * FROM surveys
