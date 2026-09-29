@@ -31,6 +31,18 @@
   // After the draft, so a restored answer is what the history starts from.
   attachVersions(form);
 
+  // Esc leaves a text field (SPEC.md story 80). Inside a textarea Enter
+  // is a newline, so a respondent who has finished typing has no plain
+  // key that moves on; Esc gives them one, since from outside the field
+  // Enter means Next. Attached to every respondent page, not only the
+  // paged ones, so the key does one thing everywhere. The answer is
+  // not touched: clearing it takes a second Esc, which voice.js owns.
+  form.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    if (isTextField(event.target)) event.target.blur();
+  });
+
   var questions = Array.prototype.slice.call(
     form.querySelectorAll(".respond-question")
   );

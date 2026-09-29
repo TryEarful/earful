@@ -243,7 +243,8 @@ letters for choices, digits for scales — rather than inventing one:
 | Yes / No | `Y` `N` | Pick |
 | Text question offering voice | `Space`, held | Record while held; transcribe on release |
 | Text question offering voice | `⇧Space` | Start, then stop recording |
-| Text question offering voice, or while recording | `Esc` `Esc` | Clear the answer; a live take is dropped, not transcribed |
+| In a text field | `Esc` | Leave the field, so that `↵` moves on; the answer is untouched |
+| Text question offering voice, or while recording | `Esc` `Esc`, within 3 seconds | Clear the answer; a live take is dropped, not transcribed |
 | Not in a text field | `↵` / `⇧↵` | Next / Back |
 | In a textarea | `↵`, `⇧↵` | Newline, untouched |
 | In a textarea | `⌘↵` / `Ctrl↵` | Next |
@@ -257,6 +258,24 @@ digit already names a value, and most surveys mix the two question types.
 convention. Long answers here are frequently dictated and then edited, so
 advancing on Enter would lose a respondent's place mid-paragraph;
 `Cmd/Ctrl+Enter` advances instead.
+
+**Esc leaves a text field**, which gives a respondent who has finished
+typing a plain way on: `Esc`, then `↵`. It works on every text question,
+with or without voice, and changes nothing in the answer.
+
+**Esc twice clears the answer**, and the two presses have to belong
+together:
+
+- The first says what a second would do, on the status line, and waits
+  **3 seconds**. After that it is forgotten, the status line says what
+  it said before, and the next `Esc` is a first press again.
+- **Any other key in between forgets it too.** `Esc`, `↵`, `Esc` is
+  leaving one question and then leaving the next; it must never clear
+  either.
+- The second press follows the first, not the focus: the first has
+  already taken focus out of the field.
+- Clearing puts focus back in the field, empty and ready to be typed
+  into.
 
 Consequences:
 

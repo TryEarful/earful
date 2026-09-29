@@ -325,24 +325,31 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   const answer = respondent.locator("textarea");
   const status = respondent.locator(".voice-status").first();
 
-  // One Esc only arms, and says so; the answer is untouched. Left
-  // alone for six seconds it gives up, and the status line says what it
-  // said before.
+  // One Esc only arms, and says so; the answer is untouched. It also
+  // leaves the field. Left alone for three seconds it gives up, and the
+  // status line says what it said before.
   await answer.click();
   await respondent.keyboard.type("Wrong answer");
   await respondent.keyboard.press("Escape");
   await expect(status).toHaveText(/Press ESC again/);
-  await respondent.waitForTimeout(6300);
+  await expect(answer).not.toBeFocused();
+  // Still armed shortly before the window closes…
+  await respondent.waitForTimeout(2000);
+  await expect(status).toHaveText(/Press ESC again/);
+  // …and not after it.
+  await respondent.waitForTimeout(1300);
   await expect(status).toHaveText(/Press Dictate/);
   await expect(answer).toHaveValue("Wrong answer");
 
-  // …so the next Esc is a first one again.
+  // So the next Esc is a first one again, though nothing is focused
+  // now; and the second follows it, clears, and hands the field back.
   await respondent.keyboard.press("Escape");
   await expect(status).toHaveText(/Press ESC again/);
   await expect(answer).toHaveValue("Wrong answer");
   await respondent.keyboard.press("Escape");
   await expect(answer).toHaveValue("");
   await expect(status).toHaveText(/Cleared/);
+  await expect(answer).toBeFocused();
 
   // The draft heard about it, so nothing comes back after a reload.
   await respondent.reload();
@@ -367,6 +374,52 @@ test("esc twice clears the answer, its draft, and a live take", async ({ page, b
   await expect(answer).toHaveValue("x");
   await respondent.getByRole("button", { name: "Reset", exact: true }).click();
   await expect(answer).toHaveValue("");
+
+  await context.close();
+});
+
+// Esc leaves a text field, which is what gives a respondent who has
+// finished typing a plain way on: inside a textarea Enter is a newline,
+// outside it Enter is Next. The answer is untouched. And because Esc
+// twice clears an answer, the two must be kept apart: Esc, Enter, Esc
+// is leaving one question and then the next, and clears neither.
+test("esc leaves the field so enter moves on, and never clears across questions", async ({
+  page,
+  browser,
+}) => {
+  const share = await spokenSurvey(page, `E2E keys esc enter ${Date.now()}`);
+
+  const context = await browser.newContext({ storageState: undefined });
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+
+  const first = respondent.locator("textarea");
+  const second = respondent.locator('.respond-question input[type="text"]');
+  const progress = respondent.locator(".respond-progress");
+
+  await first.click();
+  await respondent.keyboard.type("It went well");
+  await respondent.keyboard.press("Enter"); // a newline, as ever
+  await respondent.keyboard.type("on the whole.");
+  await expect(progress).toHaveText("Question 1 of 2");
+
+  await respondent.keyboard.press("Escape");
+  await expect(first).not.toBeFocused();
+  await expect(first).toHaveValue("It went well\non the whole.");
+  await respondent.keyboard.press("Enter");
+  await expect(progress).toHaveText("Question 2 of 2");
+
+  // Well inside three seconds of the first Esc, on the next question:
+  // a first press again, because Enter came between.
+  await expect(second).toBeFocused();
+  await respondent.keyboard.type("Researcher");
+  await respondent.keyboard.press("Escape");
+  await expect(second).not.toBeFocused();
+  await expect(second).toHaveValue("Researcher");
+
+  await respondent.keyboard.press("Shift+Enter");
+  await expect(progress).toHaveText("Question 1 of 2");
+  await expect(first).toHaveValue("It went well\non the whole.");
 
   await context.close();
 });

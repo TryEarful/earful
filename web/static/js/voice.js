@@ -34,9 +34,11 @@
   var HOLD_MS = 400;
   // A second Esc this long after the first still clears the answer.
   // After that the first is forgotten and the status line goes back to
-  // what it said before: long enough to read the prompt and decide,
-  // short enough that a stray Esc does not stay armed.
-  var ESC_WINDOW_MS = 6000;
+  // what it said before. Short, because the first Esc has a use of its
+  // own — it leaves the field, so that Enter moves on (respond.js) —
+  // and a respondent who pressed it for that must not find a later Esc
+  // clearing their answer.
+  var ESC_WINDOW_MS = 3000;
   var ARMED_MESSAGE = "Press ESC again to clear this answer.";
   var COLLAPSE_KEY = "earful-voice-collapsed";
   var SVG_NS = "http://www.w3.org/2000/svg";
@@ -785,6 +787,12 @@
     }
 
     document.addEventListener("keydown", function (event) {
+      // Esc twice means twice running. Any other key in between is the
+      // respondent doing something else — Enter, to move on, most of
+      // all — and the Esc after it is a first press again, on whatever
+      // question that turns out to be. Auto-repeat is not a key press:
+      // a held Space repeats for as long as a take lasts.
+      if (event.key !== "Escape" && !event.repeat) disarm(true);
       if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
       var target = event.target;
       if (!target || insideConsent(target)) return;
@@ -852,27 +860,34 @@
       field.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
-    // Esc twice clears the answer. It applies to the field and the voice
-    // controls, and to a live take wherever focus happens to be — while
-    // recording, the take is what the respondent is interacting with.
-    // One Esc arms and says so; the second inside the window clears.
+    // Esc twice clears the answer. A first press applies to the field
+    // and the voice controls, to the page body when one voice question
+    // is in view, and to a live take wherever focus happens to be —
+    // while recording, the take is what the respondent is interacting
+    // with. It arms and says so; a second inside the window clears.
+    //
+    // The second press follows the first, not the focus. The first Esc
+    // also takes focus out of the field (respond.js), so by the time
+    // the second arrives there is nothing focused to go by.
     function onEscape(event, target) {
+      if (armed) {
+        var waiting = armed.mic;
+        disarm(false);
+        event.preventDefault();
+        waiting.clear();
+        return;
+      }
       var mic = null;
       for (var i = 0; i < mics.length; i++) {
         if (mics[i].isRecording()) mic = mics[i];
       }
       if (!mic) {
         mic = micFor(target);
-        if (!mic || (target !== mic.field && !isVoiceControl(mic, target))) return;
+        if (!mic) return;
+        if (target !== mic.field && target !== document.body && !isVoiceControl(mic, target)) return;
       }
       if (mic.isDisabled()) return;
       event.preventDefault();
-      if (armed && armed.mic === mic) {
-        disarm(false);
-        mic.clear();
-        return;
-      }
-      disarm(true);
       armed = {
         mic: mic,
         timer: window.setTimeout(function () {
@@ -883,7 +898,7 @@
     }
 
     // disarm forgets a first Esc. Giving up — the window ran out, or the
-    // respondent moved to another question — puts the status line back;
+    // respondent pressed something else — puts the status line back;
     // a second Esc does not, since clearing has its own thing to say.
     function disarm(givingUp) {
       if (!armed) return;

@@ -97,8 +97,11 @@ textarea the server rendered is the whole interface (story 38).
    bar.
 7. **Reset**: press Esc once (the status line asks for a second), then
    again: the textarea empties, and a reload does not bring the answer
-   back. Press Esc once and wait six seconds: the prompt goes away and
-   the status line says what it said before. Do the same while holding Space: the take is dropped and nothing
+   back. Press Esc once and wait three seconds: the prompt goes away,
+   the status line says what it said before, and one more Esc only
+   prompts again. Esc also takes focus out of the field, so Esc then
+   Enter moves to the next question with the answer intact; Esc, Enter,
+   Esc clears nothing. Do the same while holding Space: the take is dropped and nothing
    is transcribed. The *Reset* button does the same on click.
 8. **Edit and submit**: change a word, submit, confirm the stored answer
    is the edited text.
