@@ -24,10 +24,7 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 				<h1>{ t(ctx, "results.heading") }</h1>
 				@StatusChip(data.Survey.Status)
 			</div>
-			<nav class="tabs" aria-label={ t(ctx, "tabs.aria") }>
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") } aria-current="page">{ t(ctx, "tabs.answers") }</a>
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") }>{ t(ctx, "tabs.stats") }</a>
-			</nav>
+			@surveyTabs(data.Survey, "results")
 			<p class="muted">
 				{ responseCountLabel(ctx, data.ResponseCount) }
 				if data.Survey.LatestVersion > 0 {

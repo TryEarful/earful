@@ -65,9 +65,18 @@ func (s *server) renderNewSurvey(w http.ResponseWriter, r *http.Request, errMsg 
 	render(w, r, status, templates.NewSurvey(info.Email, info.WorkspaceName, info.CSRFToken, errMsg))
 }
 
-// surveyPage is the editor: draft questions, status, versions.
+// surveyPage is the editor: draft questions, status, versions. A
+// publish redirects here and names its outcome in the query, so the
+// notice survives the redirect and a reload does not publish again.
 func (s *server) surveyPage(w http.ResponseWriter, r *http.Request) {
-	s.renderSurveyPage(w, r, "", "")
+	notice := ""
+	q := r.URL.Query()
+	if n, err := strconv.Atoi(q.Get("published")); err == nil && n > 0 {
+		notice = say(r, "editor.notice.published", uitext.Args{"Version": n})
+	} else if q.Get("notice") == "unchanged" {
+		notice = say(r, "editor.notice.unchanged")
+	}
+	s.renderSurveyPage(w, r, "", notice)
 }
 
 func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg, notice string) {
@@ -213,7 +222,7 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 	version, err := s.surveys.Publish(r.Context(), info.WorkspaceID, survey.ID, info.UserID, s.clock.Now())
 	switch {
 	case errors.Is(err, store.ErrNothingToPublish):
-		s.renderSurveyPage(w, r, "", say(r, "editor.notice.unchanged"))
+		http.Redirect(w, r, "/surveys/"+survey.ID.String()+"?notice=unchanged", http.StatusSeeOther)
 		return
 	case isUserError(err):
 		s.renderSurveyPage(w, r, sayError(r, err), "")
@@ -222,7 +231,7 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, "publish survey", err)
 		return
 	}
-	s.renderSurveyPage(w, r, "", say(r, "editor.notice.published", uitext.Args{"Version": version.Number}))
+	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"?published="+strconv.Itoa(version.Number), http.StatusSeeOther)
 }
 
 func (s *server) surveyClose(w http.ResponseWriter, r *http.Request) {

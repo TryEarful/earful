@@ -2,17 +2,17 @@
 title: Help
 short_title: Help
 sections: cards
-hash: sha256-8d970e96df91bb9fd532b3f7709e54464d872eb70ef41e85e50cf712c4eeac7f
+hash: sha256-e4071b66b994c058041e3cbb5309f47f65aa8da2a7e20161396ec273736c297a
 last_update: 2026-09-30
 ---
 
-Short answers to what people ask most. For anything not covered here, see [how Earful treats your data](/trust), which also says whom to contact.
+Short answers to what people ask most. **Answering a survey?** See [answer a survey](#answer-a-survey). **Running one?** [Create it](#create-a-survey), [publish and share it](#publish-and-share), then [read the answers](#read-the-answers).
 
 ## Create a survey
 
 1. On the dashboard, choose **New survey**.
 2. Give it a title and choose who can answer. An **anonymous survey** is open to anyone with the link and stores nothing that identifies them. An **invited survey** is answered only by the people you invite by email, each through their own link. This choice is permanent.
-3. Add questions one at a time, or describe what you want to learn and let **Draft questions with AI** suggest some. Drafted questions are ordinary questions: edit, reorder or delete them.
+3. Add questions one at a time, or describe what you want to learn and choose **Draft questions** to have AI suggest some. They are ordinary questions: edit, reorder or delete them.
 4. Choose **Preview as respondent** to answer the survey exactly as others will. Nothing you enter there is kept.
 
 ## Publish and share
@@ -39,4 +39,4 @@ Where a survey offers it, you can speak an answer instead of typing it. What you
 
 ## Your data
 
-What Earful keeps, where it is kept, who processes it and for how long is set out in full on [how Earful treats your data](/trust).
+What Earful keeps, where it is kept, who processes it and for how long is set out in full on [how Earful treats your data](/trust), which also says whom to contact.

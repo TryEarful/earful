@@ -13,6 +13,12 @@ import (
 func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 	info, _ := authFrom(r.Context())
 	data := templates.AccountData{IsSuperAdmin: info.IsSuperAdmin}
+	hasPassword, err := s.auth.HasPassword(r.Context(), info.UserID)
+	if err != nil {
+		s.internalError(w, r, "read account", err)
+		return
+	}
+	data.HasPassword = hasPassword
 	switch r.URL.Query().Get("notice") {
 	case "email_changed":
 		data.EmailNotice = say(r, "account.notice.email_changed")

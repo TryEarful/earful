@@ -1,6 +1,7 @@
 ---
 title: Answering by voice
-hash: sha256-297a904fb95e7392b1e46f2236387f3cd3c0bc976af861c90b62d7f420336ada
+sections: cards
+hash: sha256-04064e17b43cac9783469eec0eea8c94cfe47751aa5213da92a0552b97953038
 last_update: 2026-09-30
 ---
 
@@ -13,13 +14,11 @@ On a survey that offers it, you can speak an answer instead of typing it.
 3. What you say is turned into text and put in the answer field.
 4. Read it, and edit it if it isn't quite right. It becomes your answer only when you submit the survey.
 
-You can type instead at any point. Every question that can be answered by voice can be answered by typing.
+You can type instead at any point.
 
 ## What happens to your voice
 
-What you say is turned into text you can read and edit before it becomes your answer. Your voice itself is never stored.
-
-More about this on the [trust page](/trust).
+Your voice is turned into text and never stored. Only the text you submit is kept. [How Earful treats your data](/trust) has the details.
 
 ## If it doesn't work
 
@@ -27,3 +26,7 @@ More about this on the [trust page](/trust).
 - **Nothing is coming through.** Check that the right microphone is selected and that it is not muted.
 - **The text is wrong.** Edit it in the answer field, or clear it and speak again.
 - **Voice isn't available.** Type your answer. Dictation depends on the survey, the browser and the connection; typing always works.
+
+***
+
+[Back to help](/help)

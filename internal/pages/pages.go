@@ -126,7 +126,7 @@ type Library struct {
 }
 
 var markdown = goldmark.New(
-	goldmark.WithExtensions(extension.Table, extension.Strikethrough),
+	goldmark.WithExtensions(extension.Table, extension.Strikethrough, extension.Typographer),
 	goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 	// HTML written in a document is not passed through: a document is
 	// prose, and what it cannot say in Markdown it does not need.

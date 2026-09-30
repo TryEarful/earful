@@ -30,10 +30,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				<h1>{ t(ctx, "stats.heading") }</h1>
 				@StatusChip(data.Survey.Status)
 			</div>
-			<nav class="tabs" aria-label={ t(ctx, "tabs.aria") }>
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>{ t(ctx, "tabs.answers") }</a>
-				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") } aria-current="page">{ t(ctx, "tabs.stats") }</a>
-			</nav>
+			@surveyTabs(data.Survey, "stats")
 
 			@rangeControl(data)
 

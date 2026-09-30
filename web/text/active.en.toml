@@ -73,7 +73,7 @@ description = "The product's tagline. It is kept in English in every language."
 other = "Surveys, out loud."
 
 [home.intro]
-body = "Open source surveys people answer out loud."
+body = "Ask with a link. Hear the answers in people's own words."
 
 [home.sign_in]
 label = "Sign in"
@@ -121,7 +121,7 @@ label = "Create account"
 [magic.sent]
 title = "Check your email · Earful"
 heading = "Check your email"
-body_html = "If <strong>{{.Email}}</strong> is a valid address, a link to sign in is on its way. It works once and expires in 15 minutes."
+body_html = "A link to sign in is on its way to <strong>{{.Email}}</strong>. It works once, for 15 minutes."
 retry_html = 'Nothing arriving? Check spam, or <a href="/login">request another link</a>.'
 
 [magic.confirm]
@@ -138,7 +138,7 @@ title = "Link problem · Earful"
 heading = "This link can't sign you in"
 
 [magic.invalid.back]
-label = "Back to sign in"
+label = "Request a new link"
 
 [goodbye]
 title = "Account deleted · Earful"
@@ -153,7 +153,7 @@ again = "You can create a fresh account with the same email at any time."
 aria = "Main"
 
 [header.dashboard]
-label = "Dashboard"
+label = "Surveys"
 
 [header.account]
 label = "Account"
@@ -168,7 +168,8 @@ label = "Sign out"
 # ── Dashboard ───────────────────────────────────────────────────────────
 
 [dashboard]
-title = "Dashboard · Earful"
+heading = "Surveys"
+title = "Surveys · Earful"
 
 [dashboard.new]
 label = "New survey"
@@ -184,7 +185,7 @@ unpublished = "· not published yet"
 closes = "· closes {{.Date}}"
 # Shown on the Starter Survey's card until its owner publishes a version
 # of their own.
-starter = "A starter survey, already published in English and Spanish. Answers to it arrive in this workspace and nowhere else. Reword it for your own product, or delete it."
+starter = "A sample survey in English and Spanish. Reword it or delete it."
 
 # One question has always been drawn as "1 questions".
 [dashboard.survey.published]
@@ -220,7 +221,7 @@ label = "New email address"
 label = "Current password"
 
 [account.email.submit]
-label = "Change email"
+label = "Save new email"
 
 [account.export]
 heading = "Export everything"
@@ -264,6 +265,10 @@ failed = "Couldn't copy. The link opens the Markdown instead."
 [document.markdown]
 label = "View as Markdown"
 
+[document.back]
+description = "A link above a help or privacy page, back to the signed in dashboard."
+other = "← Your surveys"
+
 
 # ── The trail at the top of a creator's page ────────────────────────────
 
@@ -284,7 +289,7 @@ heading = "Add a language"
 empty = "Add questions to the survey first. There's nothing to translate yet."
 
 [languages.add.code]
-label_html = 'Language code <small class="muted">(like nl, de, pt-BR)</small>'
+label_html = 'Language code <small class="muted">(like nl, de or pt)</small>'
 placeholder = "nl"
 
 [languages.add.submit]
@@ -317,8 +322,10 @@ label = "Save and mark reviewed"
 # ── The two views of a survey's answers ─────────────────────────────────
 
 [tabs]
+languages = "Languages"
+questions = "Questions"
 aria = "Survey views"
-answers = "Answers"
+answers = "Results"
 stats = "Stats"
 
 
@@ -341,7 +348,7 @@ time = "Time to complete"
 note = '"Opened" counts times the survey page was loaded, so it is an upper bound on people. Days are counted in UTC. Nothing here is linked to any individual response.'
 
 [stats.trend]
-heading = "Trends"
+heading = "Per day"
 range = "Per day, {{.Range}}."
 aria = "Opened and submissions per day; the table below holds the same numbers"
 empty = "Nothing in this range yet."
@@ -405,7 +412,7 @@ heading = "No responses yet"
 body = "Share the survey link and answers will appear here. Results are grouped by question, so you can keep improving the wording without losing comparability."
 
 [results.insight]
-heading = "Insight Summary"
+heading = "Insight summary"
 label_html = "Written by <strong>{{.Model}}</strong> on {{.Date}}, reading {{.Responses}}. It's a reading of the answers, not the answers themselves. Check anything you plan to act on."
 again_hint = "Run it again for a current summary."
 intro = "Read every answer at once: themes, patterns and representative quotes across all responses, including those given to earlier versions of the questions."
@@ -467,7 +474,7 @@ label = "Title"
 
 [survey.audience]
 legend = "Who can answer"
-permanent = "This choice is permanent. It's a promise to your respondents, so no one can ever change it, not you and not us."
+permanent = "You can't change this later. It's a promise to your respondents."
 
 [survey.audience.anonymous]
 name = "Anonymous survey"
@@ -515,7 +522,7 @@ label = "Delete"
 
 [editor.generate]
 heading = "Draft questions with AI"
-intro = "Describe what you want to learn and I'll draft questions into this survey. They arrive as ordinary draft questions you can edit, reorder or delete."
+intro = "Describe what you want to learn, and questions are drafted into this survey. Edit, reorder or delete them like any others."
 
 [editor.generate.prompt]
 label = "What do you want to learn?"
@@ -527,9 +534,9 @@ label = "Draft questions"
 [editor.add]
 heading = "Add a question"
 type = "Type"
-options_html = 'Options <small class="muted">(one per line; choice and dropdown questions only)</small>'
-scale_min_html = 'Scale starts at <small class="muted">(rating only)</small>'
-scale_max_html = 'Scale ends at <small class="muted">(rating only)</small>'
+options_html = 'Options <small class="muted">(one per line)</small>'
+scale_min_html = "Scale starts at"
+scale_max_html = "Scale ends at"
 
 [editor.add.text]
 placeholder = "What would you like to ask?"
@@ -553,8 +560,8 @@ other = "Send {{.Count}} invites"
 
 [editor.publish]
 heading = "Publish"
-live = "Version {{.Version}} is live. Your edits stay in the draft until you publish again, and respondents keep seeing the published version meanwhile."
-never = "This survey has never been published, so it accepts no responses yet. Publishing freezes the current questions into version 1 and opens the survey."
+live = "Version {{.Version}} is live. Edits stay in the draft until you publish again."
+never = "Not published yet. Publishing opens the survey with these questions as version 1."
 empty = "Add at least one question to publish."
 
 [editor.publish.submit]
@@ -562,7 +569,7 @@ label = "Publish version {{.Version}}"
 
 [editor.sharing]
 heading = "Sharing"
-open = "This survey is open and accepting responses. Share this link:"
+open = "Open for answers. Share this link:"
 anonymous = "Anyone with the link can answer, and answers carry nothing that identifies them."
 invited = "Only invited participants can answer, each through their own link."
 closed = "This survey is closed. It accepts no new responses; results stay visible."
@@ -579,7 +586,7 @@ hint = "Reopening also clears the close date that has already passed."
 heading = "Published versions"
 version = "Version {{.Number}}"
 by = "by {{.Who}}"
-immutable = "Published versions are immutable: what a respondent saw can never be edited afterwards."
+immutable = "Respondents always see a published version exactly as it was."
 
 [editor.versions.audit]
 label = "View audit log"
@@ -747,10 +754,10 @@ send = "We couldn't send your link. Please try again."
 login = "We couldn't finish signing you in. Please request a new link."
 
 [magic.invalid.reason]
-incomplete = "This link is incomplete. Use the full link from your email."
-expired = "This link has expired. Links last 15 minutes, so request a new one."
-used = "This link was already used. Request a new one to sign in again."
-invalid = "This link isn't valid. Request a new one."
+incomplete = "Part of the link is missing. Open it again from your email."
+expired = "Links last 15 minutes, and this one is older."
+used = "This link has already been used."
+invalid = "This link isn't one we recognise."
 
 
 # ── Account: notices and refusals ──────────────────────────────────────
@@ -1374,12 +1381,12 @@ low = "0, not at all likely"
 high = "10, extremely likely"
 
 [respond.disclosure]
-controller_html = "This survey is run by <strong>{{.Workspace}}</strong>, who decides what happens to the answers."
-anonymous = "It's anonymous: your answers are stored with no email address, no IP address and no device details. Nothing identifies you."
+controller_html = "Run by <strong>{{.Workspace}}</strong>, who decides what happens to the answers."
+anonymous = "It's anonymous. No email, IP address or device details are stored."
 identified_html = "You're answering as <strong>{{.Email}}</strong>, and {{.Workspace}} will see that these answers are yours. Your personal link works for one submission."
 invited = "Your answers are linked to your invitation, so {{.Workspace}} can see who answered what."
-voice = "You can answer by speaking. What you say is turned into text you can read and edit before it becomes your answer. Your voice itself is never stored."
-draft = "Answers you haven't submitted, and earlier versions of them, are kept in this browser so a refresh or a mistake doesn't lose them. They're never sent until you submit, and are cleared when you do, and after a day."
+voice = "You can answer by speaking and read the text before you send it. Your voice itself is never stored."
+draft = "Unsent answers stay in this browser for a day, so a reload loses nothing."
 trust = "How Earful handles your data"
 
 [respond.already]
@@ -1390,8 +1397,8 @@ body = "Your personal link works for one submission, and yours has been recorded
 [respond.thanks]
 title = "Thank you · {{.Survey}}"
 heading = "Thank you"
-body = "Your answers have been recorded."
-anonymous = "This was an anonymous survey: your answers were stored without anything that identifies you."
+body = "Your answers are in. You can close this page now."
+anonymous = "This survey was anonymous. Nothing you sent identifies you."
 
 
 # ── Scripts: the keys they name ────────────────────────────────────────

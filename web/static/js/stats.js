@@ -66,17 +66,28 @@
       var key = select.value;
       var series = SERIES.filter(function (s) { return s.key === key; })[0];
       chart.setAttribute("aria-label", T.t("js.stats.chart.aria", { Series: series.label }));
-      chart.replaceChildren(lineChart(points, key, series));
+      chart.replaceChildren(lineChart(points, key, series, chart.clientWidth));
     }
     select.addEventListener("change", render);
     render();
+
+    // Drawn at the width it is shown, so its labels keep their size on a
+    // phone; redrawn when that width changes.
+    if (window.ResizeObserver) {
+      var drawnAt = chart.clientWidth;
+      new ResizeObserver(function () {
+        if (Math.abs(chart.clientWidth - drawnAt) < 8) return;
+        drawnAt = chart.clientWidth;
+        render();
+      }).observe(chart);
+    }
   }
 
-  // lineChart draws one series as a filled line in a fixed viewBox that
-  // scales with its container. Text sizes are in viewBox units, chosen
-  // so the labels stay readable at phone width.
-  function lineChart(points, key, series) {
-    var width = 640, height = 220;
+  // lineChart draws one series as a filled line, one viewBox unit to a
+  // pixel of the width it is given, so text sizes are true sizes. Each
+  // series has its own hue, set by its class.
+  function lineChart(points, key, series, shownWidth) {
+    var width = Math.max(280, Math.round(shownWidth || 640)), height = 220;
     var pad = { top: 12, right: 12, bottom: 28, left: 36 };
     var innerW = width - pad.left - pad.right;
     var innerH = height - pad.top - pad.bottom;
@@ -105,7 +116,7 @@
     });
 
     // The x axis shows a handful of dates, never all of them.
-    var every = Math.max(1, Math.ceil(points.length / 6));
+    var every = Math.max(1, Math.ceil(points.length / Math.max(2, Math.floor(innerW / 72))));
     points.forEach(function (p, i) {
       if (i % every !== 0 && i !== points.length - 1) return;
       var text = el("text", { x: x(i), y: height - 8, class: "trend-tick", "text-anchor": "middle" });
@@ -116,12 +127,12 @@
     // Area under the line, then the line itself.
     var line = points.map(function (p, i) { return (i === 0 ? "M" : "L") + x(i).toFixed(1) + " " + y(p[key]).toFixed(1); }).join(" ");
     var area = line + " L" + x(points.length - 1).toFixed(1) + " " + y(0).toFixed(1) + " L" + x(0).toFixed(1) + " " + y(0).toFixed(1) + " Z";
-    svg.appendChild(el("path", { d: area, class: "trend-area" }));
-    svg.appendChild(el("path", { d: line, class: "trend-line" }));
+    svg.appendChild(el("path", { d: area, class: "trend-area series-" + key }));
+    svg.appendChild(el("path", { d: line, class: "trend-line series-" + key }));
 
     // One hoverable point per day, with the value as its title.
     points.forEach(function (p, i) {
-      var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : 3.5, class: "trend-dot js-trend-dot" });
+      var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : 3.5, class: "trend-dot series-" + key + " js-trend-dot" });
       var t = el("title");
       t.textContent = T.t("js.stats.chart.point", { Day: p.label, Count: p[key], Series: series.counted });
       dot.appendChild(t);

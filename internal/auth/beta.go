@@ -236,6 +236,17 @@ func (s *Service) LoginWithPassword(ctx context.Context, address, password, ip s
 // ChangeEmail applies immediately after re-proving the current password
 // (there is no ESP to verify the new address with — the verification
 // step upgrades this flow when Brevo lands). google_sub stays linked.
+// HasPassword reports whether the account signs in with a password.
+// One that signs in by emailed link has none, and so has nothing with
+// which to confirm a change of address on the account page.
+func (s *Service) HasPassword(ctx context.Context, userID uuid.UUID) (bool, error) {
+	user, err := s.q.GetUserByID(ctx, userID)
+	if err != nil {
+		return false, fmt.Errorf("auth: get user: %w", err)
+	}
+	return user.PasswordHash != nil, nil
+}
+
 func (s *Service) ChangeEmail(ctx context.Context, userID uuid.UUID, newEmail, currentPassword string) error {
 	addr, err := mail.ParseAddress(strings.TrimSpace(newEmail))
 	if err != nil || addr.Name != "" {

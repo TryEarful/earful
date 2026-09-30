@@ -102,6 +102,12 @@ func (s *server) document(address string) http.HandlerFunc {
 			Markdown:     page.Markdown,
 			MarkdownPath: "/" + address + ".md",
 		}
+		// A reader who arrived from the signed in pages is offered the
+		// way back. The cookie is only looked at, not checked: a stale one
+		// leads to the sign in page, which is where its owner belongs.
+		if c, err := r.Cookie(sessionCookieName); err == nil && c.Value != "" {
+			data.Back = "/dashboard"
+		}
 		if !page.LastUpdate.IsZero() {
 			data.Updated = text(r).Day(page.LastUpdate)
 		}

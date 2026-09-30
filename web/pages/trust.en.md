@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-3c5fdd17cb2b2189f214266392ae9544bc11c3d7b99e14311785027e25f37190
+hash: sha256-573b85ff88a9f72e05b4a51aea174a23464c513a9ca22e5322ef1141a0de0113
 last_update: 2026-09-30
 ---
 
@@ -20,7 +20,10 @@ A survey's creator chooses at creation whether it is anonymous, and that choice 
 
 An anonymous response carries no email address, no IP address and no device details. Those columns do not exist anywhere near a response, so no query and no mistake can quietly fill them in. Adding them would take a deliberate change to the database, in public, in an open source repository.
 
-Survey creators do see coarse counts about their audience (browser family, device type and country) as totals for the survey, never attached to any response, and hidden entirely for any group smaller than five people. Country is worked out on our own server from an offline database and the IP address is discarded immediately. How many times a survey was opened and how many answers were submitted are also counted per day, so a creator can see how a survey went over a week; those are counts of the survey, with nothing attached to any response, and the audience counts are never split by day.
+Survey creators do see a few totals about their audience, never attached to any response:
+
+- Browser family, device type and country, hidden for any group smaller than five people. Country is worked out on our own server from an offline database, and the IP address is discarded immediately.
+- How many times the survey was opened and how many answers were submitted, per day. The audience totals are never split by day.
 
 ## Nothing from third parties runs on a survey page
 
@@ -32,27 +35,25 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 
 ## Where the data lives, and who touches it
 
-{{if .Region}}Hosted in {{.Region}}. These are every company involved:{{else}}These are every company involved in running this instance:{{end}}
+{{if .Region}}Hosted in {{.Region}}. Every company involved:{{else}}Every company involved in running this instance:{{end}}
 
-| Processor | What for | What they see | Where |
-|---|---|---|---|
 {{- if .GoogleCloud}}
-| Google Cloud | Hosting: the application, the database, backups and logs | Everything the service holds | `europe-west4` |
+- **Google Cloud** hosts the application, the database, backups and logs, so it can see everything the service holds. Region `europe-west4`.
 {{- end}}
 {{- if .Brevo}}
-| Brevo | Sending links to sign in and survey invitations | Email addresses of account holders and invited participants | EU (France) |
+- **Brevo** sends links to sign in and survey invitations. It sees the email addresses of account holders and invited participants. EU (France).
 {{- end}}
 {{- if eq .AI "vertex"}}
-| Google Vertex AI | Transcribing spoken answers, drafting questions, summaries and translations | Audio in transit (never stored), question and answer text | {{if eq .VertexLocation "eu"}}EU (Google Cloud, processed only in EU member states){{else if eq .VertexLocation "us"}}United States (Google Cloud){{else}}`{{.VertexLocation}}`{{end}} |
+- **Google Vertex AI** transcribes spoken answers and drafts questions, summaries and translations. It sees audio in transit, never stored, and the text of questions and answers. {{if eq .VertexLocation "eu"}}EU, processed only in EU member states.{{else if eq .VertexLocation "us"}}United States.{{else}}Region `{{.VertexLocation}}`.{{end}}
 {{- end}}
 {{- if eq .AI "openai"}}
-| AI service chosen by the operator | Transcription, drafting, summaries and translations | Audio in transit (never stored), question and answer text | Wherever this instance's operator points it |
+- **An AI service chosen by the operator** transcribes, drafts, summarises and translates. It sees audio in transit, never stored, and the text of questions and answers, wherever this instance's operator points it.
 {{- end}}
 {{- if .GoogleLogin}}
-| Google Identity | Signing in, only for people who choose Google | Email address and Google account id | Global |
+- **Google Identity** signs in the people who choose Google. It sees their email address and Google account id.
 {{- end}}
 {{- if .NoProcessors}}
-| Nobody | This instance runs entirely on its operator's own infrastructure | None | None |
+- No outside company is involved: this instance runs entirely on its operator's own infrastructure.
 {{- end}}
 
 Hosting Earful yourself removes all of them: it runs against your own Postgres, your own SMTP server and, if you want AI features, your own model.
@@ -69,10 +70,10 @@ One button exports everything a workspace holds (every survey, version, question
 
 [Source code](https://github.com/TryEarful/earful) · [Export format](https://github.com/TryEarful/earful/blob/main/docs/export-format.md)
 
-## Attribution
+## Contact
 
-{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})
+{{if .ContactEmail}}Questions, or a request about your own data: [{{.ContactEmail}}](mailto:{{.ContactEmail}}).{{else}}This instance has not published a contact address. Ask whoever sent you the survey. They decide what happens to your answers, and they can reach the people running this instance.{{end}}
 
 ***
 
-{{if .ContactEmail}}Questions, or a request about your own data: [{{.ContactEmail}}](mailto:{{.ContactEmail}}).{{else}}This instance has not published a contact address. Ask whoever sent you the survey. They decide what happens to your answers, and they can reach the people running this instance.{{end}}
+{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})

@@ -275,7 +275,7 @@
     return node.tagName === "TEXTAREA" || (node.tagName === "INPUT" && node.type === "text");
   }
 
-  function show(index) {
+  function show(index, arriving) {
     if (index < 0 || index > questions.length - 1) return;
     current = index;
 
@@ -293,7 +293,12 @@
     actions.hidden = index !== questions.length - 1;
 
     if (draft) draft.rememberPosition(index);
-    focusFirstControl(questions[index]);
+    // On a touch screen, focusing a field opens the keyboard over the
+    // page before the respondent has read it; there the first tap is
+    // theirs. With a keyboard, typing can start at once.
+    if (!arriving || !window.matchMedia("(pointer: coarse)").matches) {
+      focusFirstControl(questions[index]);
+    }
   }
 
   // buttonLabel keeps a button's word and its icon together as one
@@ -368,7 +373,7 @@
   }
 
   stampStartTime();
-  show(draft ? draft.startAt(questions.length) : 0);
+  show(draft ? draft.startAt(questions.length) : 0, true);
 })();
 
 // Draft answers that survive a reload (SPEC.md story 79, M4-T8).

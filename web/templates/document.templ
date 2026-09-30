@@ -21,6 +21,9 @@ type DocumentData struct {
 	// MarkdownPath where it is served as a file.
 	Markdown     string
 	MarkdownPath string
+	// Back leads a signed in reader back to their surveys; it is empty
+	// for everybody else.
+	Back string
 }
 
 // Document draws a document in the respondent's page shell: it is as
@@ -33,6 +36,9 @@ type DocumentData struct {
 templ Document(data DocumentData) {
 	@RespondLayout(t(ctx, "page.title", uitext.Args{"Title": data.ShortTitle}), data.Lang) {
 		<main class="document">
+			if data.Back != "" {
+				<p class="document-back"><a href={ templ.SafeURL(data.Back) }>{ t(ctx, "document.back") }</a></p>
+			}
 			<h1>{ data.Title }</h1>
 			<div class="document-body">
 				@templ.Raw(data.HTML)

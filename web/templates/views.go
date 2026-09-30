@@ -184,6 +184,9 @@ type TextAnswerView struct {
 // export arrived: six positional strings was already one too many.
 type AccountData struct {
 	IsSuperAdmin bool
+	// HasPassword shows the change of address, which is confirmed with
+	// the current password.
+	HasPassword bool
 	// EmailNotice/EmailError belong to the change-email form.
 	EmailNotice string
 	EmailError  string

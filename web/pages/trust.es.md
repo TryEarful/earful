@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-19bbd55cf5fa0f26df6d9c996e41cce922801ecbda98ff30c65a180d43ada809
+hash: sha256-dfce0e5ce4c9014e8fba069ff88a66c78d8872c6d57cab9943726610dc87ae01
 last_update: 2026-09-30
-source_hash: sha256-3c5fdd17cb2b2189f214266392ae9544bc11c3d7b99e14311785027e25f37190
+source_hash: sha256-573b85ff88a9f72e05b4a51aea174a23464c513a9ca22e5322ef1141a0de0113
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -23,7 +23,10 @@ Quien crea una encuesta decide al crearla si es anónima, y esa decisión no pue
 
 Un envío anónimo no lleva correo electrónico, ni dirección IP, ni datos del dispositivo. Esas columnas no existen cerca de ningún envío, de modo que ninguna consulta ni ningún error puede rellenarlas sin que se note. Añadirlas exigiría un cambio deliberado en la base de datos, a la vista de todos, en un repositorio de código abierto.
 
-Quienes crean encuestas sí ven recuentos generales sobre su audiencia (familia de navegador, tipo de dispositivo y país) como totales de la encuesta, nunca unidos a un envío, y ocultos por completo para cualquier grupo de menos de cinco personas. El país se determina en nuestro propio servidor con una base de datos sin conexión, y la dirección IP se descarta de inmediato. También se cuenta por día cuántas veces se abrió una encuesta y cuántas respuestas se enviaron, para que quien la creó pueda ver cómo le fue a lo largo de una semana; son recuentos de la encuesta, sin nada unido a ningún envío, y los recuentos de audiencia nunca se separan por día.
+Quienes crean encuestas sí ven algunos totales sobre su audiencia, nunca unidos a un envío:
+
+- Familia de navegador, tipo de dispositivo y país, ocultos para cualquier grupo de menos de cinco personas. El país se determina en nuestro propio servidor con una base de datos sin conexión, y la dirección IP se descarta de inmediato.
+- Cuántas veces se abrió la encuesta y cuántas respuestas se enviaron, por día. Los totales de audiencia nunca se separan por día.
 
 ## En la página de una encuesta no se ejecuta nada de terceros
 
@@ -35,27 +38,25 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 
 ## Dónde están los datos y quién los toca
 
-{{if .Region}}Alojado en {{.Region}}. Estas son todas las empresas que intervienen:{{else}}Estas son todas las empresas que intervienen en el funcionamiento de esta instalación:{{end}}
+{{if .Region}}Alojado en {{.Region}}. Todas las empresas que intervienen:{{else}}Todas las empresas que intervienen en el funcionamiento de esta instalación:{{end}}
 
-| Encargado | Para qué | Qué ve | Dónde |
-|---|---|---|---|
 {{- if .GoogleCloud}}
-| Google Cloud | Alojamiento: la aplicación, la base de datos, las copias de seguridad y los registros | Todo lo que guarda el servicio | `europe-west4` |
+- **Google Cloud** aloja la aplicación, la base de datos, las copias de seguridad y los registros, así que puede ver todo lo que guarda el servicio. Región `europe-west4`.
 {{- end}}
 {{- if .Brevo}}
-| Brevo | Envío de enlaces de acceso e invitaciones a encuestas | Correos electrónicos de titulares de cuentas y de participantes invitados | UE (Francia) |
+- **Brevo** envía los enlaces de acceso y las invitaciones a encuestas. Ve los correos de titulares de cuentas y de participantes invitados. UE (Francia).
 {{- end}}
 {{- if eq .AI "vertex"}}
-| Google Vertex AI | Transcribir respuestas habladas y redactar preguntas, resúmenes y traducciones | Audio en tránsito (nunca guardado), texto de preguntas y respuestas | {{if eq .VertexLocation "eu"}}UE (multirregión de Google Cloud: procesado solo en Estados miembros de la UE){{else if eq .VertexLocation "us"}}Estados Unidos (multirregión de Google Cloud){{else}}`{{.VertexLocation}}`{{end}} |
+- **Google Vertex AI** transcribe las respuestas habladas y redacta preguntas, resúmenes y traducciones. Ve el audio en tránsito, que nunca se guarda, y el texto de preguntas y respuestas. {{if eq .VertexLocation "eu"}}UE, procesado solo en Estados miembros de la UE.{{else if eq .VertexLocation "us"}}Estados Unidos.{{else}}Región `{{.VertexLocation}}`.{{end}}
 {{- end}}
 {{- if eq .AI "openai"}}
-| Servicio de IA configurado por el operador | Transcripción, redacción, resúmenes y traducciones | Audio en tránsito (nunca guardado), texto de preguntas y respuestas | Donde lo haya dispuesto el operador de esta instalación |
+- **Un servicio de IA elegido por el operador** transcribe, redacta, resume y traduce. Ve el audio en tránsito, que nunca se guarda, y el texto de preguntas y respuestas, allí donde lo haya dispuesto el operador de esta instalación.
 {{- end}}
 {{- if .GoogleLogin}}
-| Google Identity | Inicio de sesión, solo para quien elige Google | Correo electrónico e identificador de la cuenta de Google | Global |
+- **Google Identity** inicia la sesión de quienes eligen Google. Ve su correo electrónico y el identificador de su cuenta de Google.
 {{- end}}
 {{- if .NoProcessors}}
-| Nadie | Esta instalación funciona por completo en la infraestructura de su propio operador | Ninguno | Ninguno |
+- No interviene ninguna empresa externa: esta instalación funciona por completo en la infraestructura de su propio operador.
 {{- end}}
 
 Alojar Earful por su cuenta los elimina a todos: funciona con su propio Postgres, su propio servidor SMTP y, si quiere funciones de IA, su propio modelo.
@@ -64,7 +65,7 @@ Alojar Earful por su cuenta los elimina a todos: funciona con su propio Postgres
 
 Nuestra infraestructura está en la UE, pero la empresa matriz de Google Cloud es estadounidense, y la ley de Estados Unidos alcanza a las empresas estadounidenses estén donde estén sus servidores. Alojar en la UE reduce ese riesgo; no lo elimina. Preferimos decirlo antes que dar a entender una garantía que no podemos ofrecer.
 
-Los datos eliminados se retiran de los sistemas en uso de inmediato y se borran definitivamente en un plazo de 30 días. Las copias de seguridad se conservan 30 días y son inmutables a propósito, lo que significa que una supresión es plenamente efectiva en 30 días, no al instante. Es el compromiso habitual frente al riesgo de perderlo todo por un ataque de secuestro de datos, y creemos que es el correcto.
+Los datos eliminados se retiran de los sistemas en uso de inmediato y se borran definitivamente en un plazo de 30 días. Las copias de seguridad se conservan 30 días y son inmutables a propósito, lo que significa que una supresión es plenamente efectiva en 30 días, no al instante. Es el equilibrio habitual frente al riesgo de perderlo todo por un ataque de secuestro de datos, y creemos que es el correcto.
 
 ## Puede irse
 
@@ -72,10 +73,10 @@ Un botón exporta todo lo que contiene un espacio de trabajo (cada encuesta, ver
 
 [Código fuente](https://github.com/TryEarful/earful) · [Formato de exportación](https://github.com/TryEarful/earful/blob/main/docs/export-format.md)
 
-## Atribución
+## Contacto
 
-{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})
+{{if .ContactEmail}}Preguntas, o una solicitud sobre sus propios datos: [{{.ContactEmail}}](mailto:{{.ContactEmail}}).{{else}}Esta instalación no ha publicado una dirección de contacto. Pregunte a quien le envió la encuesta: es quien decide qué ocurre con sus respuestas, y puede dirigirse a las personas que administran esta instalación.{{end}}
 
 ***
 
-{{if .ContactEmail}}Preguntas, o una solicitud sobre sus propios datos: [{{.ContactEmail}}](mailto:{{.ContactEmail}}).{{else}}Esta instalación no ha publicado una dirección de contacto. Pregunte a quien le envió la encuesta: es quien decide qué ocurre con sus respuestas, y puede dirigirse a las personas que administran esta instalación.{{end}}
+{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})

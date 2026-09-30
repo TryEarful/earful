@@ -2,8 +2,8 @@ package templates
 
 templ Home() {
 	@Layout("Earful") {
+		@authBrand()
 		<main class="home">
-			@owl(OwlNeutral, 120)
 			<h1>{ t(ctx, "home.hero") }</h1>
 			<p class="lede">{ t(ctx, "home.intro.body") }</p>
 			<p><a class="button" href="/login">{ t(ctx, "home.sign_in.label") }</a></p>

@@ -22,7 +22,6 @@ templ AuthedHeader(email string, csrf string) {
 			<a href="/account" if currentPath(ctx) == "/account" {
 	aria-current="page"
 }>{ t(ctx, "header.account.label") }</a>
-			<span class="muted account-email">{ email }</span>
 			<form method="post" action="/logout">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<button type="submit" class="button-link">{ t(ctx, "header.sign_out.label") }</button>
@@ -36,9 +35,10 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 		@AuthedHeader(email, csrf)
 		<main>
 			<div class="title-row">
-				<h1>{ workspaceName }</h1>
+				<h1>{ t(ctx, "dashboard.heading") }</h1>
 				<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 			</div>
+			<p class="muted workspace-name">{ workspaceName }</p>
 			if len(data.Surveys) == 0 {
 				<div class="card empty-state js-panel">
 					@owl(OwlNeutral, 96)
@@ -137,35 +137,37 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 					</p>
 				}
 			</div>
-			<div class="card js-panel">
-				<h2>{ t(ctx, "account.email.heading") }</h2>
-				if data.EmailNotice != "" {
-					<p class="notice">{ data.EmailNotice }</p>
-				}
-				<form method="post" action="/account/email">
-					<input type="hidden" name="_csrf" value={ csrf }/>
-					<label class="field">
-						<span>{ t(ctx, "account.email.new.label") }</span>
-						<input type="email" name="email" required autocomplete="email"/>
-					</label>
-					<label class="field">
-						<span>{ t(ctx, "account.email.password.label") }</span>
-						<input type="password" name="password" required autocomplete="current-password"/>
-					</label>
-					if data.EmailError != "" {
-						<p class="error-text">{ data.EmailError }</p>
+			if data.HasPassword {
+				<div class="card js-panel">
+					<h2>{ t(ctx, "account.email.heading") }</h2>
+					if data.EmailNotice != "" {
+						<p class="notice">{ data.EmailNotice }</p>
 					}
-					<button type="submit">{ t(ctx, "account.email.submit.label") }</button>
-				</form>
-				<p class="muted">{ t(ctx, "account.email.hint") }</p>
-			</div>
+					<form method="post" action="/account/email">
+						<input type="hidden" name="_csrf" value={ csrf }/>
+						<label class="field">
+							<span>{ t(ctx, "account.email.new.label") }</span>
+							<input type="email" name="email" required autocomplete="email"/>
+						</label>
+						<label class="field">
+							<span>{ t(ctx, "account.email.password.label") }</span>
+							<input type="password" name="password" required autocomplete="current-password"/>
+						</label>
+						if data.EmailError != "" {
+							<p class="error-text">{ data.EmailError }</p>
+						}
+						<button type="submit">{ t(ctx, "account.email.submit.label") }</button>
+					</form>
+					<p class="muted">{ t(ctx, "account.email.hint") }</p>
+				</div>
+			}
 			@workspaceExport(csrf, data.Export)
 			<div class="card js-panel">
 				<h2>{ t(ctx, "account.delete.heading") }</h2>
 				<p>{ t(ctx, "account.delete.body") }</p>
 				<form method="post" action="/account/delete">
 					<input type="hidden" name="_csrf" value={ csrf }/>
-					<button type="submit" class="danger">{ t(ctx, "account.delete.submit.label") }</button>
+					<button type="submit" class="secondary danger">{ t(ctx, "account.delete.submit.label") }</button>
 				</form>
 			</div>
 		</main>

@@ -85,6 +85,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			<div class="title-row">
 				<h1>{ data.Survey.Title }</h1>
 				@StatusChip(data.Survey.Status)
+				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>{ t(ctx, "editor.preview.label") }</a>
 			</div>
 			<p class="muted">
 				if data.Survey.IsAnonymous {
@@ -98,25 +99,16 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 					· { responseCountLabel(ctx, data.ResponseCount) }
 				}
 			</p>
+			@surveyTabs(data.Survey, "questions")
 			if data.Notice != "" {
-				<p class="notice">{ data.Notice }</p>
+				<p class="notice" role="status">{ data.Notice }</p>
 			}
 			if data.Error != "" {
 				<p class="notice error-text">{ data.Error }</p>
 			}
 			@lifecyclePanel(csrf, data.Survey)
 			<section class="card js-panel">
-				<div class="title-row">
-					<h2>{ t(ctx, "editor.questions.heading") }</h2>
-					<div class="button-row">
-						if data.Survey.LatestVersion > 0 {
-							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>{ t(ctx, "results.heading") }</a>
-							<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/stats") }>{ t(ctx, "stats.heading") }</a>
-						}
-						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>{ t(ctx, "languages.heading") }</a>
-						<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>{ t(ctx, "editor.preview.label") }</a>
-					</div>
-				</div>
+				<h2>{ t(ctx, "editor.questions.heading") }</h2>
 				if len(data.Questions) == 0 {
 					<p class="muted">{ t(ctx, "editor.questions.empty") }</p>
 				} else {
@@ -192,7 +184,7 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 					}
 					<span>{ t(ctx, "editor.question.required") }</span>
 				</label>
-				<button type="submit">{ t(ctx, "editor.question.save.label") }</button>
+				<button type="submit" class="secondary">{ t(ctx, "editor.question.save.label") }</button>
 			</form>
 			<div class="question-actions">
 				if index > 0 {
@@ -211,7 +203,7 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 				}
 				<form method="post" action={ templ.SafeURL(fmt.Sprintf("/surveys/%s/questions/%s/delete", surveyID, q.IdentityID)) }>
 					<input type="hidden" name="_csrf" value={ csrf }/>
-					<button type="submit" class="danger">{ t(ctx, "editor.question.delete.label") }</button>
+					<button type="submit" class="secondary danger">{ t(ctx, "editor.question.delete.label") }</button>
 				</form>
 			</div>
 		</details>
@@ -243,7 +235,7 @@ templ generatePanel(csrf string, surveyID string) {
 					placeholder={ t(ctx, "editor.generate.prompt.placeholder") }
 				></textarea>
 			</label>
-			<button type="submit">{ t(ctx, "editor.generate.submit.label") }</button>
+			<button type="submit" class="secondary">{ t(ctx, "editor.generate.submit.label") }</button>
 		</form>
 		<pre class="generate-output js-generate-output" aria-live="polite" hidden></pre>
 	</section>
@@ -258,7 +250,7 @@ templ addQuestionForm(csrf string, surveyID string) {
 				<span>{ t(ctx, "editor.add.type") }</span>
 				<select name="type" required>
 					for _, kind := range domain.QuestionTypes {
-						<option value={ string(kind) }>{ typeName(ctx, kind) } · { typeHint(ctx, kind) }</option>
+						<option value={ string(kind) }>{ typeName(ctx, kind) }</option>
 					}
 				</select>
 			</label>
@@ -266,13 +258,13 @@ templ addQuestionForm(csrf string, surveyID string) {
 				<span>{ t(ctx, "editor.question.text") }</span>
 				<input type="text" name="text" required maxlength="500" placeholder={ t(ctx, "editor.add.text.placeholder") }/>
 			</label>
-			<label class="field">
+			<label class="field q-options">
 				<span>
 					@thtml(ctx, "editor.add.options_html")
 				</span>
 				<textarea name="options" rows="3"></textarea>
 			</label>
-			<div class="field-row">
+			<div class="field-row q-scale">
 				<label class="field">
 					<span>
 						@thtml(ctx, "editor.add.scale_min_html")
@@ -290,7 +282,7 @@ templ addQuestionForm(csrf string, surveyID string) {
 				<input type="checkbox" name="required"/>
 				<span>{ t(ctx, "editor.question.required") }</span>
 			</label>
-			<button type="submit">{ t(ctx, "editor.add.submit.label") }</button>
+			<button type="submit" class="secondary">{ t(ctx, "editor.add.submit.label") }</button>
 		</form>
 	</section>
 }
@@ -439,7 +431,7 @@ templ settingsPanel(csrf string, survey SurveyView) {
 		</p>
 		<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/delete") } class="danger-zone">
 			<input type="hidden" name="_csrf" value={ csrf }/>
-			<button type="submit" class="danger">{ t(ctx, "editor.settings.delete.label") }</button>
+			<button type="submit" class="secondary danger">{ t(ctx, "editor.settings.delete.label") }</button>
 			<span class="muted">{ t(ctx, "editor.settings.delete.hint") }</span>
 		</form>
 	</section>
@@ -473,4 +465,26 @@ templ SurveyAudit(email string, workspaceName string, csrf string, data SurveyAu
 			}
 		</main>
 	}
+}
+
+// surveyTabs are the views of one survey: its questions, its results,
+// its stats and its languages. Results and stats exist once it is
+// published.
+templ surveyTabs(survey SurveyView, current string) {
+	<nav class="tabs" aria-label={ t(ctx, "tabs.aria") }>
+		<a href={ templ.SafeURL("/surveys/" + survey.ID) } if current == "questions" {
+	aria-current="page"
+}>{ t(ctx, "tabs.questions") }</a>
+		if survey.LatestVersion > 0 {
+			<a href={ templ.SafeURL("/surveys/" + survey.ID + "/results") } if current == "results" {
+	aria-current="page"
+}>{ t(ctx, "tabs.answers") }</a>
+			<a href={ templ.SafeURL("/surveys/" + survey.ID + "/stats") } if current == "stats" {
+	aria-current="page"
+}>{ t(ctx, "tabs.stats") }</a>
+		}
+		<a href={ templ.SafeURL("/surveys/" + survey.ID + "/localizations") } if current == "languages" {
+	aria-current="page"
+}>{ t(ctx, "tabs.languages") }</a>
+	</nav>
 }

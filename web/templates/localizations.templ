@@ -16,6 +16,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 				{ t(ctx, "languages.heading") }
 			</nav>
 			<h1>{ t(ctx, "languages.heading") }</h1>
+			@surveyTabs(data.Survey, "languages")
 			<p class="muted">
 				{ t(ctx, "languages.intro") }
 			</p>

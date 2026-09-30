@@ -115,7 +115,7 @@
     title.textContent = T.t("js.voice.title");
     var toggle = document.createElement("button");
     toggle.type = "button";
-    toggle.className = "voice-toggle secondary";
+    toggle.className = "voice-toggle";
     toggle.setAttribute("aria-controls", uid + "-body");
     // A word rather than a glyph: a minus sign beside a title says
     // "remove" as readily as it says "put away".

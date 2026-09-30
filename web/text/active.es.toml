@@ -54,8 +54,8 @@ hash = "sha1-0607edbd6fdd7ae5b76b8522c77241fbd335ad8b"
 other = "Surveys, out loud."
 
 [home.intro.body]
-hash = "sha1-ea6781c7257c68f2cd6be2ac06143d00bc929cab"
-other = "Encuestas de código abierto que se responden en voz alta."
+hash = "sha1-6fbeecca48206c456174330920a15cb551dec1f3"
+other = "Pregunte con un enlace. Escuche las respuestas con las palabras de cada persona."
 
 [home.sign_in.label]
 hash = "sha1-ada2e9e96fa9ce85430225b412068b5b62b79800"
@@ -133,8 +133,8 @@ hash = "sha1-fab9f40578d875e348418f687879a198cf91d5a3"
 other = "Revise su correo"
 
 [magic.sent.body_html]
-hash = "sha1-6655c50bbcf2460658b88ac88c6642aea088e17b"
-other = "Si <strong>{{.Email}}</strong> es una dirección válida, ya va en camino un enlace de acceso. Funciona una sola vez y caduca en 15 minutos."
+hash = "sha1-e15f71e49d989636adf5709212b320245b7a2962"
+other = "Un enlace de acceso va de camino a <strong>{{.Email}}</strong>. Funciona una sola vez, durante 15 minutos."
 
 [magic.sent.retry_html]
 hash = "sha1-a4a84a32c8f478819dbaa437d9e31d0f55cb07f4"
@@ -169,8 +169,8 @@ hash = "sha1-07d963e4f9d11c67bda5bdaa153f77b7d3868a14"
 other = "Este enlace no puede iniciar su sesión"
 
 [magic.invalid.back.label]
-hash = "sha1-4da821676b2feab814a3b5cd6368c0d609a84c02"
-other = "Volver a iniciar sesión"
+hash = "sha1-5590df0dd645dbdbb0d338c1c84df45865136870"
+other = "Pedir un enlace nuevo"
 
 [goodbye.title]
 hash = "sha1-6da452c36612822b8305854a7343b52ba3af0894"
@@ -196,8 +196,8 @@ hash = "sha1-62bce9422ff2d14f69ab80a154510232fc8a9afd"
 other = "Principal"
 
 [header.dashboard.label]
-hash = "sha1-d87f47b47e4d5794d53fe0734c49417bd046cde0"
-other = "Panel"
+hash = "sha1-0762895fdf43e65d386349a557579da462c433e9"
+other = "Encuestas"
 
 [header.account.label]
 hash = "sha1-85dfa32c97d8618d1bea083609e2c8a29845abe5"
@@ -215,8 +215,8 @@ other = "Cerrar sesión"
 # ── Panel ───────────────────────────────────────────────────────────────
 
 [dashboard.title]
-hash = "sha1-0f4a180b06208b957e96674f3fe35453bc85f073"
-other = "Panel · Earful"
+hash = "sha1-ca51523a03849988057d39f7ead04e388b7ca676"
+other = "Encuestas · Earful"
 
 [dashboard.new.label]
 hash = "sha1-64504ed4744725ff4b74b5bad54c6d11fc28bf3f"
@@ -247,8 +247,8 @@ hash = "sha1-a7c49b0bebdb49c2213abc78211ecf60b40d9ce5"
 other = "· cierra el {{.Date}}"
 
 [dashboard.survey.starter]
-hash = "sha1-820730a3118aa28b370afd5f2b1814e747cdcddd"
-other = "Una encuesta de inicio, ya publicada en inglés y en español. Las respuestas que reciba llegan a este espacio de trabajo y a ningún otro lugar. Adáptela a su producto o elimínela."
+hash = "sha1-94ed3c79660622b4954b64e9df071372b8fad2b7"
+other = "Una encuesta de ejemplo en inglés y español. Modifíquela o elimínela."
 
 [dashboard.survey.published]
 hash = "sha1-bb4e4da8fabc1e80f34bd707f3bd81ec9f6452a7"
@@ -304,8 +304,8 @@ hash = "sha1-19dff4dad0a7214ece14624f8c4c9fb206a1cfdd"
 other = "Contraseña actual"
 
 [account.email.submit.label]
-hash = "sha1-8f1514b56ee016d4c49a8b4e2e98348f023dc82e"
-other = "Cambiar el correo electrónico"
+hash = "sha1-437acecae2225fa8e65cf99c3cf1e79cbac6c939"
+other = "Guardar el correo nuevo"
 
 [account.export.heading]
 hash = "sha1-7089c1cc58f636f02a9cefef91cd2f966da150c1"
@@ -353,6 +353,10 @@ other = "Eliminar mi cuenta"
 
 
 # ── Documentos: la página de confianza, los términos, la ayuda ──────────
+
+[document.back]
+hash = "sha1-4432092378b7153c2e5251acbabf6a5bea084583"
+other = "← Sus encuestas"
 
 [document.updated]
 hash = "sha1-c57f1386b8b1d464a301b42b66d079e113917aaa"
@@ -409,8 +413,8 @@ hash = "sha1-78e3b92af414ae95e19d7076460253a0da6904ae"
 other = "Primero añada preguntas a la encuesta: todavía no hay nada que traducir."
 
 [languages.add.code.label_html]
-hash = "sha1-ccbd2a08fac10e367ad9d96cd330254c9f4ac214"
-other = 'Código de idioma <small class="muted">(como nl, de, pt-BR)</small>'
+hash = "sha1-781cc3dbf367ad76671f94c8bcaab4729284c93a"
+other = 'Código de idioma <small class="muted">(como nl, de o pt)</small>'
 
 [languages.add.code.placeholder]
 hash = "sha1-595477bd43c386b66363f3cbda218df80e9512da"
@@ -464,8 +468,8 @@ hash = "sha1-63e3a24556cd0312951defd1e44f9d6f02753a68"
 other = "Vistas de la encuesta"
 
 [tabs.answers]
-hash = "sha1-b12fcedc7bf1f597e5ad2703f34f510c39410a64"
-other = "Respuestas"
+hash = "sha1-612e12d29278b5519294bc25cdaddffec6d0f1c6"
+other = "Resultados"
 
 [tabs.stats]
 hash = "sha1-be763e9aba2af6b8baabada85d5e26c043c93fed"
@@ -507,8 +511,8 @@ hash = "sha1-1c59e8f7701c4be4f5e1868a7f3b6d37b3fe3ed9"
 other = "«Aperturas» cuenta las veces que se cargó la página de la encuesta, así que es un límite superior del número de personas. Los días se cuentan en UTC. Nada de lo que hay aquí está vinculado a un envío concreto."
 
 [stats.trend.heading]
-hash = "sha1-716f3fa8e1e52264e7e77e2b4291372c265d085c"
-other = "Tendencias"
+hash = "sha1-9aecfcda6e8c1c1aee2f1f6d3a86192b4ed08d1c"
+other = "Por día"
 
 [stats.trend.range]
 hash = "sha1-eafd045782285ea32872a49e65c53564f21c3f6c"
@@ -646,8 +650,8 @@ hash = "sha1-f7aeb8204c39c48621be894ff4251ad944a2fb3c"
 other = "Comparta el enlace de la encuesta y las respuestas aparecerán aquí. Los resultados se agrupan por pregunta, así que puede seguir mejorando la redacción sin perder la posibilidad de comparar."
 
 [results.insight.heading]
-hash = "sha1-d3e5ca9361ed47e2c87254f9adfc1011955ce532"
-other = "Resumen de hallazgos"
+hash = "sha1-b5b284309759e8408b4199417143e4892b517543"
+other = "Resumen de conclusiones"
 
 [results.insight.label_html]
 hash = "sha1-ebd3c2937a1d8e1faaaa17aacb9ba012a9828585"
@@ -763,8 +767,8 @@ hash = "sha1-689c86f19dad8ca5a2d3de2cfbae610ef39ad5fc"
 other = "Quién puede responder"
 
 [survey.audience.permanent]
-hash = "sha1-646f67a447df5a800c0a2c743e0da47bbc772365"
-other = "Esta decisión es permanente. Es una promesa a las personas encuestadas, así que no puede cambiarse nunca: ni usted ni nosotros podemos hacerlo."
+hash = "sha1-cc21a00469ca10ed64b99d4ef5d866647ab16c12"
+other = "No podrá cambiarlo después. Es una promesa a quienes responden."
 
 [survey.audience.anonymous.name]
 hash = "sha1-f81dc2fb85a1345fd6a6921e620c40934fecab7f"
@@ -850,8 +854,8 @@ hash = "sha1-f746e778b0a51164c553dba9cfc5d8ee278b6ff8"
 other = "Redactar preguntas con IA"
 
 [editor.generate.intro]
-hash = "sha1-571a3913976393e0c39f92d9662255143b3085ae"
-other = "Describa lo que quiere averiguar y redactaré preguntas en esta encuesta. Llegan como preguntas de borrador corrientes: puede editarlas, reordenarlas o eliminarlas como cualquier otra."
+hash = "sha1-3e9693b334e4907115fb0e87b0ff2e624a5613f9"
+other = "Describa lo que quiere saber y se redactarán preguntas en esta encuesta. Puede editarlas, reordenarlas o eliminarlas como cualquier otra."
 
 [editor.generate.prompt.label]
 hash = "sha1-0813577c03c94c51333b3002727c4ad2c32b4fcd"
@@ -878,16 +882,16 @@ hash = "sha1-01465b0bc68f757c4c71574126f5733c19bd259b"
 other = "¿Qué le gustaría preguntar?"
 
 [editor.add.options_html]
-hash = "sha1-3c0c5965d1f8638b1753874104110ef872c4f777"
-other = 'Opciones <small class="muted">(una por línea; solo para preguntas de selección y listas desplegables)</small>'
+hash = "sha1-81f7863a0e856d7515c299ac63fba0c8b24bde5e"
+other = 'Opciones <small class="muted">(una por línea)</small>'
 
 [editor.add.scale_min_html]
-hash = "sha1-732ccf42566a9f02de0979e6b233a4018965cb6b"
-other = 'La escala empieza en <small class="muted">(solo para valoraciones)</small>'
+hash = "sha1-970b06c24133b5049773e5559baa8d11c44d9346"
+other = "La escala empieza en"
 
 [editor.add.scale_max_html]
-hash = "sha1-4f05cea934e0e05a0348205cdb1370af0bb497cc"
-other = 'La escala termina en <small class="muted">(solo para valoraciones)</small>'
+hash = "sha1-f6f535f631b9bc1bec34bfef16eae93dac2d49a4"
+other = "La escala termina en"
 
 [editor.add.submit.label]
 hash = "sha1-377e08d43a6cee44a2f01407550315884bedaefb"
@@ -928,12 +932,12 @@ hash = "sha1-5656400564f25dcbe129f43deea78952060bee36"
 other = "Publicar"
 
 [editor.publish.live]
-hash = "sha1-41c4010dfcf0a32fd04f22fe0726ef7c895ac360"
-other = "La versión {{.Version}} está publicada. Sus cambios se quedan en el borrador hasta que vuelva a publicar; mientras tanto, quienes responden siguen viendo la versión publicada."
+hash = "sha1-d56203beb2e8463df2444be5539374d79c5f4a75"
+other = "La versión {{.Version}} está publicada. Los cambios quedan en el borrador hasta que vuelva a publicar."
 
 [editor.publish.never]
-hash = "sha1-a947640010215e578c6c5a152728248fa3662d66"
-other = "Esta encuesta nunca se ha publicado, así que todavía no acepta envíos. Al publicarla, las preguntas actuales quedan fijadas como versión 1 y la encuesta se abre."
+hash = "sha1-1afeab20f443282e81bf0b4ff07b3c0b3a7b7e09"
+other = "Todavía no se ha publicado. Al publicarla, la encuesta se abre con estas preguntas como versión 1."
 
 [editor.publish.empty]
 hash = "sha1-90b1704b53866b84e91a5f598079ea5b247d27c6"
@@ -948,8 +952,8 @@ hash = "sha1-78779badeac10e0b28ae85376dc0c9cbe5a11bdb"
 other = "Compartir"
 
 [editor.sharing.open]
-hash = "sha1-1756ef864be05260ececbe5e73e9cceb5059a949"
-other = "Esta encuesta está abierta y acepta envíos. Comparta este enlace:"
+hash = "sha1-2cfa7f517425ed1870f9010ebeec81481e2e88c5"
+other = "Abierta a respuestas. Comparta este enlace:"
 
 [editor.sharing.anonymous]
 hash = "sha1-eb2c6618f61b35e056937894c5e3a01fe20fff41"
@@ -992,8 +996,8 @@ hash = "sha1-2981b4eaa1d242994d45eef4989bfd7d566cfb72"
 other = "por {{.Who}}"
 
 [editor.versions.immutable]
-hash = "sha1-9a9c8936bc0f55f9905ea2307c0d12099a966cfc"
-other = "Las versiones publicadas son inmutables: lo que vio una persona encuestada no puede editarse después."
+hash = "sha1-1f7e6476511a38ccd1d7fa497d7ce0b65fa3288c"
+other = "Quienes responden ven siempre una versión publicada tal como era."
 
 [editor.versions.audit.label]
 hash = "sha1-3cd3c284cc5ab5e1d1f1e6445884b2741bcff6fc"
@@ -1346,20 +1350,20 @@ hash = "sha1-8c688a38c5fd77a0a4b059c25806be2ba08d8dbc"
 other = "No pudimos completar su inicio de sesión. Solicite un enlace nuevo."
 
 [magic.invalid.reason.incomplete]
-hash = "sha1-d80264c7a9290c03f63ebad7e2b5cde58c216478"
-other = "El enlace de acceso está incompleto. Use el enlace entero de su correo."
+hash = "sha1-dda1a0b04ec39fa007eff46e779c6a7af2dc1a8d"
+other = "Falta parte del enlace. Ábralo de nuevo desde su correo."
 
 [magic.invalid.reason.expired]
-hash = "sha1-ba8ebe0f9f96093dd2ddfd3d8af9533b8ec339ce"
-other = "Este enlace de acceso ha caducado (los enlaces duran 15 minutos). Solicite uno nuevo."
+hash = "sha1-c733c62a0ad4b5876160dfa75dcc7c8c214af1a6"
+other = "Los enlaces duran 15 minutos, y este es más antiguo."
 
 [magic.invalid.reason.used]
-hash = "sha1-c4f4681ae49b078893d6876593fcbf3be533f053"
-other = "Este enlace de acceso ya se usó. Solicite uno nuevo para volver a iniciar sesión."
+hash = "sha1-8830e25b05f1d6e3c37b8b98302509ffcb639c57"
+other = "Este enlace ya se ha usado."
 
 [magic.invalid.reason.invalid]
-hash = "sha1-d7c3b8992268facffcc0e255997e8392be981f1f"
-other = "Este enlace de acceso no es válido. Solicite uno nuevo."
+hash = "sha1-28346039c58767dfab54116ba102cdd00eb93e65"
+other = "No reconocemos este enlace."
 
 
 # ── Cuenta: avisos y rechazos ──────────────────────────────────────────
@@ -2462,12 +2466,12 @@ hash = "sha1-94746e950d06c7a3c1944eede3e18b606a7cffbb"
 other = "10: muy probable"
 
 [respond.disclosure.controller_html]
-hash = "sha1-0ea29cbb39781dcca0bf846f520a7ed040be7e1e"
-other = "Esta encuesta la organiza <strong>{{.Workspace}}</strong>, que decide qué ocurre con las respuestas."
+hash = "sha1-d25343ec1f5083095bbd07e54cd337ec988c945c"
+other = "La organiza <strong>{{.Workspace}}</strong>, que decide qué ocurre con las respuestas."
 
 [respond.disclosure.anonymous]
-hash = "sha1-b56794b2041c017266eb0f4531c33bec22c84008"
-other = "Es anónima: sus respuestas se guardan sin correo electrónico, sin dirección IP y sin datos del dispositivo; nada que le identifique."
+hash = "sha1-a2782eed55a1aa69c7e484c7f97fba0031176cee"
+other = "Es anónima. No se guarda su correo, su dirección IP ni datos de su dispositivo."
 
 [respond.disclosure.identified_html]
 hash = "sha1-2ec800bbeb477c2bc1f6156bcd2ed0c4058bcb5e"
@@ -2478,12 +2482,12 @@ hash = "sha1-b56306b0a7bfc5b7f06bdb569881c76d2f4bec9b"
 other = "Sus respuestas están vinculadas a su invitación, así que {{.Workspace}} puede ver quién respondió qué."
 
 [respond.disclosure.voice]
-hash = "sha1-4e081fd2cc08e574517d703ac5bf63fee3dfe48a"
-other = "Puede responder hablando. Lo que diga se convierte en un texto que puede leer y corregir antes de que pase a ser su respuesta; su voz en sí nunca se guarda."
+hash = "sha1-bbed33008c273cbc861e14eeebf6b08064f67cdd"
+other = "Puede responder hablando y leer el texto antes de enviarlo. Su voz nunca se guarda."
 
 [respond.disclosure.draft]
-hash = "sha1-e22a2b96fffcb738bf84528635dac0b83bb4e9a8"
-other = "Las respuestas que aún no ha enviado, y sus versiones anteriores, se guardan en este navegador para que no se pierdan al recargar la página o por un error. No se envían hasta que usted las envía, y se borran al hacerlo y al cabo de un día."
+hash = "sha1-0568f7ec4a00e08d6e392bd91c3e7be5a59253dd"
+other = "Las respuestas sin enviar se quedan un día en este navegador, así que recargar la página no borra nada."
 
 [respond.disclosure.trust]
 hash = "sha1-cad2aa0617178708120fe6dcbe5489217018671e"
@@ -2510,12 +2514,12 @@ hash = "sha1-6b50e31a7e1337db9ecb0e2fcb6e65ca27f57df5"
 other = "Gracias"
 
 [respond.thanks.body]
-hash = "sha1-b3d7616ba25c51d7db7298111f0e5e11915d3d06"
-other = "Sus respuestas han quedado registradas."
+hash = "sha1-b21ff92e9633ddfcf6ce76dbe736605f8a55035f"
+other = "Sus respuestas ya están enviadas. Puede cerrar esta página."
 
 [respond.thanks.anonymous]
-hash = "sha1-7d4ee0e3a611ee3405f99470e3a7a6da387221fe"
-other = "Era una encuesta anónima: sus respuestas se guardaron sin nada que le identifique."
+hash = "sha1-6971900d9fcdfa7da247a018119ed56d86106ce9"
+other = "La encuesta era anónima. Nada de lo que envió le identifica."
 
 
 # ── Scripts: las teclas que nombran ────────────────────────────────────
@@ -2815,3 +2819,15 @@ other = "Ayuda"
 [footer.privacy]
 hash = "sha1-8fa4ee802289e81c23002818950e4c1c130555a9"
 other = "Privacidad y datos"
+
+[dashboard.heading]
+hash = "sha1-0762895fdf43e65d386349a557579da462c433e9"
+other = "Encuestas"
+
+[tabs.questions]
+hash = "sha1-9a1fc1731f624d1f9dbca42b781ff8a60a6594e1"
+other = "Preguntas"
+
+[tabs.languages]
+hash = "sha1-db07be184479f34078cd4fc76d248dc0975720e9"
+other = "Idiomas"

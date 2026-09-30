@@ -87,7 +87,9 @@ test("gallery", async ({ browser }) => {
 
   const title = "How was the workshop?";
   const share = await createPublishedSurvey(page, title);
-  const editor = page.url().replace(/[?#].*$/, "");
+  // The editor is drawn in answer to the publish POST, so its address is
+  // built from the survey's ID rather than read from the address bar.
+  const editor = "/surveys/" + share.split("/").pop();
   await capture(page, "editor-published", "en");
   await page.goto("/dashboard");
   await capture(page, "dashboard-surveys", "en");
