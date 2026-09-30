@@ -208,6 +208,9 @@ type AccountData struct {
 	// HasPassword shows the change of address, which is confirmed with
 	// the current password.
 	HasPassword bool
+	// WorkspaceNotice and WorkspaceError belong to the rename form.
+	WorkspaceNotice string
+	WorkspaceError  string
 	// EmailNotice/EmailError belong to the change-email form.
 	EmailNotice string
 	EmailError  string

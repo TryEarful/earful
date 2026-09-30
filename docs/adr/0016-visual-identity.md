@@ -29,11 +29,12 @@ cannot change. Two surveys may share a colour; since the colour means
 nothing beyond "this one", that costs nothing. A stored, chosen colour
 can replace it if creators ask to pick one.
 
-**No font is fetched from anywhere else.** ADR-0006 keeps respondent
-pages free of third party requests. The type stack prefers Manrope where
-the device has it, then Avenir Next, then the system face; Manrope can be
-served from `web/static/fonts` under its open licence without changing
-anything else.
+**The font is served with the page.** ADR-0006 keeps respondent pages
+free of third party requests, so Manrope is embedded under its open
+licence in `web/static/fonts`: a variable file for Latin, preloaded, and
+one for extended Latin that a browser fetches only for a page that uses
+its letters. Go has no type for `.woff2`, so the static package registers
+one; without it the files would be refused under `nosniff`.
 
 **Scripts and tests hook onto `js-` classes.** Styling classes can then
 be renamed freely, and a restyle cannot break a script or a test. A test

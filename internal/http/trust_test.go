@@ -33,8 +33,14 @@ func TestTrust_IsPublicAndSaysWhatItCanProve(t *testing.T) {
 
 	// The honest paragraphs matter as much as the promises: a trust page
 	// that only claims strengths is marketing.
-	if !bodyContains(page, "fully effective within 30 days") {
-		t.Errorf("the trust page omits the caveat about backups")
+	if !bodyContains(page, "erased permanently within 30 days") {
+		t.Errorf("the trust page omits when deleted data is erased")
+	}
+	// How long backups are kept is the hosted service's policy; on any
+	// other instance it is the operator's, and the page says so rather
+	// than promise what it cannot know.
+	if bodyContains(page, "fully effective within 30 days") || !bodyContains(page, "kept by this instance") {
+		t.Errorf("the trust page states the hosted service's backup policy for an instance it does not describe")
 	}
 	// The caveat about US law is about Google Cloud, and is stated only
 	// where this instance runs on it; this one does not.

@@ -48,6 +48,7 @@ templ languageSwitcher() {
 
 // headAssets are the stylesheet and the icons, the same on every page.
 templ headAssets() {
+	<link rel="preload" href={ static.AssetURL("fonts/manrope-latin.woff2") } as="font" type="font/woff2" crossorigin/>
 	<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
 	<link rel="icon" type="image/svg+xml" href={ static.AssetURL("img/favicon.svg") }/>
 	<link rel="apple-touch-icon" href={ static.AssetURL("img/apple-touch-icon.png") }/>

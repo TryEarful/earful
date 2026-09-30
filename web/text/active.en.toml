@@ -1530,5 +1530,12 @@ en = "English"
 es = "Español"
 
 [account.facts]
-workspace = "Workspace"
 email = "Email"
+
+[account.workspace]
+invalid = "Give the workspace a name of up to {{.Max}} characters."
+saved = "Name saved."
+submit = "Save name"
+hint = "Respondents see it above every survey, as who runs it."
+label = "Name"
+heading = "Workspace name"

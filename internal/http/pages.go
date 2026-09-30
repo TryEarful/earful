@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/TryEarful/earful/internal/auth"
 	"github.com/TryEarful/earful/internal/store"
+	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/templates"
 )
 
@@ -26,6 +28,10 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 		data.Notice = say(r, "account.notice.export_started")
 	case "export_running":
 		data.Notice = say(r, "account.notice.export_running")
+	case "workspace_renamed":
+		data.WorkspaceNotice = say(r, "account.workspace.saved")
+	case "workspace_invalid":
+		data.WorkspaceError = say(r, "account.workspace.invalid", uitext.Args{"Max": auth.MaxWorkspaceName})
 	}
 	// The latest export's state, if there has ever been one. A missing
 	// row is the normal case, not a problem.
@@ -93,4 +99,20 @@ func (s *server) livenessOK(ctx context.Context) bool {
 	s.healthOK = ok
 	s.healthMu.Unlock()
 	return ok
+}
+
+// accountWorkspace renames the signed in creator's workspace: the name
+// respondents read as who runs the survey. The workspace is the
+// session's, never one named by the form.
+func (s *server) accountWorkspace(w http.ResponseWriter, r *http.Request) {
+	info, _ := authFrom(r.Context())
+	err := s.auth.RenameWorkspace(r.Context(), info.WorkspaceID, r.PostFormValue("name"))
+	switch {
+	case errors.Is(err, auth.ErrInvalidWorkspaceName):
+		http.Redirect(w, r, "/account?notice=workspace_invalid", http.StatusSeeOther)
+	case err != nil:
+		s.internalError(w, r, "rename workspace", err)
+	default:
+		http.Redirect(w, r, "/account?notice=workspace_renamed", http.StatusSeeOther)
+	}
 }

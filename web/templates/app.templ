@@ -126,8 +126,6 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 				<dl class="facts">
 					<dt>{ t(ctx, "account.facts.email") }</dt>
 					<dd>{ email }</dd>
-					<dt>{ t(ctx, "account.facts.workspace") }</dt>
-					<dd>{ workspaceName }</dd>
 				</dl>
 				if data.IsSuperAdmin {
 					<p>
@@ -161,6 +159,24 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 					<p class="muted">{ t(ctx, "account.email.hint") }</p>
 				</div>
 			}
+			<div class="card js-panel">
+				<h2>{ t(ctx, "account.workspace.heading") }</h2>
+				if data.WorkspaceNotice != "" {
+					<p class="notice" role="status">{ data.WorkspaceNotice }</p>
+				}
+				<form method="post" action="/account/workspace">
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<label class="field">
+						<span>{ t(ctx, "account.workspace.label") }</span>
+						<input type="text" name="name" required maxlength="80" value={ workspaceName }/>
+						<small>{ t(ctx, "account.workspace.hint") }</small>
+					</label>
+					if data.WorkspaceError != "" {
+						<p class="error-text">{ data.WorkspaceError }</p>
+					}
+					<button type="submit" class="secondary">{ t(ctx, "account.workspace.submit") }</button>
+				</form>
+			</div>
 			@workspaceExport(csrf, data.Export)
 			<div class="card js-panel">
 				<h2>{ t(ctx, "account.delete.heading") }</h2>

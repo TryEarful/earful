@@ -127,6 +127,16 @@ test("gallery", async ({ browser }) => {
   await capture(page, "stats", "en");
   await page.goto(editor + "/localizations");
   await capture(page, "languages", "en");
+  // A language added and drafted, so the translation view and how a
+  // machine draft is marked are looked at too.
+  await page.locator('input[name="lang"]').fill("nl");
+  await page.getByRole("button", { name: "Add language" }).click();
+  const draft = page.getByRole("button", { name: "Draft the missing translations with AI" });
+  if (await draft.count()) {
+    await draft.first().click();
+    await page.waitForLoadState("networkidle");
+  }
+  await capture(page, "languages-added", "en");
   await page.goto(editor);
   await capture(page, "editor-after-answers", "en");
 

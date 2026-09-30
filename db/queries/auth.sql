@@ -139,3 +139,9 @@ ORDER BY c.created_at DESC;
 UPDATE beta_codes SET revoked_at = $2
 WHERE id = $1 AND used_at IS NULL AND revoked_at IS NULL
 RETURNING id;
+
+-- name: RenameWorkspace :exec
+-- The name respondents read above every survey ("Run by …"). Only a
+-- member may rename a workspace; the handler passes the workspace from
+-- the session, never from the form.
+UPDATE workspaces SET name = $2 WHERE id = $1 AND deleted_at IS NULL;

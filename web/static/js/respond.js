@@ -78,6 +78,13 @@
   // position after moving, without interrupting whatever they are reading.
   progress.setAttribute("aria-live", "polite");
 
+  // The same position as a bar, for the eye. The words above it are what
+  // a screen reader hears, so the bar is hidden from one.
+  var meter = document.createElement("progress");
+  meter.className = "respond-meter";
+  meter.max = questions.length;
+  meter.setAttribute("aria-hidden", "true");
+
   var backButton = document.createElement("button");
   backButton.type = "button";
   backButton.className = "secondary";
@@ -138,6 +145,7 @@
   var submitButton = actions.querySelector('button[type="submit"]');
   if (submitButton) addEnterHints(submitButton, false);
   form.insertBefore(progress, form.querySelector(".js-respond-questions"));
+  form.insertBefore(meter, form.querySelector(".js-respond-questions"));
   actions.parentNode.insertBefore(nav, actions);
   // Submit takes Next's place on the last question, so it takes its
   // place in the row as well, beside Back rather than under it.
@@ -290,6 +298,7 @@
       Current: index + 1,
       Total: questions.length,
     });
+    meter.value = index + 1;
     backButton.hidden = index === 0;
     nextButton.hidden = index === questions.length - 1;
     actions.hidden = index !== questions.length - 1;

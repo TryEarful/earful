@@ -447,6 +447,23 @@ func (q *Queries) ListBetaCodes(ctx context.Context) ([]ListBetaCodesRow, error)
 	return items, nil
 }
 
+const renameWorkspace = `-- name: RenameWorkspace :exec
+UPDATE workspaces SET name = $2 WHERE id = $1 AND deleted_at IS NULL
+`
+
+type RenameWorkspaceParams struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+// The name respondents read above every survey ("Run by …"). Only a
+// member may rename a workspace; the handler passes the workspace from
+// the session, never from the form.
+func (q *Queries) RenameWorkspace(ctx context.Context, arg RenameWorkspaceParams) error {
+	_, err := q.db.Exec(ctx, renameWorkspace, arg.ID, arg.Name)
+	return err
+}
+
 const revokeBetaCode = `-- name: RevokeBetaCode :one
 UPDATE beta_codes SET revoked_at = $2
 WHERE id = $1 AND used_at IS NULL AND revoked_at IS NULL

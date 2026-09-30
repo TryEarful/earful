@@ -180,6 +180,10 @@ type Querier interface {
 	// Who still needs an invite: never invited, not bounced, not suppressed.
 	PendingInvites(ctx context.Context, arg PendingInvitesParams) ([]Participant, error)
 	Ping(ctx context.Context) (int32, error)
+	// The name respondents read above every survey ("Run by …"). Only a
+	// member may rename a workspace; the handler passes the workspace from
+	// the session, never from the form.
+	RenameWorkspace(ctx context.Context, arg RenameWorkspaceParams) error
 	RevokeBetaCode(ctx context.Context, arg RevokeBetaCodeParams) (uuid.UUID, error)
 	SetParticipantTokenAndInvited(ctx context.Context, arg SetParticipantTokenAndInvitedParams) error
 	SetSurveyClosedAt(ctx context.Context, arg SetSurveyClosedAtParams) error

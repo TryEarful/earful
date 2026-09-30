@@ -94,12 +94,11 @@ checks every page in both themes.
 
 ## Type
 
-Manrope, where the device has it; Avenir Next on Apple devices; the
-system face elsewhere. Stylesheets and fonts may only come from Earful's
-own origin (ADR-0006), so a face is either served from `web/static` or
-taken from the device. Manrope is under the SIL Open Font License, and
-can be added under `web/static/fonts` with its licence and an
-`@font-face` rule.
+Manrope, served from `web/static/fonts` under the SIL Open Font
+License, as one variable file for Latin and one for extended Latin that
+loads only where a page needs it. Stylesheets and fonts may only come
+from Earful's own origin (ADR-0006), so nothing is fetched from a font
+service. Avenir Next and the system face stand in while it loads.
 
 | Use | Size | Weight | Tracking |
 |---|---|---|---|

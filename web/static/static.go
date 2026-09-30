@@ -7,9 +7,17 @@ import (
 	"embed"
 	"encoding/hex"
 	"io/fs"
+	"mime"
 )
 
-//go:embed css js img
+// Go's own table of types has no entry for .woff2, and the container has
+// no /etc/mime.types to add one, so fonts would be served as
+// application/octet-stream, which a browser told nosniff refuses.
+func init() {
+	_ = mime.AddExtensionType(".woff2", "font/woff2")
+}
+
+//go:embed css js img fonts
 var FS embed.FS
 
 // Version is a content fingerprint of the embedded assets, computed once

@@ -2832,10 +2832,6 @@ other = "La versión {{.Version}} está publicada, y el borrador no tiene cambio
 hash = "sha1-84add5b2952787581cb9a8851eef63d1ec75d22b"
 other = "Correo electrónico"
 
-[account.facts.workspace]
-hash = "sha1-4ca0a75c2b7fa7da4364d03b72c46fee1860a2bf"
-other = "Espacio de trabajo"
-
 [editor.sharing.copy]
 hash = "sha1-2f84eea5d45da4f1ce1760b85db18a854f4e1b39"
 other = "Copiar enlace"
@@ -2843,3 +2839,27 @@ other = "Copiar enlace"
 [editor.sharing.copied]
 hash = "sha1-8e3df45a49dba2b26f8ea64a22410bde72f9c8ac"
 other = "Copiado"
+
+[account.workspace.heading]
+hash = "sha1-6e0f2ba26a5e7f14ec0a62b070be54ac103989bb"
+other = "Nombre del espacio de trabajo"
+
+[account.workspace.label]
+hash = "sha1-709a23220f2c3d64d1e1d6d18c4d5280f8d82fca"
+other = "Nombre"
+
+[account.workspace.hint]
+hash = "sha1-3c603346cdf528d55f09968592c57c4d535c2ea6"
+other = "Quienes responden lo ven encima de cada encuesta, como quien la organiza."
+
+[account.workspace.submit]
+hash = "sha1-8ce686405ae94baa5bb04ede0dd2dcb838462483"
+other = "Guardar el nombre"
+
+[account.workspace.saved]
+hash = "sha1-6a910de58d7d58d2dbc874e71b62bc86b4d1489d"
+other = "Nombre guardado."
+
+[account.workspace.invalid]
+hash = "sha1-ee1ee5e5dae671e47a81773f9e3a6dc27c78a63f"
+other = "Dé al espacio de trabajo un nombre de hasta {{.Max}} caracteres."

@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-2cfa7afa4d9b79f7ee9557bfcd37ec9054a2fd8b19f5c1a0c449ef06cc4c00ea
+hash: sha256-c943c01ec3e11973aeb7d442db1de4d38cc6d47b188ed89a5a3db5a8a18b008c
 last_update: 2026-09-30
 ---
 
@@ -59,7 +59,7 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 
 {{if .GoogleCloud}}Our infrastructure is in the EU, but Google Cloud's parent company is American, and US law reaches American companies wherever their servers are. EU hosting reduces that risk; it does not remove it. We would rather say so than imply a guarantee we cannot give.{{end}}
 
-Deleted data is removed from live systems immediately and erased permanently within 30 days. Backups are kept for 30 days and are deliberately immutable, which means an erasure is fully effective within 30 days, not instantly. That is the standard trade against losing everything to ransomware, and we think it is the right one.
+Deleted data is removed from live systems immediately and erased permanently within 30 days. {{if .GoogleCloud}}Backups are kept for 30 days and are deliberately immutable, which means an erasure is fully effective within 30 days, not instantly. That is the standard trade against losing everything to ransomware, and we think it is the right one.{{else}}Backups are kept by this instance's operator, not by Earful: how long they are kept, and so when an erasure reaches them, is theirs to say.{{end}}
 
 ## You can leave
 

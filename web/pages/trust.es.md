@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-1228a9fb0c7004a2fd246b565c41c23dbc44256edae5c6b4e6e97c45583a579a
+hash: sha256-25fb0bc448d2c4042036dbb5ef1eb6c60094b2f876f38db31e7ecbd0999df7ba
 last_update: 2026-09-30
-source_hash: sha256-2cfa7afa4d9b79f7ee9557bfcd37ec9054a2fd8b19f5c1a0c449ef06cc4c00ea
+source_hash: sha256-c943c01ec3e11973aeb7d442db1de4d38cc6d47b188ed89a5a3db5a8a18b008c
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -62,7 +62,7 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 
 {{if .GoogleCloud}}Nuestra infraestructura está en la UE, pero la empresa matriz de Google Cloud es estadounidense, y la ley de Estados Unidos alcanza a las empresas estadounidenses estén donde estén sus servidores. Alojar en la UE reduce ese riesgo; no lo elimina. Preferimos decirlo antes que dar a entender una garantía que no podemos ofrecer.{{end}}
 
-Los datos eliminados se retiran de los sistemas en uso de inmediato y se borran definitivamente en un plazo de 30 días. Las copias de seguridad se conservan 30 días y son inmutables a propósito, lo que significa que una supresión es plenamente efectiva en 30 días, no al instante. Es el equilibrio habitual frente al riesgo de perderlo todo por un ataque de secuestro de datos, y creemos que es el correcto.
+Los datos eliminados se retiran de los sistemas en uso de inmediato y se borran definitivamente en un plazo de 30 días. {{if .GoogleCloud}}Las copias de seguridad se conservan 30 días y son inmutables a propósito, lo que significa que una supresión es plenamente efectiva en 30 días, no al instante. Es el equilibrio habitual frente al riesgo de perderlo todo por un ataque de secuestro de datos, y creemos que es el correcto.{{else}}Las copias de seguridad las guarda el operador de esta instalación, no Earful: cuánto tiempo se conservan, y por tanto cuándo llega a ellas una supresión, le corresponde decirlo a él.{{end}}
 
 ## Puede irse
 

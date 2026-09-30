@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -132,4 +133,32 @@ func getBody(t *testing.T, client *http.Client, url string) string {
 	}
 	defer resp.Body.Close()
 	return apptest.ReadBody(t, resp)
+}
+
+// A creator names their workspace, and respondents read that name as who
+// runs the survey, in place of the one made from their address.
+func TestWorkspace_CanBeRenamedAndRespondentsSeeTheName(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("rename"))
+	id := publishedSurvey(t, app, creator, "Named", true, [3]string{"short_text", "Your role?", ""})
+
+	resp := app.PostForm(t, creator, "/account/workspace", url.Values{"name": {"  Acme   Research  "}})
+	resp.Body.Close()
+	if dashboard := getBody(t, creator, app.Server.URL+"/dashboard"); !bodyContains(dashboard, "Acme Research") {
+		t.Errorf("the dashboard does not show the new name:\n%s", dashboard)
+	}
+	if page := mustGet(t, &http.Client{}, app.Server.URL+"/s/"+id); !bodyContains(page, "Acme Research") {
+		t.Errorf("the respondent does not see who runs the survey:\n%s", page)
+	}
+
+	resp = app.PostForm(t, creator, "/account/workspace", url.Values{"name": {"   "}})
+	body := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if !bodyContains(body, "Give the workspace a name") {
+		t.Errorf("an empty name is not refused:\n%s", body)
+	}
+	if dashboard := getBody(t, creator, app.Server.URL+"/dashboard"); !bodyContains(dashboard, "Acme Research") {
+		t.Errorf("an empty name replaced the old one:\n%s", dashboard)
+	}
 }

@@ -12,6 +12,7 @@ import (
 	"net/mail"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -41,6 +42,8 @@ var (
 	ErrUsedToken    = errors.New("auth: token already used")
 	ErrInvalidEmail = errors.New("auth: invalid email address")
 	ErrNoSession    = errors.New("auth: no valid session")
+	// ErrInvalidWorkspaceName is a name that is empty or too long.
+	ErrInvalidWorkspaceName = errors.New("auth: invalid workspace name")
 )
 
 // Service wires the auth flows to their dependencies. All fields are
@@ -362,6 +365,23 @@ func (s *Service) createWorkspace(ctx context.Context, qtx *db.Queries, address 
 		}
 	}
 	return ws, nil
+}
+
+// MaxWorkspaceName is the longest name a workspace may have, in
+// characters: long enough for an organisation, short enough to sit in
+// one line above a survey.
+const MaxWorkspaceName = 80
+
+// RenameWorkspace sets the name respondents see as who runs a survey.
+func (s *Service) RenameWorkspace(ctx context.Context, workspaceID uuid.UUID, name string) error {
+	name = strings.Join(strings.Fields(name), " ")
+	if name == "" || utf8.RuneCountInString(name) > MaxWorkspaceName {
+		return ErrInvalidWorkspaceName
+	}
+	if err := s.q.RenameWorkspace(ctx, db.RenameWorkspaceParams{ID: workspaceID, Name: name}); err != nil {
+		return fmt.Errorf("auth: rename workspace: %w", err)
+	}
+	return nil
 }
 
 // workspaceNameFor derives the personal-workspace name from the email's

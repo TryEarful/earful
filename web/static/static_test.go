@@ -1,6 +1,7 @@
 package static
 
 import (
+	"mime"
 	"regexp"
 	"testing"
 )
@@ -23,5 +24,17 @@ func TestStylesheetsDoNotStyleHooks(t *testing.T) {
 		if m := hook.FindAll(css, -1); len(m) > 0 {
 			t.Errorf("css/%s styles %q; style a class without the js- prefix instead", sheet.Name(), m)
 		}
+	}
+}
+
+// The fonts are served with a type a browser accepts under nosniff.
+func TestFontsHaveTheirType(t *testing.T) {
+	for _, name := range []string{"fonts/manrope-latin.woff2", "fonts/manrope-latin-ext.woff2"} {
+		if _, err := FS.ReadFile(name); err != nil {
+			t.Errorf("%s is not embedded: %v", name, err)
+		}
+	}
+	if got := mime.TypeByExtension(".woff2"); got != "font/woff2" {
+		t.Errorf(".woff2 is served as %q, want font/woff2", got)
 	}
 }
