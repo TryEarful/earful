@@ -137,10 +137,10 @@ resource "google_dns_record_set" "apex_txt" {
   type         = "TXT"
   ttl          = 3600
   rrdatas = [
-    # Original token (pre-dates this configuration; Workspace-era) kept
-    # alongside santiago@'s 2026-07-24 Search Console token: multiple
-    # verification TXTs coexist fine, and Cloud Run domain mappings need
-    # the applying account itself to be a verified owner.
+    # Original token (pre-dates this configuration) kept alongside the
+    # Search Console token of the account that applies this configuration:
+    # multiple verification TXTs coexist fine, and Cloud Run domain
+    # mappings need the applying account itself to be a verified owner.
     "\"google-site-verification=7nIancEWTagVFWdVXfzSD1kqB35E7RrtWHqBdafblJo\"",
     "\"google-site-verification=Em37NDvotD_h6Pwnu3T6WpvjU582hbn1Jw79bc7w69I\"",
     # SPF authorizes senders, so it lists only what actually sends. The

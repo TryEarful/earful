@@ -7,7 +7,7 @@ the thing.
 
 Conventions: `<sfx>` is the project suffix; staging = `earful-stg-<sfx>`,
 production = `earful-pro-<sfx>`, region `europe-west4`. Alerts land at
-support@tryearful.com.
+`<your alert address>` (the `support_email` in `bootstrap-config`).
 
 ## Deploy
 
@@ -62,7 +62,7 @@ gcloud run services update earful --image europe-west4-docker.pkg.dev/earful-ops
   --project earful-pro-<sfx> --region europe-west4
 ```
 
-Drilled on staging 2026-07-27: **14 seconds** from command to the
+Expect about **15 seconds** from command to the
 previous digest serving 100% of traffic, and the same again to roll
 forward. Check the rollback actually took by looking at something the
 bad release changed, not at the digest label — a served asset, a page,
@@ -557,7 +557,7 @@ ADR-0004's spirit, so do them once per project and record the date here.
 ("applies to all Google Cloud regions"), so any regional host works:
 
 ```sh
-P=earful-pro-aeir   # then again with earful-stg-aeir
+P=earful-pro-<sfx>   # then again with earful-stg-<sfx>
 H=https://europe-west4-aiplatform.googleapis.com
 curl -X PATCH -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
   -H "Content-Type: application/json" $H/v1/projects/$P/cacheConfig \
@@ -575,7 +575,7 @@ the belt-and-braces.
 Until approved, the documented behaviour stands: logging only on a
 classifier flag, never for training, in the EU multi-region.
 
-Status: cache disable and opt-out not yet done as of 2026-09-28.
+Record whether both steps are done for each project in `docs/runbook.local.md`.
 
 ## AI breaker trip (alert: "AI budget breaker TRIPPED")
 
@@ -590,7 +590,7 @@ stays up, only AI features pause.
 
 ## Brevo (production email)
 
-Live since 2026-07-24: pro sends via Brevo from `hello@mail.tryearful.com`
+Production sends via Brevo from `hello@mail.<domain>`
 (domain authenticated — brevo-code TXT, two DKIM CNAMEs, DMARC TXT).
 Those records are held in the `bootstrap-config` secret in the pro
 project, not in the repository; read or rotate them with `gcloud secrets
@@ -710,7 +710,7 @@ disturb ops, pro or backups:
 
 | Alert | How to fire it | Fired ✓ |
 |---|---|---|
-| Uptime /healthz | `gcloud sql instances patch earful --activation-policy NEVER` (stg), wait ~5–10 min, then `ALWAYS` | ✓ 2026-07-24, both envs (stg drill + pro's real transient) |
+| Uptime /healthz | `gcloud sql instances patch earful --activation-policy NEVER` (stg), wait ~5–10 min, then `ALWAYS` | ✓ both envs (a staging drill, and a real transient on production) |
 | 5xx rate | deploy a broken image to stg (`gcloud run services update earful --image <bad>`), curl it, roll back | pending (same channel proven by uptime drill) |
 | p95 latency | temporarily lower the threshold to 1ms (tofu var edit or console), wait one window, restore | ✓ fired for real on staging during a promotion gate, so no threshold change was needed. **Expect it on staging after most deploys**: the gate runs with `E2E_AI_MODE=real` and a streamed generation is seconds long by nature, so p95 crosses 2s for the length of the run. That is the policy working. If it becomes noise, raise the threshold for staging alone rather than widening it in the module — production's 2s is the number that matters |
 | SQL disk/CPU | temporarily lower thresholds, restore | not fired, on purpose. Filling a disk or pegging a database to prove a stock Cloud SQL metric is disproportionate, and lowering a threshold instead proves only the notification channel, which every other row here has already proven. Revisit if either fires and turns out to be misconfigured |
@@ -718,7 +718,7 @@ disturb ops, pro or backups:
 | AI usage anomaly | temporarily lower threshold; or trust the breaker drill (same metric plumbing) | ✓ covered by the breaker drill, deliberately. Both are log-based metrics on the same service, feeding the same channel, differing only in the string they count and the number they compare against — and the breaker's is the one whose string is easy to get wrong. Firing this one too would re-prove the plumbing and nothing else |
 | Retention purge FAILED | run the job against an unreachable database, or delete its invoker binding | pending |
 | Retention purge has not run in 24h | nothing to do: missing a night fires it | ✓ fired for real rather than drilled, during a multi-day provider outage in which the scheduler attempted nothing. Worth knowing why this alert exists in the shape it does: retention stopping is silent — no error, no failed execution, nothing in the app's own logs — so an alert that waits for a failure never fires, and only an alert that watches for *absence* catches it |
-| Budget €50/80/100/200 | Billing → Budgets → send test notification (thresholds themselves verified by `gcloud billing budgets describe`) | config verified 2026-07-24 (€100 @ 50/80/100% + €200 cap); email path proven live by the uptime alerts |
+| Budget €50/80/100/200 | Billing → Budgets → send test notification (thresholds themselves verified by `gcloud billing budgets describe`) | ✓ config verified (budget at 50/80/100% plus a hard cap); email path proven live by the uptime alerts |
 
 ## What the drills taught
 

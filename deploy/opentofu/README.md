@@ -113,8 +113,8 @@ BASE_URL and the uptime checks). Managed certs take 15 min–24 h.
 Rollback at any point = revert nameservers at Gandi (the old LiveDNS
 zone stays intact there).
 
-**9. Brevo** (production email — done 2026-07-24; sequence kept for
-re-runs against a NEW Brevo account):
+**9. Brevo** (production email; the sequence is kept for re-runs
+against a new Brevo account):
 
 ```
 printf '%s' "$BREVO_API_KEY" | gcloud secrets versions add BREVO_API_KEY \
