@@ -40,7 +40,7 @@ func TestInsights_ReadEveryVersionAndAreLabelled(t *testing.T) {
 	app.PostForm(t, creator, "/surveys/"+id+"/insights", nil).Body.Close()
 
 	page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
-	if !bodyContains(page, "Insight Summary") {
+	if !bodyContains(page, "Insight summary") {
 		t.Fatalf("no insight panel:\n%s", page)
 	}
 	if !bodyContains(page, "setup friction") {
@@ -196,7 +196,7 @@ func TestInsights_QuotaAndAbsence(t *testing.T) {
 		answerSurvey(t, app, id, map[int]string{0: "An answer"})
 
 		page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/results")
-		if bodyContains(page, "Insight Summary") {
+		if bodyContains(page, "Insight summary") {
 			t.Errorf("the insight panel was offered with no provider configured:\n%s", page)
 		}
 	})

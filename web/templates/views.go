@@ -67,6 +67,21 @@ func (s SurveyView) VoiceIndex() int {
 	return int(h.Sum32()%10) + 1
 }
 
+// CardVoices are the colours of a list of survey cards: each survey's
+// own, except where it would match the card above, which takes the next
+// colour instead, so neighbours are always told apart.
+func CardVoices(list []SurveyView) []int {
+	out := make([]int, len(list))
+	for i, s := range list {
+		v := s.VoiceIndex()
+		if i > 0 && v == out[i-1] {
+			v = v%10 + 1
+		}
+		out[i] = v
+	}
+	return out
+}
+
 type SurveyListData struct {
 	Surveys []SurveyView
 }
@@ -78,6 +93,9 @@ type ParticipantView struct {
 }
 
 type SurveyEditorData struct {
+	// Origin is this instance's public address, so the share link can be
+	// shown whole, as it is pasted into an email or a chat.
+	Origin string
 	// DraftChanged is whether publishing would make a new version; the
 	// editor offers Publish only then.
 	DraftChanged  bool

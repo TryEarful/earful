@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-9b2ebaaaf2fb020982c101274fff8358e107b659c1712d61b2dc18b7c04162dd
+hash: sha256-2cfa7afa4d9b79f7ee9557bfcd37ec9054a2fd8b19f5c1a0c449ef06cc4c00ea
 last_update: 2026-09-30
 ---
 
@@ -35,7 +35,7 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 
 ## Where the data lives, and who touches it
 
-{{if .NoProcessors}}No outside company is involved: this instance runs entirely on its operator's own infrastructure.{{else}}{{if .Region}}Hosted in {{.Region}}. Every company involved:{{else}}Every company involved in running this instance:{{end}}{{end}}
+{{if .NoProcessors}}{{if .Region}}Hosted in {{.Region}}. {{end}}No outside company is involved: this instance runs entirely on its operator's own infrastructure.{{else}}{{if .Region}}Hosted in {{.Region}}. Every company involved:{{else}}Every company involved in running this instance:{{end}}{{end}}
 
 {{- if .GoogleCloud}}
 - **Google Cloud** hosts the application, the database, backups and logs, so it can see everything the service holds. Region `europe-west4`.
@@ -57,7 +57,7 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 
 ## What we can't promise
 
-Our infrastructure is in the EU, but Google Cloud's parent company is American, and US law reaches American companies wherever their servers are. EU hosting reduces that risk; it does not remove it. We would rather say so than imply a guarantee we cannot give.
+{{if .GoogleCloud}}Our infrastructure is in the EU, but Google Cloud's parent company is American, and US law reaches American companies wherever their servers are. EU hosting reduces that risk; it does not remove it. We would rather say so than imply a guarantee we cannot give.{{end}}
 
 Deleted data is removed from live systems immediately and erased permanently within 30 days. Backups are kept for 30 days and are deliberately immutable, which means an erasure is fully effective within 30 days, not instantly. That is the standard trade against losing everything to ransomware, and we think it is the right one.
 

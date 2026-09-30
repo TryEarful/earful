@@ -14,7 +14,7 @@ import (
 
 const (
 	starterTitle = "How is Earful working for you?"
-	starterNote  = "A starter survey, already published in English and Spanish."
+	starterNote  = "A sample survey in English and Spanish."
 )
 
 var (
@@ -137,7 +137,7 @@ func TestStarterSurvey_IsTheSameWhoeverSignsUp(t *testing.T) {
 		t.Fatalf("the workspace was not named in Spanish, so this test is not reading as a Spanish browser:\n%s", dashboard)
 	}
 	card := surveyCard(t, dashboard, starterTitle)
-	if !bodyContains(card, "Una encuesta de inicio, ya publicada en inglés y en español.") {
+	if !bodyContains(card, "Una encuesta de ejemplo en inglés y español.") {
 		t.Errorf("the card does not describe the survey in the reader's language:\n%s", card)
 	}
 

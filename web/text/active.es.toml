@@ -336,8 +336,8 @@ hash = "sha1-1753c2061c676db8dd89101b51b92f09a277f51c"
 other = "Eliminar la cuenta"
 
 [account.delete.body]
-hash = "sha1-365dd4d83a754ade5d0e3e7b3eb1911bfe8ba8cf"
-other = "Al eliminar su cuenta, esta se desactiva de inmediato y sus datos se borran definitivamente pasados 30 días. Durante esos 30 días, soporte puede restaurarla."
+hash = "sha1-5f2a152ce5e681898e46afbbfc68a82c6f5a03f8"
+other = "Su cuenta se cierra de inmediato. Sus datos se borran definitivamente pasados 30 días, y hasta entonces soporte puede restaurarla."
 
 [account.delete.submit.label]
 hash = "sha1-2ae3a019040b2afd5fa5c1c7f7a1766b7c4ae831"
@@ -1000,28 +1000,28 @@ hash = "sha1-c7f73bb54d928922c3838bb789ee9fb8a5b1eb37"
 other = "Ajustes"
 
 [editor.settings.close_date_html]
-hash = "sha1-7f51526c5bdaa12e9a05897e949df22b21f515bd"
-other = 'Fecha de cierre <small class="muted">(opcional; déjela vacía para que no se cierre automáticamente)</small>'
+hash = "sha1-718c0aa49fdc466ed7a62978526a853affee0dfa"
+other = 'Fecha de cierre <small class="muted">(opcional)</small>'
 
 [editor.settings.save.label]
 hash = "sha1-913aba9f96cf9e2134b6ab20645d49644c123585"
 other = "Guardar ajustes"
 
 [editor.settings.anonymous]
-hash = "sha1-358878b96d6d17dc947f5c5deb1969d9deae6039"
-other = "Esta es una encuesta anónima y siempre lo será: la decisión es permanente."
+hash = "sha1-422159435a4f4191fa0f7625a0fb6c9ebee4b855"
+other = "Anónima. Esto no se puede cambiar."
 
 [editor.settings.invited]
-hash = "sha1-13e19fa169d6260d998f856395fae775994558d8"
-other = "Esta es una encuesta por invitación y siempre lo será: la decisión es permanente."
+hash = "sha1-64668459578cf70b8b8187e73cd3501df2ab7e5c"
+other = "Por invitación. Esto no se puede cambiar."
 
 [editor.settings.delete.label]
 hash = "sha1-bd4ae36fcc807092ad5121e6a143609028e64230"
 other = "Eliminar la encuesta"
 
 [editor.settings.delete.hint]
-hash = "sha1-3d5554a1164abb0dc45cd229a831049fb4fd3f2a"
-other = "Soporte puede recuperarla durante 30 días; después se borra definitivamente."
+hash = "sha1-61a17548f547987392c43ae7090a862bb9b1ddd7"
+other = "Soporte puede restaurarla durante 30 días."
 
 
 # ── El registro de cambios ─────────────────────────────────────────────
@@ -1346,8 +1346,8 @@ hash = "sha1-dda1a0b04ec39fa007eff46e779c6a7af2dc1a8d"
 other = "Falta parte del enlace. Ábralo de nuevo desde su correo."
 
 [magic.invalid.reason.expired]
-hash = "sha1-95977a299e4b96c3d27104f1d2c72bc3dcbbd272"
-other = "Era válido durante 15 minutos, y ese tiempo ha pasado."
+hash = "sha1-04c056dd5d9c70d7502d3c8fa7a62272fdfb0c83"
+other = "Caducó a los 15 minutos."
 
 [magic.invalid.reason.used]
 hash = "sha1-68b03d3a599f431a2038437333fed501079dce89"
@@ -2835,3 +2835,11 @@ other = "Correo electrónico"
 [account.facts.workspace]
 hash = "sha1-4ca0a75c2b7fa7da4364d03b72c46fee1860a2bf"
 other = "Espacio de trabajo"
+
+[editor.sharing.copy]
+hash = "sha1-2f84eea5d45da4f1ce1760b85db18a854f4e1b39"
+other = "Copiar enlace"
+
+[editor.sharing.copied]
+hash = "sha1-8e3df45a49dba2b26f8ea64a22410bde72f9c8ac"
+other = "Copiado"

@@ -103,6 +103,7 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 	}
 
 	data := templates.SurveyEditorData{
+		Origin:        s.cfg.BaseURL,
 		DraftChanged:  changed,
 		Survey:        viewSurvey(text(r), survey, s.clock.Now()),
 		Questions:     draft.Questions,

@@ -127,17 +127,25 @@
     // Area under the line, then the line itself.
     var line = points.map(function (p, i) { return (i === 0 ? "M" : "L") + x(i).toFixed(1) + " " + y(p[key]).toFixed(1); }).join(" ");
     var area = line + " L" + x(points.length - 1).toFixed(1) + " " + y(0).toFixed(1) + " L" + x(0).toFixed(1) + " " + y(0).toFixed(1) + " Z";
-    svg.appendChild(el("path", { d: area, class: "trend-area series-" + key }));
-    svg.appendChild(el("path", { d: line, class: "trend-line series-" + key }));
+    svg.appendChild(el("path", { d: area, class: "trend-area " + "series-" + key }));
+    svg.appendChild(el("path", { d: line, class: "trend-line " + "series-" + key }));
 
     // One hoverable point per day, with the value as its title.
     points.forEach(function (p, i) {
-      var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : 3.5, class: "trend-dot series-" + key + " js-trend-dot" });
+      var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : points.length < 8 ? 5 : 3.5, class: "trend-dot " + "series-" + key + " js-trend-dot" });
       var t = el("title");
       t.textContent = T.t("js.stats.chart.point", { Day: p.label, Count: p[key], Series: series.counted });
       dot.appendChild(t);
       svg.appendChild(dot);
     });
+
+    // One day is a point, not a line: its value is written beside it, in
+    // the text colour, so the chart says what it holds.
+    if (points.length === 1) {
+      var value = el("text", { x: x(0) + 10, y: y(points[0][key]), class: "trend-value", "dominant-baseline": "middle" });
+      value.textContent = String(points[0][key]);
+      svg.appendChild(value);
+    }
     return svg;
   }
 

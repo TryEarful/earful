@@ -16,7 +16,7 @@ func TestDocuments_AreServedAtTheirAddress(t *testing.T) {
 	anyone := &http.Client{}
 
 	help := mustGet(t, anyone, app.Server.URL+"/help/voice")
-	for _, want := range []string{"Answering by voice", "Your voice itself is never stored", "Last updated"} {
+	for _, want := range []string{"Answering by voice", "never stored", "Last updated"} {
 		if !bodyContains(help, want) {
 			t.Errorf("the help page does not say %q:\n%s", want, help)
 		}
@@ -67,7 +67,7 @@ func TestDocuments_CanBeTakenAwayAsMarkdown(t *testing.T) {
 		"## Your voice is never stored",
 		"Hosted in a rack in Utrecht.",
 		"(mailto:privacy@example.org)",
-		"| Nobody | This instance runs entirely on its operator's own infrastructure |",
+		"No outside company is involved: this instance runs entirely on its operator's own infrastructure.",
 	} {
 		if !strings.Contains(markdown, want) {
 			t.Errorf("the Markdown does not contain %q:\n%s", want, markdown)

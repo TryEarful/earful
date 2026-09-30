@@ -33,13 +33,13 @@ func TestTrust_IsPublicAndSaysWhatItCanProve(t *testing.T) {
 
 	// The honest paragraphs matter as much as the promises: a trust page
 	// that only claims strengths is marketing.
-	for _, honesty := range []string{
-		"US law reaches American companies",
-		"fully effective within 30 days",
-	} {
-		if !bodyContains(page, honesty) {
-			t.Errorf("the trust page omits the caveat %q", honesty)
-		}
+	if !bodyContains(page, "fully effective within 30 days") {
+		t.Errorf("the trust page omits the caveat about backups")
+	}
+	// The caveat about US law is about Google Cloud, and is stated only
+	// where this instance runs on it; this one does not.
+	if bodyContains(page, "US law reaches American companies") {
+		t.Errorf("the trust page states a caveat about a host this instance does not use")
 	}
 
 	// The CC-BY attribution the country data requires travels with it.

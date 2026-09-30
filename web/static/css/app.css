@@ -1018,9 +1018,31 @@ button:disabled,
   flex-wrap: wrap;
 }
 
+/* The share link, whole, in a box of its own with the button that copies
+   it: it is the one thing a creator hands out. */
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
 .share-link {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  word-break: break-all;
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.share-link a {
+  text-decoration: none;
 }
 
 /* --- respondent pages (M4) ------------------------------------------ */
@@ -2178,11 +2200,12 @@ input.is-live {
 }
 
 .translate-form .field {
+  flex: 0 0 11rem;
   margin: 0;
 }
 
 .translate-form .field input {
-  width: 8rem;
+  width: 100%;
 }
 
 /* A translation is visibly secondary to the words a respondent chose. */
@@ -3123,16 +3146,30 @@ fieldset.field legend {
   padding-block: 0;
 }
 
-.choice small {
+.choice span > small {
   display: block;
   margin: var(--space-1) 0 0;
 }
 
-/* The editor's title takes the row; its one action sits at the end, or
-   under it on a phone. */
-.title-row h1 {
+/* The editor's title takes the row, with Preview at its end and the
+   survey's facts on the line below. On a phone Preview follows the
+   facts, at the start of its own line. */
+.editor-title h1 {
   flex: 1 1 20rem;
   min-width: 0;
+}
+
+.editor-title .survey-meta {
+  flex-basis: 100%;
+  order: 1;
+  margin: 0;
+}
+
+@media (max-width: 30rem) {
+  .editor-title > .button {
+    order: 2;
+    margin-left: 0;
+  }
 }
 
 .survey-meta .chip {
@@ -3146,7 +3183,7 @@ fieldset.field legend {
   display: grid;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto auto;
   column-gap: var(--space-3);
-  align-items: baseline;
+  align-items: center;
 }
 
 .question summary::before {
@@ -3257,4 +3294,34 @@ main.standalone h1 {
 
 .disclosure.is-collapsed p:not(:last-child) {
   display: none;
+}
+
+/* --- round 5 ----------------------------------------------------------------- */
+
+.disclosure.is-collapsed {
+  border-left: 0;
+  padding-left: 0;
+  margin: var(--space-1) 0 var(--space-5);
+}
+
+main.standalone h1 {
+  max-width: 11em;
+}
+
+@media (max-width: 30rem) {
+  .facts {
+    grid-template-columns: 1fr;
+    row-gap: 0;
+  }
+
+  .facts dd + dt {
+    margin-top: var(--space-3);
+  }
+}
+
+.trend-value {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }

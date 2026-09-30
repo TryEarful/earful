@@ -241,7 +241,7 @@ label = "Export my workspace"
 
 [account.delete]
 heading = "Delete account"
-body = "Deleting your account deactivates it immediately and permanently erases your data after 30 days. Within those 30 days, support can restore it."
+body = "Your account closes right away. Your data is erased for good after 30 days, and until then support can restore it."
 
 [account.delete.submit]
 label = "Delete my account"
@@ -567,6 +567,8 @@ empty = "Add a question to publish."
 label = "Publish version {{.Version}}"
 
 [editor.sharing]
+copied = "Copied"
+copy = "Copy link"
 heading = "Sharing"
 open = "Open for answers. Share this link:"
 anonymous = "Anyone with the link can answer, and answers carry nothing that identifies them."
@@ -592,16 +594,16 @@ label = "View audit log"
 
 [editor.settings]
 heading = "Settings"
-close_date_html = 'Close date <small class="muted">(optional; leave empty for no automatic close)</small>'
-anonymous = "This survey is anonymous and always will be. The choice is permanent."
-invited = "This survey is by invitation and always will be. The choice is permanent."
+close_date_html = 'Close date <small class="muted">(optional)</small>'
+anonymous = "Anonymous. This can't be changed."
+invited = "By invitation. This can't be changed."
 
 [editor.settings.save]
 label = "Save settings"
 
 [editor.settings.delete]
 label = "Delete survey"
-hint = "Recoverable by support for 30 days, then permanently erased."
+hint = "Support can restore it for 30 days."
 
 
 # ── The audit log ──────────────────────────────────────────────────────
@@ -754,7 +756,7 @@ login = "We couldn't finish signing you in. Please request a new link."
 
 [magic.invalid.reason]
 incomplete = "Part of the link is missing. Open it again from your email."
-expired = "It was valid for 15 minutes, and that time has passed."
+expired = "It expired after 15 minutes."
 used = "It has already been used once."
 invalid = "We don't recognise it."
 

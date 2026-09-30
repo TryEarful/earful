@@ -19,7 +19,7 @@ templ AuthedHeader(email string, csrf string) {
 			<a href="/help" if currentPath(ctx) == "/help" {
 	aria-current="page"
 }>{ t(ctx, "header.help.label") }</a>
-			<a href="/account" if currentPath(ctx) == "/account" {
+			<a href="/account" title={ email } if currentPath(ctx) == "/account" {
 	aria-current="page"
 }>{ t(ctx, "header.account.label") }</a>
 			<form method="post" action="/logout">
@@ -38,6 +38,7 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 				<h1>{ t(ctx, "dashboard.heading") }</h1>
 				<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 			</div>
+			<p class="muted workspace-name">{ workspaceName }</p>
 			if len(data.Surveys) == 0 {
 				<div class="card empty-state js-panel">
 					@owl(OwlNeutral, 96)
@@ -47,8 +48,8 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 				</div>
 			} else {
 				<ul class="survey-list">
-					for _, s := range data.Surveys {
-						<li class={ "card", "survey-card", "voice-" + strconv.Itoa(s.VoiceIndex()), "js-survey-card" }>
+					for i, s := range data.Surveys {
+						<li class={ "card", "survey-card", "voice-" + strconv.Itoa(CardVoices(data.Surveys)[i]), "js-survey-card" }>
 							<div class="title-row">
 								<a class="survey-title" href={ templ.SafeURL("/surveys/" + s.ID) }>{ s.Title }</a>
 								@StatusChip(s.Status)

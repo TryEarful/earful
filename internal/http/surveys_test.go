@@ -316,7 +316,7 @@ func TestSurvey_CloseAndReopen(t *testing.T) {
 	resp = app.PostForm(t, client, "/surveys/"+id+"/reopen", nil)
 	resp.Body.Close()
 	page = app.SurveyPage(t, client, id)
-	if !bodyContains(page, "open and accepting responses") {
+	if !bodyContains(page, "Open for answers") {
 		t.Errorf("survey should read as open after reopening:\n%s", page)
 	}
 }
@@ -339,7 +339,7 @@ func TestSurvey_CloseDateClosesAutomatically(t *testing.T) {
 	})
 	resp.Body.Close()
 
-	if page := app.SurveyPage(t, client, id); !bodyContains(page, "open and accepting responses") {
+	if page := app.SurveyPage(t, client, id); !bodyContains(page, "Open for answers") {
 		t.Fatalf("survey should still be open before its close date:\n%s", page)
 	}
 
@@ -361,7 +361,7 @@ func TestSurvey_CloseDateClosesAutomatically(t *testing.T) {
 	resp = app.PostForm(t, client, "/surveys/"+id+"/reopen", nil)
 	resp.Body.Close()
 	page = app.SurveyPage(t, client, id)
-	if !bodyContains(page, "open and accepting responses") {
+	if !bodyContains(page, "Open for answers") {
 		t.Errorf("reopening past a close date did not reopen the survey:\n%s", page)
 	}
 }

@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-c227f161ed0716d0a5f0a7c88d4f7704b586e19c8b2d0e695315704c7ba9fb3e
+hash: sha256-1228a9fb0c7004a2fd246b565c41c23dbc44256edae5c6b4e6e97c45583a579a
 last_update: 2026-09-30
-source_hash: sha256-9b2ebaaaf2fb020982c101274fff8358e107b659c1712d61b2dc18b7c04162dd
+source_hash: sha256-2cfa7afa4d9b79f7ee9557bfcd37ec9054a2fd8b19f5c1a0c449ef06cc4c00ea
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -38,7 +38,7 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 
 ## Dónde están los datos y quién los toca
 
-{{if .NoProcessors}}No interviene ninguna empresa externa: esta instalación funciona por completo en la infraestructura de su propio operador.{{else}}{{if .Region}}Alojado en {{.Region}}. Todas las empresas que intervienen:{{else}}Todas las empresas que intervienen en el funcionamiento de esta instalación:{{end}}{{end}}
+{{if .NoProcessors}}{{if .Region}}Alojado en {{.Region}}. {{end}}No interviene ninguna empresa externa: esta instalación funciona por completo en la infraestructura de su propio operador.{{else}}{{if .Region}}Alojado en {{.Region}}. Todas las empresas que intervienen:{{else}}Todas las empresas que intervienen en el funcionamiento de esta instalación:{{end}}{{end}}
 
 {{- if .GoogleCloud}}
 - **Google Cloud** aloja la aplicación, la base de datos, las copias de seguridad y los registros, así que puede ver todo lo que guarda el servicio. Región `europe-west4`.
@@ -60,7 +60,7 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 
 ## Lo que no podemos prometer
 
-Nuestra infraestructura está en la UE, pero la empresa matriz de Google Cloud es estadounidense, y la ley de Estados Unidos alcanza a las empresas estadounidenses estén donde estén sus servidores. Alojar en la UE reduce ese riesgo; no lo elimina. Preferimos decirlo antes que dar a entender una garantía que no podemos ofrecer.
+{{if .GoogleCloud}}Nuestra infraestructura está en la UE, pero la empresa matriz de Google Cloud es estadounidense, y la ley de Estados Unidos alcanza a las empresas estadounidenses estén donde estén sus servidores. Alojar en la UE reduce ese riesgo; no lo elimina. Preferimos decirlo antes que dar a entender una garantía que no podemos ofrecer.{{end}}
 
 Los datos eliminados se retiran de los sistemas en uso de inmediato y se borran definitivamente en un plazo de 30 días. Las copias de seguridad se conservan 30 días y son inmutables a propósito, lo que significa que una supresión es plenamente efectiva en 30 días, no al instante. Es el equilibrio habitual frente al riesgo de perderlo todo por un ataque de secuestro de datos, y creemos que es el correcto.
 

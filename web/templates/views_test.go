@@ -19,3 +19,16 @@ func TestVoiceIndexIsStableAndInRange(t *testing.T) {
 		t.Errorf("16 surveys drew only %d colours; the spread is too narrow", len(seen))
 	}
 }
+
+func TestCardVoicesNeverRepeatANeighbour(t *testing.T) {
+	var list []SurveyView
+	for _, id := range []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"} {
+		list = append(list, SurveyView{ID: id})
+	}
+	got := CardVoices(list)
+	for i := 1; i < len(got); i++ {
+		if got[i] == got[i-1] {
+			t.Errorf("cards %d and %d share colour %d", i-1, i, got[i])
+		}
+	}
+}

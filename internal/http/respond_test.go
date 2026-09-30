@@ -457,7 +457,7 @@ func TestPreview_UsesTheRealRendererAndRecordsNothing(t *testing.T) {
 
 	// And the survey is still an unpublished draft with no responses.
 	editor := app.SurveyPage(t, creator, id)
-	if !bodyContains(editor, "never been published") {
+	if !bodyContains(editor, "Not published yet") {
 		t.Errorf("preview appears to have published or altered the survey:\n%s", editor)
 	}
 }
