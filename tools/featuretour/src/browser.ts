@@ -77,7 +77,7 @@ export async function signIn(page: Page, email: string, hooks: SignInHooks = {})
     const before = await seenMessages(email);
     await page.goto(BASE + "/login");
     await page.getByLabel("Email address").fill(email);
-    await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+    await page.getByRole("button", { name: "Email me a link to sign in" }).click();
     await page.getByRole("heading", { name: "Check your email" }).waitFor();
     await hooks.afterRequest?.(page);
     const found = await waitForLink(email, MAGIC_LINK, before);

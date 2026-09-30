@@ -188,7 +188,7 @@ func TestGenerate_QuotaIsRefusedKindly(t *testing.T) {
 	resp := app.PostForm(t, creator, "/surveys/"+id+"/generate", url.Values{"prompt": {"second"}})
 	defer resp.Body.Close()
 	body := apptest.ReadBody(t, resp)
-	if !bodyContains(body, "used its AI allowance for today") {
+	if !bodyContains(body, "AI allowance. It resets tomorrow") {
 		t.Errorf("quota refusal is not readable:\n%s", body)
 	}
 	if len(fake.GenerateCalls) != 1 {

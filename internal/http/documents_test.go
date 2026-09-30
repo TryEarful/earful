@@ -16,12 +16,12 @@ func TestDocuments_AreServedAtTheirAddress(t *testing.T) {
 	anyone := &http.Client{}
 
 	help := mustGet(t, anyone, app.Server.URL+"/help/voice")
-	for _, want := range []string{"Answering by voice", "your voice itself is never stored", "Last updated"} {
+	for _, want := range []string{"Answering by voice", "Your voice itself is never stored", "Last updated"} {
 		if !bodyContains(help, want) {
 			t.Errorf("the help page does not say %q:\n%s", want, help)
 		}
 	}
-	if !strings.Contains(help, "<title>Answering by voice — Earful</title>") {
+	if !strings.Contains(help, "<title>Answering by voice · Earful</title>") {
 		t.Errorf("the window is not titled for the document:\n%s", help[:300])
 	}
 	// Rendered, not shown as it was typed. The Markdown is on the page as

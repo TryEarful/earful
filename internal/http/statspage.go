@@ -303,7 +303,7 @@ func rangeLabel(l uitext.Localizer, rng statsRange) string {
 	if rng.From.Equal(rng.To) {
 		return l.Day(rng.From)
 	}
-	return l.Day(rng.From) + " – " + l.Day(rng.To)
+	return l.T("stats.range.span", uitext.Args{"From": l.Day(rng.From), "To": l.Day(rng.To)})
 }
 
 // rangeQuery reproduces the range as a query string, so the CSV link

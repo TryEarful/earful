@@ -2,14 +2,14 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-f858b6ed8fd7cd14abfd9f6ab38efbb0f944f7722e01284c4cd5920b35fdfa1d
-last_update: 2026-09-29
-source_hash: sha256-8523957e7bd32bbea8337d5c0487c55d42a200a5422341204a95a35185f31e0f
+hash: sha256-19bbd55cf5fa0f26df6d9c996e41cce922801ecbda98ff30c65a180d43ada809
+last_update: 2026-09-30
+source_hash: sha256-3c5fdd17cb2b2189f214266392ae9544bc11c3d7b99e14311785027e25f37190
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
 
-Esta página describe {{if .Instance}}{{.Instance}}{{else}}esta instalación{{end}}. Earful es de código abierto (AGPL-3.0), de modo que todo lo que aquí se afirma puede comprobarse en el código que sirve esta página.
+Esta página describe {{if .Instance}}{{.Instance}}{{else}}esta instalación{{end}}. Earful es de código abierto (AGPL 3.0), de modo que todo lo que aquí se afirma puede comprobarse en el código que sirve esta página.
 
 ## Su voz nunca se guarda
 
@@ -40,13 +40,13 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 | Encargado | Para qué | Qué ve | Dónde |
 |---|---|---|---|
 {{- if .GoogleCloud}}
-| Google Cloud | Alojamiento: la aplicación, la base de datos, las copias de seguridad y los registros | Todo lo que guarda el servicio | europe-west4 |
+| Google Cloud | Alojamiento: la aplicación, la base de datos, las copias de seguridad y los registros | Todo lo que guarda el servicio | `europe-west4` |
 {{- end}}
 {{- if .Brevo}}
 | Brevo | Envío de enlaces de acceso e invitaciones a encuestas | Correos electrónicos de titulares de cuentas y de participantes invitados | UE (Francia) |
 {{- end}}
 {{- if eq .AI "vertex"}}
-| Google Vertex AI | Transcribir respuestas habladas y redactar preguntas, resúmenes y traducciones | Audio en tránsito (nunca guardado), texto de preguntas y respuestas | {{if eq .VertexLocation "eu"}}UE (multirregión de Google Cloud: procesado solo en Estados miembros de la UE){{else if eq .VertexLocation "us"}}Estados Unidos (multirregión de Google Cloud){{else}}{{.VertexLocation}}{{end}} |
+| Google Vertex AI | Transcribir respuestas habladas y redactar preguntas, resúmenes y traducciones | Audio en tránsito (nunca guardado), texto de preguntas y respuestas | {{if eq .VertexLocation "eu"}}UE (multirregión de Google Cloud: procesado solo en Estados miembros de la UE){{else if eq .VertexLocation "us"}}Estados Unidos (multirregión de Google Cloud){{else}}`{{.VertexLocation}}`{{end}} |
 {{- end}}
 {{- if eq .AI "openai"}}
 | Servicio de IA configurado por el operador | Transcripción, redacción, resúmenes y traducciones | Audio en tránsito (nunca guardado), texto de preguntas y respuestas | Donde lo haya dispuesto el operador de esta instalación |
@@ -55,7 +55,7 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 | Google Identity | Inicio de sesión, solo para quien elige Google | Correo electrónico e identificador de la cuenta de Google | Global |
 {{- end}}
 {{- if .NoProcessors}}
-| Nadie | Esta instalación funciona por completo en la infraestructura de su propio operador | — | — |
+| Nadie | Esta instalación funciona por completo en la infraestructura de su propio operador | Ninguno | Ninguno |
 {{- end}}
 
 Alojar Earful por su cuenta los elimina a todos: funciona con su propio Postgres, su propio servidor SMTP y, si quiere funciones de IA, su propio modelo.
@@ -68,13 +68,13 @@ Los datos eliminados se retiran de los sistemas en uso de inmediato y se borran 
 
 ## Puede irse
 
-Un botón exporta todo lo que contiene un espacio de trabajo (cada encuesta, versión, pregunta y envío) como JSON documentado y archivos CSV. El formato está publicado y tiene versiones, y el propio Earful es AGPL-3.0, de modo que puede ejecutar el mismo programa por su cuenta y llevarse sus datos.
+Un botón exporta todo lo que contiene un espacio de trabajo (cada encuesta, versión, pregunta y envío) como JSON documentado y archivos CSV. El formato está publicado y tiene versiones, y el propio Earful es AGPL 3.0, de modo que puede ejecutar el mismo programa por su cuenta y llevarse sus datos.
 
 [Código fuente](https://github.com/TryEarful/earful) · [Formato de exportación](https://github.com/TryEarful/earful/blob/main/docs/export-format.md)
 
 ## Atribución
 
-{{.GeoAttribution}} — [db-ip.com]({{.GeoAttributionURL}})
+{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})
 
 ***
 

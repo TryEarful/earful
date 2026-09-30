@@ -9,7 +9,7 @@ layout: cover
 
 # Earful
 
-Open-source, AI-enhanced, voice-first surveys.
+Open source surveys people answer out loud.
 
 A tour of every feature, told through three stories. Screenshots from a local docker compose run.
 
@@ -704,6 +704,6 @@ layout: cover
 
 # Earful
 
-Open-source, AI-enhanced, voice-first surveys.
+Open source surveys people answer out loud.
 
 github.com/TryEarful/earful · AGPL-3.0

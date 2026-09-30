@@ -1,7 +1,7 @@
 ---
 title: Answering by voice
-hash: sha256-429f5240fe699c647d64c0250f6f43505894ac47bdf9e5dfcc02167f8c30dc92
-last_update: 2026-09-29
+hash: sha256-297a904fb95e7392b1e46f2236387f3cd3c0bc976af861c90b62d7f420336ada
+last_update: 2026-09-30
 ---
 
 On a survey that offers it, you can speak an answer instead of typing it.
@@ -17,7 +17,7 @@ You can type instead at any point. Every question that can be answered by voice 
 
 ## What happens to your voice
 
-What you say is turned into text you can read and edit before it becomes your answer — your voice itself is never stored.
+What you say is turned into text you can read and edit before it becomes your answer. Your voice itself is never stored.
 
 More about this on the [trust page](/trust).
 

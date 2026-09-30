@@ -37,13 +37,13 @@ func TestLanguage_FollowsTheBrowser(t *testing.T) {
 	anyone := &http.Client{}
 
 	for browser, want := range map[string][2]string{
-		"":                                 {`<html lang="en">`, "Email me a sign-in link"},
-		"en-GB,en;q=0.9":                   {`<html lang="en">`, "Email me a sign-in link"},
+		"":                                 {`<html lang="en">`, "Email me a link to sign in"},
+		"en-GB,en;q=0.9":                   {`<html lang="en">`, "Email me a link to sign in"},
 		"es":                               {`<html lang="es">`, "Enviarme un enlace de acceso"},
 		"es-AR,es;q=0.9,en;q=0.8":          {`<html lang="es">`, "Enviarme un enlace de acceso"},
 		"nl-BE,nl;q=0.9,es;q=0.8,en;q=0.7": {`<html lang="es">`, "Enviarme un enlace de acceso"},
-		"nl,de;q=0.9":                      {`<html lang="en">`, "Email me a sign-in link"},
-		"not a language at all":            {`<html lang="en">`, "Email me a sign-in link"},
+		"nl,de;q=0.9":                      {`<html lang="en">`, "Email me a link to sign in"},
+		"not a language at all":            {`<html lang="en">`, "Email me a link to sign in"},
 	} {
 		_, page := reading(t, anyone, app.Server.URL+"/login", browser)
 		if !strings.Contains(page, want[0]) || !bodyContains(page, want[1]) {

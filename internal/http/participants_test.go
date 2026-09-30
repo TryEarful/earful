@@ -199,8 +199,8 @@ func TestParticipants_PublicLinkRefusesInvitedSurvey(t *testing.T) {
 	if resp.StatusCode != http.StatusForbidden {
 		t.Errorf("GET status = %d, want 403", resp.StatusCode)
 	}
-	if !bodyContains(body, "invite-only") {
-		t.Errorf("expected the invite-only explanation:\n%s", body)
+	if !bodyContains(body, "by invitation only") {
+		t.Errorf("expected the by-invitation explanation:\n%s", body)
 	}
 	if bodyContains(body, "What do you think?") {
 		t.Error("the public link leaked the survey's questions")

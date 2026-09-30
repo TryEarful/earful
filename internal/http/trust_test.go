@@ -104,7 +104,7 @@ func TestRespondentDisclosure_TellsRespondentsWhatHappens(t *testing.T) {
 			[3]string{"long_text", "How was it?", ""})
 
 		page := mustGet(t, &http.Client{}, app.Server.URL+"/s/"+id)
-		if !bodyContains(page, "your voice itself is never stored") {
+		if !bodyContains(page, "Your voice itself is never stored") {
 			t.Errorf("the voice promise is missing where voice is offered:\n%s", page)
 		}
 	})

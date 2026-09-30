@@ -111,7 +111,7 @@ func TestStatsPage_LegacyTotalsCountOnlyAllTime(t *testing.T) {
 	if got := extractStat(t, all, "Submissions"); got != 6 {
 		t.Errorf("all-time submissions = %d, want 4 legacy + 2 dated", got)
 	}
-	if !bodyContains(all, "Includes 10 opens and 4 submissions counted before per-day tracking") {
+	if !bodyContains(all, "Includes 10 opens and 4 submissions counted before daily tracking") {
 		t.Errorf("all-time view does not explain the undated counts:\n%s", all)
 	}
 	if !bodyContains(all, "4 earlier submissions were counted by question position") {
@@ -123,7 +123,7 @@ func TestStatsPage_LegacyTotalsCountOnlyAllTime(t *testing.T) {
 	if got := extractStat(t, narrow, "Opened"); got != 1 {
 		t.Errorf("one-day opened = %d, want the dated 1 only", got)
 	}
-	if !bodyContains(narrow, "included in the all-time view only") {
+	if !bodyContains(narrow, "appear only in the all time view") {
 		t.Errorf("narrow view does not say where the undated counts went:\n%s", narrow)
 	}
 }

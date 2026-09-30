@@ -35,7 +35,7 @@ func TestMagicLink_FullFlow(t *testing.T) {
 	}
 	body = apptest.ReadBody(t, resp)
 	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK || !strings.Contains(body, "Confirm sign-in") || !strings.Contains(body, addr) {
+	if resp.StatusCode != http.StatusOK || !strings.Contains(body, "Confirm sign in") || !strings.Contains(body, addr) {
 		t.Fatalf("confirm page: status %d, body %q", resp.StatusCode, body)
 	}
 
@@ -107,7 +107,7 @@ func TestMagicLink_ReplayRejected(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("replay status = %d, want 400", resp.StatusCode)
 	}
-	if !strings.Contains(body, "Sign-in link problem") {
+	if !strings.Contains(body, "Link problem") {
 		t.Errorf("replay should render the link-problem page, got:\n%s", body)
 	}
 	// And the replay must not have produced a session.

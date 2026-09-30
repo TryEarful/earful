@@ -308,7 +308,7 @@ export function uniqueEmail(prefix: string): string {
 export async function signIn(page: Page, addr: string): Promise<void> {
   await page.goto("/login");
   await page.getByLabel("Email address").fill(addr);
-  await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+  await page.getByRole("button", { name: "Email me a link to sign in" }).click();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 
   const link = await latestLinkTo(addr, /https?:\/\/[^\s]+\/auth\/magic\/verify\?token=[\w-]+/);

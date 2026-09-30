@@ -258,7 +258,7 @@ templ addQuestionForm(csrf string, surveyID string) {
 				<span>{ t(ctx, "editor.add.type") }</span>
 				<select name="type" required>
 					for _, kind := range domain.QuestionTypes {
-						<option value={ string(kind) }>{ typeName(ctx, kind) } — { typeHint(ctx, kind) }</option>
+						<option value={ string(kind) }>{ typeName(ctx, kind) } · { typeHint(ctx, kind) }</option>
 					}
 				</select>
 			</label>
@@ -466,7 +466,7 @@ templ SurveyAudit(email string, workspaceName string, csrf string, data SurveyAu
 							} else {
 								{ e.What }
 							}
-							<span class="muted">— { e.Who }, { e.When }</span>
+							<span class="muted">· { e.Who }, { e.When }</span>
 						</li>
 					}
 				</ol>

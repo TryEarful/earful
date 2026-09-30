@@ -60,7 +60,7 @@
 # ── Every page ──────────────────────────────────────────────────────────
 
 [page]
-title = "{{.Title}} — Earful"
+title = "{{.Title}} · Earful"
 
 [page.home]
 label = "Home"
@@ -69,7 +69,7 @@ label = "Home"
 # ── Home ────────────────────────────────────────────────────────────────
 
 [home.intro]
-body = "Open-source, AI-enhanced, voice-first surveys."
+body = "Open source surveys people answer out loud."
 
 [home.sign_in]
 label = "Sign in"
@@ -84,7 +84,7 @@ label = "Email address"
 label = "Password"
 
 [login]
-title = "Sign in — Earful"
+title = "Sign in · Earful"
 heading = "Sign in"
 
 [login.submit]
@@ -94,19 +94,19 @@ label = "Sign in"
 note_html = 'Earful is in private beta. Have an invite code? <a href="/signup">Create your account</a>.'
 
 [login.magic]
-hint = "No password, no account setup — the link signs you in and creates your workspace on first use."
+hint = "No password and no setup. The link signs you in and creates your workspace the first time."
 
 [login.magic.submit]
-label = "Email me a sign-in link"
+label = "Email me a link to sign in"
 
 [login.google]
 divider = "or"
 label = "Continue with Google"
 
 [signup]
-title = "Create account — Earful"
+title = "Create account · Earful"
 heading = "Create your account"
-note_html = '''Earful is in private beta — an invite code creates exactly one account, and you're signed in immediately. Already have an account? <a href="/login">Sign in</a>.'''
+note_html = '''Earful is in private beta. An invite code creates one account and signs you in right away. Already have an account? <a href="/login">Sign in</a>.'''
 
 [signup.code]
 label = "Invite code"
@@ -115,29 +115,29 @@ label = "Invite code"
 label = "Create account"
 
 [magic.sent]
-title = "Check your email — Earful"
+title = "Check your email · Earful"
 heading = "Check your email"
-body_html = "If <strong>{{.Email}}</strong> is a valid address, a sign-in link is on its way. It works once and expires in 15 minutes."
+body_html = "If <strong>{{.Email}}</strong> is a valid address, a link to sign in is on its way. It works once and expires in 15 minutes."
 retry_html = 'Nothing arriving? Check spam, or <a href="/login">request another link</a>.'
 
 [magic.confirm]
-title = "Confirm sign-in — Earful"
-heading = "Confirm sign-in"
+title = "Confirm sign in · Earful"
+heading = "Confirm sign in"
 question_html = "Sign in to Earful as <strong>{{.Email}}</strong>?"
-note = "Wasn't you? Just close this page — the link expires on its own."
+note = "Wasn't you? Close this page. The link expires on its own."
 
 [magic.confirm.submit]
 label = "Sign in"
 
 [magic.invalid]
-title = "Sign-in link problem — Earful"
-heading = "Sign-in link problem"
+title = "Link problem · Earful"
+heading = "This link can't sign you in"
 
 [magic.invalid.back]
-label = "Back to sign-in"
+label = "Back to sign in"
 
 [goodbye]
-title = "Account deleted — Earful"
+title = "Account deleted · Earful"
 heading = "Your account is deleted"
 body = "Your account and workspace are now deactivated and scheduled for permanent deletion after 30 days. If this was a mistake, contact support within those 30 days to restore it."
 again = "You can create a fresh account with the same email at any time."
@@ -161,7 +161,7 @@ label = "Sign out"
 # ── Dashboard ───────────────────────────────────────────────────────────
 
 [dashboard]
-title = "Dashboard — Earful"
+title = "Dashboard · Earful"
 
 [dashboard.new]
 label = "New survey"
@@ -188,7 +188,7 @@ other = "· version {{.Version}} · {{.Count}} questions"
 # ── Account ─────────────────────────────────────────────────────────────
 
 [account]
-title = "Account — Earful"
+title = "Account · Earful"
 heading = "Account"
 signed_in_html = "Signed in as <strong>{{.Email}}</strong>"
 workspace_html = "Workspace: <strong>{{.Workspace}}</strong>"
@@ -204,7 +204,7 @@ label = "Erasure requests"
 
 [account.email]
 heading = "Change email"
-hint = "The change applies immediately — you'll sign in with the new address from now on."
+hint = "The change applies right away. From now on you sign in with the new address."
 
 [account.email.new]
 label = "New email address"
@@ -217,9 +217,9 @@ label = "Change email"
 
 [account.export]
 heading = "Export everything"
-body = "Download every survey, version, question and response in this workspace — a documented JSON file plus a CSV per survey. It's the same data Earful holds, in a format you can import into your own instance."
+body = "Download every survey, version, question and response in this workspace: a documented JSON file plus a CSV per survey. It's all the data Earful holds, in a format you can import into your own instance."
 building = "Building your export… reload this page in a moment."
-selfhost_html = "Earful is AGPL-3.0 and self-hostable: <code>docker compose --profile app up</code> gives you the same application this export came from."
+selfhost_html = "Earful is open source under the AGPL 3.0, and you can host it yourself: <code>docker compose --profile app up</code> gives you the same application this export came from."
 # Size and Built are left out when they are not known. The spaces before
 # the comma and the full stop are as the page has always drawn them.
 ready = "Ready {{if .Size}} ({{.Size}}) {{end}}{{if .Built}}, built {{.Built}} {{end}}. The link expires {{.Expires}}."
@@ -268,13 +268,13 @@ surveys = "Surveys"
 # ── A survey's languages ────────────────────────────────────────────────
 
 [languages]
-title = "{{.Survey}} — languages — Earful"
+title = "{{.Survey}} · Languages · Earful"
 heading = "Languages"
-intro = "Respondents can answer in their own language. Translations are drafted for you, but nothing is published until you have read it — a machine translation going out in your name is your reputation, not the model's."
+intro = "Respondents can answer in their own language. Translations are drafted for you, but nothing is published until you have read it. A translation goes out in your name, so it carries your reputation, not the model's."
 
 [languages.add]
 heading = "Add a language"
-empty = "Add questions to the survey first — there is nothing to translate yet."
+empty = "Add questions to the survey first. There's nothing to translate yet."
 
 [languages.add.code]
 label_html = 'Language code <small class="muted">(like nl, de, pt-BR)</small>'
@@ -297,7 +297,7 @@ label = "Draft the missing translations with AI"
 label = "Remove {{.Language}}"
 
 [languages.question]
-stale = "The question changed after this was translated — read it again."
+stale = "The question changed after this was translated. Read it again."
 unreviewed = "Drafted by AI, not yet reviewed."
 
 [languages.options]
@@ -318,7 +318,7 @@ stats = "Stats"
 # ── Stats ───────────────────────────────────────────────────────────────
 
 [stats]
-title = "{{.Survey}} — stats — Earful"
+title = "{{.Survey}} · Stats · Earful"
 heading = "Stats"
 
 [stats.opened]
@@ -342,7 +342,7 @@ day = "Day"
 
 [stats.questions]
 heading = "Question by question"
-intro = "The last question each submitted response answered — useful for spotting a question people give up on. Respondents who left without submitting are not counted, because survey pages report nothing until the answers are sent."
+intro = "The last question each submitted response answered, useful for spotting a question people give up on. People who leave without submitting aren't counted, because a survey page reports nothing until the answers are sent."
 empty = "No published questions yet."
 question = "Question"
 stopped = "Stopped here"
@@ -364,6 +364,10 @@ all = "All time"
 from = "From"
 to = "To"
 
+[stats.range.span]
+description = "The dates a chart covers. From and To are dates already written out."
+other = "{{.From}} to {{.To}}"
+
 [stats.range.apply]
 label = "Apply"
 
@@ -378,7 +382,7 @@ one = "1 response"
 other = "{{.Count}} responses"
 
 [results]
-title = "{{.Survey}} — results — Earful"
+title = "{{.Survey}} · Results · Earful"
 heading = "Results"
 
 # Follows the count of responses: "5 responses across 2 versions".
@@ -395,8 +399,8 @@ body = "Share the survey link and answers will appear here. Results are grouped 
 
 [results.insight]
 heading = "Insight Summary"
-label_html = "AI-generated by <strong>{{.Model}}</strong> on {{.Date}}, reading {{.Responses}}. It is a reading of the answers, not the answers themselves — check anything you plan to act on."
-again_hint = "Run it again for an up-to-date summary."
+label_html = "Written by <strong>{{.Model}}</strong> on {{.Date}}, reading {{.Responses}}. It's a reading of the answers, not the answers themselves. Check anything you plan to act on."
+again_hint = "Run it again for a current summary."
 intro = "Read every answer at once: themes, patterns and representative quotes across all responses, including those given to earlier versions of the questions."
 
 [results.insight.again]
@@ -430,8 +434,8 @@ one = "1 answer"
 other = "{{.Count}} answers"
 
 [results.question]
-reworded = "This question was reworded — see how it was asked"
-together = "Answers from every version are counted together: they are the same question (ADR-0001)."
+reworded = "This question was reworded. See how it was asked"
+together = "Answers from every version are counted together: they are the same question."
 empty = "No answers to this question yet."
 
 [results.answer]
@@ -442,7 +446,7 @@ translated_by = "Translated by {{.Model}}; the original is above."
 # ── Creating a survey, and what every survey has ───────────────────────
 
 [survey.new]
-title = "New survey — Earful"
+title = "New survey · Earful"
 heading = "New survey"
 
 [survey.new.submit]
@@ -456,7 +460,7 @@ label = "Title"
 
 [survey.audience]
 legend = "Who can answer"
-permanent = "This choice is permanent. It's a promise to your respondents, so it can never be changed — not by you, not by us."
+permanent = "This choice is permanent. It's a promise to your respondents, so no one can ever change it, not you and not us."
 
 [survey.audience.anonymous]
 name = "Anonymous survey"
@@ -504,7 +508,7 @@ label = "Delete"
 
 [editor.generate]
 heading = "Draft questions with AI"
-intro = "Describe what you want to learn and I'll draft questions into this survey. They arrive as ordinary draft questions — edit, reorder or delete them like any others."
+intro = "Describe what you want to learn and I'll draft questions into this survey. They arrive as ordinary draft questions you can edit, reorder or delete."
 
 [editor.generate.prompt]
 label = "What do you want to learn?"
@@ -529,7 +533,7 @@ label = "Add question"
 [editor.participants]
 heading = "Participants"
 empty = "Nobody invited yet. Paste addresses or upload a CSV; duplicates are removed automatically."
-emails_html = 'Email addresses <small class="muted">(one per line, or comma-separated)</small>'
+emails_html = 'Email addresses <small class="muted">(one per line, or separated by commas)</small>'
 csv = "Or a CSV file"
 drip = "Invites drip out under an hourly cap to protect deliverability; anything over the cap goes out on later runs."
 
@@ -542,7 +546,7 @@ other = "Send {{.Count}} invites"
 
 [editor.publish]
 heading = "Publish"
-live = "Version {{.Version}} is live. Your edits stay in the draft until you publish again — respondents keep seeing the published version meanwhile."
+live = "Version {{.Version}} is live. Your edits stay in the draft until you publish again, and respondents keep seeing the published version meanwhile."
 never = "This survey has never been published, so it accepts no responses yet. Publishing freezes the current questions into version 1 and opens the survey."
 empty = "Add at least one question to publish."
 
@@ -576,8 +580,8 @@ label = "View audit log"
 [editor.settings]
 heading = "Settings"
 close_date_html = 'Close date <small class="muted">(optional; leave empty for no automatic close)</small>'
-anonymous = "This is an anonymous survey and always will be — the choice is permanent."
-invited = "This is an invited survey and always will be — the choice is permanent."
+anonymous = "This survey is anonymous and always will be. The choice is permanent."
+invited = "This survey is by invitation and always will be. The choice is permanent."
 
 [editor.settings.save]
 label = "Save settings"
@@ -590,7 +594,7 @@ hint = "Recoverable by support for 30 days, then permanently erased."
 # ── The audit log ──────────────────────────────────────────────────────
 
 [audit]
-title = "Audit log — {{.Survey}}"
+title = "Audit log · {{.Survey}} · Earful"
 heading = "Audit log"
 intro = "Every draft save and every publish, newest first."
 empty = "Nothing has been saved yet."
@@ -599,19 +603,19 @@ empty = "Nothing has been saved yet."
 # ── Support: invite codes and passwords ────────────────────────────────
 
 [admin.beta]
-title = "Private beta admin — Earful"
+title = "Private beta admin · Earful"
 heading = "Private beta admin"
 
 [admin.beta.minted]
-heading = "New invite codes — copy them now"
+heading = "New invite codes. Copy them now"
 note = "This is the only time they are shown; the database stores hashes."
 
 [admin.beta.reset]
 shown = "Temporary password for {{.Email}}"
-note = "Shown once. Every session for that account has been signed out; pass the password on out-of-band and suggest they change it."
+note = "Shown once. Every session for that account has been signed out. Pass the password on privately and suggest they change it."
 heading = "Reset a user's password"
 email = "Account email"
-hint = '''The beta's answer to "I forgot my password" — there is no email to send a reset link to yet.'''
+hint = '''The beta's answer to "I forgot my password". There's no email to send a reset link to yet.'''
 
 [admin.beta.reset.submit]
 label = "Reset password"
@@ -625,11 +629,11 @@ label = "Mint codes"
 
 [admin.beta.mint.name]
 label = "Label"
-placeholder = "e.g. first-wave friends"
+placeholder = "For example, first wave friends"
 
 [admin.beta.codes]
 heading = "All codes"
-empty_html = "No codes yet — mint some above, or via <code>earful beta-codes add</code>."
+empty_html = "No codes yet. Create some above, or with <code>earful beta-codes add</code>."
 created = "Created"
 status = "Status"
 
@@ -640,10 +644,10 @@ label = "Revoke"
 # ── Support: erasing a person's data ───────────────────────────────────
 
 [admin.erasure]
-title = "Erasure — Earful"
+title = "Erasure · Earful"
 heading = "Erase a person's data"
-intro = "For a GDPR erasure request. This skips the 30-day window: what it removes is gone immediately and cannot be restored."
-done = "Erasure complete — {{.Rows}} rows removed."
+intro = "For a GDPR erasure request. It skips the grace period of 30 days: what it removes is gone immediately and can't be restored."
+done = "Erasure complete. {{.Rows}} rows removed."
 record = "Record the request and this completion in your own log; Earful deliberately keeps no record naming the person erased."
 
 [admin.erasure.find]
@@ -655,11 +659,11 @@ label = "Look up"
 [admin.erasure.found]
 heading = "What would be erased"
 nothing_html = "Nothing found for <strong>{{.Email}}</strong>."
-account = "Their account, and every session and sign-in token it has"
+account = "Their account, with all of its sessions and login links"
 workspaces = "{{.Workspaces}} workspace(s), with {{.Surveys}} survey(s) and every response to them"
 invitations = "Their invitations to {{.Surveys}} survey(s) run by others, and the {{.Responses}} response(s) they submitted there"
 suppressed = "Their entry on the email suppression list"
-anonymous = "Anonymous responses are not listed and cannot be: they carry no email, no IP and no device details, so there is no way to tell which are theirs — and nothing personal in them to erase. That is the anonymity promise working as intended, and it is worth saying so in your reply to the request."
+anonymous = "Anonymous responses are not listed and cannot be: they carry no email, no IP and no device details, so there is no way to tell which are theirs, and nothing personal in them to erase. That is the anonymity promise working as intended, and it is worth saying so in your reply to the request."
 
 [admin.erasure.submit]
 label = "Erase this data now"
@@ -668,7 +672,7 @@ label = "Erase this data now"
 # ── Support: metrics ───────────────────────────────────────────────────
 
 [admin.metrics]
-title = "Metrics — Earful"
+title = "Metrics · Earful"
 heading = "Metrics"
 intro_html = "From our own database. Nothing is added to respondent pages to produce these, and completion rate comes from unlinked survey counters, never from anything joined to a response. Definitions: <code>docs/metrics.md</code>."
 totals = "Totals"
@@ -703,43 +707,43 @@ title = "Too many attempts"
 # ── Signing in: notices and refusals ───────────────────────────────────
 
 [auth.error]
-email = "That doesn't look like an email address — check it and try again."
+email = "That doesn't look like an email address. Check it and try again."
 
 [login.notice]
 signed_out = "You've been signed out."
-google_failed = "Google sign-in didn't complete. Try again, or use your email instead."
+google_failed = "Signing in with Google didn't finish. Try again, or use your email instead."
 
 [login.error]
 credentials = "Invalid email or password."
 failed = "We couldn't sign you in. Please try again."
-paused = "Sign-in is temporarily paused for this address. Wait a little while and try again."
-incomplete = "We couldn't complete your sign-in. Please try again."
+paused = "Signing in is paused for this address for a while. Try again a little later."
+incomplete = "We couldn't finish signing you in. Please try again."
 
 [login.error.blocked]
-title = "Sign-in blocked"
-state = "The sign-in attempt could not be verified (state mismatch). Start again from the login page."
-nonce = "The sign-in attempt could not be verified. Start again from the login page."
+title = "Sign in blocked"
+state = "This attempt to sign in couldn't be verified (state mismatch). Start again from the login page."
+nonce = "This attempt to sign in couldn't be verified. Start again from the login page."
 
 [signup.error]
-code = "That invite code isn't valid — it may already be used. Check it, or ask for a fresh one."
+code = "That invite code isn't valid. It may already be used. Check it, or ask for a new one."
 password = "Passwords need at least 8 characters."
-exists = "An account with that email already exists — sign in instead."
+exists = "An account with that email already exists. Sign in instead."
 failed = "We couldn't create your account. Please try again."
-paused = "Sign-up is temporarily paused for this address. Wait a little while and try again."
+paused = "Signing up is paused for this address for a while. Try again a little later."
 
 [magic.limited]
-title = "Too many sign-in requests"
+title = "Too many requests to sign in"
 body = "We've sent several links recently. Wait a little while, check your inbox for an earlier link, then try again."
 
 [magic.error]
-send = "We couldn't send your sign-in link. Please try again."
-login = "We couldn't complete your sign-in. Please request a fresh link."
+send = "We couldn't send your link. Please try again."
+login = "We couldn't finish signing you in. Please request a new link."
 
 [magic.invalid.reason]
-incomplete = "The sign-in link is incomplete. Use the full link from your email."
-expired = "This sign-in link has expired (links last 15 minutes). Request a fresh one."
-used = "This sign-in link was already used. Request a fresh one to sign in again."
-invalid = "This sign-in link isn't valid. Request a fresh one."
+incomplete = "This link is incomplete. Use the full link from your email."
+expired = "This link has expired. Links last 15 minutes, so request a new one."
+used = "This link was already used. Request a new one to sign in again."
+invalid = "This link isn't valid. Request a new one."
 
 
 # ── Account: notices and refusals ──────────────────────────────────────
@@ -777,7 +781,7 @@ revoked = "revoked"
 # ── The survey editor: notices ─────────────────────────────────────────
 
 [editor.notice]
-unchanged = "Nothing to publish — the draft matches the version that's already live."
+unchanged = "Nothing to publish. The draft matches the live version."
 published = "Published version {{.Version}}. Respondents now see this version."
 
 
@@ -785,11 +789,11 @@ published = "Published version {{.Version}}. Respondents now see this version."
 
 [respond.notice]
 quick = "That was quick! Take a moment to review your answers, then submit again."
-stale = "This form had been open a while. Your answers are still here — review and submit again."
+stale = "This form was open a while. Your answers are still here, so review them and submit again."
 
 [respond.refused.check]
 title = "Couldn't verify your submission"
-body = "The anti-abuse check didn't pass. Reload the page and try again."
+body = "The abuse check didn't pass. Reload the page and try again."
 
 [respond.refused.limited]
 title = "Too many submissions"
@@ -800,7 +804,7 @@ title = "This survey is closed"
 body = "It's no longer accepting responses. If you think it should still be open, contact whoever sent you the link."
 
 [respond.refused.invited]
-title = "This survey is invite-only"
+title = "This survey is by invitation only"
 body = "Answers are collected through personal invitation links. If you were invited, use the link from your email; otherwise ask whoever runs the survey for an invitation."
 
 [respond.refused.missing]
@@ -834,7 +838,7 @@ one = "{{.Count}} are waiting on the hourly sending cap and will go out on the n
 other = "{{.Count}} are waiting on the hourly sending cap and will go out on the next run."
 
 [editor.error]
-unpublished = "Publish the survey (and keep it open) before sending invites — the links would lead to a dead page."
+unpublished = "Publish the survey and keep it open before sending invites. Otherwise the links lead nowhere."
 
 
 # ── Drafting questions with AI, and AI refused ─────────────────────────
@@ -855,11 +859,11 @@ one = "None of the {{.Count}} drafted questions were usable. Try describing your
 other = "None of the {{.Count}} drafted questions were usable. Try describing your goal differently."
 
 [generate.notice.added]
-one = "Added 1 question to your draft — edit it like any other."
-other = "Added {{.Count}} questions to your draft — edit them like any others."
+one = "Added 1 question to your draft. Edit it like any other."
+other = "Added {{.Count}} questions to your draft. Edit them like any others."
 
 [ai.refused]
-quota = "This workspace has used its AI allowance for today. It resets tomorrow — everything else keeps working."
+quota = "This workspace has used today's AI allowance. It resets tomorrow, and everything else keeps working."
 paused = "AI features are paused for today while we keep costs in check. They'll be back tomorrow."
 absent = "AI isn't configured on this instance, so questions have to be written by hand."
 silent = "The AI service didn't respond. Try again in a moment."
@@ -893,7 +897,7 @@ other = "{{.Count}} responses"
 
 [results.notice]
 deleted = "Response deleted. Support can restore it for the next 30 days, after which it is erased."
-translated = "Answers translated. The originals are untouched — both are shown, and the translation is marked as machine-made."
+translated = "Answers translated. The originals are untouched: both are shown, and the translation is marked as made by a machine."
 
 [results.skipped]
 one = "1 respondent skipped this"
@@ -919,13 +923,13 @@ one = "median of 1 timed response"
 other = "median of {{.Count}} timed responses"
 
 [stats.earlier]
-included = "Includes {{.Opened}} opens and {{.Submissions}} submissions counted before per-day tracking began; those have no date and do not appear on the chart."
-excluded = "{{.Opened}} opens and {{.Submissions}} submissions were counted before per-day tracking began; they have no date and are included in the all-time view only."
+included = "Includes {{.Opened}} opens and {{.Submissions}} submissions counted before daily tracking began. Those have no date and don't appear on the chart."
+excluded = "{{.Opened}} opens and {{.Submissions}} submissions were counted before daily tracking began. They have no date and appear only in the all time view."
 
 # English has always used the one wording for every number.
 [stats.earlier.stops]
-one = "{{.Count}} earlier submissions were counted by question position before per-day tracking began and are not broken down here."
-other = "{{.Count}} earlier submissions were counted by question position before per-day tracking began and are not broken down here."
+one = "{{.Count}} earlier submissions were counted by question position before daily tracking began and are not broken down here."
+other = "{{.Count}} earlier submissions were counted by question position before daily tracking began and are not broken down here."
 
 [stats.hidden]
 note = "Groups with fewer than {{.Limit}} responses are hidden, so a small sample can't point at anyone."
@@ -954,7 +958,7 @@ completion = "Completion rate"
 
 [admin.metrics.cost]
 day = "{{.Cost}} ({{.Tokens}} tokens)"
-budget = "Daily breaker: {{.Budget}}. Estimates, not invoices — see docs/metrics.md."
+budget = "Daily breaker: {{.Budget}}. Estimates, not invoices. See docs/metrics.md."
 
 
 # ── The workspace export: refusals ─────────────────────────────────────
@@ -998,7 +1002,7 @@ original = "Original"
 stale = "This page has been open a while. Reload it to use voice again."
 reload = "Reload the page to use voice."
 silence = "I didn't hear anything. Try again, or type your answer."
-unavailable = "Voice isn't available right now — please type your answer."
+unavailable = "Voice isn't available right now. Please type your answer."
 
 [voice.status]
 transcribing = "Transcribing…"
@@ -1057,7 +1061,7 @@ hint = "An open answer. Respondents can speak it instead of typing."
 
 [question.type.short_text]
 name = "Short text"
-hint = "A word or a line — a name, a role, a city."
+hint = "A word or a line: a name, a role, a city."
 
 [question.type.single_choice]
 name = "Single choice"
@@ -1069,11 +1073,11 @@ hint = "Pick any number of options."
 
 [question.type.rating_scale]
 name = "Rating scale"
-hint = "A numeric scale, e.g. 1–5."
+hint = "A numeric scale, like 1 to 5."
 
 [question.type.nps]
 name = "Net Promoter Score"
-hint = "The standard 0–10 recommendation question."
+hint = "The standard 0 to 10 recommendation question."
 
 [question.type.yes_no]
 name = "Yes / No"
@@ -1253,7 +1257,7 @@ minutes = "{{.Minutes}}m {{.Seconds}}s"
 # ── Email ──────────────────────────────────────────────────────────────
 
 [email.magic]
-subject = "Your Earful sign-in link"
+subject = "Your link to sign in to Earful"
 body = '''
 Click to sign in to Earful:
 
@@ -1323,17 +1327,17 @@ text = "How likely are you to recommend Earful to a friend or colleague?"
 # ── Answering a survey ─────────────────────────────────────────────────
 
 [respond.preview]
-banner_html = "<strong>Preview</strong> — this is exactly what respondents see. Nothing you enter here is recorded."
+banner_html = "<strong>Preview.</strong> This is exactly what respondents see. Nothing you enter here is recorded."
 voice = "Respondents can answer this by speaking; their words are transcribed and the audio is never stored."
 
 [respond.preview.submitted]
-title = "Preview — {{.Survey}}"
+title = "Preview · {{.Survey}}"
 heading = "Nothing was submitted"
 body = "This was a preview, so no response was recorded."
 back = "Back to the survey"
 
 [respond.before]
-note = "It looks like you've answered this survey before. You can answer again — each submission is recorded separately."
+note = "It looks like you've answered this survey before. You can answer again. Each submission is recorded separately."
 
 [respond.errors.heading]
 one = "Please check one answer"
@@ -1359,25 +1363,25 @@ required = "(required)"
 optional = "(optional)"
 
 [respond.nps]
-low = "0 — not at all likely"
-high = "10 — extremely likely"
+low = "0, not at all likely"
+high = "10, extremely likely"
 
 [respond.disclosure]
 controller_html = "This survey is run by <strong>{{.Workspace}}</strong>, who decides what happens to the answers."
-anonymous = "It's anonymous: your answers are stored with no email address, no IP address and no device details — nothing that identifies you."
+anonymous = "It's anonymous: your answers are stored with no email address, no IP address and no device details. Nothing identifies you."
 identified_html = "You're answering as <strong>{{.Email}}</strong>, and {{.Workspace}} will see that these answers are yours. Your personal link works for one submission."
 invited = "Your answers are linked to your invitation, so {{.Workspace}} can see who answered what."
-voice = "You can answer by speaking. What you say is turned into text you can read and edit before it becomes your answer — your voice itself is never stored."
+voice = "You can answer by speaking. What you say is turned into text you can read and edit before it becomes your answer. Your voice itself is never stored."
 draft = "Answers you haven't submitted, and earlier versions of them, are kept in this browser so a refresh or a mistake doesn't lose them. They're never sent until you submit, and are cleared when you do, and after a day."
 trust = "How Earful handles your data"
 
 [respond.already]
 title = "Already answered"
 heading = "You've already answered"
-body = "Your personal link works for one submission, and yours has been recorded. There's nothing more to do — thank you!"
+body = "Your personal link works for one submission, and yours has been recorded. There's nothing more to do. Thank you!"
 
 [respond.thanks]
-title = "Thank you — {{.Survey}}"
+title = "Thank you · {{.Survey}}"
 heading = "Thank you"
 body = "Your answers have been recorded."
 anonymous = "This was an anonymous survey: your answers were stored without anything that identifies you."
@@ -1400,11 +1404,11 @@ then = "{{.Key}} then"
 
 [js.generate]
 working = "Drafting…"
-lost = "Lost the connection — submitting the ordinary way…"
+lost = "Connection lost. Submitting the ordinary way…"
 
 [js.insights]
 working = "Reading the answers…"
-lost = "Lost the connection — running it the ordinary way…"
+lost = "Connection lost. Running it the ordinary way…"
 
 [js.stats.series]
 label = "Series"
@@ -1449,12 +1453,12 @@ reset = "Reset"
 cancel = "Cancel"
 recording = "Recording in progress. Your transcription will be shown here."
 cancelled = "Transcription cancelled."
-cleared = "Cleared — type or speak your answer again."
+cleared = "Cleared. Type or speak your answer again."
 starting = "Starting…"
 finishing = "Finishing…"
-longest = "That's the longest answer I can take — transcribing."
-lost = "Connection lost — please type your answer."
-unrecognised = "Couldn't recognise that — please type your answer."
+longest = "That's the longest answer I can take. Transcribing now."
+lost = "Connection lost. Please type your answer."
+unrecognised = "Couldn't recognise that. Please type your answer."
 
 [js.voice.hint]
 hold = "Hold {{.Key}}"
@@ -1470,26 +1474,26 @@ unnamed = "Listening… speak now."
 named = "Listening on {{.Device}}… speak now."
 
 [js.voice.quiet]
-unnamed = "Nothing is coming through — check which microphone your browser is using, or type your answer."
-named = "Nothing is coming through {{.Device}} — check which microphone your browser is using, or type your answer."
+unnamed = "Nothing is coming through. Check which microphone your browser is using, or type your answer."
+named = "Nothing is coming through {{.Device}}. Check which microphone your browser is using, or type your answer."
 
 [js.voice.transcribed]
-device = "Transcribed on your device — edit it if it isn't quite right."
-server = "Transcribed — edit it if it isn't quite right."
+device = "Transcribed on your device. Edit it if it isn't quite right."
+server = "Transcribed. Edit it if it isn't quite right."
 
 [js.voice.microphone]
 label = "Microphone"
 grant = "Grant microphone to enable dictation"
 input = "Input: {{.Device}}"
 chosen = "Microphone: {{.Device}}."
-switched = "Switched to {{.Device}} — speak again to use it."
+switched = "Switched to {{.Device}}. Speak again to use it."
 waiting = "Waiting for microphone access…"
 ready = "Microphone ready."
-unavailable = "Microphone unavailable — please type your answer."
+unavailable = "Microphone unavailable. Please type your answer."
 
 [js.voice.consent]
 title = "Dictate your answer"
-body = "Your browser will ask for microphone access. What you say is turned into text you can read and edit before it becomes your answer. Your voice is never stored — no recording is kept, here or anywhere else. Typing stays available at any time."
+body = "Your browser will ask for microphone access. What you say is turned into text you can read and edit before it becomes your answer. Your voice is never stored. No recording is kept, here or anywhere else. Typing stays available at any time."
 decline = "Not now"
 accept = "Use the microphone"
 
