@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-dfce0e5ce4c9014e8fba069ff88a66c78d8872c6d57cab9943726610dc87ae01
+hash: sha256-c227f161ed0716d0a5f0a7c88d4f7704b586e19c8b2d0e695315704c7ba9fb3e
 last_update: 2026-09-30
-source_hash: sha256-573b85ff88a9f72e05b4a51aea174a23464c513a9ca22e5322ef1141a0de0113
+source_hash: sha256-9b2ebaaaf2fb020982c101274fff8358e107b659c1712d61b2dc18b7c04162dd
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -38,7 +38,7 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 
 ## Dónde están los datos y quién los toca
 
-{{if .Region}}Alojado en {{.Region}}. Todas las empresas que intervienen:{{else}}Todas las empresas que intervienen en el funcionamiento de esta instalación:{{end}}
+{{if .NoProcessors}}No interviene ninguna empresa externa: esta instalación funciona por completo en la infraestructura de su propio operador.{{else}}{{if .Region}}Alojado en {{.Region}}. Todas las empresas que intervienen:{{else}}Todas las empresas que intervienen en el funcionamiento de esta instalación:{{end}}{{end}}
 
 {{- if .GoogleCloud}}
 - **Google Cloud** aloja la aplicación, la base de datos, las copias de seguridad y los registros, así que puede ver todo lo que guarda el servicio. Región `europe-west4`.
@@ -55,11 +55,8 @@ Si elige un idioma para la interfaz, su elección se guarda en una cookie de su 
 {{- if .GoogleLogin}}
 - **Google Identity** inicia la sesión de quienes eligen Google. Ve su correo electrónico y el identificador de su cuenta de Google.
 {{- end}}
-{{- if .NoProcessors}}
-- No interviene ninguna empresa externa: esta instalación funciona por completo en la infraestructura de su propio operador.
-{{- end}}
 
-Alojar Earful por su cuenta los elimina a todos: funciona con su propio Postgres, su propio servidor SMTP y, si quiere funciones de IA, su propio modelo.
+{{if not .NoProcessors}}Alojar Earful por su cuenta los elimina a todos: funciona con su propio Postgres, su propio servidor SMTP y, si quiere funciones de IA, su propio modelo.{{end}}
 
 ## Lo que no podemos prometer
 
@@ -79,4 +76,4 @@ Un botón exporta todo lo que contiene un espacio de trabajo (cada encuesta, ver
 
 ***
 
-{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})
+Geolocalización de IP: {{.GeoSource}} · [db-ip.com]({{.GeoAttributionURL}})

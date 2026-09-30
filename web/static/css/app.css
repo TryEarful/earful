@@ -716,15 +716,16 @@ button {
     box-shadow var(--time-quick) var(--ease);
 }
 
+/* A button answers the pointer with depth, not movement: a control that
+   shifts under the cursor is harder to hit, for people and for the
+   browser suite alike. */
 .button:hover,
 button:hover {
-  transform: translateY(-1px);
   box-shadow: var(--shadow-1);
 }
 
 .button:active,
 button:active {
-  transform: translateY(0);
   box-shadow: none;
 }
 
@@ -1610,7 +1611,7 @@ button:disabled,
   padding: var(--space-2) var(--space-4) var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  background: var(--surface-2);
+  background: var(--surface);
 }
 
 /* Put away, the card is its name and the control that brings it back. */
@@ -2005,7 +2006,20 @@ input.is-live {
 }
 
 .results-actions {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.results-actions > p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.results-actions .translate-form {
+  margin-top: 0;
 }
 
 .result h2 {
@@ -2088,14 +2102,10 @@ input.is-live {
 }
 
 .stat-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 1.25rem 1.5rem;
   margin: 0 0 0.75rem;
-}
-
-.stat-grid > div {
-  min-width: 8rem;
 }
 
 .stat-grid dt {
@@ -2168,8 +2178,11 @@ input.is-live {
 }
 
 .translate-form .field {
-  max-width: 10rem;
   margin: 0;
+}
+
+.translate-form .field input {
+  width: 8rem;
 }
 
 /* A translation is visibly secondary to the words a respondent chose. */
@@ -2346,17 +2359,16 @@ input.is-live {
 }
 
 .stat-grid .stat-sub {
-  font-size: 0.8rem;
+  margin-top: var(--space-1);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.4;
   color: var(--muted);
 }
 
-.trend-controls select {
-  font: inherit;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  background: var(--surface);
-  color: inherit;
+.trend .title-row .trend-controls {
+  margin-left: auto;
 }
 
 .trend-svg {
@@ -2417,6 +2429,7 @@ table.stops .required {
 
 .sort-button {
   all: unset;
+  gap: 0.4em;
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
@@ -2431,17 +2444,17 @@ table.stops .required {
 }
 
 .sort-button::after {
-  content: " ↕";
+  content: "↕";
   color: var(--muted);
 }
 
 th[aria-sort="ascending"] .sort-button::after {
-  content: " ↑";
+  content: "↑";
   color: inherit;
 }
 
 th[aria-sort="descending"] .sort-button::after {
-  content: " ↓";
+  content: "↓";
   color: inherit;
 }
 
@@ -2761,9 +2774,11 @@ body > main {
   margin-top: auto;
 }
 
-body > main.home:first-child,
+/* The home page sits in the optical middle of the window: the space
+   left over is shared above and below it. */
 body > .auth-brand + main.home {
-  padding-top: clamp(var(--space-6), 12vh, var(--space-8));
+  margin-block: auto;
+  padding-top: var(--space-6);
 }
 
 /* A short page that stands alone sits in the middle of the window. */
@@ -2968,7 +2983,6 @@ main.standalone h1 {
 }
 
 .question-actions button {
-  min-height: 2.25rem;
   padding: 0.375rem 1rem;
   font-size: 0.875rem;
 }
@@ -3084,4 +3098,163 @@ fieldset.field legend {
 .question summary::after {
   order: 3;
   margin-left: 0;
+}
+
+/* A credit after the last card is small print, not another paragraph. */
+.document-body > .card ~ p:last-child {
+  margin-top: var(--space-4);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.document-actions {
+  column-gap: var(--space-3);
+}
+
+.document-actions .secondary {
+  min-height: 2.75rem;
+  padding: 0.375rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* --- round 4 --------------------------------------------------------------- */
+
+.responses th:has(.sort-button) {
+  padding-block: 0;
+}
+
+.choice small {
+  display: block;
+  margin: var(--space-1) 0 0;
+}
+
+/* The editor's title takes the row; its one action sits at the end, or
+   under it on a phone. */
+.title-row h1 {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.survey-meta .chip {
+  margin-right: var(--space-2);
+  vertical-align: 0.1em;
+}
+
+/* Question rows on a grid, so number, text, type and chevron keep their
+   places whatever the text's length. */
+.question summary {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto auto;
+  column-gap: var(--space-3);
+  align-items: baseline;
+}
+
+.question summary::before {
+  grid-column: 1;
+}
+
+.question summary .qtext {
+  grid-column: 2;
+}
+
+.question summary .chip {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.question summary .qtype {
+  grid-column: 3;
+  margin-left: 0;
+  white-space: nowrap;
+}
+
+.question summary::after {
+  grid-column: 4;
+  align-self: center;
+}
+
+@media (max-width: 30rem) {
+  .question summary {
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  }
+
+  .question summary .qtype {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .question summary::after {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  /* Two rows of header on a phone scroll away rather than stay in view. */
+  .site-header {
+    position: static;
+  }
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-4);
+}
+
+.facts dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+main.standalone h1 {
+  max-width: 13em;
+  margin-inline: auto;
+}
+
+/* The question is the heaviest line on a respondent's page; the survey's
+   title above it steps down. */
+.respond main > h1 {
+  font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+}
+
+.q-text {
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+/* On a wide screen with a keyboard each navigation button carries its
+   keys on a line of their own, so the three are the same height. */
+@media (min-width: 34.01rem) and (hover: hover) and (pointer: fine) {
+  .is-paged .respond-nav button > .key-combo {
+    flex-basis: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 34rem) {
+  .voice-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .voice-actions .key-combo {
+    display: none !important;
+  }
+}
+
+.voice-grant,
+.voice-grant:hover {
+  flex: none;
+  min-height: 2.75rem;
+  font-size: 0.875rem;
+}
+
+.disclosure.is-collapsed p:not(:last-child) {
+  display: none;
 }

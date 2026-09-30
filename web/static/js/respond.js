@@ -275,6 +275,8 @@
     return node.tagName === "TEXTAREA" || (node.tagName === "INPUT" && node.type === "text");
   }
 
+  var disclosure = document.querySelector(".js-disclosure");
+
   function show(index, arriving) {
     if (index < 0 || index > questions.length - 1) return;
     current = index;
@@ -292,6 +294,9 @@
     nextButton.hidden = index === questions.length - 1;
     actions.hidden = index !== questions.length - 1;
 
+    // What the survey is and what happens to the answers is read once;
+    // past the first question only the link to the details stays.
+    if (disclosure) disclosure.classList.toggle("is-collapsed", index > 0);
     if (draft) draft.rememberPosition(index);
     // On a touch screen, focusing a field opens the keyboard over the
     // page before the respondent has read it; there the first tap is

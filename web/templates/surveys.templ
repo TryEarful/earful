@@ -84,10 +84,10 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }><a href="/surveys">{ t(ctx, "breadcrumb.surveys") }</a> / { data.Survey.Title }</nav>
 			<div class="title-row">
 				<h1>{ data.Survey.Title }</h1>
-				@StatusChip(data.Survey.Status)
 				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>{ t(ctx, "editor.preview.label") }</a>
 			</div>
-			<p class="muted">
+			<p class="muted survey-meta">
+				@StatusChip(data.Survey.Status)
 				if data.Survey.IsAnonymous {
 					{ t(ctx, "survey.audience.anonymous.name") }
 				} else {
@@ -95,8 +95,12 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 				}
 				{ t(ctx, "editor.created", uitext.Args{"Date": data.Survey.CreatedAt}) }
 				if data.Survey.Published() {
-					{ t(ctx, "editor.live", uitext.Args{"Version": data.Survey.LatestVersion}) }
-					· { responseCountLabel(ctx, data.ResponseCount) }
+					{ t(ctx, "editor.live", uitext.Args{"Version": data.Survey.LatestVersion}) } ·
+					if data.ResponseCount > 0 {
+						<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>{ responseCountLabel(ctx, data.ResponseCount) }</a>
+					} else {
+						{ responseCountLabel(ctx, data.ResponseCount) }
+					}
 				}
 			</p>
 			@surveyTabs(data.Survey, "questions")
@@ -107,26 +111,24 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 				<p class="notice error-text">{ data.Error }</p>
 			}
 			@lifecyclePanel(csrf, data.Survey)
-			<section class="card js-panel">
-				<h2>{ t(ctx, "editor.questions.heading") }</h2>
-				if len(data.Questions) == 0 {
-					<p class="muted">{ t(ctx, "editor.questions.empty") }</p>
-				} else {
+			if len(data.Questions) > 0 {
+				<section class="card js-panel">
+					<h2>{ t(ctx, "editor.questions.heading") }</h2>
 					<ol class="questions js-questions">
 						for i, q := range data.Questions {
 							@questionRow(csrf, data.Survey.ID, q, i, len(data.Questions))
 						}
 					</ol>
-				}
-			</section>
+				</section>
+			}
 			if data.AIEnabled {
 				@generatePanel(csrf, data.Survey.ID)
 			}
-			@addQuestionForm(csrf, data.Survey.ID)
+			@addQuestionForm(csrf, data.Survey.ID, len(data.Questions) == 0)
 			if !data.Survey.IsAnonymous {
 				@participantsPanel(csrf, data)
 			}
-			@publishPanel(csrf, data.Survey, len(data.Questions))
+			@publishPanel(csrf, data.Survey, len(data.Questions), data.DraftChanged)
 			@versionsPanel(data.Survey, data.Versions)
 			@settingsPanel(csrf, data.Survey)
 		</main>
@@ -241,9 +243,14 @@ templ generatePanel(csrf string, surveyID string) {
 	</section>
 }
 
-templ addQuestionForm(csrf string, surveyID string) {
+// addQuestionForm is the page's main action while the survey has no
+// questions, and one action among others once it has.
+templ addQuestionForm(csrf string, surveyID string, first bool) {
 	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.add.heading") }</h2>
+		if first {
+			<p class="muted">{ t(ctx, "editor.questions.empty") }</p>
+		}
 		<form method="post" action={ templ.SafeURL("/surveys/" + surveyID + "/questions") }>
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
@@ -282,7 +289,7 @@ templ addQuestionForm(csrf string, surveyID string) {
 				<input type="checkbox" name="required"/>
 				<span>{ t(ctx, "editor.question.required") }</span>
 			</label>
-			<button type="submit" class="secondary">{ t(ctx, "editor.add.submit.label") }</button>
+			<button type="submit" class={ templ.KV("secondary", !first) }>{ t(ctx, "editor.add.submit.label") }</button>
 		</form>
 	</section>
 }
@@ -328,23 +335,26 @@ templ participantsPanel(csrf string, data SurveyEditorData) {
 	</section>
 }
 
-templ publishPanel(csrf string, survey SurveyView, questionCount int) {
+templ publishPanel(csrf string, survey SurveyView, questionCount int, changed bool) {
 	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.publish.heading") }</h2>
-		if survey.Published() {
-			<p>{ t(ctx, "editor.publish.live", uitext.Args{"Version": survey.LatestVersion}) }</p>
-		} else {
-			<p>{ t(ctx, "editor.publish.never") }</p>
-		}
-		if questionCount == 0 {
-			<p class="muted">{ t(ctx, "editor.publish.empty") }</p>
-		} else {
-			<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/publish") }>
-				<input type="hidden" name="_csrf" value={ csrf }/>
-				<button type="submit">
-					{ t(ctx, "editor.publish.submit.label", uitext.Args{"Version": survey.LatestVersion + 1}) }
-				</button>
-			</form>
+		switch {
+			case questionCount == 0:
+				<p class="muted">{ t(ctx, "editor.publish.empty") }</p>
+			case !changed:
+				<p class="muted">{ t(ctx, "editor.publish.current", uitext.Args{"Version": survey.LatestVersion}) }</p>
+			default:
+				if survey.Published() {
+					<p>{ t(ctx, "editor.publish.live", uitext.Args{"Version": survey.LatestVersion}) }</p>
+				} else {
+					<p>{ t(ctx, "editor.publish.never") }</p>
+				}
+				<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/publish") }>
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<button type="submit">
+						{ t(ctx, "editor.publish.submit.label", uitext.Args{"Version": survey.LatestVersion + 1}) }
+					</button>
+				</form>
 		}
 	</section>
 }

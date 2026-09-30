@@ -378,6 +378,19 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 
 // LatestQuestions returns the questions of the most recent published
 // version, or nil when the survey has never been published.
+// HasUnpublishedChanges reports whether publishing the given draft would
+// make a new version: always before the first publish, and afterwards
+// only when its questions differ from the live version's. It is the
+// comparison Publish refuses by, so the editor offers the button only
+// where pressing it would do something.
+func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID, draft []domain.Question) (bool, error) {
+	latest, err := s.LatestQuestions(ctx, surveyID)
+	if err != nil {
+		return false, err
+	}
+	return latest == nil || !questionsEqual(latest, draft), nil
+}
+
 func (s *Surveys) LatestQuestions(ctx context.Context, surveyID uuid.UUID) ([]domain.Question, error) {
 	latest, err := s.q.GetLatestVersion(ctx, surveyID)
 	if errors.Is(err, pgx.ErrNoRows) {

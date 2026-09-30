@@ -54,6 +54,9 @@ outcomes are written down, factually.
 
 ## Markup, styling and behaviour
 
+How pages look and speak is in [docs/style-guide.md](docs/style-guide.md),
+and ADR-0016 records why. `make gallery` shows every page for review.
+
 A class does one job. A class that starts with `js-` is how a script or
 a test finds an element (`js-voice-button`, `js-survey-card`), and it is
 never styled. Any other class is for styling, and scripts and tests never

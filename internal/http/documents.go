@@ -48,6 +48,7 @@ func pageFacts(cfg config.Config) pages.Facts {
 		"NoProcessors":      !hosted && !brevo && ai == "" && !google,
 		"GeoAttribution":    geoip.Attribution,
 		"GeoAttributionURL": geoip.AttributionURL,
+		"GeoSource":         geoip.Source,
 	}
 }
 

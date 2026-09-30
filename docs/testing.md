@@ -268,8 +268,7 @@ or `internal/http/routes.go`):
 3. `mcp__playwright__browser_snapshot` — confirm the accessibility tree
    shows an `h1` "Earful" and the tagline paragraph
 4. `mcp__playwright__browser_console_messages` (level: error) — confirm no
-   unexpected errors (a `favicon.ico` 404 is expected and harmless; no
-   favicon is in scope for M0)
+   unexpected errors
 5. `docker compose --profile app down`
 
 **M2 sign-in and account flow** (re-run after any change to
@@ -325,7 +324,7 @@ or the survey handlers):
    document.documentElement.scrollWidth <= window.innerWidth
    ```
    (this check caught a header overflow that affected every signed-in page)
-9. Console errors: none expected beyond the `favicon.ico` 404
+9. Console errors: none expected
 10. `docker compose --profile app down`
 
 **M5–M11 surfaces** (re-run after changes to voice, generation, results,

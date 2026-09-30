@@ -154,7 +154,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 					@statBuckets(t(ctx, "stats.audience.country"), data.Countries)
 					<p class="muted">{ data.SuppressionNote }</p>
 				} else {
-					<p class="muted">{ data.SuppressionNote } { t(ctx, "stats.audience.empty") }</p>
+					<p class="muted">{ t(ctx, "stats.audience.empty") } { data.SuppressionNote }</p>
 				}
 			</section>
 		</main>

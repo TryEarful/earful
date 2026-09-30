@@ -230,7 +230,7 @@
 
     var grant = document.createElement("button");
     grant.type = "button";
-    grant.className = "voice-grant secondary";
+    grant.className = "voice-grant button-link";
     grant.textContent = T.t("js.voice.microphone.grant");
     grant.hidden = true;
 

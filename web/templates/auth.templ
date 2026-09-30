@@ -100,12 +100,14 @@ templ MagicSent(email string) {
 		@authBrand()
 		<main class="standalone">
 			<h1>{ t(ctx, "magic.sent.heading") }</h1>
-			<p>
-				@thtml(ctx, "magic.sent.body_html", uitext.Args{"Email": email})
-			</p>
-			<p class="muted">
-				@thtml(ctx, "magic.sent.retry_html")
-			</p>
+			<div class="card js-panel">
+				<p>
+					@thtml(ctx, "magic.sent.body_html", uitext.Args{"Email": email})
+				</p>
+				<p class="muted">
+					@thtml(ctx, "magic.sent.retry_html")
+				</p>
+			</div>
 		</main>
 	}
 }

@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-573b85ff88a9f72e05b4a51aea174a23464c513a9ca22e5322ef1141a0de0113
+hash: sha256-9b2ebaaaf2fb020982c101274fff8358e107b659c1712d61b2dc18b7c04162dd
 last_update: 2026-09-30
 ---
 
@@ -35,7 +35,7 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 
 ## Where the data lives, and who touches it
 
-{{if .Region}}Hosted in {{.Region}}. Every company involved:{{else}}Every company involved in running this instance:{{end}}
+{{if .NoProcessors}}No outside company is involved: this instance runs entirely on its operator's own infrastructure.{{else}}{{if .Region}}Hosted in {{.Region}}. Every company involved:{{else}}Every company involved in running this instance:{{end}}{{end}}
 
 {{- if .GoogleCloud}}
 - **Google Cloud** hosts the application, the database, backups and logs, so it can see everything the service holds. Region `europe-west4`.
@@ -52,11 +52,8 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 {{- if .GoogleLogin}}
 - **Google Identity** signs in the people who choose Google. It sees their email address and Google account id.
 {{- end}}
-{{- if .NoProcessors}}
-- No outside company is involved: this instance runs entirely on its operator's own infrastructure.
-{{- end}}
 
-Hosting Earful yourself removes all of them: it runs against your own Postgres, your own SMTP server and, if you want AI features, your own model.
+{{if not .NoProcessors}}Hosting Earful yourself removes all of them: it runs against your own Postgres, your own SMTP server and, if you want AI features, your own model.{{end}}
 
 ## What we can't promise
 
@@ -76,4 +73,4 @@ One button exports everything a workspace holds (every survey, version, question
 
 ***
 
-{{.GeoAttribution}} · [db-ip.com]({{.GeoAttributionURL}})
+IP geolocation by {{.GeoSource}} · [db-ip.com]({{.GeoAttributionURL}})

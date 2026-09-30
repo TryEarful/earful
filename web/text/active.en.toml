@@ -121,7 +121,7 @@ label = "Create account"
 [magic.sent]
 title = "Check your email · Earful"
 heading = "Check your email"
-body_html = "A link to sign in is on its way to <strong>{{.Email}}</strong>. It works once, for 15 minutes."
+body_html = "A link to sign in is on its way to <strong>{{.Email}}</strong>, and works once, for 15 minutes."
 retry_html = 'Nothing arriving? Check spam, or <a href="/login">request another link</a>.'
 
 [magic.confirm]
@@ -198,8 +198,6 @@ other = "· version {{.Version}} · {{.Count}} questions"
 [account]
 title = "Account · Earful"
 heading = "Account"
-signed_in_html = "Signed in as <strong>{{.Email}}</strong>"
-workspace_html = "Workspace: <strong>{{.Workspace}}</strong>"
 
 [account.admin.beta]
 label = "Private beta admin"
@@ -225,9 +223,9 @@ label = "Save new email"
 
 [account.export]
 heading = "Export everything"
-body = "Download every survey, version, question and response in this workspace: a documented JSON file plus a CSV per survey. It's all the data Earful holds, in a format you can import into your own instance."
+body = "Download every survey and response in this workspace: a documented JSON file and a CSV for each survey. It's everything Earful holds, ready to import into your own instance."
 building = "Building your export… reload this page in a moment."
-selfhost_html = "Earful is open source under the AGPL 3.0, and you can host it yourself: <code>docker compose --profile app up</code> gives you the same application this export came from."
+selfhost_html = "Earful is open source under the AGPL 3.0. To host it yourself, run <code>docker compose --profile app up</code>."
 # Size and Built are left out when they are not known. The spaces before
 # the comma and the full stop are as the page has always drawn them.
 ready = "Ready {{if .Size}} ({{.Size}}) {{end}}{{if .Built}}, built {{.Built}} {{end}}. The link expires {{.Expires}}."
@@ -349,7 +347,7 @@ note = '"Opened" counts times the survey page was loaded, so it is an upper boun
 
 [stats.trend]
 heading = "Per day"
-range = "Per day, {{.Range}}."
+range = "{{.Range}}"
 aria = "Opened and submissions per day; the table below holds the same numbers"
 empty = "Nothing in this range yet."
 day = "Day"
@@ -364,7 +362,7 @@ required = "Required"
 
 [stats.audience]
 heading = "Audience"
-intro = "Totals for the whole life of the survey: these three counts keep no dates, so no date range can narrow them to a day, and a day on a small survey is a person."
+intro = "Totals for the whole life of the survey: these three counts keep no dates, so no range can narrow them to the few people who answered on one day."
 browser = "Browser"
 device = "Device"
 country = "Country"
@@ -499,7 +497,7 @@ label = "Preview as respondent"
 
 [editor.questions]
 heading = "Questions"
-empty = "No questions yet. Add the first one below."
+empty = "No questions yet. Start with the first one."
 
 [editor.question]
 required = "Required"
@@ -559,10 +557,11 @@ one = "Send 1 invite"
 other = "Send {{.Count}} invites"
 
 [editor.publish]
+current = "Version {{.Version}} is live, and the draft has no changes to publish."
 heading = "Publish"
 live = "Version {{.Version}} is live. Edits stay in the draft until you publish again."
 never = "Not published yet. Publishing opens the survey with these questions as version 1."
-empty = "Add at least one question to publish."
+empty = "Add a question to publish."
 
 [editor.publish.submit]
 label = "Publish version {{.Version}}"
@@ -755,9 +754,9 @@ login = "We couldn't finish signing you in. Please request a new link."
 
 [magic.invalid.reason]
 incomplete = "Part of the link is missing. Open it again from your email."
-expired = "Links last 15 minutes, and this one is older."
-used = "This link has already been used."
-invalid = "This link isn't one we recognise."
+expired = "It was valid for 15 minutes, and that time has passed."
+used = "It has already been used once."
+invalid = "We don't recognise it."
 
 
 # ── Account: notices and refusals ──────────────────────────────────────
@@ -1497,7 +1496,7 @@ server = "Transcribed. Edit it if it isn't quite right."
 
 [js.voice.microphone]
 label = "Microphone"
-grant = "Grant microphone to enable dictation"
+grant = "Choose microphone"
 input = "Input: {{.Device}}"
 chosen = "Microphone: {{.Device}}."
 switched = "Switched to {{.Device}}. Speak again to use it."
@@ -1527,3 +1526,7 @@ submit = "Change"
 # A language is offered by the name it gives itself, which is the same whatever language offers it.
 en = "English"
 es = "Español"
+
+[account.facts]
+workspace = "Workspace"
+email = "Email"

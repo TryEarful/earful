@@ -78,6 +78,9 @@ type ParticipantView struct {
 }
 
 type SurveyEditorData struct {
+	// DraftChanged is whether publishing would make a new version; the
+	// editor offers Publish only then.
+	DraftChanged  bool
 	Survey        SurveyView
 	Questions     []domain.Question
 	Versions      []VersionView

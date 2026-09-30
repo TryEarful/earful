@@ -177,3 +177,7 @@ const Attribution = "IP geolocation by DB-IP (IP-to-Country Lite, CC BY 4.0)"
 
 // AttributionURL is the link that credit must carry.
 const AttributionURL = "https://db-ip.com"
+
+// Source names the data by itself, for a document that words the credit
+// in its own language around it.
+const Source = "DB-IP (IP-to-Country Lite, CC BY 4.0)"

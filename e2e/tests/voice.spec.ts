@@ -197,7 +197,7 @@ test("without a microphone the voice controls are disabled and the error is boxe
   await expect(status).toHaveClass(/\bis-error\b/);
   await expect(mic).toBeDisabled();
   await expect(reset).toBeDisabled();
-  await expect(respondent.getByRole("button", { name: "Grant microphone to enable dictation" })).toBeDisabled();
+  await expect(respondent.getByRole("button", { name: "Choose microphone" })).toBeDisabled();
   await expect(respondent.locator(".js-voice").first()).toHaveAttribute("data-state", "unavailable");
 
   // Typing is untouched: a tap of Space is the browser's own space, and
@@ -260,7 +260,7 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
   // no device in particular.
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue("default");
-  await expect(respondent.getByRole("button", { name: "Grant microphone to enable dictation" })).toBeHidden();
+  await expect(respondent.getByRole("button", { name: "Choose microphone" })).toBeHidden();
   await mic.click();
   await expect(stop).toBeVisible();
   await expect(picker).toHaveValue("default");
@@ -352,7 +352,7 @@ test("without permission the picker is a button that asks for it", async ({ page
   const offered = await offersVoice(respondent);
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
-  const grant = respondent.getByRole("button", { name: "Grant microphone to enable dictation" });
+  const grant = respondent.getByRole("button", { name: "Choose microphone" });
   const picker = respondent.getByLabel("Microphone");
   await expect(grant).toBeVisible();
   await expect(picker).toBeHidden();

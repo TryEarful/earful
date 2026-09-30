@@ -96,7 +96,14 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 		return
 	}
 
+	changed, err := s.surveys.HasUnpublishedChanges(r.Context(), survey.ID, draft.Questions)
+	if err != nil {
+		s.internalError(w, r, "compare draft", err)
+		return
+	}
+
 	data := templates.SurveyEditorData{
+		DraftChanged:  changed,
 		Survey:        viewSurvey(text(r), survey, s.clock.Now()),
 		Questions:     draft.Questions,
 		Versions:      viewVersions(text(r), versions),

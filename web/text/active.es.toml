@@ -55,7 +55,7 @@ other = "Surveys, out loud."
 
 [home.intro.body]
 hash = "sha1-6fbeecca48206c456174330920a15cb551dec1f3"
-other = "Pregunte con un enlace. Escuche las respuestas con las palabras de cada persona."
+other = "Pregunte con un enlace. Escuche las respuestas en las propias palabras de cada persona."
 
 [home.sign_in.label]
 hash = "sha1-ada2e9e96fa9ce85430225b412068b5b62b79800"
@@ -133,8 +133,8 @@ hash = "sha1-fab9f40578d875e348418f687879a198cf91d5a3"
 other = "Revise su correo"
 
 [magic.sent.body_html]
-hash = "sha1-e15f71e49d989636adf5709212b320245b7a2962"
-other = "Un enlace de acceso va de camino a <strong>{{.Email}}</strong>. Funciona una sola vez, durante 15 minutos."
+hash = "sha1-93afa57d44601afd92812926f118d0c23870c415"
+other = "Un enlace de acceso va de camino a <strong>{{.Email}}</strong>, y funciona una sola vez, durante 15 minutos."
 
 [magic.sent.retry_html]
 hash = "sha1-a4a84a32c8f478819dbaa437d9e31d0f55cb07f4"
@@ -267,14 +267,6 @@ other = "Cuenta · Earful"
 hash = "sha1-85dfa32c97d8618d1bea083609e2c8a29845abe5"
 other = "Cuenta"
 
-[account.signed_in_html]
-hash = "sha1-0c77d8500e13b58d0c188170017ffbadcc07661e"
-other = "Sesión iniciada como <strong>{{.Email}}</strong>"
-
-[account.workspace_html]
-hash = "sha1-8868c6263df17d359fe13e13b6274ea390c7a748"
-other = "Espacio de trabajo: <strong>{{.Workspace}}</strong>"
-
 [account.admin.beta.label]
 hash = "sha1-942cb0d41bb8fcfa7672fed4dd6525a7574de64b"
 other = "Administración de la beta privada"
@@ -312,16 +304,16 @@ hash = "sha1-7089c1cc58f636f02a9cefef91cd2f966da150c1"
 other = "Exportar todo"
 
 [account.export.body]
-hash = "sha1-89bc4fa353c220b4ef965cf881418c932ed51058"
-other = "Descargue todas las encuestas, versiones, preguntas y envíos de este espacio de trabajo: un archivo JSON documentado y un CSV por encuesta. Son los mismos datos que guarda Earful, en un formato que puede importar en su propia instalación."
+hash = "sha1-a4aad5a21aab3a7fa581a803840999a1f7e1615a"
+other = "Descargue todas las encuestas y respuestas de este espacio de trabajo: un archivo JSON documentado y un CSV por encuesta. Es todo lo que Earful guarda, listo para importarlo en su propia instalación."
 
 [account.export.building]
 hash = "sha1-a02ced5f0a2630c1e067a1b2849d4473e40aeda2"
 other = "Preparando su exportación… vuelva a cargar esta página en un momento."
 
 [account.export.selfhost_html]
-hash = "sha1-8df3afc9c82240cba913962955d718ad01e93587"
-other = "Earful tiene licencia AGPL 3.0 y puede alojarlo usted mismo: <code>docker compose --profile app up</code> le da la misma aplicación de la que salió esta exportación."
+hash = "sha1-ff680ade77cabf60c4c6e63756992a4ef646b71b"
+other = "Earful es de código abierto con licencia AGPL 3.0. Para alojarlo usted mismo, ejecute <code>docker compose --profile app up</code>."
 
 [account.export.ready]
 hash = "sha1-82bfc2bfac53175e09f7cfa1365f56a14fc0aee0"
@@ -515,8 +507,8 @@ hash = "sha1-9aecfcda6e8c1c1aee2f1f6d3a86192b4ed08d1c"
 other = "Por día"
 
 [stats.trend.range]
-hash = "sha1-eafd045782285ea32872a49e65c53564f21c3f6c"
-other = "Por día, {{.Range}}."
+hash = "sha1-b04dd1edae32f82c89905de5a1d2742bd6077730"
+other = "{{.Range}}"
 
 [stats.trend.aria]
 hash = "sha1-a166197da4f934665f7c63b01674a1c4577ecb66"
@@ -559,8 +551,8 @@ hash = "sha1-51d9934555e29c55ec859265102b489e0b764ac8"
 other = "Audiencia"
 
 [stats.audience.intro]
-hash = "sha1-f3c3e49375389d0382d9c0aa6806aad9d9071abf"
-other = "Totales de toda la vida de la encuesta: estos tres recuentos no guardan fechas, de modo que ningún intervalo puede reducirlos a un día, y un día en una encuesta pequeña es una persona."
+hash = "sha1-1aead2f03d76d0cc866732d64686918ecd181876"
+other = "Totales de toda la vida de la encuesta: estos tres recuentos no guardan fechas, así que ningún intervalo puede reducirlos a las pocas personas que respondieron un día concreto."
 
 [stats.audience.browser]
 hash = "sha1-54a2cf5e634dbba0be2bf8a55f79252f5c790bdb"
@@ -803,15 +795,15 @@ other = "· versión publicada: {{.Version}}"
 
 [editor.preview.label]
 hash = "sha1-c8d9e01f7d2b4a157d10dc369b55dfe59abb1528"
-other = "Vista previa de quien responde"
+other = "Vista previa"
 
 [editor.questions.heading]
 hash = "sha1-9a1fc1731f624d1f9dbca42b781ff8a60a6594e1"
 other = "Preguntas"
 
 [editor.questions.empty]
-hash = "sha1-2ceb9b5a7f5d47fc4384127a0d783ccb4525f103"
-other = "Todavía no hay preguntas. Añada la primera más abajo."
+hash = "sha1-070bae233b4c94723ae2f5b38b8a23d07281df6e"
+other = "Todavía no hay preguntas. Empiece por la primera."
 
 [editor.question.required]
 hash = "sha1-eed6bfb41051ed5b74447340f3c2e29d11e99a7c"
@@ -940,8 +932,8 @@ hash = "sha1-1afeab20f443282e81bf0b4ff07b3c0b3a7b7e09"
 other = "Todavía no se ha publicado. Al publicarla, la encuesta se abre con estas preguntas como versión 1."
 
 [editor.publish.empty]
-hash = "sha1-90b1704b53866b84e91a5f598079ea5b247d27c6"
-other = "Añada al menos una pregunta para publicar."
+hash = "sha1-b81bc81d2340f47c3097dc54af298695b96b9ad4"
+other = "Añada una pregunta para publicar."
 
 [editor.publish.submit.label]
 hash = "sha1-0738a6b7262453b709435a325161405689f38612"
@@ -1354,16 +1346,16 @@ hash = "sha1-dda1a0b04ec39fa007eff46e779c6a7af2dc1a8d"
 other = "Falta parte del enlace. Ábralo de nuevo desde su correo."
 
 [magic.invalid.reason.expired]
-hash = "sha1-c733c62a0ad4b5876160dfa75dcc7c8c214af1a6"
-other = "Los enlaces duran 15 minutos, y este es más antiguo."
+hash = "sha1-95977a299e4b96c3d27104f1d2c72bc3dcbbd272"
+other = "Era válido durante 15 minutos, y ese tiempo ha pasado."
 
 [magic.invalid.reason.used]
-hash = "sha1-8830e25b05f1d6e3c37b8b98302509ffcb639c57"
-other = "Este enlace ya se ha usado."
+hash = "sha1-68b03d3a599f431a2038437333fed501079dce89"
+other = "Ya se ha usado una vez."
 
 [magic.invalid.reason.invalid]
-hash = "sha1-28346039c58767dfab54116ba102cdd00eb93e65"
-other = "No reconocemos este enlace."
+hash = "sha1-ec1a98b6322f2c742e96fa142b9663e69bca9c9d"
+other = "No lo reconocemos."
 
 
 # ── Cuenta: avisos y rechazos ──────────────────────────────────────────
@@ -2746,8 +2738,8 @@ hash = "sha1-242805378404a310345cf70839197bf474f74005"
 other = "Micrófono"
 
 [js.voice.microphone.grant]
-hash = "sha1-89563b8e39a82dbf8b92cd79cdf68cd083e79408"
-other = "Permita el micrófono para activar el dictado"
+hash = "sha1-040dcd225c269bbbff116525a198c59d37dbfb73"
+other = "Elegir micrófono"
 
 [js.voice.microphone.input]
 hash = "sha1-9bafc6fbb1d928736f243dba381100d3af0f7d0b"
@@ -2831,3 +2823,15 @@ other = "Preguntas"
 [tabs.languages]
 hash = "sha1-db07be184479f34078cd4fc76d248dc0975720e9"
 other = "Idiomas"
+
+[editor.publish.current]
+hash = "sha1-1cf7d553239bdc8bdf6f7e15b140c70ba1534665"
+other = "La versión {{.Version}} está publicada, y el borrador no tiene cambios que publicar."
+
+[account.facts.email]
+hash = "sha1-84add5b2952787581cb9a8851eef63d1ec75d22b"
+other = "Correo electrónico"
+
+[account.facts.workspace]
+hash = "sha1-4ca0a75c2b7fa7da4364d03b72c46fee1860a2bf"
+other = "Espacio de trabajo"

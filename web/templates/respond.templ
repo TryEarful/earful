@@ -274,7 +274,7 @@ templ languagePicker(data RespondData) {
 // link, because it is the thing a respondent needs before deciding to
 // answer at all.
 templ respondentDisclosure(data RespondData) {
-	<div class="disclosure">
+	<div class="disclosure js-disclosure">
 		<p>
 			@thtml(ctx, "respond.disclosure.controller_html", uitext.Args{"Workspace": data.WorkspaceName})
 			// The space between this sentence and the next. templ puts

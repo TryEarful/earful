@@ -38,7 +38,6 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 				<h1>{ t(ctx, "dashboard.heading") }</h1>
 				<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 			</div>
-			<p class="muted workspace-name">{ workspaceName }</p>
 			if len(data.Surveys) == 0 {
 				<div class="card empty-state js-panel">
 					@owl(OwlNeutral, 96)
@@ -123,12 +122,12 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 		<main>
 			<h1>{ t(ctx, "account.heading") }</h1>
 			<div class="card js-panel">
-				<p>
-					@thtml(ctx, "account.signed_in_html", uitext.Args{"Email": email})
-				</p>
-				<p>
-					@thtml(ctx, "account.workspace_html", uitext.Args{"Workspace": workspaceName})
-				</p>
+				<dl class="facts">
+					<dt>{ t(ctx, "account.facts.email") }</dt>
+					<dd>{ email }</dd>
+					<dt>{ t(ctx, "account.facts.workspace") }</dt>
+					<dd>{ workspaceName }</dd>
+				</dl>
 				if data.IsSuperAdmin {
 					<p>
 						<a href="/admin/beta-codes">{ t(ctx, "account.admin.beta.label") }</a> ·
