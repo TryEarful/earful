@@ -92,6 +92,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0012 | Flow counters (opened, submitted, where answers stop) carry a UTC day in a second counter table; audience counters never do, because a date range plus suppression still leaks by subtraction; amends 0009 |
 | 0014 | Interface text is named messages in `web/text`, one TOML file per language, served through go-i18n; the interface language is chosen per request, and a respondent's is never stored |
 | 0015 | A workspace is created holding one published survey, the Starter Survey, written in the transaction that creates it and its owner's from then on; English with a Spanish Localization for everyone; `surveys.origin` tells it from a survey somebody made |
+| 0016 | One visual identity from the brand's tokens, with a derived dark theme; the owl drawn inline so the stylesheet colours it under the CSP; a survey's colour hashed from its ID; no font fetched from elsewhere; scripts and tests hook onto `js-` classes; no dashes in what a reader reads |
 
 ## MVP scope
 
