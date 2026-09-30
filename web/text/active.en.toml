@@ -68,6 +68,10 @@ label = "Home"
 
 # ── Home ────────────────────────────────────────────────────────────────
 
+[home.hero]
+description = "The product's tagline. It is kept in English in every language."
+other = "Surveys, out loud."
+
 [home.intro]
 body = "Open source surveys people answer out loud."
 
@@ -154,6 +158,9 @@ label = "Dashboard"
 [header.account]
 label = "Account"
 
+[header.help]
+label = "Help"
+
 [header.sign_out]
 label = "Sign out"
 
@@ -167,8 +174,8 @@ title = "Dashboard · Earful"
 label = "New survey"
 
 [dashboard.empty]
-heading = "No surveys yet"
-body = "Create your first survey, add questions, and publish it when it's ready."
+heading = "Nothing to hear yet"
+body = "Create a survey, add a few questions and publish it. Answers arrive here as people send them."
 
 [dashboard.survey]
 anonymous = "Anonymous"
@@ -1499,6 +1506,11 @@ accept = "Use the microphone"
 
 
 # ── Choosing the language of the interface ─────────────────────────────
+
+[footer]
+aria = "About Earful"
+help = "Help"
+privacy = "Privacy and data"
 
 [switcher]
 label = "Language"

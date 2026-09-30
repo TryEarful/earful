@@ -1,17 +1,28 @@
 package templates
 
-import "github.com/TryEarful/earful/internal/uitext"
+import (
+	"strconv"
 
-// AuthedHeader is the shared chrome for signed-in pages: brand, nav, and
-// the sign-out button (a real POST form carrying the CSRF token — no
-// state-changing GETs anywhere).
+	"github.com/TryEarful/earful/internal/uitext"
+)
+
+// AuthedHeader is the shared chrome for signed in pages: the mark, the
+// navigation, and the sign out button (a real POST form carrying the
+// CSRF token, so that no GET anywhere changes state).
 templ AuthedHeader(email string, csrf string) {
 	<header class="site-header js-site-header">
-		<a class="brand" href="/dashboard">Earful</a>
+		@lockup("/dashboard")
 		<nav aria-label={ t(ctx, "header.nav.aria") }>
-			<a href="/dashboard">{ t(ctx, "header.dashboard.label") }</a>
-			<a href="/account">{ t(ctx, "header.account.label") }</a>
-			<span class="muted">{ email }</span>
+			<a href="/dashboard" if currentPath(ctx) == "/dashboard" {
+	aria-current="page"
+}>{ t(ctx, "header.dashboard.label") }</a>
+			<a href="/help" if currentPath(ctx) == "/help" {
+	aria-current="page"
+}>{ t(ctx, "header.help.label") }</a>
+			<a href="/account" if currentPath(ctx) == "/account" {
+	aria-current="page"
+}>{ t(ctx, "header.account.label") }</a>
+			<span class="muted account-email">{ email }</span>
 			<form method="post" action="/logout">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<button type="submit" class="button-link">{ t(ctx, "header.sign_out.label") }</button>
@@ -29,15 +40,16 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 				<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 			</div>
 			if len(data.Surveys) == 0 {
-				<div class="card js-panel">
+				<div class="card empty-state js-panel">
+					@owl(OwlNeutral, 96)
 					<h2>{ t(ctx, "dashboard.empty.heading") }</h2>
 					<p>{ t(ctx, "dashboard.empty.body") }</p>
-					<p><a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a></p>
+					<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 				</div>
 			} else {
 				<ul class="survey-list">
 					for _, s := range data.Surveys {
-						<li class="card js-survey-card">
+						<li class={ "card", "survey-card", "voice-" + strconv.Itoa(s.VoiceIndex()), "js-survey-card" }>
 							<div class="title-row">
 								<a class="survey-title" href={ templ.SafeURL("/surveys/" + s.ID) }>{ s.Title }</a>
 								@StatusChip(s.Status)

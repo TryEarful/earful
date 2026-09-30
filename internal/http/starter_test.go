@@ -231,7 +231,7 @@ func TestStarterSurvey_IsItsOwnersToDelete(t *testing.T) {
 
 	app.PostForm(t, owner, "/surveys/"+id+"/delete", nil).Body.Close()
 
-	if dashboard := getBody(t, owner, app.Server.URL+"/dashboard"); !bodyContains(dashboard, "No surveys yet") {
+	if dashboard := getBody(t, owner, app.Server.URL+"/dashboard"); surveyCardRe.MatchString(dashboard) {
 		t.Errorf("the dashboard still lists something after the only survey was deleted:\n%s", dashboard)
 	}
 	resp, err := http.Get(app.Server.URL + "/s/" + id)
@@ -244,7 +244,7 @@ func TestStarterSurvey_IsItsOwnersToDelete(t *testing.T) {
 	}
 
 	again := app.Login(t, address)
-	if dashboard := getBody(t, again, app.Server.URL+"/dashboard"); !bodyContains(dashboard, "No surveys yet") {
+	if dashboard := getBody(t, again, app.Server.URL+"/dashboard"); surveyCardRe.MatchString(dashboard) {
 		t.Errorf("signing in again brought back a survey its owner deleted:\n%s", dashboard)
 	}
 }

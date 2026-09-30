@@ -63,8 +63,10 @@ func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Previe
 
 // RespondLayout is a self-contained page shell for respondent pages. It
 // deliberately does not reuse the creator chrome: a respondent has no
-// account, no navigation, and nothing to sign out of. `noindex` keeps
-// surveys out of search results and LLM scrapes (M4-T5).
+// account, no navigation, and nothing to sign out of. Its footer holds
+// only what a respondent may need before answering: help, and what
+// happens to their answers. `noindex` keeps surveys out of search
+// results and LLM scrapes (M4-T5).
 templ RespondLayout(title string, lang string) {
 	<!DOCTYPE html>
 	<html lang={ htmlLang(ctx, lang) }>
@@ -73,10 +75,17 @@ templ RespondLayout(title string, lang string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<meta name="robots" content="noindex, nofollow, noarchive"/>
 			<title>{ title }</title>
-			<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
+			@headAssets()
 		</head>
 		<body class="respond">
 			{ children... }
+			<footer class="site-footer respond-footer">
+				<span class="made-with">
+					@owl(OwlNeutral, 20)
+					Earful
+				</span>
+				@footerLinks(lang)
+			</footer>
 		</body>
 	</html>
 }
@@ -196,6 +205,11 @@ templ Respond(data RespondData) {
 		}
 		<script src={ static.AssetURL("js/uitext.js") } defer></script>
 		if data.VoiceEnabled() {
+			// The owl at the head of each dictation card, drawn here so the
+			// script copies it rather than holding markup of its own.
+			<template class="js-voice-owl">
+				@owl(OwlListening, 22)
+			</template>
 			<script src={ static.AssetURL("js/wsclient.js") } defer></script>
 			<script src={ static.AssetURL("js/voice.js") } defer></script>
 		}
@@ -488,7 +502,8 @@ func boolEquals(got *bool, want bool) bool { return got != nil && *got == want }
 // RespondThanks closes the loop for the respondent.
 templ RespondThanks(title string, anonymous bool) {
 	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": title}), "") {
-		<main>
+		<main class="standalone">
+			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
 			<p>{ t(ctx, "respond.thanks.body") }</p>
 			if anonymous {
@@ -502,7 +517,8 @@ templ RespondThanks(title string, anonymous bool) {
 // preview form. Nothing is written; the page says so plainly.
 templ RespondPreviewSubmitted(surveyID string, title string) {
 	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "") {
-		<main>
+		<main class="standalone">
+			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.preview.submitted.heading") }</h1>
 			<p>{ t(ctx, "respond.preview.submitted.body") }</p>
 			<p><a class="button" href={ templ.SafeURL("/surveys/" + surveyID) }>{ t(ctx, "respond.preview.submitted.back") }</a></p>
@@ -514,7 +530,8 @@ templ RespondPreviewSubmitted(surveyID string, title string) {
 // right now, in the respondent's language rather than ours.
 templ RespondUnavailable(title string, heading string, message string) {
 	@RespondLayout(heading, "") {
-		<main>
+		<main class="standalone">
+			@owl(OwlSurprised, 96)
 			<h1>{ heading }</h1>
 			if title != "" {
 				<p class="muted">{ title }</p>

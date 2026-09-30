@@ -9,7 +9,7 @@ import (
 	"io/fs"
 )
 
-//go:embed css js
+//go:embed css js img
 var FS embed.FS
 
 // Version is a content fingerprint of the embedded assets, computed once

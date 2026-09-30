@@ -49,6 +49,10 @@ other = "Inicio"
 
 # ── Inicio ──────────────────────────────────────────────────────────────
 
+[home.hero]
+hash = "sha1-0607edbd6fdd7ae5b76b8522c77241fbd335ad8b"
+other = "Surveys, out loud."
+
 [home.intro.body]
 hash = "sha1-ea6781c7257c68f2cd6be2ac06143d00bc929cab"
 other = "Encuestas de código abierto que se responden en voz alta."
@@ -199,6 +203,10 @@ other = "Panel"
 hash = "sha1-85dfa32c97d8618d1bea083609e2c8a29845abe5"
 other = "Cuenta"
 
+[header.help.label]
+hash = "sha1-c47ae15370cfe1ed2781eedc1dc2547d12d9e972"
+other = "Ayuda"
+
 [header.sign_out.label]
 hash = "sha1-dc1649a16c1496db3e4073be6a73faf5121aeae7"
 other = "Cerrar sesión"
@@ -215,12 +223,12 @@ hash = "sha1-64504ed4744725ff4b74b5bad54c6d11fc28bf3f"
 other = "Nueva encuesta"
 
 [dashboard.empty.heading]
-hash = "sha1-17f9b0d5c605fc0b2f9658f4aa23bcad838fa976"
-other = "Todavía no hay encuestas"
+hash = "sha1-6742c0dcd5e134da3292d3ffc3e778d29a806c83"
+other = "Todavía no hay nada que escuchar"
 
 [dashboard.empty.body]
-hash = "sha1-fb0ed20b0ad7fec9c86d9015ac163f91c0d1056a"
-other = "Cree su primera encuesta, añada preguntas y publíquela cuando esté lista."
+hash = "sha1-a2db94690a4e92b1c222294b83b1f30c5fc7caea"
+other = "Cree una encuesta, añada unas preguntas y publíquela. Las respuestas llegan aquí a medida que la gente las envía."
 
 [dashboard.survey.anonymous]
 hash = "sha1-9bed5104004c5fe4e3e46673da174472bff1360a"
@@ -2795,3 +2803,15 @@ other = "English"
 [switcher.own.es]
 hash = "sha1-2001ca082b2d2742765d8ac9182678bfe0374fbf"
 other = "Español"
+
+[footer.aria]
+hash = "sha1-a0f621c12c4cf2a686aef9c51ac7b558b83848ce"
+other = "Sobre Earful"
+
+[footer.help]
+hash = "sha1-c47ae15370cfe1ed2781eedc1dc2547d12d9e972"
+other = "Ayuda"
+
+[footer.privacy]
+hash = "sha1-8fa4ee802289e81c23002818950e4c1c130555a9"
+other = "Privacidad y datos"

@@ -20,7 +20,7 @@ export PATH
 
 TEST_DATABASE_URL ?= postgres://earful:earful@localhost:5433/earful_test?sslmode=disable
 
-.PHONY: tools generate generate-check dev build check test e2e-smoke featuretour featuretour-deck migrate purge geoip text-status text-accept pages compose-up compose-up-app compose-down docker-build release-check
+.PHONY: tools generate generate-check dev build check test e2e-smoke gallery featuretour featuretour-deck migrate purge geoip text-status text-accept pages compose-up compose-up-app compose-down docker-build release-check
 
 tools:
 	go install github.com/a-h/templ/cmd/templ@$(TEMPL_VERSION)
@@ -117,6 +117,15 @@ e2e-smoke:
 	docker compose --profile app up -d --build --wait app mailpit
 	docker compose --profile app restart app
 	cd e2e && npm install && npx playwright install chromium && npx playwright test
+
+# The design gallery: every page at phone and desktop widths, light and
+# dark, English and Spanish, with an axe report, in GALLERY_DIR (default
+# e2e/test-results/gallery). For looking at the design as a whole; see
+# docs/style-guide.md.
+gallery:
+	docker compose --profile app up -d --build --wait app mailpit
+	docker compose --profile app restart app
+	cd e2e && npm install && npx playwright install chromium && npx playwright test -c gallery.config.ts
 
 # The feature-tour deck (tools/featuretour): a PDF walkthrough of the
 # product built from screenshots of this compose stack. The image is

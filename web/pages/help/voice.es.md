@@ -2,7 +2,7 @@
 title: Responder con la voz
 hash: sha256-142bd971e682b1ae4c388d05479133b50bf2180340804dd4e5a4ab77504cb6a1
 last_update: 2026-09-29
-source_hash: sha256-429f5240fe699c647d64c0250f6f43505894ac47bdf9e5dfcc02167f8c30dc92
+source_hash: sha256-297a904fb95e7392b1e46f2236387f3cd3c0bc976af861c90b62d7f420336ada
 ---
 
 En las encuestas que lo ofrecen, puede decir su respuesta en lugar de escribirla.

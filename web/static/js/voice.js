@@ -121,7 +121,14 @@
     // "remove" as readily as it says "put away".
     var toggleLabel = document.createTextNode(T.t("js.voice.hide"));
     toggle.appendChild(toggleLabel);
-    head.appendChild(title);
+    // The listening owl, from the page (a <template>); the stylesheet
+    // shows the sound it hears only while the microphone is open.
+    var owlTemplate = document.querySelector(".js-voice-owl");
+    var mark = document.createElement("span");
+    mark.className = "voice-mark";
+    if (owlTemplate) mark.appendChild(owlTemplate.content.cloneNode(true));
+    mark.appendChild(title);
+    head.appendChild(mark);
     head.appendChild(toggle);
     var body = document.createElement("div");
     body.className = "voice-body";

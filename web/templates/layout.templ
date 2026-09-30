@@ -9,11 +9,14 @@ templ Layout(title string) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title }</title>
-			<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
+			@headAssets()
 		</head>
 		<body>
 			{ children... }
-			@languageSwitcher()
+			<footer class="site-footer">
+				@footerLinks("")
+				@languageSwitcher()
+			</footer>
 		</body>
 	</html>
 }
@@ -28,8 +31,7 @@ templ Layout(title string) {
 // language of a survey is chosen in its address (story 25).
 templ languageSwitcher() {
 	if len(languages(ctx)) > 1 {
-		<footer class="site-footer">
-			<form method="post" action="/language" class="language-switcher">
+		<form method="post" action="/language" class="language-switcher">
 				<input type="hidden" name="next" value={ currentPath(ctx) }/>
 				<label>
 					<span>{ t(ctx, "switcher.label") }</span>
@@ -40,7 +42,32 @@ templ languageSwitcher() {
 					</select>
 				</label>
 				<button type="submit" class="secondary">{ t(ctx, "switcher.submit") }</button>
-			</form>
-		</footer>
+		</form>
 	}
+}
+
+// headAssets are the stylesheet and the icons, the same on every page.
+templ headAssets() {
+	<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
+	<link rel="icon" type="image/svg+xml" href={ static.AssetURL("img/favicon.svg") }/>
+	<link rel="apple-touch-icon" href={ static.AssetURL("img/apple-touch-icon.png") }/>
+	<meta name="theme-color" content="#F7F2E8" media="(prefers-color-scheme: light)"/>
+	<meta name="theme-color" content="#101823" media="(prefers-color-scheme: dark)"/>
+}
+
+// footerLinks are the pages anyone may need from anywhere: help, and
+// what happens to their data. lang carries a respondent's chosen
+// language to the page, as the survey's own links do.
+templ footerLinks(lang string) {
+	<ul class="footer-links" aria-label={ t(ctx, "footer.aria") }>
+		<li><a href={ templ.SafeURL(withLang("/help", lang)) }>{ t(ctx, "footer.help") }</a></li>
+		<li><a href={ templ.SafeURL(withLang("/trust", lang)) }>{ t(ctx, "footer.privacy") }</a></li>
+	</ul>
+}
+
+// authBrand heads a page shown to somebody who is not signed in.
+templ authBrand() {
+	<header class="auth-brand">
+		@lockup("/")
+	</header>
 }

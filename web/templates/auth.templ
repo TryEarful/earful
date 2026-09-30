@@ -10,7 +10,8 @@ import "github.com/TryEarful/earful/internal/uitext"
 // notice carries post-redirect messages ("signed out").
 templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
 	@Layout(t(ctx, "login.title")) {
-		<main>
+		@authBrand()
+		<main class="standalone">
 			<h1>{ t(ctx, "login.heading") }</h1>
 			if notice != "" {
 				<p class="notice">{ notice }</p>
@@ -64,7 +65,8 @@ templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
 // to send.
 templ Signup(errMsg string) {
 	@Layout(t(ctx, "signup.title")) {
-		<main>
+		@authBrand()
+		<main class="standalone">
 			<h1>{ t(ctx, "signup.heading") }</h1>
 			<div class="card js-panel">
 				<form method="post" action="/signup">
@@ -95,7 +97,8 @@ templ Signup(errMsg string) {
 
 templ MagicSent(email string) {
 	@Layout(t(ctx, "magic.sent.title")) {
-		<main>
+		@authBrand()
+		<main class="standalone">
 			<h1>{ t(ctx, "magic.sent.heading") }</h1>
 			<p>
 				@thtml(ctx, "magic.sent.body_html", uitext.Args{"Email": email})
@@ -112,7 +115,8 @@ templ MagicSent(email string) {
 // GET, so they cannot consume the single-use token.
 templ MagicConfirm(email string, token string) {
 	@Layout(t(ctx, "magic.confirm.title")) {
-		<main>
+		@authBrand()
+		<main class="standalone">
 			<h1>{ t(ctx, "magic.confirm.heading") }</h1>
 			<p>
 				@thtml(ctx, "magic.confirm.question_html", uitext.Args{"Email": email})
@@ -128,7 +132,9 @@ templ MagicConfirm(email string, token string) {
 
 templ MagicInvalid(reason string) {
 	@Layout(t(ctx, "magic.invalid.title")) {
-		<main>
+		@authBrand()
+		<main class="standalone">
+			@owl(OwlSurprised, 88)
 			<h1>{ t(ctx, "magic.invalid.heading") }</h1>
 			<p>{ reason }</p>
 			<p><a class="button" href="/login">{ t(ctx, "magic.invalid.back.label") }</a></p>
@@ -138,7 +144,8 @@ templ MagicInvalid(reason string) {
 
 templ ErrorPage(title string, msg string) {
 	@Layout(t(ctx, "page.title", uitext.Args{"Title": title})) {
-		<main>
+		@authBrand()
+		<main class="standalone">
 			<h1>{ title }</h1>
 			<p>{ msg }</p>
 			<p><a href="/">{ t(ctx, "page.home.label") }</a></p>
@@ -148,7 +155,8 @@ templ ErrorPage(title string, msg string) {
 
 templ Goodbye() {
 	@Layout(t(ctx, "goodbye.title")) {
-		<main>
+		@authBrand()
+		<main class="standalone">
 			<h1>{ t(ctx, "goodbye.heading") }</h1>
 			<p>{ t(ctx, "goodbye.body") }</p>
 			<p class="muted">{ t(ctx, "goodbye.again") }</p>

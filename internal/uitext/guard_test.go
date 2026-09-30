@@ -29,6 +29,8 @@ var unmoved = map[string]bool{}
 // the same in every language.
 var notWording = map[string]bool{
 	"Earful": true,
+	// The wordmark, which is always written in lower case.
+	"earful": true,
 	// The shape of an invite code, which is not a word in any language.
 	"earful-xxxx-xxxx-xxxx": true,
 	// Two addresses to show how addresses are entered; whose they are

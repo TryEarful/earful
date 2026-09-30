@@ -1,6 +1,10 @@
 package templates
 
-import "github.com/TryEarful/earful/internal/domain"
+import (
+	"hash/fnv"
+
+	"github.com/TryEarful/earful/internal/domain"
+)
 
 // View types carry pre-formatted, presentation-ready data into the
 // templates. Formatting decisions (dates, status labels) live in the
@@ -50,6 +54,17 @@ type AuditEntry struct {
 	What string
 	// Publish marks version entries so the template can emphasise them.
 	Publish bool
+}
+
+// VoiceIndex is the survey's colour, 1 to 10: a Voice colour from the
+// palette (docs/style-guide.md), for telling surveys apart at a glance.
+// It is worked out from the ID, so it never changes and needs nothing
+// stored; two surveys may share one, which costs nothing, since the
+// colour means nothing beyond "this one".
+func (s SurveyView) VoiceIndex() int {
+	h := fnv.New32a()
+	h.Write([]byte(s.ID))
+	return int(h.Sum32()%10) + 1
 }
 
 type SurveyListData struct {
