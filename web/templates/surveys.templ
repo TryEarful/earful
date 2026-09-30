@@ -128,8 +128,10 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			if !data.Survey.IsAnonymous {
 				@participantsPanel(csrf, data)
 			}
-			@publishPanel(csrf, data.Survey, len(data.Questions), data.DraftChanged)
-			@versionsPanel(data.Survey, data.Versions)
+			if !data.Survey.Published() || data.DraftChanged {
+				@publishPanel(csrf, data.Survey, len(data.Questions), data.DraftChanged)
+			}
+			@versionsPanel(data.Survey, data.Versions, data.DraftChanged)
 			@settingsPanel(csrf, data.Survey)
 		</main>
 		<script src={ static.AssetURL("js/share.js") } defer></script>
@@ -398,10 +400,16 @@ templ lifecyclePanel(csrf string, survey SurveyView, origin string) {
 	}
 }
 
-templ versionsPanel(survey SurveyView, versions []VersionView) {
+// versionsPanel lists the published versions. Where the draft matches
+// the live one it also says so, in place of a Publish card with nothing
+// to publish.
+templ versionsPanel(survey SurveyView, versions []VersionView, changed bool) {
 	if len(versions) > 0 {
 		<section class="card js-panel">
 			<h2>{ t(ctx, "editor.versions.heading") }</h2>
+			if !changed {
+				<p class="muted">{ t(ctx, "editor.publish.current", uitext.Args{"Version": survey.LatestVersion}) }</p>
+			}
 			<ul class="versions">
 				for _, v := range versions {
 					<li>

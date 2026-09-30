@@ -1037,7 +1037,7 @@ button:disabled,
   border-radius: var(--radius-s);
   background: var(--surface-2);
   font-family: var(--mono);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   overflow-wrap: anywhere;
 }
 
@@ -3324,4 +3324,17 @@ main.standalone h1 {
   font-size: 13px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+/* Four tabs fit a phone's width in every language the interface speaks;
+   a longer translation still scrolls sideways rather than widen the page. */
+@media (max-width: 30rem) {
+  .tabs {
+    gap: var(--space-4);
+  }
+
+  .tabs a {
+    flex: none;
+    font-size: 0.875rem;
+  }
 }
