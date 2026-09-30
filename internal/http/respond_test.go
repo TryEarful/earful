@@ -3,6 +3,7 @@ package http_test
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -88,7 +89,7 @@ func TestRespond_DropdownAnswersLikeAChoiceList(t *testing.T) {
 	}
 	// The hint is decoration for the eye only; the accessible name must
 	// stay the option text alone.
-	if !bodyContains(page, `class="key-hint" data-key="A" aria-hidden="true"`) {
+	if !regexp.MustCompile(`class="[^"]*\bjs-key-hint\b[^"]*" data-key="A" aria-hidden="true"`).MatchString(page) {
 		t.Errorf("options carry no aria-hidden key hint:\n%s", page)
 	}
 

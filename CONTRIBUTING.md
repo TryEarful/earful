@@ -52,6 +52,17 @@ Records belong in records: `PLAN.md`'s status log and the drill log in
 [docs/runbook.md](docs/runbook.md) are the places where dates and
 outcomes are written down, factually.
 
+## Markup, styling and behaviour
+
+A class does one job. A class that starts with `js-` is how a script or
+a test finds an element (`js-voice-button`, `js-survey-card`), and it is
+never styled. Any other class is for styling, and scripts and tests never
+select by it. A state a script sets and the stylesheet shows is an
+`is-` class (`is-recording`) or a `data-` attribute. With that split, the
+look of a page can change without breaking what it does, and a test
+fails only when behaviour does. `web/static/static_test.go` fails the
+build if a stylesheet styles a `js-` class.
+
 ## What must not be written down
 
 Everything in this repository ships to everyone who runs Earful, and

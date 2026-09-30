@@ -92,7 +92,7 @@ export async function shoot(manifest: Manifest, page: Page, id: string, opts: Sh
         shot = { id, file, kind: "card", width: box.width, height: box.height, dpr };
     } else {
         const fullPage = opts.kind === "page";
-        const focusLocator = opts.locator ?? page.locator("main, .site-header").first();
+        const focusLocator = opts.locator ?? page.locator("main, .js-site-header").first();
         // A focused element goes to the top of the window, so the capture
         // can start at it rather than wherever the page happened to sit.
         if (opts.locator && !fullPage) {

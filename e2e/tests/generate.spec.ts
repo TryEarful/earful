@@ -33,7 +33,7 @@ test("questions stream in and land in the draft", async ({ page }) => {
   // This test is about the streamed path, so wait until generate.js says
   // it owns the submit. Clicking earlier is not a failure — the plain
   // POST still drafts the questions — but it is the other test.
-  await expect(panel.locator(".generate-form[data-enhanced]")).toBeAttached();
+  await expect(panel.locator(".js-generate-form[data-enhanced]")).toBeAttached();
 
   await panel.locator('textarea[name="prompt"]').fill("how our first week feels to a new customer");
   await panel.getByRole("button", { name: "Draft questions" }).click();
@@ -42,13 +42,13 @@ test("questions stream in and land in the draft", async ({ page }) => {
   // summary, and the editor then shows the questions themselves. The
   // first fragment is where a real model's thinking time lands, so this
   // gets the AI budget rather than the default 5s.
-  await expect(panel.locator(".generate-output")).not.toBeEmpty({ timeout: aiTimeout });
-  await expect(panel.locator(".generate-output")).toContainText(/Added \d+ questions?/, {
+  await expect(panel.locator(".js-generate-output")).not.toBeEmpty({ timeout: aiTimeout });
+  await expect(panel.locator(".js-generate-output")).toContainText(/Added \d+ questions?/, {
     timeout: aiTimeout,
   });
 
   // They are ordinary draft questions: listed, and editable.
-  const questions = page.locator(".questions li.question");
+  const questions = page.locator(".js-questions .js-question");
   await expect(questions.first()).toBeVisible({ timeout: aiTimeout });
   expect(await questions.count()).toBeGreaterThan(2);
   await expect(page.getByRole("button", { name: "Publish version 1" })).toBeVisible();
@@ -81,7 +81,7 @@ test("drafting with AI works without JavaScript", async ({ browser }) => {
   await expect(page.getByText(/Added \d+ questions? to your draft/)).toBeVisible({
     timeout: aiTimeout + 5000,
   });
-  expect(await page.locator(".questions li.question").count()).toBeGreaterThan(2);
+  expect(await page.locator(".js-questions .js-question").count()).toBeGreaterThan(2);
 
   await context.close();
 });

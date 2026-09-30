@@ -143,7 +143,7 @@ export async function nextUntilSubmit(page: Page, onStep?: (i: number) => Promis
 /** Walks the wizard until the question with this text is the visible step. */
 export async function stepTo(page: Page, questionText: string) {
     for (let i = 0; i < 40; i++) {
-        const q = page.locator(".respond-question:visible", { hasText: questionText });
+        const q = page.locator(".js-respond-question:visible", { hasText: questionText });
         if (await q.count()) return q.first();
         await page.getByRole("button", { name: "Next" }).click();
         await page.waitForTimeout(250);
@@ -153,5 +153,5 @@ export async function stepTo(page: Page, questionText: string) {
 
 /** The visible step of the wizard, for a focused screenshot. */
 export function visibleStep(page: Page) {
-    return page.locator(".respond-question:visible").first();
+    return page.locator(".js-respond-question:visible").first();
 }

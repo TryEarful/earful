@@ -13,11 +13,11 @@
   var T = window.EarfulText;
   if (!T) return;
 
-  var panel = document.querySelector(".insight");
+  var panel = document.querySelector(".js-insight");
   if (!panel) return;
   var path = panel.getAttribute("data-insight-path");
-  var form = panel.querySelector(".insight-form");
-  var output = panel.querySelector(".insight-output");
+  var form = panel.querySelector(".js-insight-form");
+  var output = panel.querySelector(".js-insight-output");
   var button = form && form.querySelector("button");
   if (!path || !form || !output || !button || !window.EarfulSocket || !window.EarfulSocket.supported) {
     return;

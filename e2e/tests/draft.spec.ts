@@ -30,7 +30,7 @@ test("answers and position survive a reload, and clear on submit", async ({ page
   );
   await expect(respondent.getByLabel("Weekly")).toBeChecked();
   // And they come back where they were, not at the start.
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 2 of 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 2 of 2");
 
   await minFillWait(respondent);
   await respondent.getByRole("button", { name: "Submit answers" }).click();
@@ -106,7 +106,7 @@ test("a spoken answer is kept across a reload too", async ({ page, browser }) =>
   // Wait for the stream to finish before reading: chunks arrive one after
   // another, and a value read mid-transcription is shorter than what the
   // draft ends up holding.
-  await expect(respondent.locator(".voice-status").first()).toHaveText(/Transcribed/, {
+  await expect(respondent.locator(".js-voice-status").first()).toHaveText(/Transcribed/, {
     timeout: 15000,
   });
   const spoken = await respondent.locator("textarea").inputValue();
@@ -181,11 +181,11 @@ test("earlier versions of an answer are kept in the browser and can be restored"
   await link.click();
   const dialog = respondent.getByRole("dialog", { name: "Previous versions" });
   await expect(dialog).toBeVisible();
-  const items = dialog.locator(".versions-item");
+  const items = dialog.locator(".js-versions-item");
   await expect(items).toHaveCount(2);
   // Newest first, and the newest is what Reset destroyed.
   await expect(items.first()).toContainText("Second thought, which took a while");
-  await expect(items.last().locator(".versions-text")).toHaveText("First thought.");
+  await expect(items.last().locator(".js-versions-text")).toHaveText("First thought.");
   await expect(items.first().locator("time")).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
 
   const scan = await new AxeBuilder({ page: respondent }).include(".versions-dialog").analyze();
@@ -200,7 +200,7 @@ test("earlier versions of an answer are kept in the browser and can be restored"
   // The history is the draft's kind of data: it survives a reload…
   await respondent.reload();
   await respondent.getByRole("button", { name: "Previous versions" }).click();
-  await expect(respondent.locator(".versions-item")).toHaveCount(2);
+  await expect(respondent.locator(".js-versions-item")).toHaveCount(2);
   await respondent.keyboard.press("Escape");
   await expect(respondent.getByRole("dialog")).toBeHidden();
 

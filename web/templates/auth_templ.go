@@ -86,7 +86,7 @@ func Login(googleEnabled bool, betaMode bool, errMsg string, notice string) temp
 				}
 			}
 			if betaMode {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"card\"><form method=\"post\" action=\"/login\"><label class=\"field\"><span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"card js-panel\"><form method=\"post\" action=\"/login\"><label class=\"field\"><span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -161,7 +161,7 @@ func Login(googleEnabled bool, betaMode bool, errMsg string, notice string) temp
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"card\"><form method=\"post\" action=\"/auth/magic/request\"><label class=\"field\"><span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"card js-panel\"><form method=\"post\" action=\"/auth/magic/request\"><label class=\"field\"><span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -324,7 +324,7 @@ func Signup(errMsg string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</h1><div class=\"card\"><form method=\"post\" action=\"/signup\"><label class=\"field\"><span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</h1><div class=\"card js-panel\"><form method=\"post\" action=\"/signup\"><label class=\"field\"><span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

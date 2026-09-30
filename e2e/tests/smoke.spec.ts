@@ -84,7 +84,7 @@ test("respondent page is axe-clean", async ({ page, browser }) => {
   const respondentContext = await browser.newContext({ storageState: undefined });
   const respondent = await respondentContext.newPage();
   await respondent.goto(share);
-  await expect(respondent.locator(".respond-form")).toBeVisible();
+  await expect(respondent.locator(".js-respond-form")).toBeVisible();
 
   const results = await new AxeBuilder({ page: respondent }).analyze();
   expect(results.violations).toEqual([]);

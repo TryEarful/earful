@@ -23,7 +23,7 @@
   var T = window.EarfulText;
   if (!T) return;
 
-  var form = document.querySelector(".respond-form");
+  var form = document.querySelector(".js-respond-form");
   if (!form) return;
   var voicePath = form.getAttribute("data-voice-path");
   if (!voicePath) return;
@@ -85,7 +85,7 @@
 
   var mics = [];
   Array.prototype.slice
-    .call(form.querySelectorAll('.respond-question[data-voice="1"]'))
+    .call(form.querySelectorAll('.js-respond-question[data-voice="1"]'))
     .forEach(function (question) {
       var field = question.querySelector("textarea, input[type=text]");
       if (field) mics.push(attachMic(question, field));
@@ -94,7 +94,7 @@
 
   function attachMic(question, field) {
     var wrap = document.createElement("div");
-    wrap.className = "voice";
+    wrap.className = "voice js-voice";
     // idle, recording or transcribing: one attribute the stylesheet and
     // the browser suite can both read, instead of inferring the state
     // from which pieces happen to be hidden.
@@ -129,7 +129,7 @@
 
     var button = document.createElement("button");
     button.type = "button";
-    button.className = "voice-button secondary";
+    button.className = "voice-button secondary js-voice-button";
     button.appendChild(icon(MIC_ICON));
     // The label is its own text node so the key hint beside it survives
     // every label change; setting button.textContent would delete it.
@@ -151,7 +151,7 @@
     // than a paragraph of deleting.
     var resetButton = document.createElement("button");
     resetButton.type = "button";
-    resetButton.className = "voice-reset secondary";
+    resetButton.className = "voice-reset secondary js-voice-reset";
     resetButton.appendChild(icon(TRASH_ICON));
     resetButton.appendChild(document.createTextNode(T.t("js.voice.reset")));
     resetButton.appendChild(
@@ -165,7 +165,7 @@
     // progress are announced, not just shown: this control is unusable
     // otherwise.
     var status = document.createElement("div");
-    status.className = "voice-status";
+    status.className = "voice-status js-voice-status";
     status.setAttribute("aria-live", "polite");
     var statusText = document.createElement("span");
     statusText.className = "voice-status-text";
@@ -179,7 +179,7 @@
     // it already announces T.t("voice.status.transcribing"); a screen reader does not
     // need the same fact twice.
     var progress = document.createElement("span");
-    progress.className = "voice-progress";
+    progress.className = "voice-progress js-voice-progress";
     progress.setAttribute("aria-hidden", "true");
     progress.hidden = true;
 
@@ -190,11 +190,11 @@
     // transcript that comes back empty. A live spectrum and the device's
     // name make it visible while there is still time to fix it.
     var monitor = document.createElement("span");
-    monitor.className = "voice-monitor";
+    monitor.className = "voice-monitor js-voice-monitor";
     monitor.hidden = true;
 
     var spectrum = document.createElement("canvas");
-    spectrum.className = "voice-spectrum";
+    spectrum.className = "voice-spectrum js-voice-spectrum";
     // The status line announces the device name; the bars only repeat
     // what a sighted respondent can already hear.
     spectrum.setAttribute("aria-hidden", "true");
@@ -233,7 +233,7 @@
     // the right thing to be doing. Decoration as far as a screen reader
     // is concerned; the status line announces the take.
     var holdBar = document.createElement("span");
-    holdBar.className = "voice-hold";
+    holdBar.className = "voice-hold js-voice-hold";
     holdBar.setAttribute("aria-hidden", "true");
     holdBar.hidden = true;
 
@@ -280,7 +280,7 @@
         // The box the words land in lights up too: on a long answer the
         // button can be scrolled out of view while the microphone is
         // still open.
-        field.classList.add("voice-live");
+        field.classList.add("is-live");
         field.setAttribute("placeholder", RECORDING_HINT);
         progress.hidden = true;
         if (!handle.monitor) return;
@@ -299,7 +299,7 @@
       },
       transcribing: function () {
         wrap.setAttribute("data-state", "transcribing");
-        field.classList.remove("voice-live");
+        field.classList.remove("is-live");
         stopMeter();
         progress.hidden = false;
         cancelLink.hidden = false;
@@ -308,13 +308,13 @@
       // line, boxed and bordered, so it is not read as a progress update.
       fail: function (message) {
         statusText.textContent = message;
-        status.classList.add("voice-error");
+        status.classList.add("is-error");
       },
       settled: function () {
         holdBar.hidden = true;
         cancelLink.hidden = true;
         wrap.setAttribute("data-state", "idle");
-        field.classList.remove("voice-live");
+        field.classList.remove("is-live");
         if (placeholder === null) field.removeAttribute("placeholder");
         else field.setAttribute("placeholder", placeholder);
         stopMeter();
@@ -359,7 +359,7 @@
     resetButton.addEventListener("click", clear);
 
     function say(message) {
-      status.classList.remove("voice-error");
+      status.classList.remove("is-error");
       statusText.textContent = message || idleHint();
     }
 
@@ -503,7 +503,7 @@
       finishing = null;
       setLabel(T.t("js.voice.dictate"));
       fillCombo(micHint, HOLD_HINT);
-      button.classList.remove("recording");
+      button.classList.remove("is-recording");
       ui.settled();
     }
 
@@ -514,7 +514,7 @@
       finishing = current;
       setLabel(T.t("js.voice.dictate"));
       fillCombo(micHint, HOLD_HINT);
-      button.classList.remove("recording");
+      button.classList.remove("is-recording");
       current.stop();
     }
 
@@ -542,7 +542,7 @@
       if (on && recorder) stop();
       collapsed = on;
       body.hidden = on;
-      wrap.classList.toggle("collapsed", on);
+      wrap.classList.toggle("is-collapsed", on);
       toggle.setAttribute("aria-expanded", on ? "false" : "true");
       toggleLabel.nodeValue = on ? T.t("js.voice.show") : T.t("js.voice.hide");
       toggle.setAttribute("aria-label", on ? T.t("js.voice.show_aria") : T.t("js.voice.hide_aria"));
@@ -646,7 +646,7 @@
               micHint,
               mode === "hold" ? T.parts("js.voice.hint.release", { Key: { key: T.t("js.key.space") } }) : []
             );
-            button.classList.add("recording");
+            button.classList.add("is-recording");
             ui.recording(handle);
             var device = handle.monitor && handle.monitor.device;
             say(device ? T.t("js.voice.listening.named", { Device: device }) : T.t("js.voice.listening.unnamed"));
@@ -725,7 +725,7 @@
   // accessible name.
   function keyCombo(parts) {
     var combo = document.createElement("span");
-    combo.className = "key-combo";
+    combo.className = "key-combo js-key-combo";
     combo.setAttribute("aria-hidden", "true");
     fillCombo(combo, parts);
     return combo;
@@ -742,7 +742,7 @@
         return;
       }
       var piece = document.createElement("span");
-      piece.className = typeof part === "string" ? "key-word" : "key-hint";
+      piece.className = typeof part === "string" ? "key-word" : "key-hint js-key-hint";
       piece.textContent = typeof part === "string" ? part : part.key;
       combo.appendChild(piece);
     });

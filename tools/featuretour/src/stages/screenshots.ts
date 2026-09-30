@@ -61,7 +61,7 @@ class Story {
     }
 
     private card(heading: string | RegExp) {
-        return this.page.locator(".card", {
+        return this.page.locator(".js-panel", {
             has: this.page.locator("h2", {
                 hasText: typeof heading === "string" ? new RegExp(`^${heading}$`) : heading,
             }),
@@ -70,7 +70,7 @@ class Story {
 
     private resultCard(key: string) {
         const q = latest(this.st).questions.find((q) => q.key === key)!;
-        return this.page.locator(".card.result", {
+        return this.page.locator(".js-result", {
             has: this.page.locator("h2", { hasText: q.text }),
         }).first();
     }
@@ -84,7 +84,7 @@ class Story {
         // Results, card by card.
         await page.goto(`${survey}/results`);
         await this.shot(`results-${name}`, { kind: "viewport" });
-        for (const details of await page.locator(".wordings summary").all()) await details.click();
+        for (const details of await page.locator(".js-wordings summary").all()) await details.click();
         for (const q of latest(st).questions) {
             await this.shot(`result-${name}-${q.key}`, {
                 kind: "card",
@@ -95,7 +95,7 @@ class Story {
         await page.waitForTimeout(200);
         await this.shot(`results-${name}-table`, {
             kind: "viewport",
-            locator: page.locator("details", { has: page.locator("table.responses") }),
+            locator: page.locator("details", { has: page.locator(".js-responses") }),
         });
 
         // The Insight Summary, mid-stream and once labelled.
@@ -108,13 +108,13 @@ class Story {
             .click();
         await page.waitForFunction(
             () =>
-                (document.querySelector("#insights .insight-output")?.textContent ?? "").length >
+                (document.querySelector("#insights .js-insight-output")?.textContent ?? "").length >
                     300,
             null,
             { timeout: 120_000 },
         ).catch(() => {});
         await this.shot(`insights-${name}-streaming`, { kind: "card", locator: insights });
-        await page.locator("#insights .ai-label").waitFor({ timeout: 300_000 });
+        await page.locator("#insights .js-ai-label").waitFor({ timeout: 300_000 });
         await this.shot(`insights-${name}-done`, { kind: "card", locator: insights });
 
         // Answer translation, for stories with text answers.
@@ -125,9 +125,9 @@ class Story {
             await page.goto(`${survey}/results`);
             await this.shot(`translate-${name}`, {
                 kind: "viewport",
-                locator: page.locator(".results-actions"),
+                locator: page.locator(".js-results-actions"),
             });
-            await page.locator(".results-actions input[name=lang]").fill("en");
+            await page.locator(".js-results-actions input[name=lang]").fill("en");
             await page.getByRole("button", { name: "Translate" }).click();
             await page.waitForURL(/lang=en/, { timeout: 300_000 });
             await page.waitForLoadState("networkidle");
@@ -151,7 +151,7 @@ class Story {
         });
         await this.shot(`stats-${name}-audience`, {
             kind: "card",
-            locator: page.locator(".card.stats"),
+            locator: page.locator(".js-audience"),
         });
 
         // The CSVs the pages offer.

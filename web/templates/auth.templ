@@ -16,7 +16,7 @@ templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
 				<p class="notice">{ notice }</p>
 			}
 			if betaMode {
-				<div class="card">
+				<div class="card js-panel">
 					<form method="post" action="/login">
 						<label class="field">
 							<span>{ t(ctx, "auth.email.label") }</span>
@@ -36,7 +36,7 @@ templ Login(googleEnabled bool, betaMode bool, errMsg string, notice string) {
 					</p>
 				</div>
 			} else {
-				<div class="card">
+				<div class="card js-panel">
 					<form method="post" action="/auth/magic/request">
 						<label class="field">
 							<span>{ t(ctx, "auth.email.label") }</span>
@@ -66,7 +66,7 @@ templ Signup(errMsg string) {
 	@Layout(t(ctx, "signup.title")) {
 		<main>
 			<h1>{ t(ctx, "signup.heading") }</h1>
-			<div class="card">
+			<div class="card js-panel">
 				<form method="post" action="/signup">
 					<label class="field">
 						<span>{ t(ctx, "signup.code.label") }</span>

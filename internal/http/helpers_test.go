@@ -19,7 +19,7 @@ func bodyContains(body, want string) bool {
 	return strings.Contains(html.UnescapeString(body), want)
 }
 
-var surveyCardRe = regexp.MustCompile(`(?s)<li class="card">.*?</li>`)
+var surveyCardRe = regexp.MustCompile(`(?s)<li class="[^"]*\bjs-survey-card\b[^"]*">.*?</li>`)
 
 // surveyCard returns the dashboard's card for the survey with this title,
 // so that what a test reads about one survey is not satisfied by another

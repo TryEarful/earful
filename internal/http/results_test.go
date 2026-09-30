@@ -3,6 +3,7 @@ package http_test
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -124,7 +125,7 @@ func TestResults_DistributionsPerType(t *testing.T) {
 	// The bar's width travels as an SVG attribute. The CSP forbids inline
 	// styles, so a style attribute here would be dropped by the browser and
 	// every bar would render full width; this pins the markup that works.
-	if !bodyContains(page, `class="bar-fill" width="67%"`) {
+	if !regexp.MustCompile(`class="[^"]*\bjs-bar-fill\b[^"]*" width="67%"`).MatchString(page) {
 		t.Errorf("bar width attribute missing:\n%s", page)
 	}
 	if bodyContains(page, `style="width`) {

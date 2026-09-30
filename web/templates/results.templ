@@ -37,7 +37,7 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
-			<div class="results-actions">
+			<div class="results-actions js-results-actions">
 				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results.csv") }>
 					{ t(ctx, "results.csv.label") }
 				</a>
@@ -49,7 +49,7 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 			@insightPanel(csrf, data)
 
 			if data.ResponseCount == 0 {
-				<section class="card">
+				<section class="card js-panel">
 					<h2>{ t(ctx, "results.empty.heading") }</h2>
 					<p class="muted">
 						{ t(ctx, "results.empty.body") }
@@ -77,23 +77,23 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 // never rendered as though it were data.
 templ insightPanel(csrf string, data SurveyResultsData) {
 	if data.Insight.Available && data.ResponseCount > 0 {
-		<section class="card insight" id="insights" data-insight-path={ "/surveys/" + data.Survey.ID + "/insights/stream" }>
+		<section class="card insight js-panel js-insight" id="insights" data-insight-path={ "/surveys/" + data.Survey.ID + "/insights/stream" }>
 			<h2>{ t(ctx, "results.insight.heading") }</h2>
 			if data.Insight.Present {
-				<p class="ai-label">
+				<p class="ai-label js-ai-label">
 					@thtml(ctx, "results.insight.label_html", uitext.Args{"Model": data.Insight.Model, "Date": data.Insight.GeneratedAt, "Responses": data.Insight.CountLabel})
 				</p>
 				if data.Insight.Stale {
 					<p class="notice">{ data.Insight.StaleNote } { t(ctx, "results.insight.again_hint") }</p>
 				}
-				<pre class="insight-output">{ data.Insight.Output }</pre>
+				<pre class="insight-output js-insight-output">{ data.Insight.Output }</pre>
 			} else {
 				<p class="muted">
 					{ t(ctx, "results.insight.intro") }
 				</p>
-				<pre class="insight-output" hidden></pre>
+				<pre class="insight-output js-insight-output" hidden></pre>
 			}
-			<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/insights") } class="insight-form">
+			<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/insights") } class="insight-form js-insight-form">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<button type="submit" class="secondary">
 					if data.Insight.Present {
@@ -111,11 +111,11 @@ templ insightPanel(csrf string, data SurveyResultsData) {
 // response can be deleted: deleting is per response, not per answer,
 // because a response is what a person submitted.
 templ responseTable(csrf string, data SurveyResultsData) {
-	<section class="card">
+	<section class="card js-panel">
 		<details>
 			<summary><h2>{ t(ctx, "results.table.heading") }</h2></summary>
 			<div class="table-scroll" tabindex="0">
-				<table class="responses">
+				<table class="responses js-responses">
 					<thead>
 						<tr>
 							for _, header := range data.TableHeaders {
@@ -176,7 +176,7 @@ templ translateForm(csrf string, data SurveyResultsData) {
 }
 
 templ questionResults(q QuestionResultsView) {
-	<section class="card result">
+	<section class="card result js-panel js-result">
 		<h2>{ q.Text }</h2>
 		<p class="muted">
 			{ q.TypeLabel } · { tn(ctx, "results.answers", q.Answered) }
@@ -185,7 +185,7 @@ templ questionResults(q QuestionResultsView) {
 			}
 		</p>
 		if len(q.Wordings) > 0 {
-			<details class="wordings">
+			<details class="wordings js-wordings">
 				<summary>{ t(ctx, "results.question.reworded") }</summary>
 				<ul>
 					for _, w := range q.Wordings {
@@ -206,7 +206,7 @@ templ questionResults(q QuestionResultsView) {
 					<li>
 						<span class="bar-label">{ row.Label }</span>
 						<svg class="bar" aria-hidden="true" focusable="false">
-							<rect class="bar-fill" width={ barWidth(row.Percent) } height="100%"></rect>
+							<rect class="bar-fill js-bar-fill" width={ barWidth(row.Percent) } height="100%"></rect>
 						</svg>
 						<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
 					</li>
@@ -217,7 +217,7 @@ templ questionResults(q QuestionResultsView) {
 			<ol class="transcripts">
 				for _, answer := range q.Texts {
 					<li>
-						<p class="transcript-text">{ answer.Text }</p>
+						<p class="transcript-text js-transcript-text">{ answer.Text }</p>
 						if answer.Translation != "" {
 							<p class="transcript-translation">
 								<span class="chip chip-small">{ t(ctx, "results.answer.machine") }</span>

@@ -31,7 +31,7 @@ async function keyedSurvey(page: Page, title: string): Promise<string> {
 
   await page.getByRole("button", { name: "Publish version 1" }).click();
   await expect(page.getByText("Published version 1")).toBeVisible();
-  const share = await page.locator(".share-link a").getAttribute("href");
+  const share = await page.locator(".js-share-link a").getAttribute("href");
   if (!share) throw new Error("no share link after publishing");
   return share;
 }
@@ -50,7 +50,7 @@ test("a whole survey can be answered without a single click", async ({ page, bro
 
   // Dropdown renders as the same lettered list, so it answers the same
   // way — a browser's own <select> popup has nowhere to put a hint.
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 2 of 4");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 2 of 4");
   await respondent.keyboard.press("c");
   await expect(respondent.getByRole("radio", { name: "An ad", exact: true })).toBeChecked();
   await respondent.keyboard.press("Enter");
@@ -59,7 +59,7 @@ test("a whole survey can be answered without a single click", async ({ page, bro
   // why choices get letters: the digits were already spoken for.
   await respondent.keyboard.press("1");
   await respondent.keyboard.press("0");
-  await expect(respondent.locator('.scale-point input[value="10"]')).toBeChecked();
+  await expect(respondent.locator('.js-scale-point input[value="10"]')).toBeChecked();
   await respondent.keyboard.press("Enter");
 
   // Yes/no takes the initial.
@@ -84,10 +84,10 @@ test("shift+enter goes back, and a stale digit does not linger", async ({ page, 
 
   await respondent.keyboard.press("a");
   await respondent.keyboard.press("Enter");
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 2 of 4");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 2 of 4");
 
   await respondent.keyboard.press("Shift+Enter");
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 1 of 4");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 1 of 4");
   await expect(respondent.getByRole("radio", { name: "Free", exact: true })).toBeChecked();
 
   await context.close();
@@ -105,7 +105,7 @@ test("typing is never swallowed by the key layer", async ({ page, browser }) => 
   await add.locator('input[name="text"]').fill("And your role?");
   await add.getByRole("button", { name: "Add question" }).click();
   await page.getByRole("button", { name: "Publish version 1" }).click();
-  const share = await page.locator(".share-link a").getAttribute("href");
+  const share = await page.locator(".js-share-link a").getAttribute("href");
 
   const context = await browser.newContext({ storageState: undefined });
   const respondent = await context.newPage();
@@ -116,7 +116,7 @@ test("typing is never swallowed by the key layer", async ({ page, browser }) => 
   await answer.click();
   await respondent.keyboard.type("Plan b, and 10 out of 10 for yes");
   await expect(answer).toHaveValue("Plan b, and 10 out of 10 for yes");
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 1 of 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 1 of 2");
 
   // Enter remains a newline in a textarea: long answers are frequently
   // dictated and then edited, so advancing mid-paragraph would lose the
@@ -124,11 +124,11 @@ test("typing is never swallowed by the key layer", async ({ page, browser }) => 
   await respondent.keyboard.press("Enter");
   await respondent.keyboard.type("second line");
   await expect(answer).toHaveValue(/\nsecond line$/);
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 1 of 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 1 of 2");
 
   // …and Ctrl/Cmd+Enter is the way out without reaching for the mouse.
   await respondent.keyboard.press("ControlOrMeta+Enter");
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 2 of 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 2 of 2");
 
   await context.close();
 });
@@ -147,7 +147,7 @@ test("hints are visual only, and the page stays axe-clean", async ({ page, brows
   // aria-hidden makes it so.
   await expect(respondent.getByRole("radio", { name: "Pro", exact: true })).toHaveCount(1);
   await expect(respondent.getByRole("radio", { name: "B Pro", exact: true })).toHaveCount(0);
-  await expect(respondent.locator(".key-hint").first()).toHaveAttribute("aria-hidden", "true");
+  await expect(respondent.locator(".js-key-hint").first()).toHaveAttribute("aria-hidden", "true");
 
   // Shown only where a keyboard exists. Displaying a shortcut that cannot
   // be pressed misleads the reader, so on a touch device the hint must be
@@ -155,7 +155,7 @@ test("hints are visual only, and the page stays axe-clean", async ({ page, brows
   const hasKeyboard = await respondent.evaluate(
     () => matchMedia("(hover: hover) and (pointer: fine)").matches
   );
-  const hint = respondent.locator(".key-hint").first();
+  const hint = respondent.locator(".js-key-hint").first();
   if (hasKeyboard) {
     await expect(hint).toBeVisible();
   } else {
@@ -182,7 +182,7 @@ async function spokenSurvey(page: Page, title: string): Promise<string> {
   await add.locator('input[name="text"]').fill("Your role?");
   await add.getByRole("button", { name: "Add question" }).click();
   await page.getByRole("button", { name: "Publish version 1" }).click();
-  const share = await page.locator(".share-link a").getAttribute("href");
+  const share = await page.locator(".js-share-link a").getAttribute("href");
   if (!share) throw new Error("no share link after publishing");
   return share;
 }
@@ -229,11 +229,11 @@ test("shift+space starts and stops recording", async ({ page, browser }) => {
   await respondent.getByRole("button", { name: "Use the microphone" }).click();
   await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   // A toggled take has no key to release, so the hint says nothing.
-  await expect(respondent.locator(".voice-button .key-combo").first()).toBeEmpty();
+  await expect(respondent.locator(".js-voice-button .js-key-combo").first()).toBeEmpty();
 
   await respondent.waitForTimeout(1200);
   await respondent.keyboard.press("Shift+ ");
-  await expect(respondent.locator(".voice-status").first()).toHaveText(/Transcribed/, {
+  await expect(respondent.locator(".js-voice-status").first()).toHaveText(/Transcribed/, {
     timeout: 15000,
   });
   await expect(respondent.locator("textarea")).not.toBeEmpty();
@@ -262,10 +262,10 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
   const answer = respondent.locator("textarea");
-  const row = respondent.locator(".voice").first();
+  const row = respondent.locator(".js-voice").first();
   await expect(row).toHaveAttribute("data-state", "idle");
 
-  const holdBar = respondent.locator(".voice-hold").first();
+  const holdBar = respondent.locator(".js-voice-hold").first();
   await answer.click();
   await respondent.keyboard.type("Plan b");
   await expect(answer).toHaveValue("Plan b");
@@ -274,7 +274,7 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   // The bar is there for as long as the hold is only a hold, and gone
   // once it has become a take.
   await respondent.keyboard.down(" ");
-  const hint = respondent.locator(".voice-button .key-combo").first();
+  const hint = respondent.locator(".js-voice-button .js-key-combo").first();
   await expect(hint).toHaveText("Hold Space");
   await expect(holdBar).toBeVisible();
   await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
@@ -283,25 +283,25 @@ test("holding space records, releasing it transcribes, and a tap still types", a
   // that this one ends when the key comes up.
   await expect(hint).toHaveText("Release Space");
   await expect(row).toHaveAttribute("data-state", "recording");
-  await expect(answer).toHaveClass(/voice-live/);
+  await expect(answer).toHaveClass(/\bis-live\b/);
   await expect(answer).toHaveValue("Plan b"); // the held key typed nothing
 
   await respondent.waitForTimeout(1200);
   await respondent.keyboard.up(" ");
-  await expect(respondent.locator(".voice-status").first()).toHaveText(/Transcribed/, {
+  await expect(respondent.locator(".js-voice-status").first()).toHaveText(/Transcribed/, {
     timeout: 15000,
   });
   // The transcript joins what was typed, with the space that separates
   // sentences rather than glued on.
   await expect(answer).toHaveValue(/^Plan b\s+\S/);
   await expect(row).toHaveAttribute("data-state", "idle");
-  await expect(answer).not.toHaveClass(/voice-live/);
+  await expect(answer).not.toHaveClass(/\bis-live\b/);
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
   await expect(hint).toHaveText("Hold Space");
 
   // The reset button is named by its text alone; its icon is decoration.
   await expect(respondent.getByRole("button", { name: "Reset", exact: true })).toHaveCount(1);
-  await expect(respondent.locator(".voice-reset svg").first()).toHaveAttribute("aria-hidden", "true");
+  await expect(respondent.locator(".js-voice-reset svg").first()).toHaveAttribute("aria-hidden", "true");
   const scan = await new AxeBuilder({ page: respondent }).analyze();
   expect(scan.violations).toEqual([]);
 
@@ -326,12 +326,12 @@ test("shift+esc clears the answer, its draft, and a live take", async ({ page, b
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
   const answer = respondent.locator("textarea");
-  const status = respondent.locator(".voice-status").first();
+  const status = respondent.locator(".js-voice-status").first();
   const reset = respondent.getByRole("button", { name: "Reset", exact: true });
 
   // The button names the chord, one cap per key.
-  await expect(reset.locator(".key-hint")).toHaveText(["⇧ Shift", "ESC"]);
-  await expect(reset.locator(".key-combo")).toHaveText("⇧ Shift + ESC");
+  await expect(reset.locator(".js-key-hint")).toHaveText(["⇧ Shift", "ESC"]);
+  await expect(reset.locator(".js-key-combo")).toHaveText("⇧ Shift + ESC");
 
   // Esc leaves the field and changes nothing, twice as much as once.
   await answer.click();
@@ -364,7 +364,7 @@ test("shift+esc clears the answer, its draft, and a live take", async ({ page, b
   await respondent.keyboard.up(" ");
   await respondent.waitForTimeout(1000); // long enough for a stray transcript to have landed
   await expect(answer).toHaveValue("");
-  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
+  await expect(respondent.locator(".js-voice").first()).toHaveAttribute("data-state", "idle");
 
   // From inside the field too, and the button does the same as the keys.
   await respondent.keyboard.type("x");
@@ -393,16 +393,16 @@ test("esc leaves the field so enter moves on, and clears nothing", async ({
   await respondent.goto(share);
 
   const first = respondent.locator("textarea");
-  const second = respondent.locator('.respond-question input[type="text"]');
-  const progress = respondent.locator(".respond-progress");
+  const second = respondent.locator('.js-respond-question input[type="text"]');
+  const progress = respondent.locator(".js-respond-progress");
   // The Next button names the keys, in the order to press them. Asserted
   // on the hidden property rather than on visibility: hints are not
   // drawn at all on a device without a keyboard.
   const next = respondent.getByRole("button", { name: "Next", exact: true });
-  const hints = next.locator(".key-hint");
-  const escFirst = next.locator(".key-esc");
+  const hints = next.locator(".js-key-hint");
+  const escFirst = next.locator(".js-key-esc");
   await expect(hints).toHaveText(["ESC", "↵ Enter"]);
-  await expect(next.locator(".key-combo").first()).toHaveText("ESC then ↵ Enter");
+  await expect(next.locator(".js-key-combo").first()).toHaveText("ESC then ↵ Enter");
 
   await first.click();
   await expect(escFirst).toHaveJSProperty("hidden", false);
@@ -421,8 +421,8 @@ test("esc leaves the field so enter moves on, and clears nothing", async ({
   // Back names its keys the same way: the symbol, then the name, one
   // cap per key.
   const back = respondent.getByRole("button", { name: "Back", exact: true });
-  await expect(back.locator(".key-hint")).toHaveText(["ESC", "⇧ Shift", "↵ Enter"]);
-  await expect(back.locator(".key-combo").first()).toHaveText("ESC then ⇧ Shift + ↵ Enter");
+  await expect(back.locator(".js-key-hint")).toHaveText(["ESC", "⇧ Shift", "↵ Enter"]);
+  await expect(back.locator(".js-key-combo").first()).toHaveText("ESC then ⇧ Shift + ↵ Enter");
 
   // And again on the next question, straight away.
   await expect(second).toBeFocused();
@@ -453,7 +453,7 @@ async function endsOnLongAnswer(page: Page, title: string): Promise<string> {
   await add.locator('input[name="text"]').fill("Anything else?");
   await add.getByRole("button", { name: "Add question" }).click();
   await page.getByRole("button", { name: "Publish version 1" }).click();
-  const share = await page.locator(".share-link a").getAttribute("href");
+  const share = await page.locator(".js-share-link a").getAttribute("href");
   if (!share) throw new Error("no share link after publishing");
   return share;
 }
@@ -472,11 +472,11 @@ test("submit names its keys, and esc then enter submits from a textarea", async 
 
   await respondent.keyboard.type("Researcher");
   await respondent.keyboard.press("Enter");
-  await expect(respondent.locator(".respond-progress")).toHaveText("Question 2 of 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 2 of 2");
 
   const submit = respondent.getByRole("button", { name: "Submit answers", exact: true });
-  const hints = submit.locator(".key-hint");
-  const escFirst = submit.locator(".key-esc");
+  const hints = submit.locator(".js-key-hint");
+  const escFirst = submit.locator(".js-key-esc");
   const answer = respondent.locator("textarea");
   await expect(submit).toBeVisible();
   await expect(hints).toHaveText(["ESC", "↵ Enter"]);

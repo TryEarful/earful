@@ -13,12 +13,12 @@
   var T = window.EarfulText;
   if (!T) return;
 
-  var form = document.querySelector(".generate-form");
+  var form = document.querySelector(".js-generate-form");
   if (!form) return;
   var path = form.getAttribute("data-generate-path");
   if (!path || !window.EarfulSocket || !window.EarfulSocket.supported) return;
 
-  var output = document.querySelector(".generate-output");
+  var output = document.querySelector(".js-generate-output");
   var button = form.querySelector('button[type="submit"]');
   var prompt = form.querySelector('[name="prompt"]');
   if (!output || !button || !prompt) return;

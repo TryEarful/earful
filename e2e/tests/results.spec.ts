@@ -32,7 +32,7 @@ test("results read back what respondents said, and export cleanly", async ({ pag
   await expect(page.getByRole("heading", { name: "Results" })).toBeVisible();
   // The transcript list, specifically: the answers also appear in the
   // "All responses" table further down.
-  const transcripts = page.locator(".transcript-text");
+  const transcripts = page.locator(".js-transcript-text");
   await expect(transcripts.filter({ hasText: "Setup took a while" })).toBeVisible();
   await expect(transcripts.filter({ hasText: "Loved it" })).toBeVisible();
 
@@ -54,8 +54,8 @@ test("results read back what respondents said, and export cleanly", async ({ pag
   await page.getByRole("link", { name: "Stats", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Big picture" })).toBeVisible();
   await expect(page.getByText(/counts times the survey page was loaded/)).toBeVisible();
-  await expect(page.locator(".trend-svg")).toBeVisible();
-  await expect(page.locator(".trend-svg .trend-dot")).toHaveCount(1);
+  await expect(page.locator(".js-trend-svg")).toBeVisible();
+  await expect(page.locator(".js-trend-svg .js-trend-dot")).toHaveCount(1);
   await expect(page.getByRole("combobox", { name: "Series" })).toBeVisible();
   await expect(page.getByRole("cell", { name: /What would make surveys less painful/ })).toBeVisible();
 
@@ -94,13 +94,13 @@ test("an insight summary streams in and is labelled as AI output", async ({ page
   if (!offered) {
     // No summary without a model — but the answers themselves, which are
     // the actual results, are all still there to read.
-    await expect(page.locator(".transcript-text").first()).toBeVisible();
+    await expect(page.locator(".js-transcript-text").first()).toBeVisible();
   }
   test.skip(!offered, "this instance has no AI configured, so it offers no Insight Summary");
 
   // Same as generation: wait for insights.js to own the submit, or this
   // silently tests the plain POST instead of the stream.
-  await expect(page.locator(".insight-form[data-enhanced]")).toBeAttached();
+  await expect(page.locator(".js-insight-form[data-enhanced]")).toBeAttached();
 
   await page.getByRole("button", { name: "Analyse the responses" }).click();
 
@@ -108,7 +108,7 @@ test("an insight summary streams in and is labelled as AI output", async ({ page
   // that keeps analysis from passing for data.
   await expect(page.getByText(/Written by/)).toBeVisible({ timeout: aiTimeout * 2 });
   await expect(page.getByText(/not the answers themselves/)).toBeVisible();
-  await expect(page.locator(".insight-output")).not.toBeEmpty();
+  await expect(page.locator(".js-insight-output")).not.toBeEmpty();
 });
 
 test("a workspace export can be built and downloaded", async ({ page }) => {

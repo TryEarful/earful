@@ -28,7 +28,7 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 				<p class="error-text">{ errMsg }</p>
 			}
 			if len(minted) > 0 {
-				<div class="card">
+				<div class="card js-panel">
 					<h2>{ t(ctx, "admin.beta.minted.heading") }</h2>
 					<p class="muted">{ t(ctx, "admin.beta.minted.note") }</p>
 					<ul class="code-list">
@@ -39,13 +39,13 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 				</div>
 			}
 			if resetTemp != "" {
-				<div class="card">
+				<div class="card js-panel">
 					<h2>{ t(ctx, "admin.beta.reset.shown", uitext.Args{"Email": resetEmail}) }</h2>
 					<p><code>{ resetTemp }</code></p>
 					<p class="muted">{ t(ctx, "admin.beta.reset.note") }</p>
 				</div>
 			}
-			<div class="card">
+			<div class="card js-panel">
 				<h2>{ t(ctx, "admin.beta.mint.heading") }</h2>
 				<form method="post" action="/admin/beta-codes">
 					<input type="hidden" name="_csrf" value={ csrf }/>
@@ -60,7 +60,7 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 					<button type="submit">{ t(ctx, "admin.beta.mint.submit.label") }</button>
 				</form>
 			</div>
-			<div class="card">
+			<div class="card js-panel">
 				<h2>{ t(ctx, "admin.beta.reset.heading") }</h2>
 				<form method="post" action="/admin/reset-password">
 					<input type="hidden" name="_csrf" value={ csrf }/>
@@ -72,7 +72,7 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 				</form>
 				<p class="muted">{ t(ctx, "admin.beta.reset.hint") }</p>
 			</div>
-			<div class="card">
+			<div class="card js-panel">
 				<h2>{ t(ctx, "admin.beta.codes.heading") }</h2>
 				if len(codes) == 0 {
 					<p class="muted">
@@ -124,7 +124,7 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 			</p>
 
 			if data.Done {
-				<div class="card">
+				<div class="card js-panel">
 					<p class="notice">{ t(ctx, "admin.erasure.done", uitext.Args{"Rows": data.ErasedRow}) }</p>
 					<p class="muted">
 						{ t(ctx, "admin.erasure.record") }
@@ -132,7 +132,7 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 				</div>
 			}
 
-			<div class="card">
+			<div class="card js-panel">
 				<h2>{ t(ctx, "admin.erasure.find.heading") }</h2>
 				<form method="get" action="/admin/erasure">
 					<label class="field">
@@ -144,7 +144,7 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 			</div>
 
 			if data.Searched {
-				<div class="card">
+				<div class="card js-panel">
 					<h2>{ t(ctx, "admin.erasure.found.heading") }</h2>
 					if !data.Subject.Found {
 						<p>
@@ -194,7 +194,7 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 				@thtml(ctx, "admin.metrics.intro_html")
 			</p>
 
-			<section class="card">
+			<section class="card js-panel">
 				<h2>{ t(ctx, "admin.metrics.totals") }</h2>
 				<dl class="stat-grid">
 					for _, total := range data.Totals {
@@ -209,7 +209,7 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 			@metricSeries(t(ctx, "admin.metrics.signups"), data.Signups, data.WindowDays)
 			@metricSeries(t(ctx, "admin.metrics.responses"), data.Responses, data.WindowDays)
 
-			<section class="card">
+			<section class="card js-panel">
 				<h2>{ t(ctx, "admin.metrics.spend.heading") }</h2>
 				<p class="muted">{ data.BudgetNote }</p>
 				<p>
@@ -222,7 +222,7 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 }
 
 templ metricSeries(title string, points []MetricPoint, windowDays int) {
-	<section class="card">
+	<section class="card js-panel">
 		<h2>{ title }</h2>
 		<p class="muted">{ t(ctx, "admin.metrics.window", uitext.Args{"Days": windowDays}) }</p>
 		@metricRows(points)

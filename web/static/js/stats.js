@@ -38,9 +38,9 @@
     }
     if (!Array.isArray(points) || points.length === 0) return;
 
-    var chart = section.querySelector(".trend-chart");
-    var table = section.querySelector(".trend-table");
-    var controls = section.querySelector(".trend-controls");
+    var chart = section.querySelector(".js-trend-chart");
+    var table = section.querySelector(".js-trend-table");
+    var controls = section.querySelector(".js-trend-controls");
     if (!chart || !table || !controls) return;
 
     // The series picker only exists once there is a chart to switch.
@@ -85,7 +85,7 @@
     points.forEach(function (p) { if (p[key] > max) max = p[key]; });
     var top = niceCeiling(max);
 
-    var svg = el("svg", { viewBox: "0 0 " + width + " " + height, class: "trend-svg", role: "presentation" });
+    var svg = el("svg", { viewBox: "0 0 " + width + " " + height, class: "trend-svg js-trend-svg", role: "presentation" });
     var title = el("title");
     title.textContent = T.t("js.stats.chart.title", { Series: series.label });
     svg.appendChild(title);
@@ -121,7 +121,7 @@
 
     // One hoverable point per day, with the value as its title.
     points.forEach(function (p, i) {
-      var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : 3.5, class: "trend-dot" });
+      var dot = el("circle", { cx: x(i), cy: y(p[key]), r: points.length > 120 ? 2 : 3.5, class: "trend-dot js-trend-dot" });
       var t = el("title");
       t.textContent = T.t("js.stats.chart.point", { Day: p.label, Count: p[key], Series: series.counted });
       dot.appendChild(t);
@@ -203,6 +203,6 @@
   var dataNode = document.getElementById("trend-data");
   if (trend && dataNode) drawTrend(trend, dataNode);
 
-  var stops = document.querySelector("table.stops[data-sortable]");
+  var stops = document.querySelector(".js-stops[data-sortable]");
   if (stops) makeSortable(stops);
 })();

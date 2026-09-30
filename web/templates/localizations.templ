@@ -27,7 +27,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
 
-			<section class="card">
+			<section class="card js-panel">
 				<h2>{ t(ctx, "languages.add.heading") }</h2>
 				<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>
 					<input type="hidden" name="_csrf" value={ csrf }/>
@@ -52,7 +52,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 }
 
 templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
-	<section class="card" id={ "lang-" + lang.Code }>
+	<section class="card js-panel" id={ "lang-" + lang.Code }>
 		<div class="title-row">
 			<h2>{ lang.Label } <span class="muted">({ lang.Code })</span></h2>
 			if lang.Ready {

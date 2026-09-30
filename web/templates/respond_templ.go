@@ -296,7 +296,7 @@ func Respond(data RespondData) templ.Component {
 				}
 			}
 			if len(data.ErrorList) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"error-summary\" role=\"alert\" tabindex=\"-1\" id=\"error-summary\"><h2>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"error-summary js-error-summary\" role=\"alert\" tabindex=\"-1\" id=\"error-summary\"><h2>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -363,7 +363,7 @@ func Respond(data RespondData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"respond-form\" data-question-count=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"respond-form js-respond-form\" data-question-count=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -496,7 +496,7 @@ func Respond(data RespondData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " <input type=\"text\" name=\"website\" tabindex=\"-1\" autocomplete=\"off\"></label></div><ol class=\"respond-questions\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " <input type=\"text\" name=\"website\" tabindex=\"-1\" autocomplete=\"off\"></label></div><ol class=\"respond-questions js-respond-questions\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -506,7 +506,7 @@ func Respond(data RespondData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</ol><div class=\"respond-actions\"><button type=\"submit\" class=\"respond-submit\"><span class=\"button-label\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</ol><div class=\"respond-actions js-respond-actions\"><button type=\"submit\" class=\"respond-submit\"><span class=\"button-label\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1064,7 +1064,7 @@ func respondQuestion(q domain.Question, index int, total int, data RespondData) 
 			templ_7745c5c3_Var50 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<li class=\"respond-question\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<li class=\"respond-question js-respond-question\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1612,7 +1612,7 @@ func answerControl(q domain.Question, data RespondData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, point := range q.ScalePoints() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "<label class=\"scale-point\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "<label class=\"scale-point js-scale-point\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1886,14 +1886,14 @@ func keyHint(key string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if key != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 155, "<span class=\"key-hint\" data-key=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 155, "<span class=\"key-hint js-key-hint\" data-key=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var94 string
 			templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.ResolveAttributeValue(key)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/respond.templ`, Line: 455, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/respond.templ`, Line: 455, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var94)
 			if templ_7745c5c3_Err != nil {
@@ -1906,7 +1906,7 @@ func keyHint(key string) templ.Component {
 			var templ_7745c5c3_Var95 string
 			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(key)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/respond.templ`, Line: 455, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/respond.templ`, Line: 455, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 			if templ_7745c5c3_Err != nil {

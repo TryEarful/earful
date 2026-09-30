@@ -24,9 +24,9 @@ test("a respondent with a Spanish browser answers in Spanish", async ({ page, br
   // The page, and what the script draws on it: the position, the
   // buttons, the keys they name.
   await expect(respondent.locator("html")).toHaveAttribute("lang", "es");
-  await expect(respondent.locator(".respond-progress")).toHaveText("Pregunta 1 de 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Pregunta 1 de 2");
   await expect(respondent.getByRole("button", { name: "Siguiente" })).toBeVisible();
-  await expect(respondent.getByRole("button", { name: "Siguiente" }).locator(".key-hint")).toContainText(["↵ Intro"]);
+  await expect(respondent.getByRole("button", { name: "Siguiente" }).locator(".js-key-hint")).toContainText(["↵ Intro"]);
   await expect(respondent.getByText("Es anónima")).toBeVisible();
 
   const results = await new AxeBuilder({ page: respondent }).analyze();
@@ -34,7 +34,7 @@ test("a respondent with a Spanish browser answers in Spanish", async ({ page, br
 
   await respondent.locator("textarea").fill("Déjenme hablar en vez de escribir.");
   await respondent.getByRole("button", { name: "Siguiente" }).click();
-  await expect(respondent.locator(".respond-progress")).toHaveText("Pregunta 2 de 2");
+  await expect(respondent.locator(".js-respond-progress")).toHaveText("Pregunta 2 de 2");
   await expect(respondent.getByRole("button", { name: "Atrás" })).toBeVisible();
   // What the creator wrote is the creator's, in whatever language.
   await respondent.getByLabel("Monthly").check();

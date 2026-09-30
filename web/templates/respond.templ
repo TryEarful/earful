@@ -131,7 +131,7 @@ templ Respond(data RespondData) {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
 			if len(data.ErrorList) > 0 {
-				<div class="error-summary" role="alert" tabindex="-1" id="error-summary">
+				<div class="error-summary js-error-summary" role="alert" tabindex="-1" id="error-summary">
 					<h2>{ tn(ctx, "respond.errors.heading", len(data.ErrorList)) }</h2>
 					<ul>
 						for _, e := range data.ErrorList {
@@ -143,7 +143,7 @@ templ Respond(data RespondData) {
 			<form
 				method="post"
 				action={ templ.SafeURL(respondAction(data)) }
-				class="respond-form"
+				class="respond-form js-respond-form"
 				data-question-count={ strconv.Itoa(len(data.Questions)) }
 				if !data.Preview && data.ParticipantToken == "" {
 					data-challenge-url={ "/s/" + data.SurveyID + "/challenge" }
@@ -168,12 +168,12 @@ templ Respond(data RespondData) {
 						<input type="text" name="website" tabindex="-1" autocomplete="off"/>
 					</label>
 				</div>
-				<ol class="respond-questions">
+				<ol class="respond-questions js-respond-questions">
 					for i, q := range data.Questions {
 						@respondQuestion(q, i, len(data.Questions), data)
 					}
 				</ol>
-				<div class="respond-actions">
+				<div class="respond-actions js-respond-actions">
 					<button type="submit" class="respond-submit">
 						<span class="button-label">
 							{ t(ctx, "respond.submit.label") }
@@ -309,7 +309,7 @@ templ RespondAlreadySubmitted(title string) {
 
 templ respondQuestion(q domain.Question, index int, total int, data RespondData) {
 	<li
-		class="respond-question"
+		class="respond-question js-respond-question"
 		id={ "q-" + q.IdentityID }
 		data-index={ strconv.Itoa(index) }
 		if data.VoiceEnabled() && q.Type.AcceptsVoice() {
@@ -406,7 +406,7 @@ templ answerControl(q domain.Question, data RespondData) {
 		case domain.RatingScale, domain.NPS:
 			<div class="scale">
 				for _, point := range q.ScalePoints() {
-					<label class="scale-point">
+					<label class="scale-point js-scale-point">
 						if numberEquals(data.Answers[q.IdentityID].Number, point) {
 							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) } checked/>
 						} else {
@@ -452,7 +452,7 @@ templ answerControl(q domain.Question, data RespondData) {
 // DOM rather than recomputing the same letters in two languages.
 templ keyHint(key string) {
 	if key != "" {
-		<span class="key-hint" data-key={ key } aria-hidden="true">{ key }</span>
+		<span class="key-hint js-key-hint" data-key={ key } aria-hidden="true">{ key }</span>
 	}
 }
 

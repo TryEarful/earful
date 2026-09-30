@@ -29,7 +29,7 @@
     });
   }
 
-  var form = document.querySelector(".respond-form");
+  var form = document.querySelector(".js-respond-form");
   if (!form) return;
 
   solveChallenge(form);
@@ -50,7 +50,7 @@
   });
 
   var questions = Array.prototype.slice.call(
-    form.querySelectorAll(".respond-question")
+    form.querySelectorAll(".js-respond-question")
   );
   // Nothing to page through.
   if (questions.length < 2) {
@@ -61,19 +61,19 @@
   // If the server re-rendered with validation errors, stay on the plain
   // long-form view: every problem is visible at once and the error summary
   // links work. Paging would hide most of them behind navigation.
-  if (document.querySelector(".error-summary")) {
+  if (document.querySelector(".js-error-summary")) {
     stampStartTime();
     return;
   }
 
   var current = 0;
-  form.classList.add("paged");
+  form.classList.add("is-paged");
 
   var nav = document.createElement("div");
   nav.className = "respond-nav";
 
   var progress = document.createElement("p");
-  progress.className = "respond-progress";
+  progress.className = "respond-progress js-respond-progress";
   // Announce progress politely: a screen reader user hears the new
   // position after moving, without interrupting whatever they are reading.
   progress.setAttribute("aria-live", "polite");
@@ -102,7 +102,7 @@
   var escHints = [];
   function addEnterHints(button, shifted) {
     var esc = keyCombo(T.parts("js.key.then", { Key: { key: T.t("js.key.esc") } }));
-    esc.className += " key-esc";
+    esc.className += " key-esc js-key-esc";
     esc.hidden = true;
     escHints.push(esc);
     var enter = { key: T.t("js.key.enter") };
@@ -132,12 +132,12 @@
   nav.appendChild(backButton);
   nav.appendChild(nextButton);
 
-  var actions = form.querySelector(".respond-actions");
+  var actions = form.querySelector(".js-respond-actions");
   // The server renders Submit, so that it is there without JavaScript;
   // its hints are added here because the keys they name are.
   var submitButton = actions.querySelector('button[type="submit"]');
   if (submitButton) addEnterHints(submitButton, false);
-  form.insertBefore(progress, form.querySelector(".respond-questions"));
+  form.insertBefore(progress, form.querySelector(".js-respond-questions"));
   actions.parentNode.insertBefore(nav, actions);
   // Submit takes Next's place on the last question, so it takes its
   // place in the row as well, beside Back rather than under it.
@@ -221,7 +221,7 @@
     // wired there, not here, so that it works on a one-question survey
     // too, where this layer never attaches.
     if (event.shiftKey && event.key === " ") {
-      var mic = questions[current].querySelector(".voice-button");
+      var mic = questions[current].querySelector(".js-voice-button");
       if (mic) {
         event.preventDefault();
         mic.click();
@@ -264,7 +264,7 @@
 
   function pickByValue(value) {
     var input = questions[current].querySelector(
-      '.scale-point input[value="' + value + '"]'
+      '.js-scale-point input[value="' + value + '"]'
     );
     if (!input) return false;
     input.click();
@@ -332,7 +332,7 @@
   // the button's accessible name must remain T.t("js.respond.next"), not "Next Enter".
   function keyCombo(parts) {
     var combo = document.createElement("span");
-    combo.className = "key-combo";
+    combo.className = "key-combo js-key-combo";
     combo.setAttribute("aria-hidden", "true");
     fillCombo(combo, parts);
     return combo;
@@ -349,7 +349,7 @@
         return;
       }
       var piece = document.createElement("span");
-      piece.className = typeof part === "string" ? "key-word" : "key-hint";
+      piece.className = typeof part === "string" ? "key-word" : "key-hint js-key-hint";
       piece.textContent = typeof part === "string" ? part : part.key;
       combo.appendChild(piece);
     });
@@ -556,7 +556,7 @@ function attachVersions(form) {
   // strokes large enough to regret.
   Array.prototype.forEach.call(
     form.querySelectorAll(
-      '.respond-question[data-voice="1"] textarea, .respond-question[data-voice="1"] input[type=text]'
+      '.js-respond-question[data-voice="1"] textarea, .js-respond-question[data-voice="1"] input[type=text]'
     ),
     attach
   );
@@ -679,7 +679,7 @@ function attachVersions(form) {
     backdrop.className = "versions-backdrop";
 
     var dialog = document.createElement("div");
-    dialog.className = "versions-dialog";
+    dialog.className = "versions-dialog js-versions-dialog";
     dialog.setAttribute("role", "dialog");
     dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-labelledby", "versions-title");
@@ -697,7 +697,7 @@ function attachVersions(form) {
       .reverse()
       .forEach(function (entry) {
         var item = document.createElement("li");
-        item.className = "versions-item";
+        item.className = "versions-item js-versions-item";
 
         var meta = document.createElement("div");
         meta.className = "versions-meta";
@@ -721,7 +721,7 @@ function attachVersions(form) {
         meta.appendChild(restore);
 
         var text = document.createElement("p");
-        text.className = "versions-text";
+        text.className = "versions-text js-versions-text";
         text.textContent = entry.v;
 
         item.appendChild(meta);

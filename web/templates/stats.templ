@@ -37,7 +37,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 
 			@rangeControl(data)
 
-			<section class="card">
+			<section class="card js-panel">
 				<h2>{ t(ctx, "stats.picture.heading") }</h2>
 				<dl class="stat-grid">
 					<div>
@@ -70,14 +70,14 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				}
 			</section>
 
-			<section class="card trend" id="trend">
+			<section class="card trend js-panel" id="trend">
 				<div class="title-row">
 					<h2>{ t(ctx, "stats.trend.heading") }</h2>
-					<div class="trend-controls"></div>
+					<div class="trend-controls js-trend-controls"></div>
 				</div>
 				<p class="muted">{ t(ctx, "stats.trend.range", uitext.Args{"Range": data.Range.Label}) }</p>
-				<div class="trend-chart" role="img" aria-label={ t(ctx, "stats.trend.aria") }></div>
-				<div class="trend-table">
+				<div class="trend-chart js-trend-chart" role="img" aria-label={ t(ctx, "stats.trend.aria") }></div>
+				<div class="trend-table js-trend-table">
 					if len(data.TrendRows) == 0 {
 						<p class="muted">{ t(ctx, "stats.trend.empty") }</p>
 					} else {
@@ -106,7 +106,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				@templ.JSONScript("trend-data", data.Trend)
 			</section>
 
-			<section class="card" id="questions">
+			<section class="card js-panel" id="questions">
 				<h2>{ t(ctx, "stats.questions.heading") }</h2>
 				<p class="muted">
 					{ t(ctx, "stats.questions.intro") }
@@ -115,7 +115,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 					<p class="muted">{ t(ctx, "stats.questions.empty") }</p>
 				} else {
 					<div class="table-scroll" tabindex="0">
-						<table class="responses stops" data-sortable>
+						<table class="responses stops js-stops" data-sortable>
 							<thead>
 								<tr>
 									<th scope="col" data-sort="text">{ t(ctx, "stats.questions.question") }</th>
@@ -146,7 +146,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				}
 			</section>
 
-			<section class="card stats">
+			<section class="card stats js-panel js-audience">
 				<h2>{ t(ctx, "stats.audience.heading") }</h2>
 				<p class="muted">
 					{ t(ctx, "stats.audience.intro") }
@@ -204,7 +204,7 @@ templ statBuckets(title string, rows []CountView) {
 			for _, row := range rows {
 				<li>
 					<span class="bar-label">{ row.Label }</span>
-					<svg class="bar" aria-hidden="true" focusable="false"><rect class="bar-fill" width={ barWidth(row.Percent) } height="100%"></rect></svg>
+					<svg class="bar" aria-hidden="true" focusable="false"><rect class="bar-fill js-bar-fill" width={ barWidth(row.Percent) } height="100%"></rect></svg>
 					<span class="bar-count">{ strconv.Itoa(row.Count) } ({ row.Share })</span>
 				</li>
 			}

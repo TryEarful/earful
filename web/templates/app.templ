@@ -6,7 +6,7 @@ import "github.com/TryEarful/earful/internal/uitext"
 // the sign-out button (a real POST form carrying the CSRF token — no
 // state-changing GETs anywhere).
 templ AuthedHeader(email string, csrf string) {
-	<header class="site-header">
+	<header class="site-header js-site-header">
 		<a class="brand" href="/dashboard">Earful</a>
 		<nav aria-label={ t(ctx, "header.nav.aria") }>
 			<a href="/dashboard">{ t(ctx, "header.dashboard.label") }</a>
@@ -29,7 +29,7 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 				<a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a>
 			</div>
 			if len(data.Surveys) == 0 {
-				<div class="card">
+				<div class="card js-panel">
 					<h2>{ t(ctx, "dashboard.empty.heading") }</h2>
 					<p>{ t(ctx, "dashboard.empty.body") }</p>
 					<p><a class="button" href="/surveys/new">{ t(ctx, "dashboard.new.label") }</a></p>
@@ -37,7 +37,7 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 			} else {
 				<ul class="survey-list">
 					for _, s := range data.Surveys {
-						<li class="card">
+						<li class="card js-survey-card">
 							<div class="title-row">
 								<a class="survey-title" href={ templ.SafeURL("/surveys/" + s.ID) }>{ s.Title }</a>
 								@StatusChip(s.Status)
@@ -72,7 +72,7 @@ templ Dashboard(email string, workspaceName string, csrf string, data SurveyList
 // It is on the account page rather than hidden in settings because the
 // point of it is that it is easy to find.
 templ workspaceExport(csrf string, export ExportView) {
-	<div class="card">
+	<div class="card js-panel">
 		<h2>{ t(ctx, "account.export.heading") }</h2>
 		<p>
 			{ t(ctx, "account.export.body") }
@@ -110,7 +110,7 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 		@AuthedHeader(email, csrf)
 		<main>
 			<h1>{ t(ctx, "account.heading") }</h1>
-			<div class="card">
+			<div class="card js-panel">
 				<p>
 					@thtml(ctx, "account.signed_in_html", uitext.Args{"Email": email})
 				</p>
@@ -125,7 +125,7 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 					</p>
 				}
 			</div>
-			<div class="card">
+			<div class="card js-panel">
 				<h2>{ t(ctx, "account.email.heading") }</h2>
 				if data.EmailNotice != "" {
 					<p class="notice">{ data.EmailNotice }</p>
@@ -148,7 +148,7 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 				<p class="muted">{ t(ctx, "account.email.hint") }</p>
 			</div>
 			@workspaceExport(csrf, data.Export)
-			<div class="card">
+			<div class="card js-panel">
 				<h2>{ t(ctx, "account.delete.heading") }</h2>
 				<p>{ t(ctx, "account.delete.body") }</p>
 				<form method="post" action="/account/delete">

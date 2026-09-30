@@ -119,7 +119,7 @@ async function buildStory(
 
     // Publish version 1.
     await publish(page, surveyId, 1);
-    const shareHref = await page.locator(".share-link a").getAttribute("href");
+    const shareHref = await page.locator(".js-share-link a").getAttribute("href");
     if (!shareHref) throw new Error(`${name}: no share link after publishing`);
     const shareUrl = new URL(shareHref, BASE).toString();
     if (first) {
@@ -220,7 +220,7 @@ UPDATE surveys SET deleted_at = now()
 }
 
 function card(page: Page, heading: string) {
-    return page.locator(".card", {
+    return page.locator(".js-panel", {
         has: page.locator("h2", { hasText: new RegExp(`^${heading}$`) }),
     })
         .first();
@@ -237,7 +237,7 @@ async function draftQuestions(page: Page, story: StoryDef, manifest: Manifest, s
     if (shots) {
         await page.waitForFunction(
             () =>
-                (document.querySelector(".generate-output")?.textContent ?? "").split("\n")
+                (document.querySelector(".js-generate-output")?.textContent ?? "").split("\n")
                     .length >= 3,
             null,
             { timeout: 120_000 },
@@ -246,7 +246,7 @@ async function draftQuestions(page: Page, story: StoryDef, manifest: Manifest, s
     }
     // The page reloads itself when the stream ends; every question is then in the list.
     await page.waitForFunction(
-        (n: number) => document.querySelectorAll("li.question").length >= n,
+        (n: number) => document.querySelectorAll(".js-question").length >= n,
         story.questions.length,
         { timeout: 180_000 },
     );
@@ -348,7 +348,7 @@ async function reword(page: Page, surveyId: string, story: StoryDef, manifest: M
     for (const [key, text] of Object.entries(story.reword ?? {})) {
         const q = story.questions.find((q) => q.key === key);
         if (!q) throw new Error(`reword: no question with key ${key}`);
-        const row = page.locator("li.question", { hasText: q.text });
+        const row = page.locator(".js-question", { hasText: q.text });
         await row.locator("summary").click();
         await row.locator("input[name=text]").fill(text);
         await shoot(manifest, page, "question-editor-open", { kind: "card", locator: row });

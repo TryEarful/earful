@@ -37,7 +37,7 @@ templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) 
 		@AuthedHeader(email, csrf)
 		<main>
 			<h1>{ t(ctx, "survey.new.heading") }</h1>
-			<form method="post" action="/surveys" class="card">
+			<form method="post" action="/surveys" class="card js-panel">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<label class="field">
 					<span>{ t(ctx, "survey.name.label") }</span>
@@ -105,7 +105,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 				<p class="notice error-text">{ data.Error }</p>
 			}
 			@lifecyclePanel(csrf, data.Survey)
-			<section class="card">
+			<section class="card js-panel">
 				<div class="title-row">
 					<h2>{ t(ctx, "editor.questions.heading") }</h2>
 					<div class="button-row">
@@ -120,7 +120,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 				if len(data.Questions) == 0 {
 					<p class="muted">{ t(ctx, "editor.questions.empty") }</p>
 				} else {
-					<ol class="questions">
+					<ol class="questions js-questions">
 						for i, q := range data.Questions {
 							@questionRow(csrf, data.Survey.ID, q, i, len(data.Questions))
 						}
@@ -148,7 +148,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 }
 
 templ questionRow(csrf string, surveyID string, q domain.Question, index int, total int) {
-	<li class="question">
+	<li class="question js-question">
 		<details>
 			<summary>
 				<span class="qtype">{ typeName(ctx, q.Type) }</span>
@@ -222,7 +222,7 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 // JavaScript it posts, waits, and comes back with the questions added.
 // generate.js upgrades it to a live stream against the same handler.
 templ generatePanel(csrf string, surveyID string) {
-	<section class="card" id="ai-generate">
+	<section class="card js-panel" id="ai-generate">
 		<h2>{ t(ctx, "editor.generate.heading") }</h2>
 		<p class="muted">
 			{ t(ctx, "editor.generate.intro") }
@@ -230,7 +230,7 @@ templ generatePanel(csrf string, surveyID string) {
 		<form
 			method="post"
 			action={ templ.SafeURL("/surveys/" + surveyID + "/generate") }
-			class="generate-form"
+			class="generate-form js-generate-form"
 			data-generate-path={ "/surveys/" + surveyID + "/generate/stream" }
 		>
 			<input type="hidden" name="_csrf" value={ csrf }/>
@@ -245,12 +245,12 @@ templ generatePanel(csrf string, surveyID string) {
 			</label>
 			<button type="submit">{ t(ctx, "editor.generate.submit.label") }</button>
 		</form>
-		<pre class="generate-output" aria-live="polite" hidden></pre>
+		<pre class="generate-output js-generate-output" aria-live="polite" hidden></pre>
 	</section>
 }
 
 templ addQuestionForm(csrf string, surveyID string) {
-	<section class="card">
+	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.add.heading") }</h2>
 		<form method="post" action={ templ.SafeURL("/surveys/" + surveyID + "/questions") }>
 			<input type="hidden" name="_csrf" value={ csrf }/>
@@ -296,7 +296,7 @@ templ addQuestionForm(csrf string, surveyID string) {
 }
 
 templ participantsPanel(csrf string, data SurveyEditorData) {
-	<section class="card">
+	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.participants.heading") }</h2>
 		if len(data.Participants) == 0 {
 			<p class="muted">{ t(ctx, "editor.participants.empty") }</p>
@@ -337,7 +337,7 @@ templ participantsPanel(csrf string, data SurveyEditorData) {
 }
 
 templ publishPanel(csrf string, survey SurveyView, questionCount int) {
-	<section class="card">
+	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.publish.heading") }</h2>
 		if survey.Published() {
 			<p>{ t(ctx, "editor.publish.live", uitext.Args{"Version": survey.LatestVersion}) }</p>
@@ -359,12 +359,12 @@ templ publishPanel(csrf string, survey SurveyView, questionCount int) {
 
 templ lifecyclePanel(csrf string, survey SurveyView) {
 	if survey.Published() {
-		<section class="card">
+		<section class="card js-panel">
 			<h2>{ t(ctx, "editor.sharing.heading") }</h2>
 			switch survey.Status {
 				case domain.StatusOpen:
 					<p>{ t(ctx, "editor.sharing.open") }</p>
-					<p class="share-link"><a href={ templ.SafeURL(survey.ShareURL()) }>{ survey.ShareURL() }</a></p>
+					<p class="share-link js-share-link"><a href={ templ.SafeURL(survey.ShareURL()) }>{ survey.ShareURL() }</a></p>
 					if survey.IsAnonymous {
 						<p class="muted">{ t(ctx, "editor.sharing.anonymous") }</p>
 					} else {
@@ -394,7 +394,7 @@ templ lifecyclePanel(csrf string, survey SurveyView) {
 
 templ versionsPanel(survey SurveyView, versions []VersionView) {
 	if len(versions) > 0 {
-		<section class="card">
+		<section class="card js-panel">
 			<h2>{ t(ctx, "editor.versions.heading") }</h2>
 			<ul class="versions">
 				for _, v := range versions {
@@ -414,7 +414,7 @@ templ versionsPanel(survey SurveyView, versions []VersionView) {
 }
 
 templ settingsPanel(csrf string, survey SurveyView) {
-	<section class="card">
+	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.settings.heading") }</h2>
 		<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/settings") }>
 			<input type="hidden" name="_csrf" value={ csrf }/>

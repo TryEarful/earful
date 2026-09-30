@@ -338,7 +338,7 @@ export async function createPublishedSurvey(page: Page, title: string): Promise<
   await page.getByRole("button", { name: "Publish version 1" }).click();
   await expect(page.getByText("Published version 1")).toBeVisible();
 
-  const share = await page.locator(".share-link a").getAttribute("href");
+  const share = await page.locator(".js-share-link a").getAttribute("href");
   if (!share) throw new Error("no share link after publishing");
   return share;
 }

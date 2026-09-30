@@ -96,8 +96,8 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   // While recording, the page shows what the microphone is hearing and
   // which microphone it is: the browser picks the input silently, and a
   // wrong pick otherwise surfaces only as an empty transcript.
-  await expect(respondent.locator(".voice-monitor")).toBeVisible();
-  await expect(respondent.locator(".voice-spectrum")).toBeVisible();
+  await expect(respondent.locator(".js-voice-monitor")).toBeVisible();
+  await expect(respondent.locator(".js-voice-spectrum")).toBeVisible();
 
   await respondent.waitForTimeout(1500); // a second of speech to transcribe
   await stop.click();
@@ -121,11 +121,11 @@ test("a spoken answer becomes an editable transcript", async ({ page, browser })
   // afford. The microphone row stays, since its picker is a choice for
   // the next take.
   await expect(answer).not.toHaveAttribute("placeholder", /Recording in progress/);
-  await expect(respondent.locator(".voice-progress")).toBeHidden();
-  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
+  await expect(respondent.locator(".js-voice-progress")).toBeHidden();
+  await expect(respondent.locator(".js-voice").first()).toHaveAttribute("data-state", "idle");
   await expect(respondent.getByLabel("Microphone")).toBeVisible();
   // The meter is there only while there is something to meter.
-  await expect(respondent.locator(".voice-spectrum")).toBeHidden();
+  await expect(respondent.locator(".js-voice-spectrum")).toBeHidden();
 
   await context.close();
 });
@@ -190,15 +190,15 @@ test("without a microphone the voice controls are disabled and the error is boxe
 
   const mic = respondent.getByRole("button", { name: "Dictate" });
   const reset = respondent.getByRole("button", { name: "Reset", exact: true });
-  const status = respondent.locator(".voice-status").first();
+  const status = respondent.locator(".js-voice-status").first();
   await mic.click();
 
   await expect(status).toHaveText(/Microphone unavailable/);
-  await expect(status).toHaveClass(/voice-error/);
+  await expect(status).toHaveClass(/\bis-error\b/);
   await expect(mic).toBeDisabled();
   await expect(reset).toBeDisabled();
   await expect(respondent.getByRole("button", { name: "Grant microphone to enable dictation" })).toBeDisabled();
-  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "unavailable");
+  await expect(respondent.locator(".js-voice").first()).toHaveAttribute("data-state", "unavailable");
 
   // Typing is untouched: a tap of Space is the browser's own space, and
   // Shift+Esc clears nothing, because the keys are no longer claimed.
@@ -248,7 +248,7 @@ test("the microphone can be changed from a dropdown, and the choice sticks", asy
   const mic = respondent.getByRole("button", { name: "Dictate" });
   const stop = respondent.getByRole("button", { name: "Stop", exact: true });
   const picker = respondent.getByLabel("Microphone");
-  const status = respondent.locator(".voice-status").first();
+  const status = respondent.locator(".js-voice-status").first();
   const lastRequest = () =>
     respondent.evaluate(() => {
       const requests = (window as any).__earfulMicRequests;
@@ -320,7 +320,7 @@ test("a take on a slow connection is still transcribed", async ({ page, browser 
 
   const mic = respondent.getByRole("button", { name: "Dictate" });
   const stop = respondent.getByRole("button", { name: "Stop", exact: true });
-  const status = respondent.locator(".voice-status").first();
+  const status = respondent.locator(".js-voice-status").first();
 
   await mic.click();
   await expect(stop).toBeVisible();
@@ -365,10 +365,10 @@ test("without permission the picker is a button that asks for it", async ({ page
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue("default");
   await expect(grant).toBeHidden();
-  await expect(respondent.locator(".voice-status").first()).toHaveText(/Microphone ready/);
+  await expect(respondent.locator(".js-voice-status").first()).toHaveText(/Microphone ready/);
 
   // Allowed and named, and that is all: no take was started.
-  await expect(respondent.locator(".voice").first()).toHaveAttribute("data-state", "idle");
+  await expect(respondent.locator(".js-voice").first()).toHaveAttribute("data-state", "idle");
   await expect(respondent.getByRole("button", { name: "Dictate" })).toBeVisible();
   await expect(respondent.locator("textarea")).toHaveValue("");
 
@@ -453,7 +453,7 @@ test("a transcription in flight can be cancelled", async ({ page, browser }) => 
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
   const answer = respondent.locator("textarea");
-  const card = respondent.locator(".voice").first();
+  const card = respondent.locator(".js-voice").first();
   const cancel = respondent.getByRole("button", { name: "Cancel", exact: true });
   await answer.fill("Typed before the take.");
   await expect(cancel).toBeHidden();
@@ -466,7 +466,7 @@ test("a transcription in flight can be cancelled", async ({ page, browser }) => 
   await cancel.click();
   await expect(card).toHaveAttribute("data-state", "idle");
   await expect(cancel).toBeHidden();
-  await expect(respondent.locator(".voice-status").first()).toHaveText(/cancelled/);
+  await expect(respondent.locator(".js-voice-status").first()).toHaveText(/cancelled/);
   await expect(answer).toHaveValue("Typed before the take.");
 
   await context.close();
@@ -491,7 +491,7 @@ test("shift+esc cancels a transcription in flight and clears the answer", async 
   test.skip(!offered, "this instance has no transcription configured, so it offers no mic");
 
   const answer = respondent.locator("textarea");
-  const card = respondent.locator(".voice").first();
+  const card = respondent.locator(".js-voice").first();
   await answer.fill("Typed before the take.");
 
   await respondent.getByRole("button", { name: "Dictate" }).click();
@@ -500,7 +500,7 @@ test("shift+esc cancels a transcription in flight and clears the answer", async 
 
   await respondent.keyboard.press("Shift+Escape");
   await expect(card).toHaveAttribute("data-state", "idle");
-  await expect(respondent.locator(".voice-status").first()).toHaveText(/Cleared/);
+  await expect(respondent.locator(".js-voice-status").first()).toHaveText(/Cleared/);
   await expect(answer).toHaveValue("");
 
   await context.close();
