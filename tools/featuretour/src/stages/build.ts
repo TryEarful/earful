@@ -7,7 +7,7 @@
 import { join } from "@std/path";
 import type { Browser, Page } from "playwright";
 import { AUTH_DIR, BASE } from "../config.ts";
-import { lit, psql, query } from "../compose.ts";
+import { lit, psql, query, run } from "../compose.ts";
 import type { AIContent, StoryDef, Surveys } from "../content.ts";
 import { DESKTOP, INVITE_LINK, signIn } from "../browser.ts";
 import { messageURL, seenMessages, waitForLink } from "../mailpit.ts";
@@ -91,7 +91,12 @@ async function buildStory(
     await Deno.mkdir(AUTH_DIR, { recursive: true });
     const storageState = join(AUTH_DIR, name + ".json");
     await context.storageState({ path: storageState });
-    if (first) await shoot(manifest, page, "dashboard-empty", { kind: "viewport" });
+    if (first) {
+        await giveStarterSurvey(story, account);
+        await page.goto(BASE + "/dashboard");
+        await shoot(manifest, page, "dashboard-first", { kind: "viewport" });
+    }
+    await putAwayStarterSurvey(account);
 
     // Create the survey.
     await page.goto(BASE + "/surveys/new");
@@ -174,6 +179,44 @@ UPDATE users SET is_super_admin = ${story.super_admin ? "true" : "false"} WHERE 
         lit(account.user_id)
     };`);
     return { userId: account.user_id, workspaceId: account.workspace_id };
+}
+
+/**
+ * A workspace is created holding its Starter Survey, and an account from
+ * an earlier run is not created again: reset deleted its surveys, that
+ * one included. The first dashboard is to look the same either way, so
+ * where the survey is missing it is added the way an operator would.
+ */
+async function giveStarterSurvey(story: StoryDef, account: Account) {
+    const rows = await query<{ n: number }>(`
+    SELECT count(*)::int AS n FROM surveys
+     WHERE workspace_id = ${lit(account.workspaceId)}
+       AND origin = 'starter' AND deleted_at IS NULL`);
+    if (rows[0]?.n > 0) return;
+    await run("docker", [
+        "compose",
+        "--profile",
+        "app",
+        "exec",
+        "-T",
+        "app",
+        "/earful",
+        "starter-survey",
+        "add",
+        story.email,
+    ]);
+}
+
+/**
+ * The stories are about the surveys they make. The Starter Survey is
+ * shown once, on the first dashboard, and then deleted as its owner
+ * might, so that every later page holds the story's survey alone.
+ */
+async function putAwayStarterSurvey(account: Account) {
+    await psql(`
+UPDATE surveys SET deleted_at = now()
+ WHERE workspace_id = ${lit(account.workspaceId)}
+   AND origin = 'starter' AND deleted_at IS NULL;`);
 }
 
 function card(page: Page, heading: string) {

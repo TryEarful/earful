@@ -96,15 +96,15 @@ Enter an email address, click the link. When self-hosting, the local inbox is ma
 ---
 id: confirm
 layout: two
-shots: [confirm-signin, dashboard-empty]
+shots: [confirm-signin, dashboard-first]
 ---
 
 ## Confirm, and land on the dashboard
 
-The link only signs you in on a button press, so an email scanner that follows links cannot burn it. A personal workspace is created on first sign-in.
+The link only signs you in on a button press, so an email scanner that follows links cannot burn it. A personal workspace is created on first sign-in, holding one published survey to start from.
 
 - The confirmation page.
-- An empty workspace.
+- A new workspace, and the survey it starts with.
 
 ---
 id: story-restaurant
