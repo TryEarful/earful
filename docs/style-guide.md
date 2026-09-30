@@ -185,3 +185,32 @@ its left. In prose the name is Earful.
 - "All ears" is the one idiom, for loading and empty moments.
 - Spanish addresses the reader as usted and should read as if written in
   Spanish. The tagline "Surveys, out loud." stays in English.
+
+## Reviewing a page
+
+Every page a change adds or alters is reviewed against this list, at a
+phone's width (390px) and a desktop's (1280px), in the light theme and
+the dark, in English and Spanish. `make gallery` takes those pictures and
+an axe report for each; a new page is added to `e2e/gallery/gallery.spec.ts`
+so that it is pictured too. Each criterion passes or fails, with a reason.
+
+1. **Polished.** Spacing on the scale above, radii and type from the
+   tokens, nothing cramped, clipped or left alone on a line.
+2. **Clear hierarchy.** One filled button, for the page's main action;
+   headings on the type scale; the next step is the most visible thing.
+3. **Intuitive.** Someone new knows what to do without the Help page.
+   Labels are short and say what happens.
+4. **Clean.** No box inside a box, no sentence said twice, no card that
+   holds a single line.
+5. **On brand.** Colours by their roles, Signal only where a microphone is
+   open, the owl only where its moods are listed and never beside data.
+6. **Words.** Sentence case, short sentences, no dashes, Spanish that
+   reads as written in Spanish. Wording lives in `web/text`, never in a
+   template.
+7. **Responsive.** Nothing scrolls sideways at 390px; every link and
+   control is at least 44px tall.
+8. **Accessible in both themes.** The dark theme is as finished as the
+   light one, axe reports nothing, and focus is visible.
+
+A page is done when it passes every criterion in two reviews in a row,
+the second made after the fixes from the first.

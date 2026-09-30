@@ -24,6 +24,12 @@ application edge and does not reach into internal packages.
 - **Accessibility is not optional.** The axe gate treats violations as
   failures, and the browser suite runs at phone, tablet and desktop
   widths.
+- **Every page follows the [style guide](docs/style-guide.md).** A new
+  page or feature uses its tokens, components, owl moods and wording
+  rules rather than new ones, and is reviewed against the guide's
+  checklist before it is merged (see "Building a page" below). A change
+  that needs something the guide does not have adds it to the guide in
+  the same pull request.
 - **Architectural decisions live in [docs/adr/](docs/adr/).** If a change
   contradicts one, the ADR is amended in the same pull request or the
   change is rejected. Several invariants are enforced by database
@@ -56,6 +62,31 @@ outcomes are written down, factually.
 
 How pages look and speak is in [docs/style-guide.md](docs/style-guide.md),
 and ADR-0016 records why. `make gallery` shows every page for review.
+
+### Building a page
+
+1. **Start from what exists.** Use the tokens at the top of
+   `web/static/css/app.css` and the components the style guide lists: a
+   page is a stack of `.card`s, with one filled button for its main
+   action and outlined ones for the rest. A new colour, size or
+   component is a change to the guide first.
+2. **Write the words in `web/text`,** in English and Spanish, in
+   sentence case, short, with no dashes. The tests reject wording in a
+   template and a dash in any message.
+3. **Hook behaviour onto `js-` classes** (below), never onto styling
+   classes.
+4. **Add the page to the gallery** (`e2e/gallery/gallery.spec.ts`) in
+   every state a person can see it in: empty, full, an error.
+5. **Review it.** Run `make gallery` and review every picture of the
+   page against the checklist in the style guide ("Reviewing a page").
+   For anything more than a small change, have reviewer agents do this:
+   give each one a group of pages, the pictures and axe report from the
+   gallery, the style guide and its checklist, and ask for a pass or
+   fail per criterion with an exact fix for each failure. The agents
+   read and report; fixes are made in one place, since every page shares
+   one stylesheet. Repeat until each page passes twice in a row.
+6. **Run `make check` and `make e2e-smoke`,** and read their exit codes,
+   not a filtered part of their output.
 
 A class does one job. A class that starts with `js-` is how a script or
 a test finds an element (`js-voice-button`, `js-survey-card`), and it is
