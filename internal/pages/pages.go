@@ -234,12 +234,14 @@ func render(name string, doc Written, facts map[string]any) (*Page, error) {
 
 // dress fits the rendered body to the application's stylesheet. A table
 // scrolls sideways within the page on a narrow screen and does not push
-// the page wider; and where the document asks for cards, each section
+// the page wider, and can be reached from the keyboard, since a region
+// that scrolls and cannot be focused cannot be scrolled without a
+// pointer; and where the document asks for cards, each section
 // is one, from its heading to the next heading or to a rule. A rule
 // (*** on a line of its own) is how a document says that what follows
 // belongs to no section, and in a document of cards it is not drawn.
 func dress(html string, cards bool) string {
-	html = strings.ReplaceAll(html, "<table>", `<div class="table-scroll"><table class="responses">`)
+	html = strings.ReplaceAll(html, "<table>", `<div class="table-scroll" tabindex="0"><table class="responses">`)
 	html = strings.ReplaceAll(html, "</table>", "</table></div>")
 	if !cards {
 		return html

@@ -81,7 +81,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 					if len(data.TrendRows) == 0 {
 						<p class="muted">{ t(ctx, "stats.trend.empty") }</p>
 					} else {
-						<div class="table-scroll">
+						<div class="table-scroll" tabindex="0">
 							<table class="responses">
 								<thead>
 									<tr>
@@ -114,7 +114,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				if len(data.Questions) == 0 {
 					<p class="muted">{ t(ctx, "stats.questions.empty") }</p>
 				} else {
-					<div class="table-scroll">
+					<div class="table-scroll" tabindex="0">
 						<table class="responses stops" data-sortable>
 							<thead>
 								<tr>

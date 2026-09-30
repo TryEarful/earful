@@ -465,7 +465,7 @@ func SurveyStats(email string, csrf string, data SurveyStatsData) templ.Componen
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"table-scroll\"><table class=\"responses\"><thead><tr><th scope=\"col\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div class=\"table-scroll\" tabindex=\"0\"><table class=\"responses\"><thead><tr><th scope=\"col\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -615,7 +615,7 @@ func SurveyStats(email string, csrf string, data SurveyStatsData) templ.Componen
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"table-scroll\"><table class=\"responses stops\" data-sortable><thead><tr><th scope=\"col\" data-sort=\"text\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"table-scroll\" tabindex=\"0\"><table class=\"responses stops\" data-sortable><thead><tr><th scope=\"col\" data-sort=\"text\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

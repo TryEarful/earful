@@ -115,7 +115,7 @@ func TestSectionsAndTablesAreDressed(t *testing.T) {
 	if strings.Contains(page.HTML, "<hr") || !strings.Contains(last, "No address is published.") || strings.Contains(last, "A word about it.") {
 		t.Errorf("what follows the rule is not outside the sections:\n%s", page.HTML)
 	}
-	if !strings.Contains(page.HTML, `<div class="table-scroll"><table class="responses">`) {
+	if !strings.Contains(page.HTML, `<div class="table-scroll" tabindex="0"><table class="responses">`) {
 		t.Errorf("the table is not dressed:\n%s", page.HTML)
 	}
 	if !strings.HasPrefix(strings.TrimSpace(page.HTML), "<p>This page describes") {

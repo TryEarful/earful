@@ -79,7 +79,7 @@ templ BetaCodesAdmin(email string, csrf string, minted []string, resetEmail stri
 						@thtml(ctx, "admin.beta.codes.empty_html")
 					</p>
 				} else {
-					<div class="table-scroll">
+					<div class="table-scroll" tabindex="0">
 						<table>
 							<thead>
 								<tr><th>{ t(ctx, "admin.beta.mint.name.label") }</th><th>{ t(ctx, "admin.beta.codes.created") }</th><th>{ t(ctx, "admin.beta.codes.status") }</th><th></th></tr>
@@ -233,7 +233,7 @@ templ metricRows(points []MetricPoint) {
 	if len(points) == 0 {
 		<p class="muted">{ t(ctx, "admin.metrics.empty") }</p>
 	} else {
-		<div class="table-scroll">
+		<div class="table-scroll" tabindex="0">
 			<table class="responses">
 				<tbody>
 					for _, point := range points {
