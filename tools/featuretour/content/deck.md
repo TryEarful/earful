@@ -484,11 +484,10 @@ shots: [voice-consent, voice-recording]
 
 ## Answer by speaking
 
-Consent first. Audio streams to the server over a WebSocket, is transcribed, and is discarded in the same request.
+Consent first. Audio streams to the server over a WebSocket, is transcribed, and is discarded in the same request. Hold Space to talk and release to transcribe; Esc twice starts the answer over.
 
 - The consent dialog states the promise before the browser asks for the microphone.
 - While recording, a level meter shows which input is live.
-- Hold Space to talk and release to transcribe; Esc twice starts the answer over.
 
 ---
 id: voice-transcript
