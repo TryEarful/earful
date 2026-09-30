@@ -29,7 +29,7 @@ committed.
 | `--deep-teal` | `#0E5A5E` | Links, focus rings, a selected choice |
 | `--teal` | `#177A77` | Interactive tint |
 | `--feather` | `#EAD9B4` | Warm fills; the owl's outline in the dark |
-| `--sand` | `#D2B98C` | The owl's ear tufts, wings and eye rings |
+| `--sand` | `#D2B98C` | The owl's wings and eye rings |
 | `--paper` | `#F7F2E8` | The page. A page is never plain white |
 | `--white` | `#FFFFFF` | Cards and fields on the page |
 

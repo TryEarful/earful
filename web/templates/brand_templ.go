@@ -115,7 +115,7 @@ func owl(mood OwlMood, size int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" aria-hidden=\"true\" focusable=\"false\"><path class=\"owl-accent\" d=\"M25 21C22.5 18.5 21.5 16 21.5 13.5C26 14 31.5 16 36 19Z\"></path> <path class=\"owl-accent\" d=\"M71 21C73.5 18.5 74.5 16 74.5 13.5C70 14 64.5 16 60 19Z\"></path> <circle class=\"owl-body\" cx=\"48\" cy=\"52\" r=\"40\"></circle> <path class=\"owl-accent\" d=\"M13 58C20 67 30 73 33 89.1A40 40 0 0 1 9.5 62C10.5 60 11.7 58.8 13 58Z\"></path> <path class=\"owl-accent\" d=\"M83 58C76 67 66 73 63 89.1A40 40 0 0 0 86.5 62C85.5 60 84.3 58.8 83 58Z\"></path> <path class=\"owl-face\" d=\"M48 38C43 28 31 24 23 29C15 35 14 47 18 55C24 64 35 70 38 90.6A40 40 0 0 0 58 90.6C61 70 72 64 78 55C82 47 81 35 73 29C65 24 53 28 48 38Z\"></path> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" aria-hidden=\"true\" focusable=\"false\"><path class=\"owl-body\" d=\"M25 21C22.5 18.5 21.5 16 21.5 13.5C26 14 31.5 16 36 19Z\"></path> <path class=\"owl-body\" d=\"M71 21C73.5 18.5 74.5 16 74.5 13.5C70 14 64.5 16 60 19Z\"></path> <circle class=\"owl-body\" cx=\"48\" cy=\"52\" r=\"40\"></circle> <path class=\"owl-accent\" d=\"M13 58C20 67 30 73 33 89.1A40 40 0 0 1 9.5 62C10.5 60 11.7 58.8 13 58Z\"></path> <path class=\"owl-accent\" d=\"M83 58C76 67 66 73 63 89.1A40 40 0 0 0 86.5 62C85.5 60 84.3 58.8 83 58Z\"></path> <path class=\"owl-face\" d=\"M48 38C43 28 31 24 23 29C15 35 14 47 18 55C24 64 35 70 38 90.6A40 40 0 0 0 58 90.6C61 70 72 64 78 55C82 47 81 35 73 29C65 24 53 28 48 38Z\"></path> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

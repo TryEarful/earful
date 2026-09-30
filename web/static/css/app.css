@@ -2341,7 +2341,10 @@ input.is-live {
 .tabs {
   display: flex;
   gap: var(--space-5);
+  /* Sideways only: a long translation scrolls across, and nothing may
+     scroll up and down inside a row of links. */
   overflow-x: auto;
+  overflow-y: hidden;
   border-bottom: 1px solid var(--border);
   margin: var(--space-4) 0 var(--space-5);
 }
@@ -2355,7 +2358,6 @@ input.is-live {
   font-weight: 700;
   font-size: 0.9375rem;
   border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
 }
 
 .tabs a:hover {
