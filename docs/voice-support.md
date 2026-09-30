@@ -30,6 +30,12 @@ true` set explicitly, so a browser that cannot honour it fails instead of
 quietly routing the audio to a vendor, and the failure falls back to
 typing.
 
+On-device recognition has to be told the language it listens for, and
+cannot work it out. Dictation listens for the language of the questions,
+and a survey read as it was written is in a language nothing records
+(only its translations are named). Those takes go to the server, which
+is sent no language and works out what was said.
+
 Everything else takes the server path, which therefore has to be
 production-grade regardless (ADR-0004's own consequence note).
 

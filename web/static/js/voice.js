@@ -1053,8 +1053,12 @@
     // microphone anyway, so automated sessions take the server path —
     // which is what the browser suite is there to exercise.
     if (navigator.webdriver) return Promise.resolve("server");
+    // Recognition on the device has to be told what language it is
+    // listening for, and cannot work it out. Where the language of the
+    // survey is not known, the server can.
+    var lang = voiceLanguage();
+    if (!lang) return Promise.resolve("server");
     var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    var lang = pageLanguage();
     var query;
     try {
       query = Recognition.available({ langs: [lang], processLocally: true });
@@ -1071,20 +1075,18 @@
     );
   }
 
-  // The language dictation listens for is the one the respondent is
-  // reading: the language of the survey where they chose one, and
-  // otherwise the language the page is worded in. The form says which,
-  // and it is read when a take begins, so it is what the recogniser on
-  // the device is set to and what the server is sent. The page's own
-  // declaration is read only by a page served before the form said.
+  // The language dictation listens for is the language of the
+  // questions, which the form says: the one the respondent chose for the
+  // survey, or nothing where they are reading it as it was written, whose
+  // language is not recorded anywhere. Nothing is sent as nothing, and the
+  // server works out what was said. It is read when a take begins, so it
+  // is what the recogniser on the device is set to and what the server
+  // is sent. The page's own declaration is read only by a page served
+  // before the form said.
   function voiceLanguage() {
     var declared = form.getAttribute("data-voice-lang");
     if (declared !== null) return declared;
     return document.documentElement.lang || "";
-  }
-
-  function pageLanguage() {
-    return voiceLanguage() || "en";
   }
 
   // --- on-device recognition (M5-T1) -------------------------------------
@@ -1097,7 +1099,9 @@
     var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     var recognition = new Recognition();
     recognition.processLocally = true;
-    recognition.lang = pageLanguage();
+    // Only reached with a language: chooseEngine sends the rest to the
+    // server.
+    recognition.lang = voiceLanguage();
     recognition.continuous = true;
     recognition.interimResults = false;
 

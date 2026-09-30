@@ -66,11 +66,12 @@ test("dictation asks for the microphone in Spanish", async ({ page, browser }) =
   await context.close();
 });
 
-// What the recogniser listens for is decided when a take begins, from
-// what the respondent is reading. Here nobody chose a language for the
-// survey, so it is the language the browser asked for and the page is
-// worded in.
-test("dictation listens for the language the respondent is reading", async ({ page, browser }) => {
+// What the recogniser listens for is the language of the questions,
+// decided when a take begins. Here the survey is read as it was written,
+// by a Spanish browser: the buttons are in Spanish, and the questions are
+// in a language nothing records, so none is named and the server works
+// out what was said.
+test("dictation names no language it does not know", async ({ page, browser }) => {
   // Never against a real transcriber: see voice.spec.ts.
   test.skip(
     !scriptedVoice,
@@ -102,7 +103,7 @@ test("dictation listens for the language the respondent is reading", async ({ pa
 
   await respondent.goto(share);
   test.skip(!(await offersVoice(respondent)), "this instance offers no voice");
-  await expect(respondent.locator("form.respond-form")).toHaveAttribute("data-voice-lang", "es");
+  await expect(respondent.locator("form.respond-form")).toHaveAttribute("data-voice-lang", "");
 
   await respondent.getByRole("button", { name: "Dictar" }).click();
   await respondent.getByRole("button", { name: "Usar el micrófono" }).click();
@@ -112,7 +113,7 @@ test("dictation listens for the language the respondent is reading", async ({ pa
   await stop.click();
   await expect(respondent.locator("textarea")).not.toBeEmpty({ timeout: aiTimeout });
 
-  expect(begun).toEqual(["es"]);
+  expect(begun).toEqual([""]);
   await context.close();
 });
 

@@ -145,11 +145,11 @@ func TestVoice_SpokenAnswerBecomesAnEditableTranscript(t *testing.T) {
 		t.Fatalf("provider calls = %d, want 1", len(fake.TranscribeCalls))
 	}
 	call := fake.TranscribeCalls[0]
-	// The page's language reaches the model. For a browser that asks
-	// for no language, on a survey nobody chose a language for, that is
-	// "en"; the tests below cover a respondent who is reading another.
-	if call.Language != "en" {
-		t.Errorf("language hint = %q, want the page's language", call.Language)
+	// Read as it was written, the survey's language is not known, and
+	// the model is told none rather than a guess; the tests below cover
+	// a respondent who chose one.
+	if call.Language != "" {
+		t.Errorf("language hint = %q, want none", call.Language)
 	}
 	// What arrives is a well-formed WAV of the audio that was sent, not a
 	// file path or a reference to storage.
@@ -329,11 +329,12 @@ func TestVoice_InvitedSurveysSpeakThroughTheirPersonalLink(t *testing.T) {
 	}
 }
 
-// TestVoice_ListensForTheLanguageBeingRead: a respondent who is reading
-// Spanish is about to speak Spanish, whether they chose it for the
-// survey or their browser chose it for the page. A recogniser listening
-// for another language does not fail; it writes down something else.
-func TestVoice_ListensForTheLanguageBeingRead(t *testing.T) {
+// TestVoice_ListensForTheLanguageOfTheQuestions: a respondent answers in
+// the language they are asked in, whatever language the buttons are in.
+// A recogniser listening for another language does not fail; it writes
+// down something else, so where the language is not known it is told
+// none.
+func TestVoice_ListensForTheLanguageOfTheQuestions(t *testing.T) {
 	t.Parallel()
 	fake := &ai.Fake{
 		TranslateScript:  [][]string{{"¿Cómo fue?"}, {"Hoe was het?"}},
@@ -356,14 +357,15 @@ func TestVoice_ListensForTheLanguageBeingRead(t *testing.T) {
 	for _, tc := range []struct {
 		name, address, browser, want string
 	}{
-		// Nothing chosen for the survey: the language the page is in,
-		// which came from the browser.
-		{"the browser's", "/s/" + id, "es-MX,es;q=0.9,en;q=0.8", "es"},
+		// Read as written, by a Spanish browser: the page is in
+		// Spanish, the questions in whatever the creator wrote them in,
+		// which nothing records. No language is guessed.
+		{"not known", "/s/" + id, "es-MX,es;q=0.9,en;q=0.8", ""},
 		// Chosen for the survey, by a browser that asks for English.
 		{"the survey's", "/s/" + id + "?lang=es", "en", "es"},
 		// Chosen for the survey in a language the interface is not
 		// written in: what is spoken is what the questions are in.
-		{"the survey's, over the browser's", "/s/" + id + "?lang=nl", "es", "nl"},
+		{"the survey's, over the page's", "/s/" + id + "?lang=nl", "es", "nl"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, page := reading(t, &http.Client{}, app.Server.URL+tc.address, tc.browser)

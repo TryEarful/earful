@@ -86,9 +86,12 @@ that shows it.
   them. This is "interface text" in an "interface language".
 - `<html lang>` on a respondent's page is the survey's language when one
   was chosen, since the questions are what the page is for, and the
-  interface's otherwise. Dictation listens for the same language, the
-  one the respondent is reading, and takes it from an attribute of its
-  own rather than from that declaration.
+  interface's otherwise. Dictation listens for the language of the
+  questions, whatever the buttons are in: the survey's where one was
+  chosen, and none where the survey is read as written, since nothing
+  records what language a creator wrote in and a guess would be
+  transcribed as though it were right. It takes this from an attribute
+  of its own rather than from that declaration.
 - Scripts receive their wording from the page, in a JSON block, because
   the Content-Security-Policy (ADR-0006) allows data there and code
   nowhere inline.
