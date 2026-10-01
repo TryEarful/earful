@@ -38,14 +38,22 @@ apply and promotion is downtime for that feature: keep it to minutes,
 and prefer client code that tolerates both sides, which is what the
 Vertex client's model-keyed request tuning is for.
 
-**Do not push to `main` while a tag run is waiting to start.** The
-workflow shares one concurrency group, and a run entering a group that
-already has one running and one pending cancels the *pending* one — so a
-routine push lands on the queue and quietly takes the promotion with it.
-The tag stays in git and nothing breaks, but production silently does
-not get the release, and the run that should have shipped it reads as
-"cancelled" rather than as anything alarming. Let the tag run start
-first; `gh run list --workflow=Deploy --limit 3` shows the queue.
+**Pushes to `main` and tags queue separately.** Each kind of run has
+its own concurrency group. A push to `main` cancels the branch run still
+in progress, since only the newest commit needs to reach staging. Tag
+runs are never cancelled and never cancel a branch run, so a routine
+push cannot take a pending promotion with it. Tags pushed in quick
+succession are the exception: a tag run entering its group while one is
+running and one is pending cancels the pending one, so push the next tag
+only once the previous tag run has started;
+`gh run list --workflow=Deploy --limit 3` shows the queue.
+
+A branch run and a tag run can deploy to staging at the same time.
+Migrations take an advisory lock and the last revision update wins, so
+the worst case is a staging revision that the next run replaces. A
+cancelled branch run can leave staging on the older revision with the
+newer migration applied, which is the same state as a deploy that
+failed after migrating.
 
 Migrations are backward-compatible by policy: the schema lands before
 the new code, and the previous revision keeps serving during the swap —

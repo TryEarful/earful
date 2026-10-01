@@ -31,9 +31,18 @@ permissions:
   id-token: write
   contents: read
 
+# Only the newest push to main matters, so it cancels the branch run still
+# in progress. Tag runs promote to production and are never cancelled: the
+# expression is evaluated on the incoming run, and tags have their own group.
+# A branch run and a tag run can therefore overlap on staging. Migrations
+# take an advisory lock and the last revision update wins, so the worst
+# case is a staging revision the next run replaces. Cancelling mid deploy
+# can leave staging on the older revision with the newer migration applied,
+# which is the same state as a deploy that failed after migrating;
+# migrations are backward compatible for the rolling deploy either way.
 concurrency:
-  group: deploy
-  cancel-in-progress: false
+  group: deploy-${{ github.ref_type }}
+  cancel-in-progress: ${{ github.ref_type == 'branch' }}
 
 jobs:
   build:
