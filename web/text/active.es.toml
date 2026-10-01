@@ -2348,6 +2348,10 @@ other = "dic"
 hash = "sha1-3a52ce780950d4d969792a2559cd519d7ee8c727"
 other = ","
 
+[format.group]
+hash = "sha1-5c10b5b2cd673a0616d529aa5234b12ee7153808"
+other = "."
+
 [format.percent]
 hash = "sha1-0ad7dae9dab4350512d1448d56779e1e5add904f"
 other = "{{.Value}} %"

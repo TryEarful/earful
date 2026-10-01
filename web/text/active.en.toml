@@ -1300,6 +1300,8 @@ december = "Dec"
 [format]
 # What separates the whole of a number from its fraction.
 decimal = "."
+# What groups the digits of a large number in threes.
+group = ","
 percent = "{{.Value}}%"
 
 [format.money]

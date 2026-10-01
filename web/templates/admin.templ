@@ -195,7 +195,12 @@ templ AdminAITiers(email string, csrf string, data AITiersData) {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
 			if data.Error != "" {
-				<p class="error-text" role="alert">{ data.Error }</p>
+				<p class="notice error-text" role="alert">{ data.Error }</p>
+			}
+			if data.Searched && len(data.Workspaces) == 0 {
+				<p class="notice" role="status">
+					@thtml(ctx, "admin.tiers.none_html", uitext.Args{"Email": data.Email})
+				</p>
 			}
 			<div class="card js-panel">
 				<h2>{ t(ctx, "admin.tiers.find.heading") }</h2>
@@ -211,14 +216,9 @@ templ AdminAITiers(email string, csrf string, data AITiersData) {
 					}
 				</form>
 			</div>
-			if data.Searched {
+			if len(data.Workspaces) > 0 {
 				<div class="card js-panel">
 					<h2>{ t(ctx, "admin.tiers.results") }</h2>
-					if len(data.Workspaces) == 0 {
-						<p>
-							@thtml(ctx, "admin.tiers.none_html", uitext.Args{"Email": data.Email})
-						</p>
-					}
 					for _, ws := range data.Workspaces {
 						<form method="post" action="/admin/ai-tiers" class="js-tier-form">
 							<h3>{ ws.Name }</h3>
@@ -234,7 +234,13 @@ templ AdminAITiers(email string, csrf string, data AITiersData) {
 									}
 								</select>
 							</label>
-							<button type="submit">{ t(ctx, "admin.tiers.save.label") }</button>
+							// One filled button per page: with several workspaces
+							// listed, no one save outranks the others.
+							if len(data.Workspaces) > 1 {
+								<button type="submit" class="secondary">{ t(ctx, "admin.tiers.save.label") }</button>
+							} else {
+								<button type="submit">{ t(ctx, "admin.tiers.save.label") }</button>
+							}
 						</form>
 					}
 				</div>

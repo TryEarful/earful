@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/TryEarful/earful/internal/auth"
@@ -51,8 +50,8 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data.AIUsage = say(r, "account.facts.ai_usage", uitext.Args{
-			"Tokens": strconv.FormatInt(usage.Tokens, 10),
-			"Cap":    strconv.FormatInt(usage.Cap, 10),
+			"Tokens": text(r).Count(usage.Tokens),
+			"Cap":    text(r).Count(usage.Cap),
 			"Tier":   say(r, tierMessage(usage.Tier)),
 		})
 	}

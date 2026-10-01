@@ -69,6 +69,32 @@ func (l Localizer) Signed(value float64, places int) string {
 	return l.mark(written)
 }
 
+// Count is a whole number with its digits grouped in threes by the
+// language's separator: "1,000,000" in English.
+func (l Localizer) Count(n int64) string {
+	digits := strconv.FormatInt(n, 10)
+	sign := ""
+	if strings.HasPrefix(digits, "-") {
+		sign, digits = "-", digits[1:]
+	}
+	if len(digits) <= 3 {
+		return sign + digits
+	}
+	group := l.T("format.group")
+	var b strings.Builder
+	lead := len(digits) % 3
+	if lead > 0 {
+		b.WriteString(digits[:lead])
+	}
+	for i := lead; i < len(digits); i += 3 {
+		if b.Len() > 0 {
+			b.WriteString(group)
+		}
+		b.WriteString(digits[i : i+3])
+	}
+	return sign + b.String()
+}
+
 func (l Localizer) mark(written string) string {
 	return strings.Replace(written, ".", l.T("format.decimal"), 1)
 }

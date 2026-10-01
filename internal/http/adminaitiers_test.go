@@ -59,7 +59,7 @@ func TestAITiers_SuperAdminRaisesAWorkspacesAllowance(t *testing.T) {
 
 	admin := app.LoginAsSuperAdmin(t, apptest.UniqueEmail("tieradmin"))
 	page := mustGet(t, admin, app.Server.URL+"/admin/ai-tiers?email="+url.QueryEscape(address))
-	if !bodyContains(page, "Used today:") || !bodyContains(page, "High, 1000000 tokens a day") {
+	if !bodyContains(page, "Used today:") || !bodyContains(page, "High, 1,000,000 tokens a day") {
 		t.Fatalf("lookup does not show the workspace and its choices:\n%s", page)
 	}
 	m := workspaceFieldRe.FindStringSubmatch(page)
@@ -109,7 +109,7 @@ func TestAITiers_SuperAdminRaisesAWorkspacesAllowance(t *testing.T) {
 	if bodyContains(body, "AI allowance. It resets tomorrow") || len(fake.GenerateCalls) != 2 {
 		t.Errorf("after moving to high, generate calls = %d; still refused:\n%s", len(fake.GenerateCalls), body)
 	}
-	if account := mustGet(t, creator, app.Server.URL+"/account"); !bodyContains(account, "of 1000000 tokens · Tier: High") {
+	if account := mustGet(t, creator, app.Server.URL+"/account"); !bodyContains(account, "of 1,000,000 tokens · Tier: High") {
 		t.Errorf("the account page does not show the new tier:\n%s", account)
 	}
 }

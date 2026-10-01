@@ -132,11 +132,11 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 					}
 				</dl>
 				if data.IsSuperAdmin {
-					<p>
-						<a href="/admin/beta-codes">{ t(ctx, "account.admin.beta.label") }</a> ·
-						<a href="/admin/metrics">{ t(ctx, "account.admin.metrics.label") }</a> ·
-						<a href="/admin/erasure">{ t(ctx, "account.admin.erasure.label") }</a> ·
-						<a href="/admin/ai-tiers">{ t(ctx, "account.admin.tiers.label") }</a>
+					<p class="button-row">
+						<a class="button-link" href="/admin/beta-codes">{ t(ctx, "account.admin.beta.label") }</a>
+						<a class="button-link" href="/admin/metrics">{ t(ctx, "account.admin.metrics.label") }</a>
+						<a class="button-link" href="/admin/erasure">{ t(ctx, "account.admin.erasure.label") }</a>
+						<a class="button-link" href="/admin/ai-tiers">{ t(ctx, "account.admin.tiers.label") }</a>
 					</p>
 				}
 			</div>

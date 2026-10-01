@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -74,7 +73,7 @@ func (s *server) renderAITiers(w http.ResponseWriter, r *http.Request, status in
 		data.Options = append(data.Options, templates.AITierOption{
 			Value: string(tier),
 			Label: say(r, "admin.tiers.option", uitext.Args{
-				"Tier": loc.T(tierMessage(tier)), "Cap": strconv.FormatInt(caps.For(tier), 10),
+				"Tier": loc.T(tierMessage(tier)), "Cap": loc.Count(caps.For(tier)),
 			}),
 		})
 	}
@@ -98,7 +97,7 @@ func (s *server) renderAITiers(w http.ResponseWriter, r *http.Request, status in
 				Name: ws.Name,
 				Tier: string(usage.Tier),
 				Usage: say(r, "admin.tiers.usage", uitext.Args{
-					"Tokens": strconv.FormatInt(usage.Tokens, 10), "Cap": strconv.FormatInt(usage.Cap, 10),
+					"Tokens": loc.Count(usage.Tokens), "Cap": loc.Count(usage.Cap),
 				}),
 			})
 		}

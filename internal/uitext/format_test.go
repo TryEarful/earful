@@ -92,3 +92,23 @@ func TestSpanishDatesAndNumbers(t *testing.T) {
 		}
 	}
 }
+
+// A large count is grouped in threes by each language's separator, and a
+// small one is left alone.
+func TestCountsAreGrouped(t *testing.T) {
+	en, es := written(t)
+	for got, want := range map[string]string{
+		en.Count(0):       "0",
+		en.Count(999):     "999",
+		en.Count(1000):    "1,000",
+		en.Count(200000):  "200,000",
+		en.Count(1000000): "1,000,000",
+		en.Count(-12345):  "-12,345",
+		es.Count(1000000): "1.000.000",
+		es.Count(50000):   "50.000",
+	} {
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+}
