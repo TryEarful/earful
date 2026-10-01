@@ -216,6 +216,32 @@ type AccountData struct {
 	EmailError  string
 	Notice      string
 	Export      ExportView
+	// AIUsage is today's AI spend against the workspace's allowance,
+	// in words; empty on an instance with no AI.
+	AIUsage string
+}
+
+// AITiersData is the super-admin AI tier control (issue #3).
+type AITiersData struct {
+	Email      string
+	Searched   bool
+	Workspaces []AITierWorkspace
+	// Options are the tiers in order, each labelled with its cap.
+	Options []AITierOption
+	Notice  string
+	Error   string
+}
+
+type AITierWorkspace struct {
+	ID    string
+	Name  string
+	Tier  string
+	Usage string
+}
+
+type AITierOption struct {
+	Value string
+	Label string
 }
 
 // ExportView is the state of the workspace export (M7-T3): building,

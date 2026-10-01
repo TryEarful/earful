@@ -87,6 +87,9 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// Erasure fast-path (M8-T3): look up, then confirm.
 	mux.Handle("GET /admin/erasure", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminErasurePage))))
 	mux.Handle("POST /admin/erasure", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminErasureRun)))))
+	// AI tiers (issue #3): which daily AI allowance a workspace has.
+	mux.Handle("GET /admin/ai-tiers", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminAITiersPage))))
+	mux.Handle("POST /admin/ai-tiers", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminAITiersSet)))))
 	mux.Handle("POST /admin/reset-password", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminResetPassword)))))
 
 	// Survey building (M3). Every handler resolves the survey through the

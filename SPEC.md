@@ -280,6 +280,7 @@ promise is that people answer, the page asking them is the product.
 88. As anyone using Earful, I want a Help page in my language one link away from every page, so that I can find out how to make, share, read or answer a survey without asking. [tested](internal/http/documents_test.go)
 89. As a creator, I want to name my Workspace, so that respondents read who is asking in words I chose, in my language. [tested](internal/http/workspace_test.go)
 90. As a creator, I want a survey's results as an Excel workbook with the same columns and rows as the CSV, numbers as numeric cells and text defused against formula injection, so that I can open them in a spreadsheet without an import step. [tested](internal/http/export_xlsx_test.go)
+91. As the operator of an instance, I want each workspace's daily AI allowance set by a tier (low normal, normal or high) that a super admin can change, so that a heavy customer can have more and a trial less without changing the cap for everyone. [tested](internal/ai/meter_test.go) — each tier's cap, and the € breaker outranking every tier; the super-admin control, its authorization and the same-day lift in [the HTTP suite](internal/http/adminaitiers_test.go); the caps' configuration in [config](internal/config/config_test.go)
 
 **The Starter Survey is its owner's survey, not Earful's.** It is
 written once, with the Workspace, and from then on nothing treats it

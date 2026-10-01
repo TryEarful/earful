@@ -208,6 +208,9 @@ label = "Metrics"
 [account.admin.erasure]
 label = "Erasure requests"
 
+[account.admin.tiers]
+label = "AI tiers"
+
 [account.email]
 heading = "Change email"
 hint = "The change applies right away. From now on you sign in with the new address."
@@ -686,6 +689,40 @@ anonymous = "Anonymous responses are not listed and cannot be: they carry no ema
 
 [admin.erasure.submit]
 label = "Erase this data now"
+
+
+# ── Support: AI tiers ──────────────────────────────────────────────────
+
+[ai.tier]
+low_normal = "Low normal"
+normal = "Normal"
+high = "High"
+
+[admin.tiers]
+title = "AI tiers · Earful"
+heading = "AI tiers"
+intro = "A workspace's tier sets how many AI tokens it can use each day. The daily budget for the whole instance still applies to every tier."
+results = "Workspaces"
+none_html = "No workspace found for <strong>{{.Email}}</strong>."
+usage = "Used today: {{.Tokens}} of {{.Cap}} tokens."
+option = "{{.Tier}}, {{.Cap}} tokens a day"
+saved = "Tier saved."
+
+[admin.tiers.find]
+heading = "Find an account"
+
+[admin.tiers.find.submit]
+label = "Look up"
+
+[admin.tiers.tier]
+label = "Tier"
+
+[admin.tiers.save]
+label = "Save tier"
+
+[admin.tiers.error]
+invalid = "Choose one of the tiers listed."
+workspace = "That workspace no longer exists."
 
 
 # ── Support: metrics ───────────────────────────────────────────────────
@@ -1539,6 +1576,8 @@ es = "Español"
 
 [account.facts]
 email = "Email"
+ai = "AI today"
+ai_usage = "{{.Tokens}} of {{.Cap}} tokens · Tier: {{.Tier}}"
 
 [account.workspace]
 invalid = "Give the workspace a name of up to {{.Max}} characters."

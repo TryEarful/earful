@@ -1,5 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createPublishedSurvey, latestLinkTo, minFillWait, signIn, submitTimeout, uniqueEmail } from "../tests/helpers";
@@ -149,6 +150,39 @@ test("gallery", async ({ browser }) => {
   await capture(es, "editor-published", "es");
   await es.goto(editor + "/results");
   await capture(es, "results", "es");
+
+  // The AI tier control, a super admin's page. Only the CLI grants super
+  // admin, so the creator is granted it inside the compose stack's app
+  // container; against any other base URL there is no container to ask.
+  if (!process.env.E2E_BASE_URL) {
+    execFileSync("docker", ["compose", "exec", "-T", "app", "/earful", "admin", "grant", email], {
+      cwd: path.join(__dirname, "..", ".."),
+    });
+    await page.goto("/admin/ai-tiers");
+    await capture(page, "admin-ai-tiers", "en");
+    await page.goto("/admin/ai-tiers?email=" + encodeURIComponent(uniqueEmail("nobody")));
+    await capture(page, "admin-ai-tiers-none", "en");
+    await page.goto("/admin/ai-tiers?email=" + encodeURIComponent(email));
+    await capture(page, "admin-ai-tiers-found", "en");
+    await page.locator(".js-tier").first().selectOption("high");
+    await page.locator(".js-tier-form").first().locator("button").click();
+    await expect(page).toHaveURL(/notice=saved/);
+    await capture(page, "admin-ai-tiers-saved", "en");
+    // A tier the server does not know, as a tampered form would send it.
+    await page.locator(".js-tier").first().evaluate((select: HTMLSelectElement) => {
+      select.add(new Option("unlimited", "unlimited", true, true));
+    });
+    await page.locator(".js-tier-form").first().locator("button").click();
+    await capture(page, "admin-ai-tiers-error", "en");
+    const { context: spanishAdmin, page: esAdmin } = await visitor(browser, "es");
+    await spanishAdmin.addCookies(await creatorContext.cookies());
+    await esAdmin.goto("/admin/ai-tiers?email=" + encodeURIComponent(email));
+    await capture(esAdmin, "admin-ai-tiers-found", "es");
+    await esAdmin.goto("/account");
+    await capture(esAdmin, "account-admin", "es");
+    await spanishAdmin.close();
+  }
+
   await spanish.close();
   await creatorContext.close();
 

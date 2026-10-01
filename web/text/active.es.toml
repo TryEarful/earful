@@ -279,6 +279,10 @@ other = "Métricas"
 hash = "sha1-cc97232186fc110e9d13df208419db5eeb551872"
 other = "Solicitudes de supresión"
 
+[account.admin.tiers.label]
+hash = "sha1-20121111066f65a2309ffe1de8cf19d196ee882f"
+other = "Niveles de IA"
+
 [account.email.heading]
 hash = "sha1-8f1514b56ee016d4c49a8b4e2e98348f023dc82e"
 other = "Cambiar el correo electrónico"
@@ -1195,6 +1199,74 @@ other = "Los envíos anónimos no aparecen ni pueden aparecer: no llevan correo,
 [admin.erasure.submit.label]
 hash = "sha1-b95924fbeee1244e0ac0e24f202759e216e6b999"
 other = "Borrar estos datos ahora"
+
+[ai.tier.low_normal]
+hash = "sha1-69eeb478e14db10201589fe03466655233b4766d"
+other = "Normal bajo"
+
+[ai.tier.normal]
+hash = "sha1-45e118d0563ea8581f830f46e85b60ae714faae4"
+other = "Normal"
+
+[ai.tier.high]
+hash = "sha1-b1a5954a483f8f8b0207385095f74aeb409b3f80"
+other = "Alto"
+
+[admin.tiers.title]
+hash = "sha1-b9c277a4ec5342c8352a3645fc6f177066bcc04a"
+other = "Niveles de IA · Earful"
+
+[admin.tiers.heading]
+hash = "sha1-20121111066f65a2309ffe1de8cf19d196ee882f"
+other = "Niveles de IA"
+
+[admin.tiers.intro]
+hash = "sha1-1b59c9df6a6704b5979575ed871bb771795808dd"
+other = "El nivel de un espacio de trabajo fija cuántos tokens de IA puede usar cada día. El presupuesto diario de toda la instancia sigue valiendo para todos los niveles."
+
+[admin.tiers.results]
+hash = "sha1-205b4561ed36923d5a51de1b34c70044bf82e111"
+other = "Espacios de trabajo"
+
+[admin.tiers.none_html]
+hash = "sha1-9653476d302e5346667ce42fded253e90bcbba90"
+other = "No se encontró ningún espacio de trabajo para <strong>{{.Email}}</strong>."
+
+[admin.tiers.usage]
+hash = "sha1-c6de396c9c1089fa8fcc0ff7e0814baf63a87e3b"
+other = "Usado hoy: {{.Tokens}} de {{.Cap}} tokens."
+
+[admin.tiers.option]
+hash = "sha1-b38b195a5b5d7b3a3030f200bf17bb909a5d790c"
+other = "{{.Tier}}, {{.Cap}} tokens al día"
+
+[admin.tiers.saved]
+hash = "sha1-7215cf52159e5722625a10d335853829b08227a1"
+other = "Nivel guardado."
+
+[admin.tiers.find.heading]
+hash = "sha1-e73497922a6e7849d9b94e695aaa1a3caff856ba"
+other = "Buscar una cuenta"
+
+[admin.tiers.find.submit.label]
+hash = "sha1-6d7049b88568d8f67d8482c3e0db4726e9bd8036"
+other = "Buscar"
+
+[admin.tiers.tier.label]
+hash = "sha1-5bd44ebe63cd3b9445ca759f970513d78b28a61c"
+other = "Nivel"
+
+[admin.tiers.save.label]
+hash = "sha1-aeae5a04b1d2e213141f96c1f943f27c264895de"
+other = "Guardar nivel"
+
+[admin.tiers.error.invalid]
+hash = "sha1-8bb809dbec90c6e7aa4788676ee52435813443c0"
+other = "Elija uno de los niveles de la lista."
+
+[admin.tiers.error.workspace]
+hash = "sha1-f1da6e63cd7db959cc3a6dc394c2ad05ec98f777"
+other = "Ese espacio de trabajo ya no existe."
 
 
 # ── Soporte: métricas ──────────────────────────────────────────────────
@@ -2845,6 +2917,14 @@ other = "La versión {{.Version}} está publicada, y el borrador no tiene cambio
 [account.facts.email]
 hash = "sha1-84add5b2952787581cb9a8851eef63d1ec75d22b"
 other = "Correo electrónico"
+
+[account.facts.ai]
+hash = "sha1-017c8485d0821be6d7d51df5227acc635e143e17"
+other = "IA hoy"
+
+[account.facts.ai_usage]
+hash = "sha1-3de6a65dabb5d0bf9380a6b0872af106c890927c"
+other = "{{.Tokens}} de {{.Cap}} tokens · Nivel: {{.Tier}}"
 
 [editor.sharing.copy]
 hash = "sha1-2f84eea5d45da4f1ce1760b85db18a854f4e1b39"

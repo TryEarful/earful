@@ -182,6 +182,67 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 	}
 }
 
+// AdminAITiers sets a workspace's AI tier (issue #3): find an account,
+// then choose the tier of each workspace it belongs to. Support only,
+// like everything else under /admin.
+templ AdminAITiers(email string, csrf string, data AITiersData) {
+	@Layout(t(ctx, "admin.tiers.title")) {
+		@AuthedHeader(email, csrf)
+		<main>
+			<h1>{ t(ctx, "admin.tiers.heading") }</h1>
+			<p class="muted">{ t(ctx, "admin.tiers.intro") }</p>
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			if data.Error != "" {
+				<p class="error-text" role="alert">{ data.Error }</p>
+			}
+			<div class="card js-panel">
+				<h2>{ t(ctx, "admin.tiers.find.heading") }</h2>
+				<form method="get" action="/admin/ai-tiers">
+					<label class="field">
+						<span>{ t(ctx, "auth.email.label") }</span>
+						<input type="email" name="email" required autocomplete="off" value={ data.Email }/>
+					</label>
+					if data.Searched && len(data.Workspaces) > 0 {
+						<button type="submit" class="secondary">{ t(ctx, "admin.tiers.find.submit.label") }</button>
+					} else {
+						<button type="submit">{ t(ctx, "admin.tiers.find.submit.label") }</button>
+					}
+				</form>
+			</div>
+			if data.Searched {
+				<div class="card js-panel">
+					<h2>{ t(ctx, "admin.tiers.results") }</h2>
+					if len(data.Workspaces) == 0 {
+						<p>
+							@thtml(ctx, "admin.tiers.none_html", uitext.Args{"Email": data.Email})
+						</p>
+					}
+					for _, ws := range data.Workspaces {
+						<form method="post" action="/admin/ai-tiers" class="js-tier-form">
+							<h3>{ ws.Name }</h3>
+							<p class="muted">{ ws.Usage }</p>
+							<input type="hidden" name="_csrf" value={ csrf }/>
+							<input type="hidden" name="email" value={ data.Email }/>
+							<input type="hidden" name="workspace" value={ ws.ID }/>
+							<label class="field">
+								<span>{ t(ctx, "admin.tiers.tier.label") }</span>
+								<select name="tier" class="js-tier">
+									for _, option := range data.Options {
+										<option value={ option.Value } selected?={ option.Value == ws.Tier }>{ option.Label }</option>
+									}
+								</select>
+							</label>
+							<button type="submit">{ t(ctx, "admin.tiers.save.label") }</button>
+						</form>
+					}
+				</div>
+			}
+		</main>
+	}
+}
+
 // AdminMetrics is M9-T7: the numbers needed to steer the product, none
 // of which cost a respondent anything. Deliberately plain — this is a
 // place to read six figures, not a dashboard to admire.

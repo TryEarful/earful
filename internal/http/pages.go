@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/TryEarful/earful/internal/auth"
@@ -40,6 +41,20 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 	} else if !errors.Is(err, store.ErrNotFound) {
 		s.internalError(w, r, "read latest export", err)
 		return
+	}
+	// Today's AI spend against the workspace's tier (issue #3). The same
+	// numbers the meter decides by; absent where there is no AI to spend.
+	if s.ai != nil {
+		usage, err := s.aiMeter.Usage(r.Context(), info.WorkspaceID)
+		if err != nil {
+			s.internalError(w, r, "read ai usage", err)
+			return
+		}
+		data.AIUsage = say(r, "account.facts.ai_usage", uitext.Args{
+			"Tokens": strconv.FormatInt(usage.Tokens, 10),
+			"Cap":    strconv.FormatInt(usage.Cap, 10),
+			"Tier":   say(r, tierMessage(usage.Tier)),
+		})
 	}
 	render(w, r, http.StatusOK, templates.Account(info.Email, info.WorkspaceName, info.CSRFToken, data))
 }

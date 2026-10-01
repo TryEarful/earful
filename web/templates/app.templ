@@ -126,12 +126,17 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 				<dl class="facts">
 					<dt>{ t(ctx, "account.facts.email") }</dt>
 					<dd>{ email }</dd>
+					if data.AIUsage != "" {
+						<dt>{ t(ctx, "account.facts.ai") }</dt>
+						<dd class="js-ai-usage">{ data.AIUsage }</dd>
+					}
 				</dl>
 				if data.IsSuperAdmin {
 					<p>
 						<a href="/admin/beta-codes">{ t(ctx, "account.admin.beta.label") }</a> ·
 						<a href="/admin/metrics">{ t(ctx, "account.admin.metrics.label") }</a> ·
-						<a href="/admin/erasure">{ t(ctx, "account.admin.erasure.label") }</a>
+						<a href="/admin/erasure">{ t(ctx, "account.admin.erasure.label") }</a> ·
+						<a href="/admin/ai-tiers">{ t(ctx, "account.admin.tiers.label") }</a>
 					</p>
 				}
 			</div>
