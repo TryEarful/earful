@@ -193,6 +193,9 @@ type QuestionResultsView struct {
 	Distribution []CountView
 	Summary      string
 	Texts        []TextAnswerView
+	// OtherTexts are what respondents wrote beside Other on a choice
+	// question, listed under its bars.
+	OtherTexts []TextAnswerView
 }
 
 type WordingView struct {

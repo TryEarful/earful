@@ -36,6 +36,7 @@
   var draft = attachDraft(form);
   // After the draft, so a restored answer is what the history starts from.
   attachVersions(form);
+  attachOther(form);
 
   // Esc leaves a text field (SPEC.md story 80). Inside a textarea Enter
   // is a newline, so a respondent who has finished typing has no plain
@@ -401,6 +402,27 @@
   stampStartTime();
   show(draft ? draft.startAt(questions.length) : 0, true);
 })();
+
+// Other and the box beside it (issue #21). Picking Other puts the
+// cursor in the box, and writing in the box picks Other, so the two read
+// as one answer. Without this the server makes the same connection: words
+// in the box with nothing picked are taken as Other.
+function attachOther(form) {
+  "use strict";
+
+  Array.prototype.forEach.call(form.querySelectorAll(".js-other-choice"), function (choice) {
+    var question = choice.closest(".js-respond-question");
+    var box = question && question.querySelector(".js-other-text");
+    if (!box) return;
+
+    choice.addEventListener("change", function () {
+      if (choice.checked) box.focus();
+    });
+    box.addEventListener("input", function () {
+      if (box.value.trim() !== "" && !choice.checked) choice.checked = true;
+    });
+  });
+}
 
 // Draft answers that survive a reload (SPEC.md story 79, M4-T8).
 //

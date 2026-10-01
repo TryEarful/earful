@@ -132,7 +132,15 @@ func displayAnswer(l uitext.Localizer, value domain.AnswerValue) string {
 	if value.Date != "" {
 		return displayDate(l, value.Date)
 	}
-	return value.Display()
+	return value.DisplayWith(otherAnswer(l))
+}
+
+// otherAnswer words an Other answer for a reader: the word Other in
+// their language, then what the respondent wrote.
+func otherAnswer(l uitext.Localizer) func(written string) string {
+	return func(written string) string {
+		return l.T("answer.write_in.written", uitext.Args{"Text": written})
+	}
 }
 
 // displayDate is a stored date answer as a day in the reader's language,

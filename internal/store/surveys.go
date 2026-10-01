@@ -358,6 +358,7 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 			Position:           int32(i),
 			ScaleMin:           scaleMin,
 			ScaleMax:           scaleMax,
+			AllowOther:         q.AllowOther,
 		})
 		if err != nil {
 			return db.SurveyVersion{}, fmt.Errorf("store: create question: %w", err)
@@ -450,6 +451,7 @@ func (s *Surveys) QuestionsForVersion(ctx context.Context, versionID uuid.UUID) 
 			Text:       r.Text,
 			Options:    options,
 			Required:   r.Required,
+			AllowOther: r.AllowOther,
 		}
 		// NULL for versions published before migration 00009; Scale() then
 		// applies the documented fallback rather than a 0..0 scale.
@@ -575,7 +577,8 @@ func questionsEqual(a, b []domain.Question) bool {
 	}
 	for i := range a {
 		x, y := a[i], b[i]
-		if x.IdentityID != y.IdentityID || x.Type != y.Type || x.Text != y.Text || x.Required != y.Required {
+		if x.IdentityID != y.IdentityID || x.Type != y.Type || x.Text != y.Text || x.Required != y.Required ||
+			x.AllowOther != y.AllowOther {
 			return false
 		}
 		// Rescaling a rating question is a real change, so it must not be

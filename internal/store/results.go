@@ -46,8 +46,11 @@ type QuestionResults struct {
 	Wordings []Wording
 	Options  []string
 	Required bool
-	ScaleMin int
-	ScaleMax int
+	// AllowOther is whether the newest version offers Other. Answers
+	// given under an earlier version that offered it keep theirs.
+	AllowOther bool
+	ScaleMin   int
+	ScaleMax   int
 	// FirstVersion/LastVersion bound the question's life: a question
 	// added later, or deleted, shows a shorter span than the survey.
 	FirstVersion int
@@ -190,6 +193,7 @@ func foldQuestions(questionRows []db.ListQuestionsAcrossVersionsRow) (map[string
 		question.Text = row.Text
 		question.Options = options
 		question.Required = row.Required
+		question.AllowOther = row.AllowOther
 		question.LastVersion = int(row.VersionNumber)
 		if row.ScaleMin != nil {
 			question.ScaleMin = int(*row.ScaleMin)
@@ -240,6 +244,8 @@ func (q QuestionResults) AsQuestion() domain.Question {
 		Type:       q.Type,
 		Text:       q.Text,
 		Options:    q.Options,
+		Required:   q.Required,
+		AllowOther: q.AllowOther,
 		ScaleMin:   q.ScaleMin,
 		ScaleMax:   q.ScaleMax,
 	}

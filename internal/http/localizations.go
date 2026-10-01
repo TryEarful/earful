@@ -380,12 +380,18 @@ func (s *server) shownVersion(r *http.Request, version store.ServedVersion) stor
 // twin. Position identifies the option: a localized option set is only
 // served when it is complete and in the creator's order. A value that
 // matches nothing shown is passed through for validation to refuse.
+// Other is no option and is passed through as it is, before any option
+// is compared with it, and so is what was written beside it: that is
+// the respondent's own text in whatever language they wrote it.
 func canonicalAnswers(submitted domain.Submission, shown, original []domain.Question) domain.Submission {
 	written := make(map[string][]string, len(original))
 	for _, q := range original {
 		written[q.IdentityID] = q.Options
 	}
 	canonical := func(q domain.Question, choice string) string {
+		if q.AllowOther && choice == domain.OtherChoice {
+			return choice
+		}
 		options := written[q.IdentityID]
 		if len(options) != len(q.Options) {
 			return choice

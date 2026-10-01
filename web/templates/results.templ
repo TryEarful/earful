@@ -214,6 +214,22 @@ templ questionResults(q QuestionResultsView) {
 				}
 			</ul>
 		}
+		if len(q.OtherTexts) > 0 {
+			<h3>{ t(ctx, "results.write_in.heading") }</h3>
+			<ol class="transcripts js-other-answers">
+				for _, answer := range q.OtherTexts {
+					<li>
+						<p class="transcript-text js-other-answer">{ answer.Text }</p>
+						<p class="muted transcript-meta">
+							{ answer.SubmittedAt } · <span class="chip chip-small">{ answer.VersionLabel }</span>
+							if answer.Participant != "" {
+								{ " · " + answer.Participant }
+							}
+						</p>
+					</li>
+				}
+			</ol>
+		}
 		if len(q.Texts) > 0 {
 			<ol class="transcripts">
 				for _, answer := range q.Texts {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -296,7 +297,7 @@ func answerSummary(r *http.Request, questions []domain.Question, submitted domai
 		case value.Bool != nil:
 			line.Answer = say(r, "answer.no")
 		default:
-			line.Answer = value.Display()
+			line.Answer = value.DisplayWith(otherAnswer(text(r)))
 		}
 		summary = append(summary, line)
 	}
@@ -520,6 +521,19 @@ func parseSubmission(r *http.Request, questions []domain.Question) domain.Submis
 			value.Text = strings.TrimSpace(r.PostFormValue(field))
 		case domain.SingleChoice, domain.Dropdown:
 			value.Choice = r.PostFormValue(field)
+			if q.AllowOther {
+				// Writing in the box with nothing picked is choosing
+				// Other: without a script nothing ticks it for the
+				// respondent. A picked option wins over the box, since
+				// it is the choice they made.
+				written := otherWritten(r, q)
+				switch {
+				case value.Choice == domain.OtherChoice:
+					value.Other = written
+				case value.Choice == "" && written != "":
+					value.Choice, value.Other = domain.OtherChoice, written
+				}
+			}
 		case domain.MultipleChoice:
 			if r.PostForm != nil {
 				for _, chosen := range r.PostForm[field] {
@@ -527,6 +541,16 @@ func parseSubmission(r *http.Request, questions []domain.Question) domain.Submis
 						value.Choices = append(value.Choices, chosen)
 					}
 				}
+			}
+			if q.AllowOther {
+				// On a checkbox list, writing in the box is ticking
+				// Other, for the same reason.
+				written := otherWritten(r, q)
+				chosen := slices.Contains(value.Choices, domain.OtherChoice)
+				if written != "" && !chosen {
+					value.Choices = append(value.Choices, domain.OtherChoice)
+				}
+				value.Other = written
 			}
 		case domain.RatingScale, domain.NPS:
 			if n, err := strconv.Atoi(r.PostFormValue(field)); err == nil {
@@ -557,6 +581,11 @@ func parseSubmission(r *http.Request, questions []domain.Question) domain.Submis
 		answers[q.IdentityID] = value
 	}
 	return domain.Submission{Answers: answers}
+}
+
+// otherWritten is what the respondent wrote in the box beside Other.
+func otherWritten(r *http.Request, q domain.Question) string {
+	return strings.TrimSpace(r.PostFormValue(templates.OtherFieldPrefix + q.IdentityID))
 }
 
 // durationFrom derives how long the response took from the timestamp the

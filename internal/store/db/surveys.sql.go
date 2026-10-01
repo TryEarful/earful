@@ -75,9 +75,9 @@ func (q *Queries) CreateDraftRevision(ctx context.Context, arg CreateDraftRevisi
 
 const createQuestion = `-- name: CreateQuestion :one
 INSERT INTO questions (version_id, question_identity_id, type, text, options, required, position,
-                       scale_min, scale_max)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, version_id, question_identity_id, type, text, options, required, position, scale_min, scale_max
+                       scale_min, scale_max, allow_other)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, version_id, question_identity_id, type, text, options, required, position, scale_min, scale_max, allow_other
 `
 
 type CreateQuestionParams struct {
@@ -90,6 +90,7 @@ type CreateQuestionParams struct {
 	Position           int32     `json:"position"`
 	ScaleMin           *int32    `json:"scale_min"`
 	ScaleMax           *int32    `json:"scale_max"`
+	AllowOther         bool      `json:"allow_other"`
 }
 
 func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (Question, error) {
@@ -103,6 +104,7 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 		arg.Position,
 		arg.ScaleMin,
 		arg.ScaleMax,
+		arg.AllowOther,
 	)
 	var i Question
 	err := row.Scan(
@@ -116,6 +118,7 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 		&i.Position,
 		&i.ScaleMin,
 		&i.ScaleMax,
+		&i.AllowOther,
 	)
 	return i, err
 }
@@ -363,7 +366,7 @@ func (q *Queries) ListDraftRevisions(ctx context.Context, draftID uuid.UUID) ([]
 }
 
 const listQuestionsForVersion = `-- name: ListQuestionsForVersion :many
-SELECT id, version_id, question_identity_id, type, text, options, required, position, scale_min, scale_max FROM questions WHERE version_id = $1 ORDER BY position
+SELECT id, version_id, question_identity_id, type, text, options, required, position, scale_min, scale_max, allow_other FROM questions WHERE version_id = $1 ORDER BY position
 `
 
 func (q *Queries) ListQuestionsForVersion(ctx context.Context, versionID uuid.UUID) ([]Question, error) {
@@ -386,6 +389,7 @@ func (q *Queries) ListQuestionsForVersion(ctx context.Context, versionID uuid.UU
 			&i.Position,
 			&i.ScaleMin,
 			&i.ScaleMax,
+			&i.AllowOther,
 		); err != nil {
 			return nil, err
 		}

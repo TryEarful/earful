@@ -463,6 +463,10 @@ func questionFromForm(r *http.Request) domain.Question {
 				q.Options = append(q.Options, trimmed)
 			}
 		}
+		// Read only here: the add form keeps the box, hidden, while
+		// another type is picked, and a box ticked before the type
+		// changed means nothing for the type chosen.
+		q.AllowOther = r.PostFormValue("allow_other") == "on"
 	}
 	if q.Type.NeedsScale() {
 		q.ScaleMin, _ = strconv.Atoi(r.PostFormValue("scale_min"))

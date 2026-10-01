@@ -71,7 +71,7 @@ func (q *Queries) ListAnswersForSurvey(ctx context.Context, surveyID uuid.UUID) 
 const listQuestionsAcrossVersions = `-- name: ListQuestionsAcrossVersions :many
 
 SELECT q.question_identity_id, q.type, q.text, q.options, q.required,
-       q.position, q.scale_min, q.scale_max, v.number AS version_number
+       q.position, q.scale_min, q.scale_max, q.allow_other, v.number AS version_number
 FROM questions q
 JOIN survey_versions v ON v.id = q.version_id
 WHERE v.survey_id = $1
@@ -87,6 +87,7 @@ type ListQuestionsAcrossVersionsRow struct {
 	Position           int32     `json:"position"`
 	ScaleMin           *int32    `json:"scale_min"`
 	ScaleMax           *int32    `json:"scale_max"`
+	AllowOther         bool      `json:"allow_other"`
 	VersionNumber      int32     `json:"version_number"`
 }
 
@@ -117,6 +118,7 @@ func (q *Queries) ListQuestionsAcrossVersions(ctx context.Context, surveyID uuid
 			&i.Position,
 			&i.ScaleMin,
 			&i.ScaleMax,
+			&i.AllowOther,
 			&i.VersionNumber,
 		); err != nil {
 			return nil, err

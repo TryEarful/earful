@@ -481,6 +481,9 @@ templ answerControl(q domain.Question, data RespondData) {
 						<span>{ opt }</span>
 					</label>
 				}
+				if q.AllowOther {
+					@otherChoice(q, data, "radio", data.Answers[q.IdentityID].Choice == domain.OtherChoice)
+				}
 			</div>
 		case domain.MultipleChoice:
 			<div class="options">
@@ -494,6 +497,9 @@ templ answerControl(q domain.Question, data RespondData) {
 						@keyHint(optionKey(i))
 						<span>{ opt }</span>
 					</label>
+				}
+				if q.AllowOther {
+					@otherChoice(q, data, "checkbox", hasChoice(data.Answers[q.IdentityID].Choices, domain.OtherChoice))
 				}
 			</div>
 		case domain.RatingScale, domain.NPS:
@@ -600,6 +606,41 @@ func numberHint(ctx context.Context, q domain.Question) string {
 	l := uitext.From(ctx)
 	min, max := q.Scale()
 	return l.T("respond.number.hint", uitext.Args{"Min": l.Count(int64(min)), "Max": l.Count(int64(max))})
+}
+
+// OtherFieldPrefix names the box beside Other, followed by the
+// question's identity. It is not an answer field of its own: the server
+// reads it only for a question that offers Other.
+const OtherFieldPrefix = "other_"
+
+// otherChoice is Other, after the options and in the same list, with the
+// box to write in under it. Other posts domain.OtherChoice like any
+// option posts its text. The box is named by the question and by the
+// word Other, so it is announced as what it is for, and it carries the
+// same password manager opt outs as any other answer field. Without a
+// script both work as they are: the server takes words in the box with
+// nothing picked as Other chosen. respond.js ties the two together.
+templ otherChoice(q domain.Question, data RespondData, kind string, chosen bool) {
+	<label class="option">
+		<input type={ kind } name={ "q_" + q.IdentityID } value={ domain.OtherChoice } class="js-other-choice" checked?={ chosen } autocomplete="off"/>
+		@keyHint(optionKey(len(q.Options)))
+		<span id={ "qo-" + q.IdentityID }>{ t(ctx, "answer.write_in.label") }</span>
+	</label>
+	<input
+		type="text"
+		name={ OtherFieldPrefix + q.IdentityID }
+		value={ data.Answers[q.IdentityID].Other }
+		class="js-other-text"
+		placeholder={ t(ctx, "respond.write_in.placeholder") }
+		autocomplete="off"
+		data-1p-ignore
+		data-lpignore="true"
+		data-bwignore
+		aria-labelledby={ "qt-" + q.IdentityID + " qo-" + q.IdentityID }
+		if data.Errors[q.IdentityID] != "" {
+			aria-describedby={ "err-" + q.IdentityID }
+		}
+	/>
 }
 
 // keyHint is the little [A] beside a control. aria-hidden is not

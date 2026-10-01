@@ -22,7 +22,19 @@ type AnswerValue struct {
 	// Date is a calendar day in ISO 8601 form (DateLayout), with no time
 	// and no zone: the day the respondent picked, not an instant.
 	Date string `json:"date,omitempty"`
+	// Other is what the respondent wrote in the box beside Other, on a
+	// question that offers it. It is set exactly when Choice is, or
+	// Choices holds, OtherChoice.
+	Other string `json:"other,omitempty"`
 }
+
+// OtherChoice is the choice an answer records when the respondent picked
+// Other, and the value the Other control posts. Options are compared by
+// their text, so the marker is spelled as no option a person writes, and
+// a question that offers Other refuses an option spelled like it
+// (ErrReservedOption). What the respondent wrote is kept in Other, never
+// in the choice, so it cannot be mistaken for an option either.
+const OtherChoice = "__other__"
 
 // DateLayout is the only form a date answer is accepted and stored in. It
 // is what a browser's date control submits, whatever the respondent's
@@ -32,18 +44,37 @@ const DateLayout = "2006-01-02"
 // IsEmpty reports whether the respondent left the question unanswered.
 func (v AnswerValue) IsEmpty() bool {
 	return strings.TrimSpace(v.Text) == "" && v.Choice == "" && len(v.Choices) == 0 &&
-		v.Number == nil && v.Bool == nil && strings.TrimSpace(v.Date) == ""
+		v.Number == nil && v.Bool == nil && strings.TrimSpace(v.Date) == "" &&
+		strings.TrimSpace(v.Other) == ""
 }
 
-// Display renders an answer for a human reader (results, exports).
+// Display renders an answer for a human reader (results, exports). An
+// Other answer reads "Other: " and what was written.
 func (v AnswerValue) Display() string {
+	return v.DisplayWith(func(written string) string { return "Other: " + written })
+}
+
+// DisplayWith renders an answer as Display does, except that the
+// function given words an Other answer, so a reader can be shown it in
+// their own language.
+func (v AnswerValue) DisplayWith(other func(written string) string) string {
+	choice := func(c string) string {
+		if c == OtherChoice && v.Other != "" {
+			return other(v.Other)
+		}
+		return c
+	}
 	switch {
 	case v.Text != "":
 		return v.Text
 	case v.Choice != "":
-		return v.Choice
+		return choice(v.Choice)
 	case len(v.Choices) > 0:
-		return strings.Join(v.Choices, ", ")
+		shown := make([]string, len(v.Choices))
+		for i, c := range v.Choices {
+			shown[i] = choice(c)
+		}
+		return strings.Join(shown, ", ")
 	case v.Number != nil:
 		return strconv.Itoa(*v.Number)
 	case v.Bool != nil:
@@ -91,6 +122,7 @@ var (
 	ErrNotAnOption    = errors.New("choose one of the options offered")
 	ErrOutOfRange     = errors.New("choose a value on the scale")
 	ErrNotADate       = errors.New("enter a date as year, month and day")
+	ErrOtherEmpty     = errors.New("write your answer in the box beside Other")
 )
 
 // ValidateAnswer checks one answer against the question as it was asked.
@@ -104,20 +136,44 @@ func ValidateAnswer(q Question, v AnswerValue) error {
 		return nil
 	}
 
+	if v.Other != "" && !q.AllowOther {
+		return ErrNotAnOption
+	}
+	if len([]rune(v.Other)) > maxAnswerTextLen {
+		return ErrAnswerTooLong
+	}
+
 	switch q.Type {
 	case LongText, ShortText:
 		if len([]rune(v.Text)) > maxAnswerTextLen {
 			return ErrAnswerTooLong
 		}
 	case SingleChoice, Dropdown:
-		if !containsOption(q.Options, v.Choice) {
+		if q.AllowOther && v.Choice == OtherChoice {
+			if strings.TrimSpace(v.Other) == "" {
+				return ErrOtherEmpty
+			}
+			return nil
+		}
+		if v.Other != "" || !containsOption(q.Options, v.Choice) {
 			return ErrNotAnOption
 		}
 	case MultipleChoice:
+		other := false
 		for _, choice := range v.Choices {
+			if q.AllowOther && choice == OtherChoice {
+				other = true
+				continue
+			}
 			if !containsOption(q.Options, choice) {
 				return ErrNotAnOption
 			}
+		}
+		switch {
+		case other && strings.TrimSpace(v.Other) == "":
+			return ErrOtherEmpty
+		case !other && v.Other != "":
+			return ErrNotAnOption
 		}
 	case RatingScale, NPS:
 		if v.Number == nil {

@@ -468,6 +468,9 @@ reworded = "This question was reworded. See how it was asked"
 together = "Answers from every version are counted together: they are the same question."
 empty = "No answers to this question yet."
 
+[results.write_in]
+heading = "Written for Other"
+
 [results.answer]
 machine = "Machine translation"
 translated_by = "Translated by {{.Model}}; the original is above."
@@ -530,6 +533,7 @@ scale_min = "Scale starts at"
 scale_max = "Scale ends at"
 number_min = "Lowest answer"
 number_max = "Highest answer"
+write_in = "Offer Other, with a box to write in"
 
 [editor.question.save]
 label = "Save question"
@@ -1023,6 +1027,12 @@ version = "Version"
 yes = "Yes"
 no = "No"
 
+# The choice after a question's own options, with a box to write in.
+[answer.write_in]
+label = "Other"
+# An Other answer as it is read back: the word, then what was written.
+written = "Other: {{.Text}}"
+
 
 # ── Stats: what the page works out ─────────────────────────────────────
 
@@ -1133,6 +1143,7 @@ option = "choose one of the options offered"
 range = "choose a value on the scale"
 date = "enter a date as year, month and day"
 number = "enter a whole number from {{.Min}} to {{.Max}}"
+write_in = "write your answer in the box beside Other"
 
 [question.error]
 empty = "give the question some text"
@@ -1140,6 +1151,8 @@ kind = "choose a question type"
 options = "list at least two options"
 blank = "remove the blank option"
 duplicate = "two options are identical"
+write_in = "only a choice question can offer Other"
+reserved = "choose a different wording for that option"
 scale = "the scale must start at 0 or 1 and end no higher than {{.Limit}}"
 bounds = "the lowest answer must be below the highest, and both between {{.Low}} and {{.High}}"
 long = "keep the question under {{.Limit}} characters"
@@ -1537,6 +1550,9 @@ high = "10, extremely likely"
 
 [respond.number]
 hint = "A whole number from {{.Min}} to {{.Max}}."
+
+[respond.write_in]
+placeholder = "Your answer"
 
 [respond.disclosure]
 controller_html = "Run by <strong>{{.Workspace}}</strong>, who decides what happens to the answers."

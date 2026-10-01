@@ -207,6 +207,10 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 						</span>
 						<textarea name="options" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="4">{ strings.Join(q.Options, "\n") }</textarea>
 					</label>
+					<label class="checkbox">
+						<input type="checkbox" name="allow_other" class="js-allow-other" checked?={ q.AllowOther } autocomplete="off"/>
+						<span>{ t(ctx, "editor.question.write_in") }</span>
+					</label>
 				}
 				if q.Type.NeedsScale() {
 					<div class="field-row">
@@ -351,6 +355,10 @@ templ addQuestionForm(csrf string, surveyID string, first bool) {
 					@thtml(ctx, "editor.add.options_html")
 				</span>
 				<textarea name="options" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3"></textarea>
+			</label>
+			<label class="checkbox q-other">
+				<input type="checkbox" name="allow_other" class="js-allow-other" autocomplete="off"/>
+				<span>{ t(ctx, "editor.question.write_in") }</span>
 			</label>
 			<div class="field-row q-scale">
 				<label class="field">

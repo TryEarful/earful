@@ -10,7 +10,7 @@
 -- by identity to get the current wording plus the history of how it was
 -- worded when each response was collected.
 SELECT q.question_identity_id, q.type, q.text, q.options, q.required,
-       q.position, q.scale_min, q.scale_max, v.number AS version_number
+       q.position, q.scale_min, q.scale_max, q.allow_other, v.number AS version_number
 FROM questions q
 JOIN survey_versions v ON v.id = q.version_id
 WHERE v.survey_id = $1

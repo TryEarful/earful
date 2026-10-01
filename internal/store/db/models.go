@@ -116,11 +116,12 @@ type Question struct {
 	Type               string    `json:"type"`
 	Text               string    `json:"text"`
 	// Option strings for choice/dropdown types; empty for text, yes/no and scale types (see scale_min/scale_max).
-	Options  []byte `json:"options"`
-	Required bool   `json:"required"`
-	Position int32  `json:"position"`
-	ScaleMin *int32 `json:"scale_min"`
-	ScaleMax *int32 `json:"scale_max"`
+	Options    []byte `json:"options"`
+	Required   bool   `json:"required"`
+	Position   int32  `json:"position"`
+	ScaleMin   *int32 `json:"scale_min"`
+	ScaleMax   *int32 `json:"scale_max"`
+	AllowOther bool   `json:"allow_other"`
 }
 
 type QuestionIdentity struct {

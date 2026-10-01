@@ -120,6 +120,7 @@ func viewQuestionResults(l uitext.Localizer, results store.Results, translations
 			}
 		case domain.SingleChoice, domain.MultipleChoice, domain.Dropdown:
 			view.Distribution = choiceDistribution(l, question)
+			view.OtherTexts = otherAnswers(l, question)
 		case domain.YesNo:
 			view.Distribution = yesNoDistribution(l, question)
 		case domain.RatingScale, domain.NPS:
@@ -150,26 +151,39 @@ func skippedNote(l uitext.Localizer, answered, responses int) string {
 	return l.N("results.skipped", skipped)
 }
 
+// otherBar is the key Other answers are counted under. No option can be
+// spelled with a NUL, which the database refuses in text, so a creator's
+// own option called "Other" keeps a bar of its own.
+const otherBar = "\x00other"
+
 // choiceDistribution counts every option the question has ever offered,
 // including options that only existed in an earlier version — dropping
-// them would silently discard real answers.
+// them would silently discard real answers. Other is one more bar,
+// after the options, whenever the question offers it or any answer
+// chose it.
 func choiceDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {
 	counts := map[string]int{}
 	total := 0
+	key := func(value domain.AnswerValue, choice string) string {
+		if choice == domain.OtherChoice && value.Other != "" {
+			return otherBar
+		}
+		return choice
+	}
 	for _, answer := range question.Answers {
 		switch {
 		case answer.Value.Choice != "":
-			counts[answer.Value.Choice]++
+			counts[key(answer.Value, answer.Value.Choice)]++
 			total++
 		case len(answer.Value.Choices) > 0:
 			for _, choice := range answer.Value.Choices {
-				counts[choice]++
+				counts[key(answer.Value, choice)]++
 			}
 			total++
 		}
 	}
 	labels := append([]string(nil), question.Options...)
-	seen := map[string]bool{}
+	seen := map[string]bool{otherBar: true}
 	for _, label := range labels {
 		seen[label] = true
 	}
@@ -181,8 +195,36 @@ func choiceDistribution(l uitext.Localizer, question store.QuestionResults) []te
 	}
 	sort.Strings(extra)
 	labels = append(labels, extra...)
+	if question.AllowOther || counts[otherBar] > 0 {
+		labels = append(labels, otherBar)
+	}
 
-	return toCountViews(l, labels, counts, total)
+	views := toCountViews(l, labels, counts, total)
+	for i := range views {
+		if views[i].Label == otherBar {
+			views[i].Label = l.T("answer.write_in.label")
+		}
+	}
+	return views
+}
+
+// otherAnswers lists what respondents wrote beside Other, in the order
+// they were given.
+func otherAnswers(l uitext.Localizer, question store.QuestionResults) []templates.TextAnswerView {
+	var out []templates.TextAnswerView
+	for _, answer := range question.Answers {
+		if answer.Value.Other == "" {
+			continue
+		}
+		out = append(out, templates.TextAnswerView{
+			Text:         answer.Value.Other,
+			VersionLabel: "v" + strconv.Itoa(answer.VersionNumber),
+			SubmittedAt:  l.DateTime(answer.SubmittedAt),
+			Participant:  participantLabel(answer.ParticipantEmail),
+			ResponseID:   answer.ResponseID.String(),
+		})
+	}
+	return out
 }
 
 func yesNoDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {

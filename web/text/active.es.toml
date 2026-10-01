@@ -763,6 +763,10 @@ other = "Las respuestas de todas las versiones se cuentan juntas: son la misma p
 hash = "sha1-b730f32a120e3a114fbb0e2a38de764af9f08975"
 other = "Todavía no hay respuestas a esta pregunta."
 
+[results.write_in.heading]
+hash = "sha1-cb7f0303232a8095cf189057a967e40e01abe600"
+other = "Lo escrito en Otro"
+
 [results.answer.machine]
 hash = "sha1-6642e6e77e79130e4510ada830961b0eb11e08a6"
 other = "Traducción automática"
@@ -884,6 +888,10 @@ other = "Respuesta más baja"
 [editor.question.number_max]
 hash = "sha1-9d5e99838afa1c5cc59782df7c1ed37b173f2f9f"
 other = "Respuesta más alta"
+
+[editor.question.write_in]
+hash = "sha1-19ae05e730452e427f1a5c590b1a5856b4dcf79d"
+other = "Ofrecer Otro, con un espacio para escribir"
 
 [editor.question.save.label]
 hash = "sha1-5d579cd1557554f8ad09207bedb0412f122b8e1c"
@@ -1881,6 +1889,14 @@ other = "Sí"
 hash = "sha1-816c52fd2bdd94a63cd0944823a6c0aa9384c103"
 other = "No"
 
+[answer.write_in.label]
+hash = "sha1-6e6a6f2086bb5fe5dbfd17d8d5f502d48759834b"
+other = "Otro"
+
+[answer.write_in.written]
+hash = "sha1-4746cf0b2f684f825bfbbac891a554084cad5cbe"
+other = "Otro: {{.Text}}"
+
 
 # ── Estadísticas: lo que calcula la página ─────────────────────────────
 
@@ -2075,6 +2091,10 @@ other = "escriba una fecha con año, mes y día"
 hash = "sha1-8279d40a7b892506c3ea430787bb32556129ce96"
 other = "escriba un número entero del {{.Min}} al {{.Max}}"
 
+[answer.error.write_in]
+hash = "sha1-84580d3cdfd845b7f289e8310a9584dcddfe3a79"
+other = "escriba su respuesta en el espacio junto a Otro"
+
 [question.error.empty]
 hash = "sha1-67e2b8571d7b7a76b7add0a6201cfdd90f2c587d"
 other = "escriba el texto de la pregunta"
@@ -2094,6 +2114,14 @@ other = "quite la opción en blanco"
 [question.error.duplicate]
 hash = "sha1-2242adb5152a549248bf6437211e1e4c4b61a104"
 other = "hay dos opciones idénticas"
+
+[question.error.write_in]
+hash = "sha1-0281e2f49dd4eaa5fb8420c88e5bdca5758795a6"
+other = "solo una pregunta de opciones puede ofrecer Otro"
+
+[question.error.reserved]
+hash = "sha1-f029af71d7d4ba1810f6aab59cca587554b20424"
+other = "elija otra redacción para esa opción"
 
 [question.error.scale]
 hash = "sha1-a341f198564edfa71d55145e01a652600fc356ab"
@@ -2806,6 +2834,10 @@ other = "10: muy probable"
 [respond.number.hint]
 hash = "sha1-2669798c3d8f408bbcb02100456048062763084c"
 other = "Un número entero del {{.Min}} al {{.Max}}."
+
+[respond.write_in.placeholder]
+hash = "sha1-3ae5ff6e1731b62d6f2bb646dd66518e4695c868"
+other = "Su respuesta"
 
 [respond.disclosure.controller_html]
 hash = "sha1-d25343ec1f5083095bbd07e54cd337ec988c945c"

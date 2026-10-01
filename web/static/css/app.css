@@ -3156,10 +3156,11 @@ main.standalone h1 {
   font-size: 0.875rem;
 }
 
-/* The fields a question type needs, and only those: options for choices,
-   a range for a rating, limits for a number. Read from the form, so it
-   works without a script. */
+/* The fields a question type needs, and only those: options for choices
+   and whether to offer Other, a range for a rating, limits for a number.
+   Read from the form, so it works without a script. */
 .q-options,
+.q-other,
 .q-scale,
 .q-bounds {
   display: none;
@@ -3169,6 +3170,7 @@ form:has(select[name="type"] :is(option[value="single_choice"], option[value="mu
   display: block;
 }
 
+form:has(select[name="type"] :is(option[value="single_choice"], option[value="multiple_choice"], option[value="dropdown"]):checked) .q-other,
 form:has(select[name="type"] option[value="rating_scale"]:checked) .q-scale,
 form:has(select[name="type"] option[value="number"]:checked) .q-bounds {
   display: flex;

@@ -154,6 +154,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 					Text:       question.Text,
 					Options:    question.Options,
 					Required:   question.Required,
+					AllowOther: question.AllowOther,
 				}
 				if question.Type.HasBounds() || question.Type == domain.NPS {
 					exportedQuestion.ScaleMin, exportedQuestion.ScaleMax = min, max
@@ -195,6 +196,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 				exportedResponse.Answers[identity] = export.Answer{
 					Text: value.Text, Choice: value.Choice, Choices: value.Choices,
 					Number: value.Number, Bool: value.Bool, Date: value.Date,
+					Other: value.Other,
 				}
 			}
 			exported.Responses = append(exported.Responses, exportedResponse)

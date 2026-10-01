@@ -333,6 +333,47 @@ test("gallery", async ({ browser }) => {
   const numberEditor = "/surveys/" + numberShare.split("/").pop();
   await page.goto(numberEditor + "/results");
   await capture(page, "results-number", "en");
+
+  // A choice question offering Other (issue #21): the box in the editor,
+  // Other picked with words in its box, the message for Other picked
+  // with nothing written, and what was written listed in the results.
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill("Finding us");
+  await page.getByRole("button", { name: "Create survey" }).click();
+  const addOther = page.locator('form[action$="/questions"]');
+  await addOther.locator('select[name="type"]').selectOption("single_choice");
+  await addOther.locator('input[name="text"]').fill("How did you hear of us?");
+  await addOther.locator('textarea[name="options"]').fill("Email\nA friend\nSocial media");
+  await addOther.locator(".js-allow-other").check();
+  await addOther.getByLabel("Required").check();
+  await capture(page, "editor-other-adding", "en");
+  await addOther.getByRole("button", { name: "Add question" }).click();
+  await page.locator(".js-question summary").first().click();
+  await capture(page, "editor-other", "en");
+  await page.getByRole("button", { name: "Publish version 1" }).click();
+  await expect(page.getByText("Published version 1")).toBeVisible();
+  const otherShare = await page.locator(".js-share-link a").getAttribute("href");
+  if (!otherShare) throw new Error("no share link after publishing");
+  for (const [lang, written] of [["en", "A podcast"], ["es", "Un pódcast"]]) {
+    const { context, page: respondent } = await visitor(browser, lang);
+    await respondent.goto(otherShare);
+    await respondent.locator(".js-other-choice").check();
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    const empty = lang === "es" ? "escriba su respuesta en el espacio junto a Otro" : "write your answer in the box beside Other";
+    await expect(respondent.getByText(new RegExp(empty, "i")).first()).toBeVisible({ timeout: submitTimeout });
+    await capture(respondent, "respond-other-error", lang);
+    await respondent.locator(".js-other-text").fill(written);
+    await capture(respondent, "respond-other", lang);
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });
+    await capture(respondent, "respond-thanks-other", lang);
+    await context.close();
+  }
+  const otherEditor = "/surveys/" + otherShare.split("/").pop();
+  await page.goto(otherEditor + "/results");
+  await capture(page, "results-other", "en");
   // A thank you page of the creator's own: the editor's section refusing
   // an address that is not a web page, then saved; the page a respondent
   // reads after sending, in each language; and its translation beside
@@ -389,6 +430,11 @@ test("gallery", async ({ browser }) => {
   await capture(es, "editor-published", "es");
   await es.goto(thanksEditor);
   await capture(es, "editor-thanks", "es");
+  await es.goto(otherEditor);
+  await es.locator(".js-question summary").first().click();
+  await capture(es, "editor-other", "es");
+  await es.goto(otherEditor + "/results");
+  await capture(es, "results-other", "es");
   await es.goto(editor + "/preview");
   await capture(es, "preview", "es");
   await es.goto(editor + "/preview?layout=all");

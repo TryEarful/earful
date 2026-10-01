@@ -162,6 +162,12 @@ type Question struct {
 	Required   bool         `json:"required"`
 	ScaleMin   int          `json:"scale_min,omitempty"`
 	ScaleMax   int          `json:"scale_max,omitempty"`
+	// AllowOther offers one more choice after the options, Other, with
+	// a box for the respondent to write their own answer in. Only a
+	// type that NeedsOptions may carry it. The word "Other" is the
+	// interface's, so it is shown in the respondent's language and is
+	// never one of Options.
+	AllowOther bool `json:"allow_other,omitempty"`
 }
 
 // DefaultRatingScaleMin/Max are the bounds assumed for a rating scale
@@ -220,6 +226,8 @@ var (
 	ErrTooFewOptions     = errors.New("list at least two options")
 	ErrEmptyOption       = errors.New("remove the blank option")
 	ErrDuplicateOption   = errors.New("two options are identical")
+	ErrOtherNotOffered   = errors.New("only a choice question can offer Other")
+	ErrReservedOption    = errors.New("choose a different wording for that option")
 	ErrBadScale          = error(LimitError{Kind: LimitScale, Limit: ratingScaleMaxCap})
 	ErrBadBounds         = error(LimitError{Kind: LimitBounds, Limit: NumberBoundLimit})
 )
@@ -255,7 +263,15 @@ func (q Question) Validate() error {
 				return ErrDuplicateOption
 			}
 			seen[strings.ToLower(trimmed)] = true
+			// An answer names its choice by the option's text, so an
+			// option spelled like the marker would read as Other.
+			if q.AllowOther && strings.EqualFold(trimmed, OtherChoice) {
+				return ErrReservedOption
+			}
 		}
+	}
+	if q.AllowOther && !q.Type.NeedsOptions() {
+		return ErrOtherNotOffered
 	}
 	if q.Type.NeedsScale() {
 		if q.ScaleMin != ratingScaleMinLow && q.ScaleMin != ratingScaleMinHigh {

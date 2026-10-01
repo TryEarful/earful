@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 5.**
+**Format version 6.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -24,7 +24,7 @@ spreadsheets and contain nothing the JSON doesn't.
 
 ```jsonc
 {
-  "format_version": 4,
+  "format_version": 6,
   "exported_at": "2026-07-25T14:03:11Z",
   "workspace": { "id": "uuid", "name": "sam's workspace" },
   "surveys": [
@@ -49,6 +49,7 @@ spreadsheets and contain nothing the JSON doesn't.
               "text": "What stood out in your first week?",
               "required": true,
               "options": ["…"],            // choice/dropdown types only
+              "allow_other": true,         // omitted unless Other was offered
               "scale_min": 1,              // rating_scale, nps and number only
               "scale_max": 7
             }
@@ -135,6 +136,17 @@ An answer object carries exactly one field, chosen by the question type:
 A `date` is a calendar day in ISO 8601 form, `yyyy-mm-dd`, with no time
 and no time zone: the day the respondent picked, not an instant.
 
+A `single_choice`, `dropdown` or `multiple_choice` question with
+`allow_other` offered one more choice after its options, Other, with a
+box to write in. An answer that picked it records the marker
+`__other__` as its `choice`, or among its `choices`, and what the
+respondent wrote in `other`, the one case where an answer carries two
+fields: `{"choice": "__other__", "other": "By fax"}`,
+`{"choices": ["Email", "__other__"], "other": "By fax"}`. The marker is
+never one of the question's `options`. The word Other is the
+interface's, shown in the respondent's language, so it is not in the
+file. The CSV writes such an answer as `Other: By fax`.
+
 A `number` question asks for a whole number. Its `scale_min` and
 `scale_max` are the lowest and highest answers it accepts, each within a
 million of zero; a bound of 0 is omitted, like any zero `scale_min`.
@@ -191,6 +203,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 6 | `allow_other` on a question, and the `other` answer field beside the `__other__` choice. Everything in version 5 is unchanged. |
 | 5 | `thanks` on a version: the creator's own thank you message and link, as that version was published with them. Everything in version 4 is unchanged. |
 | 4 | The `number` question type: its answers use the existing `number` field and its limits the existing `scale_min` and `scale_max`. Everything in version 3 is unchanged. |
 | 3 | The `date` question type, and its `date` answer field. Everything in version 2 is unchanged. |

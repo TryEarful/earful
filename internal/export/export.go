@@ -24,7 +24,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 5
+const FormatVersion = 6
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {
@@ -104,6 +104,9 @@ type Question struct {
 	Required   bool     `json:"required"`
 	ScaleMin   int      `json:"scale_min,omitempty"`
 	ScaleMax   int      `json:"scale_max,omitempty"`
+	// AllowOther is whether the question offered Other with a box to
+	// write in, absent where it did not. Format version 6.
+	AllowOther bool `json:"allow_other,omitempty"`
 }
 
 type Participant struct {
@@ -137,6 +140,10 @@ type Answer struct {
 	Bool    *bool    `json:"bool,omitempty"`
 	// Date is a calendar day, yyyy-mm-dd, with no time or zone.
 	Date string `json:"date,omitempty"`
+	// Other is what the respondent wrote beside Other, with Choice set
+	// to, or Choices holding, the marker domain.OtherChoice. Format
+	// version 6.
+	Other string `json:"other,omitempty"`
 }
 
 // Stat is one unlinked survey-level counter (ADR-0009). It travels so an
