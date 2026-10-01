@@ -28,16 +28,19 @@ async function dateSurvey(page: Page, title: string): Promise<string> {
 test("a date question is answered with the browser's date control", async ({ page, browser }) => {
   const share = await dateSurvey(page, `E2E date ${Date.now()}`);
 
-  // The suite's locale is en-US, so the control reads month, day, year.
   const context = await browser.newContext({ storageState: undefined, locale: "en-US" });
   const respondent = await context.newPage();
   await respondent.goto(share);
 
   const date = respondent.getByLabel("When did you visit?");
   await expect(date).toHaveAttribute("type", "date");
-  await date.click();
+  // The order of the control's segments follows the machine's region,
+  // not the page's locale, so typed digits are only checked to reach the
+  // field; the day itself is then set whole.
+  await date.focus();
   await respondent.keyboard.type("04182026");
-  await expect(date).toHaveValue("2026-04-18");
+  await expect(date).toHaveValue(/^2026-\d\d-\d\d$/);
+  await date.fill("2026-04-18");
 
   await respondent.keyboard.press("Enter");
   await expect(respondent.locator(".js-respond-progress")).toHaveText("Question 2 of 2");
