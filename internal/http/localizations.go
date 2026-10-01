@@ -289,6 +289,12 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 			view.PendingCount++
 		}
 		if draft.HasThanksToTranslate() {
+			// The thank you page is counted with the questions, so the
+			// progress line agrees with the number left to review.
+			view.Total++
+			if !thanksPending {
+				view.Reviewed++
+			}
 			thanks := templates.LocalizedThanksView{
 				SourceMessage:   draft.Thanks.Message,
 				SourceLinkLabel: draft.Thanks.LinkLabel,

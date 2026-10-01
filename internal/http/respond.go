@@ -583,7 +583,7 @@ func parseSubmission(r *http.Request, questions []domain.Question) domain.Submis
 	return domain.Submission{Answers: answers}
 }
 
-// otherWritten is what the respondent wrote in the box beside Other.
+// otherWritten is what the respondent wrote in the box for Other.
 func otherWritten(r *http.Request, q domain.Question) string {
 	return strings.TrimSpace(r.PostFormValue(templates.OtherFieldPrefix + q.IdentityID))
 }

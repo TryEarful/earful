@@ -22,7 +22,7 @@ type AnswerValue struct {
 	// Date is a calendar day in ISO 8601 form (DateLayout), with no time
 	// and no zone: the day the respondent picked, not an instant.
 	Date string `json:"date,omitempty"`
-	// Other is what the respondent wrote in the box beside Other, on a
+	// Other is what the respondent wrote in the box for Other, on a
 	// question that offers it. It is set exactly when Choice is, or
 	// Choices holds, OtherChoice.
 	Other string `json:"other,omitempty"`
@@ -122,7 +122,7 @@ var (
 	ErrNotAnOption    = errors.New("choose one of the options offered")
 	ErrOutOfRange     = errors.New("choose a value on the scale")
 	ErrNotADate       = errors.New("enter a date as year, month and day")
-	ErrOtherEmpty     = errors.New("write your answer in the box beside Other")
+	ErrOtherEmpty     = errors.New("write your answer in the box for Other")
 )
 
 // ValidateAnswer checks one answer against the question as it was asked.

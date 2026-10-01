@@ -306,7 +306,7 @@ reviewed = "Reviewed"
 pending = "{{.Count}} to review"
 # The spaces after the first full stop are as the page has always drawn
 # them.
-progress = "{{.Reviewed}} of {{.Total}} questions reviewed. {{if .Blocked}} Publishing is blocked until every one has been read.{{end}}"
+progress = "{{.Reviewed}} of {{.Total}} reviewed. {{if .Blocked}} Publishing is blocked until every one has been read.{{end}}"
 
 [languages.draft]
 label = "Draft the missing translations with AI"
@@ -1143,7 +1143,7 @@ option = "choose one of the options offered"
 range = "choose a value on the scale"
 date = "enter a date as year, month and day"
 number = "enter a whole number from {{.Min}} to {{.Max}}"
-write_in = "write your answer in the box beside Other"
+write_in = "write your answer in the box for Other"
 
 [question.error]
 empty = "give the question some text"

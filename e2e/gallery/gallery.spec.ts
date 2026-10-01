@@ -360,13 +360,15 @@ test("gallery", async ({ browser }) => {
     const { context, page: respondent } = await visitor(browser, lang);
     await respondent.goto(otherShare);
     await respondent.locator(".js-other-choice").check();
+    await respondent.locator(".js-other-text").fill(written);
+    await capture(respondent, "respond-other", lang);
+    await respondent.locator(".js-other-text").fill("");
     await minFillWait(respondent);
     await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
-    const empty = lang === "es" ? "escriba su respuesta en el espacio junto a Otro" : "write your answer in the box beside Other";
+    const empty = lang === "es" ? "escriba su respuesta en el espacio de Otro" : "write your answer in the box for Other";
     await expect(respondent.getByText(new RegExp(empty, "i")).first()).toBeVisible({ timeout: submitTimeout });
     await capture(respondent, "respond-other-error", lang);
     await respondent.locator(".js-other-text").fill(written);
-    await capture(respondent, "respond-other", lang);
     await minFillWait(respondent);
     await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
     await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });

@@ -410,7 +410,7 @@ other = "Idiomas"
 
 [languages.intro]
 hash = "sha1-47efc407dbcb97909fee4ffc53eb6aa627708007"
-other = "Las personas encuestadas pueden responder en su propio idioma. Las traducciones se redactan por usted, pero no se publica nada hasta que usted lo haya leído: una traducción automática que sale en su nombre compromete su reputación, no la del modelo."
+other = "Las personas encuestadas pueden responder en su propio idioma. Las traducciones se le dan redactadas, pero no se publica nada hasta que usted lo haya leído. Una traducción sale en su nombre, así que compromete su reputación, no la del modelo."
 
 [languages.add.heading]
 hash = "sha1-8960674be5c7679fb51b377c8d250daa8832b648"
@@ -441,8 +441,8 @@ hash = "sha1-a603e34a55f4ee29d4647426b3e97ec8d0e17085"
 other = "{{.Count}} por revisar"
 
 [languages.status.progress]
-hash = "sha1-60cf90b8894b5a876ecc13ec1e2cd3d4683db78b"
-other = "{{.Reviewed}} de {{.Total}} preguntas revisadas.{{if .Blocked}} No se puede publicar hasta que se hayan leído todas.{{end}}"
+hash = "sha1-a157e2b8cf405a0f34b5c129ec33a30b05c18bc3"
+other = "Revisados {{.Reviewed}} de {{.Total}}.{{if .Blocked}} No se puede publicar hasta que se haya leído todo.{{end}}"
 
 [languages.draft.label]
 hash = "sha1-e37425a2e8377cd30c85b95cd86e7a472434441c"
@@ -2092,8 +2092,8 @@ hash = "sha1-8279d40a7b892506c3ea430787bb32556129ce96"
 other = "escriba un número entero del {{.Min}} al {{.Max}}"
 
 [answer.error.write_in]
-hash = "sha1-84580d3cdfd845b7f289e8310a9584dcddfe3a79"
-other = "escriba su respuesta en el espacio junto a Otro"
+hash = "sha1-92e1393e2d3b8578405dde62af2c24204f4797f1"
+other = "escriba su respuesta en el espacio de Otro"
 
 [question.error.empty]
 hash = "sha1-67e2b8571d7b7a76b7add0a6201cfdd90f2c587d"

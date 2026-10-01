@@ -608,7 +608,7 @@ func numberHint(ctx context.Context, q domain.Question) string {
 	return l.T("respond.number.hint", uitext.Args{"Min": l.Count(int64(min)), "Max": l.Count(int64(max))})
 }
 
-// OtherFieldPrefix names the box beside Other, followed by the
+// OtherFieldPrefix names the box for Other, followed by the
 // question's identity. It is not an answer field of its own: the server
 // reads it only for a question that offers Other.
 const OtherFieldPrefix = "other_"

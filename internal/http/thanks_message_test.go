@@ -278,6 +278,11 @@ func TestThanksMessage_Localized(t *testing.T) {
 	if body := app.Publish(t, creator, id); bodyContains(body, "Published version 1") {
 		t.Fatalf("a language without its thank you page was published:\n%s", body)
 	}
+	// The progress line counts the thank you page with the questions, so
+	// it agrees with the number left to review.
+	if page := mustGet(t, creator, app.Server.URL+"/surveys/"+id+"/localizations"); !bodyContains(page, "1 of 2 reviewed") {
+		t.Errorf("the progress does not count the thank you page:\n%s", page)
+	}
 
 	// The model drafts it; a draft is not a review.
 	resp := app.PostForm(t, creator, "/surveys/"+id+"/localizations/nl/draft", nil)

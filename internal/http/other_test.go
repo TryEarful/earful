@@ -160,7 +160,7 @@ func TestRespond_OtherNeedsWords(t *testing.T) {
 	if resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d, want 422", resp.StatusCode)
 	}
-	if !bodyContains(body, "rite your answer in the box beside Other") {
+	if !bodyContains(body, "rite your answer in the box for Other") {
 		t.Errorf("the message does not say where to write:\n%s", body)
 	}
 	if !strings.Contains(body, `value="`+domain.OtherChoice+`" class="js-other-choice" checked`) {
