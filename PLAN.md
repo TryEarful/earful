@@ -94,6 +94,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0015 | A workspace is created holding one published survey, the Starter Survey, written in the transaction that creates it and its owner's from then on; English with a Spanish Localization for everyone; `surveys.origin` tells it from a survey somebody made |
 | 0016 | One visual identity from the brand's tokens, with a derived dark theme; the owl drawn inline so the stylesheet colours it under the CSP; a survey's colour hashed from its ID; no font fetched from elsewhere; scripts and tests hook onto `js-` classes; no dashes in what a reader reads |
 | 0017 | Proposed. Embedding: a link and button snippet first; framing only on /e/{surveyID}, for open anonymous surveys, from creator-listed origins in frame-ancestors; /s/ and every other page stay frame-ancestors 'none'; X-Frame-Options: DENY kept everywhere |
+| 0018 | Proposed. A survey's look (one Voice colour, a start and an end image) is chosen in the draft and frozen with the version; images uploaded, re-encoded, stored in Postgres and served first party; no CSP change; amends 0016 |
 
 ## MVP scope
 
