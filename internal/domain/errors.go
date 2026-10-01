@@ -1,6 +1,10 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // A validation error is read twice: by the code that decides what to do
 // about it, and by the person who has to put it right. The sentinels
@@ -21,6 +25,7 @@ const (
 	LimitQuestionText LimitKind = "question"
 	LimitTitle        LimitKind = "title"
 	LimitScale        LimitKind = "scale"
+	LimitBounds       LimitKind = "bounds"
 	LimitQuestions    LimitKind = "questions"
 	LimitLanguages    LimitKind = "languages"
 )
@@ -43,12 +48,40 @@ func (e LimitError) Error() string {
 		return fmt.Sprintf("keep the title under %d characters", e.Limit)
 	case LimitScale:
 		return fmt.Sprintf("the scale must start at 0 or 1 and end no higher than %d", e.Limit)
+	case LimitBounds:
+		return fmt.Sprintf("the lowest answer must be below the highest, and both between %s and %s",
+			grouped(-e.Limit), grouped(e.Limit))
 	case LimitQuestions:
 		return fmt.Sprintf("a survey can hold at most %d questions", e.Limit)
 	case LimitLanguages:
 		return fmt.Sprintf("a survey can carry at most %d languages", e.Limit)
 	}
 	return fmt.Sprintf("over the limit of %d", e.Limit)
+}
+
+// RangeError reports a number answer that is not a whole number within
+// the question's limits. It carries the limits, so the respondent can be
+// told in their own language what to type.
+type RangeError struct {
+	Min, Max int
+}
+
+func (e RangeError) Error() string {
+	return fmt.Sprintf("enter a whole number from %s to %s", grouped(e.Min), grouped(e.Max))
+}
+
+// grouped writes n with its digits in threes, as the English a person
+// is shown writes it.
+func grouped(n int) string {
+	digits := strconv.Itoa(n)
+	sign := ""
+	if strings.HasPrefix(digits, "-") {
+		sign, digits = "-", digits[1:]
+	}
+	for i := len(digits) - 3; i > 0; i -= 3 {
+		digits = digits[:i] + "," + digits[i:]
+	}
+	return sign + digits
 }
 
 // QuestionError says which question of a draft a problem belongs to.

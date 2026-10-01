@@ -861,6 +861,14 @@ other = "La escala empieza en"
 hash = "sha1-f6f535f631b9bc1bec34bfef16eae93dac2d49a4"
 other = "La escala termina en"
 
+[editor.question.number_min]
+hash = "sha1-6c96dc053f1df5e86eddf0c0809d2a0fdd9259ef"
+other = "Respuesta más baja"
+
+[editor.question.number_max]
+hash = "sha1-9d5e99838afa1c5cc59782df7c1ed37b173f2f9f"
+other = "Respuesta más alta"
+
 [editor.question.save.label]
 hash = "sha1-5d579cd1557554f8ad09207bedb0412f122b8e1c"
 other = "Guardar pregunta"
@@ -1745,6 +1753,10 @@ other = "Media: {{.Average}}"
 hash = "sha1-4fe3573f48b873f249948efa0026fac3dcd0191a"
 other = "NPS {{.Score}} · media {{.Average}} · {{.Promoters}} promotores, {{.Detractors}} detractores, {{.Passives}} pasivos"
 
+[results.summary.number]
+hash = "sha1-3bc7ada9536724aa40ce69f1c4b82df79b3ad1d2"
+other = "Media {{.Average}} · mediana {{.Median}} · mínimo {{.Lowest}} · máximo {{.Highest}}"
+
 [results.column.submitted]
 hash = "sha1-2e00359b9802d1fa28aa05450482d8df1c0cf61f"
 other = "Enviado"
@@ -1951,6 +1963,10 @@ other = "elija un valor de la escala"
 hash = "sha1-676ff802b228d175b54f6501940333924eeb82b2"
 other = "escriba una fecha con año, mes y día"
 
+[answer.error.number]
+hash = "sha1-8279d40a7b892506c3ea430787bb32556129ce96"
+other = "escriba un número entero del {{.Min}} al {{.Max}}"
+
 [question.error.empty]
 hash = "sha1-67e2b8571d7b7a76b7add0a6201cfdd90f2c587d"
 other = "escriba el texto de la pregunta"
@@ -1974,6 +1990,10 @@ other = "hay dos opciones idénticas"
 [question.error.scale]
 hash = "sha1-a341f198564edfa71d55145e01a652600fc356ab"
 other = "la escala debe empezar en 0 o en 1 y no terminar por encima de {{.Limit}}"
+
+[question.error.bounds]
+hash = "sha1-98cd7fc277f3e6538df7969e41352926aeead79a"
+other = "la respuesta más baja debe ser menor que la más alta, y las dos estar entre {{.Low}} y {{.High}}"
 
 [question.error.long]
 hash = "sha1-b4742a5c54fd34b752c7c58e60b1d0885b9b127a"
@@ -2120,6 +2140,14 @@ other = "Fecha"
 [question.type.date.hint]
 hash = "sha1-09f898de376100f9241c4c03678007975364d52d"
 other = "Un día del calendario, por ejemplo cuándo vino alguien de visita."
+
+[question.type.number.name]
+hash = "sha1-b7baa1d40c4ea29afc9098732bffee2a861a6c44"
+other = "Número"
+
+[question.type.number.hint]
+hash = "sha1-899d5ac283b5a1eded6105fa3497ea7cceddff94"
+other = "Un número entero entre los límites que usted fije, por ejemplo cuántas personas vinieron."
 
 
 # ── En qué estado está un participante ─────────────────────────────────
@@ -2642,6 +2670,10 @@ other = "0: nada probable"
 [respond.nps.high]
 hash = "sha1-94746e950d06c7a3c1944eede3e18b606a7cffbb"
 other = "10: muy probable"
+
+[respond.number.hint]
+hash = "sha1-2669798c3d8f408bbcb02100456048062763084c"
+other = "Un número entero del {{.Min}} al {{.Max}}."
 
 [respond.disclosure.controller_html]
 hash = "sha1-d25343ec1f5083095bbd07e54cd337ec988c945c"

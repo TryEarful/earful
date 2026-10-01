@@ -10,6 +10,13 @@ import (
 	"github.com/TryEarful/earful/web/static"
 )
 
+// numberBoundMin and numberBoundMax are the farthest a number question's
+// limits may go, for the editor's fields; the server holds to the same.
+var (
+	numberBoundMin = fmt.Sprint(-domain.NumberBoundLimit)
+	numberBoundMax = fmt.Sprint(domain.NumberBoundLimit)
+)
+
 // responseCountLabel is "1 response", "5 responses": how many times a
 // survey has been submitted, wherever that is said.
 func responseCountLabel(ctx context.Context, n int) string {
@@ -210,6 +217,18 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 						</label>
 					</div>
 				}
+				if q.Type == domain.Number {
+					<div class="field-row">
+						<label class="field">
+							<span>{ t(ctx, "editor.question.number_min") }</span>
+							<input type="number" name="number_min" min={ numberBoundMin } max={ numberBoundMax } step="1" value={ fmt.Sprint(q.ScaleMin) } required autocomplete="off"/>
+						</label>
+						<label class="field">
+							<span>{ t(ctx, "editor.question.number_max") }</span>
+							<input type="number" name="number_max" min={ numberBoundMin } max={ numberBoundMax } step="1" value={ fmt.Sprint(q.ScaleMax) } required autocomplete="off"/>
+						</label>
+					</div>
+				}
 				<label class="checkbox">
 					if q.Required {
 						<input type="checkbox" name="required" checked autocomplete="off"/>
@@ -319,6 +338,16 @@ templ addQuestionForm(csrf string, surveyID string, first bool) {
 						@thtml(ctx, "editor.add.scale_max_html")
 					</span>
 					<input type="number" name="scale_max" min="2" max="10" value="5" autocomplete="off"/>
+				</label>
+			</div>
+			<div class="field-row q-bounds">
+				<label class="field">
+					<span>{ t(ctx, "editor.question.number_min") }</span>
+					<input type="number" name="number_min" min={ numberBoundMin } max={ numberBoundMax } step="1" value="0" autocomplete="off"/>
+				</label>
+				<label class="field">
+					<span>{ t(ctx, "editor.question.number_max") }</span>
+					<input type="number" name="number_max" min={ numberBoundMin } max={ numberBoundMax } step="1" value="10" autocomplete="off"/>
 				</label>
 			</div>
 			<label class="checkbox">

@@ -30,6 +30,9 @@ func bothLanguages(t *testing.T) (en, es uitext.Localizer) {
 func everyError() []error {
 	errs := []error{
 		domain.ErrAnswerTooLong, domain.ErrBadScale, domain.ErrDraftTooLong, domain.ErrTooManyLanguages,
+		domain.ErrBadBounds,
+		domain.RangeError{Min: 1, Max: 12},
+		domain.RangeError{Min: -5000, Max: 1000000},
 		domain.LimitError{Kind: domain.LimitQuestionText, Limit: 500},
 		domain.LimitError{Kind: domain.LimitTitle, Limit: 200},
 		domain.QuestionError{Position: 2, Err: domain.ErrTooFewOptions},

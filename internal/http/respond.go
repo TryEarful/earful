@@ -521,6 +521,16 @@ func parseSubmission(r *http.Request, questions []domain.Question) domain.Submis
 			}
 		case domain.Date:
 			value.Date = strings.TrimSpace(r.PostFormValue(field))
+		case domain.Number:
+			// Whatever does not read as a whole number is kept as text:
+			// it is refused with the question's limits and shown back,
+			// never stored, and never mistaken for a skipped question.
+			typed := strings.TrimSpace(r.PostFormValue(field))
+			if n, err := strconv.Atoi(typed); err == nil {
+				value.Number = &n
+			} else {
+				value.Text = typed
+			}
 		}
 		answers[q.IdentityID] = value
 	}

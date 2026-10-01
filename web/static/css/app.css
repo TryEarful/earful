@@ -1424,6 +1424,13 @@ button:disabled,
   margin-top: 0.4rem;
 }
 
+/* A number question's limits, set under its field as a scale's ends are
+   under the scale. */
+.number-hint {
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
+
 .respond-progress {
   margin-bottom: var(--space-2);
   color: var(--muted);
@@ -3120,10 +3127,11 @@ main.standalone h1 {
 }
 
 /* The fields a question type needs, and only those: options for choices,
-   a range for a rating. Read from the form, so it works without a
-   script. */
+   a range for a rating, limits for a number. Read from the form, so it
+   works without a script. */
 .q-options,
-.q-scale {
+.q-scale,
+.q-bounds {
   display: none;
 }
 
@@ -3131,7 +3139,8 @@ form:has(select[name="type"] :is(option[value="single_choice"], option[value="mu
   display: block;
 }
 
-form:has(select[name="type"] option[value="rating_scale"]:checked) .q-scale {
+form:has(select[name="type"] option[value="rating_scale"]:checked) .q-scale,
+form:has(select[name="type"] option[value="number"]:checked) .q-bounds {
   display: flex;
 }
 

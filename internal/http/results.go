@@ -127,6 +127,8 @@ func viewQuestionResults(l uitext.Localizer, results store.Results, translations
 			view.Summary = scaleSummary(l, question)
 		case domain.Date:
 			view.Distribution = dateDistribution(l, question)
+		case domain.Number:
+			view.Summary = numberSummary(l, question)
 		}
 		out = append(out, view)
 	}
@@ -281,6 +283,46 @@ func scaleSummary(l uitext.Localizer, question store.QuestionResults) string {
 		"Detractors": detractors,
 		"Passives":   count - promoters - detractors,
 	})
+}
+
+// numberSummary reads a number question as its average, median, lowest
+// and highest answer. A bar per value is no use here: the limits can be
+// a million apart, and a count of people at each age is a list, not a
+// picture. Each answer is still in the responses table.
+func numberSummary(l uitext.Localizer, question store.QuestionResults) string {
+	var values []int
+	sum := 0
+	for _, answer := range question.Answers {
+		if answer.Value.Number == nil {
+			continue
+		}
+		values = append(values, *answer.Value.Number)
+		sum += *answer.Value.Number
+	}
+	if len(values) == 0 {
+		return ""
+	}
+	sort.Ints(values)
+	middle := len(values) / 2
+	median := float64(values[middle])
+	if len(values)%2 == 0 {
+		median = float64(values[middle-1]+values[middle]) / 2
+	}
+	return l.T("results.summary.number", uitext.Args{
+		"Average": l.Decimal(float64(sum)/float64(len(values)), 1),
+		"Median":  wholeOrHalf(l, median),
+		"Lowest":  l.Count(int64(values[0])),
+		"Highest": l.Count(int64(values[len(values)-1])),
+	})
+}
+
+// wholeOrHalf writes a median, which is a whole number or lies halfway
+// between two, without a trailing ",0" on the whole ones.
+func wholeOrHalf(l uitext.Localizer, value float64) string {
+	if value == float64(int64(value)) {
+		return l.Count(int64(value))
+	}
+	return l.Decimal(value, 1)
 }
 
 func toCountViews(l uitext.Localizer, labels []string, counts map[string]int, total int) []templates.CountView {

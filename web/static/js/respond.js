@@ -287,11 +287,12 @@
     return true;
   }
 
-  // A date field is typed into: its digits are the day, month and year,
-  // never a scale point, and its letters are not option keys.
+  // Date and number fields are typed into: their digits are a day or a
+  // number, never a scale point, and their letters are not option keys.
   function isTextField(node) {
     if (node.tagName === "TEXTAREA") return true;
-    return node.tagName === "INPUT" && (node.type === "text" || node.type === "date");
+    if (node.tagName !== "INPUT") return false;
+    return node.type === "text" || node.type === "date" || node.type === "number";
   }
 
   var disclosure = document.querySelector(".js-disclosure");

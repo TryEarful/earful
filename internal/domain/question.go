@@ -23,6 +23,7 @@ const (
 	YesNo          QuestionType = "yes_no"
 	Dropdown       QuestionType = "dropdown"
 	Date           QuestionType = "date"
+	Number         QuestionType = "number"
 )
 
 // QuestionTypes lists every supported type in the order the editor offers
@@ -31,7 +32,7 @@ const (
 var QuestionTypes = []QuestionType{
 	LongText, ShortText, SingleChoice, MultipleChoice,
 	RatingScale, NPS, YesNo, Dropdown,
-	Date,
+	Date, Number,
 }
 
 // Label is the human name shown in the editor.
@@ -55,6 +56,8 @@ func (t QuestionType) Label() string {
 		return "Dropdown"
 	case Date:
 		return "Date"
+	case Number:
+		return "Number"
 	default:
 		return string(t)
 	}
@@ -81,6 +84,8 @@ func (t QuestionType) Hint() string {
 		return "One option from a long list, in a compact control."
 	case Date:
 		return "A day on the calendar, such as when someone visited."
+	case Number:
+		return "A whole number between limits you set, such as how many came."
 	}
 	return ""
 }
@@ -99,6 +104,12 @@ func (t QuestionType) NeedsOptions() bool {
 // NeedsScale reports whether a type carries numeric bounds the author can
 // set. NPS is fixed at 0–10 by definition, so it does not.
 func (t QuestionType) NeedsScale() bool { return t == RatingScale }
+
+// HasBounds reports whether a question of this type carries a lowest and
+// highest value the author sets, held in ScaleMin and ScaleMax: the ends
+// of a rating scale, or the limits of a number. Publish freezes them and
+// an export carries them.
+func (t QuestionType) HasBounds() bool { return t == RatingScale || t == Number }
 
 // AcceptsVoice reports whether a respondent can answer by speaking
 // (ADR-0004: voice is for open text).
@@ -130,6 +141,12 @@ const (
 	ratingScaleMaxCap  = 10
 )
 
+// NumberBoundLimit is how far from zero a number question's limits may
+// go. A number question asks for a count or an amount a person types,
+// and the limit keeps every stored answer far from the edge of the
+// database's integer without getting in the way of a real question.
+const NumberBoundLimit = 1_000_000
+
 // Question is one question as it exists in a Draft. Once published it is
 // frozen into a `questions` row; the shape is deliberately the same so
 // the respondent renderer serves drafts (preview) and published versions
@@ -160,9 +177,16 @@ const (
 // Scale returns the effective bounds for scale-shaped types. NPS is fixed
 // by its definition; a rating scale with no usable bounds falls back to
 // the defaults rather than degenerating to a single point.
+//
+// A number question's limits are its own, with no fallback: they are
+// required when it is written, and a guessed 1 to 5 would refuse real
+// answers.
 func (q Question) Scale() (min, max int) {
 	if q.Type == NPS {
 		return NPSMin, NPSMax
+	}
+	if q.Type == Number {
+		return q.ScaleMin, q.ScaleMax
 	}
 	if q.ScaleMax <= q.ScaleMin {
 		return DefaultRatingScaleMin, DefaultRatingScaleMax
@@ -170,8 +194,13 @@ func (q Question) Scale() (min, max int) {
 	return q.ScaleMin, q.ScaleMax
 }
 
-// ScalePoints returns every selectable value of a scale question.
+// ScalePoints returns every selectable value of a scale question, and
+// nothing for any other type: a number is typed rather than picked, and
+// its range can hold two million values.
 func (q Question) ScalePoints() []int {
+	if q.Type != RatingScale && q.Type != NPS {
+		return nil
+	}
 	min, max := q.Scale()
 	if max < min {
 		return nil
@@ -192,6 +221,7 @@ var (
 	ErrEmptyOption       = errors.New("remove the blank option")
 	ErrDuplicateOption   = errors.New("two options are identical")
 	ErrBadScale          = error(LimitError{Kind: LimitScale, Limit: ratingScaleMaxCap})
+	ErrBadBounds         = error(LimitError{Kind: LimitBounds, Limit: NumberBoundLimit})
 )
 
 // maxQuestionTextLen keeps a question readable and bounds the row; a
@@ -233,6 +263,11 @@ func (q Question) Validate() error {
 		}
 		if q.ScaleMax > ratingScaleMaxCap || q.ScaleMax <= q.ScaleMin {
 			return ErrBadScale
+		}
+	}
+	if q.Type == Number {
+		if q.ScaleMin < -NumberBoundLimit || q.ScaleMax > NumberBoundLimit || q.ScaleMax <= q.ScaleMin {
+			return ErrBadBounds
 		}
 	}
 	return nil

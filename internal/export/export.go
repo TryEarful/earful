@@ -24,7 +24,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 3
+const FormatVersion = 4
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {

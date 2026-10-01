@@ -42,8 +42,8 @@ var plainErrors = []struct {
 }
 
 // limitError is the message for an error that carries a limit, by what
-// the limit is on. ErrAnswerTooLong, ErrBadScale, ErrDraftTooLong and
-// ErrTooManyLanguages are errors of this kind.
+// the limit is on. ErrAnswerTooLong, ErrBadScale, ErrBadBounds,
+// ErrDraftTooLong and ErrTooManyLanguages are errors of this kind.
 func limitError(kind domain.LimitKind) (uitext.ID, bool) {
 	switch kind {
 	case domain.LimitAnswerText:
@@ -56,6 +56,8 @@ func limitError(kind domain.LimitKind) (uitext.ID, bool) {
 		return "question.error.scale", true
 	case domain.LimitQuestions:
 		return "survey.error.long", true
+	case domain.LimitBounds:
+		return "question.error.bounds", true
 	case domain.LimitLanguages:
 		return "language.error.limit", true
 	}
@@ -76,10 +78,22 @@ func errorText(l uitext.Localizer, err error) (string, bool) {
 		}
 		return l.T("question.error.numbered", uitext.Args{"Position": numbered.Position, "Problem": problem}), true
 	}
+	var outside domain.RangeError
+	if errors.As(err, &outside) {
+		return l.T("answer.error.number", uitext.Args{
+			"Min": l.Count(int64(outside.Min)), "Max": l.Count(int64(outside.Max)),
+		}), true
+	}
 	var limit domain.LimitError
 	if errors.As(err, &limit) {
 		if id, ok := limitError(limit.Kind); ok {
-			return l.T(id, uitext.Args{"Limit": limit.Limit}), true
+			// A number's limits are written out as the two ends, so the
+			// minus sign is part of a number, never of the wording.
+			return l.T(id, uitext.Args{
+				"Limit": limit.Limit,
+				"Low":   l.Count(int64(-limit.Limit)),
+				"High":  l.Count(int64(limit.Limit)),
+			}), true
 		}
 		return "", false
 	}

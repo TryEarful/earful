@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 3.**
+**Format version 4.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -24,7 +24,7 @@ spreadsheets and contain nothing the JSON doesn't.
 
 ```jsonc
 {
-  "format_version": 3,
+  "format_version": 4,
   "exported_at": "2026-07-25T14:03:11Z",
   "workspace": { "id": "uuid", "name": "sam's workspace" },
   "surveys": [
@@ -49,7 +49,7 @@ spreadsheets and contain nothing the JSON doesn't.
               "text": "What stood out in your first week?",
               "required": true,
               "options": ["…"],            // choice/dropdown types only
-              "scale_min": 1,              // rating_scale and nps only
+              "scale_min": 1,              // rating_scale, nps and number only
               "scale_max": 7
             }
           ]
@@ -115,12 +115,16 @@ An answer object carries exactly one field, chosen by the question type:
 | `long_text`, `short_text` | `text` | `{"text": "It was fine."}` |
 | `single_choice`, `dropdown` | `choice` | `{"choice": "Weekly"}` |
 | `multiple_choice` | `choices` | `{"choices": ["Email", "Slack"]}` |
-| `rating_scale`, `nps` | `number` | `{"number": 7}` |
+| `rating_scale`, `nps`, `number` | `number` | `{"number": 7}` |
 | `yes_no` | `bool` | `{"bool": true}` |
 | `date` | `date` | `{"date": "2026-04-18"}` |
 
 A `date` is a calendar day in ISO 8601 form, `yyyy-mm-dd`, with no time
 and no time zone: the day the respondent picked, not an instant.
+
+A `number` question asks for a whole number. Its `scale_min` and
+`scale_max` are the lowest and highest answers it accepts, each within a
+million of zero; a bound of 0 is omitted, like any zero `scale_min`.
 
 A question a respondent skipped has **no entry** in `answers`. That is
 deliberate and worth preserving on import: it is what distinguishes "left
@@ -174,6 +178,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 4 | The `number` question type: its answers use the existing `number` field and its limits the existing `scale_min` and `scale_max`. Everything in version 3 is unchanged. |
 | 3 | The `date` question type, and its `date` answer field. Everything in version 2 is unchanged. |
 | 2 | `stats_daily` added: per-day opened, submitted and reached counters (ADR-0012). Everything in version 1 is unchanged. |
 | 1 | First published format (M7-T3). |

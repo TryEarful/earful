@@ -47,9 +47,12 @@ func generateSystemPrompt(withTitle bool) string {
 		`"options":["…"],"scale_min":<int>,"scale_max":<int>}` + "\n\n" +
 		"Allowed types: " + strings.Join(types, ", ") + ".\n" +
 		"Include \"options\" only for single_choice, multiple_choice and dropdown (at least two, all distinct). " +
-		"Include \"scale_min\" and \"scale_max\" only for rating_scale (scale_min 0 or 1, scale_max 2–10). " +
+		"Include \"scale_min\" and \"scale_max\" only for rating_scale (scale_min 0 or 1, scale_max 2–10) and number. " +
 		"nps is always 0–10 and needs neither.\n" +
 		"date asks for a day on the calendar, such as when something happened, and needs neither.\n" +
+		"number asks for a whole number, such as a count or an age; its scale_min and scale_max are the lowest and highest " +
+		"sensible answers (scale_min below scale_max, both between -" + fmt.Sprint(domain.NumberBoundLimit) +
+		" and " + fmt.Sprint(domain.NumberBoundLimit) + "). Use rating_scale, not number, for an opinion.\n" +
 		"Write neutral, specific, answerable questions in the language of the request. " +
 		"Prefer a mix of types, and at most " + fmt.Sprint(maxGeneratedQuestions) + " questions." +
 		titleInstruction(withTitle)
@@ -346,7 +349,7 @@ func parseGeneratedQuestions(output string) []domain.Question {
 		if question.Type.NeedsOptions() {
 			question.Options = raw.Options
 		}
-		if question.Type.NeedsScale() {
+		if question.Type.HasBounds() {
 			question.ScaleMin, question.ScaleMax = raw.ScaleMin, raw.ScaleMax
 		}
 		questions = append(questions, question)

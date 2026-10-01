@@ -56,6 +56,7 @@ func TestSurvey_EveryQuestionType(t *testing.T) {
 		{"yes_no", "Did you have what you needed?", nil},
 		{"dropdown", "Where are you based?", url.Values{"options": {"Amsterdam\nBerlin\nLisbon"}}},
 		{"date", "When did you join?", nil},
+		{"number", "How many people did you come with?", url.Values{"number_min": {"1"}, "number_max": {"12"}}},
 	}
 	for _, tc := range cases {
 		body := app.AddQuestion(t, client, id, tc.qType, tc.text, tc.extra)
@@ -90,6 +91,10 @@ func TestSurvey_QuestionValidation(t *testing.T) {
 		{"duplicate options", "single_choice", "Pick one", url.Values{"options": {"Yes\nyes"}}, "identical"},
 		{"bad scale", "rating_scale", "Rate it", url.Values{"scale_min": {"1"}, "scale_max": {"99"}}, "scale must start"},
 		{"unknown type", "telepathy", "Think it", nil, "choose a question type"},
+		{"inverted number", "number", "How many?", url.Values{"number_min": {"12"}, "number_max": {"1"}}, "lowest answer must be below the highest"},
+		{"number past the limit", "number", "How many?", url.Values{"number_min": {"0"}, "number_max": {"5000000"}}, "between -1,000,000 and 1,000,000"},
+		{"number with no limits", "number", "How many?", nil, "lowest answer must be below the highest"},
+		{"number with a missing limit", "number", "How many?", url.Values{"number_max": {"12"}}, "lowest answer must be below the highest"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

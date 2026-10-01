@@ -415,6 +415,16 @@ func questionFromForm(r *http.Request) domain.Question {
 			q.ScaleMax = 5
 		}
 	}
+	if q.Type == domain.Number {
+		// Both limits are required. One missing or not a whole number
+		// leaves both at zero, which validation refuses, rather than
+		// a zero quietly standing in for what the author left out.
+		low, lowErr := strconv.Atoi(strings.TrimSpace(r.PostFormValue("number_min")))
+		high, highErr := strconv.Atoi(strings.TrimSpace(r.PostFormValue("number_max")))
+		if lowErr == nil && highErr == nil {
+			q.ScaleMin, q.ScaleMax = low, high
+		}
+	}
 	return q
 }
 

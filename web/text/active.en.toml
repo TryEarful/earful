@@ -522,6 +522,8 @@ text = "Question"
 options_html = 'Options <small class="muted">(one per line)</small>'
 scale_min = "Scale starts at"
 scale_max = "Scale ends at"
+number_min = "Lowest answer"
+number_max = "Highest answer"
 
 [editor.question.save]
 label = "Save question"
@@ -972,6 +974,7 @@ other = "{{.Count}} respondents skipped this"
 [results.summary]
 average = "Average {{.Average}}"
 nps = "NPS {{.Score}} · average {{.Average}} · {{.Promoters}} promoters, {{.Detractors}} detractors, {{.Passives}} passives"
+number = "Average {{.Average}} · median {{.Median}} · lowest {{.Lowest}} · highest {{.Highest}}"
 
 [results.column]
 submitted = "Submitted"
@@ -1090,6 +1093,7 @@ long = "please keep the answer under {{.Limit}} characters"
 option = "choose one of the options offered"
 range = "choose a value on the scale"
 date = "enter a date as year, month and day"
+number = "enter a whole number from {{.Min}} to {{.Max}}"
 
 [question.error]
 empty = "give the question some text"
@@ -1098,6 +1102,7 @@ options = "list at least two options"
 blank = "remove the blank option"
 duplicate = "two options are identical"
 scale = "the scale must start at 0 or 1 and end no higher than {{.Limit}}"
+bounds = "the lowest answer must be below the highest, and both between {{.Low}} and {{.High}}"
 long = "keep the question under {{.Limit}} characters"
 numbered = "question {{.Position}}: {{.Problem}}"
 
@@ -1166,6 +1171,10 @@ hint = "One option from a long list, in a compact control."
 [question.type.date]
 name = "Date"
 hint = "A day on the calendar, such as when someone visited."
+
+[question.type.number]
+name = "Number"
+hint = "A whole number between limits you set, such as how many came."
 
 
 # ── Where a participant stands ─────────────────────────────────────────
@@ -1476,6 +1485,9 @@ optional = "(optional)"
 [respond.nps]
 low = "0, not at all likely"
 high = "10, extremely likely"
+
+[respond.number]
+hint = "A whole number from {{.Min}} to {{.Max}}."
 
 [respond.disclosure]
 controller_html = "Run by <strong>{{.Workspace}}</strong>, who decides what happens to the answers."

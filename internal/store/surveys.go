@@ -327,11 +327,12 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 		if err != nil {
 			return db.SurveyVersion{}, fmt.Errorf("store: encode options: %w", err)
 		}
-		// Scale bounds are frozen alongside the wording: a later version
-		// may rescale a question, and a response must be read back against
-		// the scale it was actually shown (ADR-0001).
+		// Scale bounds, and a number's limits, are frozen alongside the
+		// wording: a later version may rescale a question, and a response
+		// must be read back against the bounds it was actually shown
+		// (ADR-0001).
 		var scaleMin, scaleMax *int32
-		if q.Type.NeedsScale() {
+		if q.Type.HasBounds() {
 			min, max := q.Scale()
 			scaleMin, scaleMax = int32ptr(min), int32ptr(max)
 		}

@@ -236,7 +236,7 @@ templ questionResults(q QuestionResultsView) {
 				}
 			</ol>
 		}
-		if len(q.Distribution) == 0 && len(q.Texts) == 0 {
+		if len(q.Distribution) == 0 && len(q.Texts) == 0 && q.Summary == "" {
 			<p class="muted">{ t(ctx, "results.question.empty") }</p>
 		}
 	</section>

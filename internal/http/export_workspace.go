@@ -148,7 +148,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 					Options:    question.Options,
 					Required:   question.Required,
 				}
-				if question.Type.NeedsScale() || question.Type == domain.NPS {
+				if question.Type.HasBounds() || question.Type == domain.NPS {
 					exportedQuestion.ScaleMin, exportedQuestion.ScaleMax = min, max
 				}
 				exportedVersion.Questions = append(exportedVersion.Questions, exportedQuestion)

@@ -1319,7 +1319,7 @@ func questionResults(q QuestionResultsView) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		if len(q.Distribution) == 0 && len(q.Texts) == 0 {
+		if len(q.Distribution) == 0 && len(q.Texts) == 0 && q.Summary == "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<p class=\"muted\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

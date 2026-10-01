@@ -517,7 +517,53 @@ templ answerControl(q domain.Question, data RespondData) {
 					aria-describedby={ "err-" + q.IdentityID }
 				}
 			/>
+		case domain.Number:
+			// The browser's own number field, held to the question's
+			// limits and to whole numbers. The server checks both again,
+			// since a browser without the field, or without a script,
+			// sends whatever was typed. The limits are said in words, and
+			// the error says them instead when there is one.
+			<input
+				type="number"
+				inputmode="numeric"
+				name={ "q_" + q.IdentityID }
+				value={ numberValue(data.Answers[q.IdentityID]) }
+				min={ strconv.Itoa(q.ScaleMin) }
+				max={ strconv.Itoa(q.ScaleMax) }
+				step="1"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				aria-labelledby={ "qt-" + q.IdentityID }
+				if data.Errors[q.IdentityID] != "" {
+					aria-describedby={ "err-" + q.IdentityID }
+				} else {
+					aria-describedby={ "nh-" + q.IdentityID }
+				}
+			/>
+			if data.Errors[q.IdentityID] == "" {
+				<p class="muted number-hint" id={ "nh-" + q.IdentityID }>{ numberHint(ctx, q) }</p>
+			}
 	}
+}
+
+// numberValue is what a number field shows again: the number, or what
+// was typed when it did not read as one, so the respondent can correct
+// it rather than type it again.
+func numberValue(v domain.AnswerValue) string {
+	if v.Number != nil {
+		return strconv.Itoa(*v.Number)
+	}
+	return v.Text
+}
+
+// numberHint says a number question's limits, with the digits grouped as
+// the page's language groups them.
+func numberHint(ctx context.Context, q domain.Question) string {
+	l := uitext.From(ctx)
+	min, max := q.Scale()
+	return l.T("respond.number.hint", uitext.Args{"Min": l.Count(int64(min)), "Max": l.Count(int64(max))})
 }
 
 // keyHint is the little [A] beside a control. aria-hidden is not

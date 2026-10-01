@@ -135,6 +135,13 @@ func ValidateAnswer(q Question, v AnswerValue) error {
 		if _, err := time.Parse(DateLayout, v.Date); err != nil {
 			return ErrNotADate
 		}
+	case Number:
+		// Something typed that does not read as a whole number arrives
+		// as Text, so it is refused here rather than taken for a skip.
+		min, max := q.Scale()
+		if v.Number == nil || *v.Number < min || *v.Number > max {
+			return RangeError{Min: min, Max: max}
+		}
 	default:
 		return ErrUnknownType
 	}

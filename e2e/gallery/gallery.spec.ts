@@ -261,6 +261,46 @@ test("gallery", async ({ browser }) => {
   await page.goto(dateEditor + "/results");
   await capture(page, "results-date", "en");
 
+  // A survey asking for a number: the limits in the editor, the field
+  // with its limits said under it, the message for a number outside
+  // them, and the summary in the results.
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill("Your group");
+  await page.getByRole("button", { name: "Create survey" }).click();
+  const addNumber = page.locator('form[action$="/questions"]');
+  await addNumber.locator('select[name="type"]').selectOption("number");
+  await addNumber.locator('input[name="text"]').fill("How many people did you come with?");
+  await addNumber.getByLabel("Lowest answer").fill("1");
+  await addNumber.getByLabel("Highest answer").fill("12");
+  await capture(page, "editor-number-adding", "en");
+  await addNumber.getByRole("button", { name: "Add question" }).click();
+  await page.locator(".js-question summary").first().click();
+  await capture(page, "editor-number", "en");
+  await page.getByRole("button", { name: "Publish version 1" }).click();
+  await expect(page.getByText("Published version 1")).toBeVisible();
+  const numberShare = await page.locator(".js-share-link a").getAttribute("href");
+  if (!numberShare) throw new Error("no share link after publishing");
+  for (const [lang, given] of [["en", "4"], ["es", "7"]]) {
+    const { context, page: respondent } = await visitor(browser, lang);
+    await respondent.goto(numberShare);
+    await capture(respondent, "respond-number", lang);
+    const field = respondent.getByLabel("How many people did you come with?");
+    await field.fill("20");
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    const outside = lang === "es" ? "escriba un número entero del 1 al 12" : "enter a whole number from 1 to 12";
+    await expect(respondent.getByText(outside).first()).toBeVisible({ timeout: submitTimeout });
+    await capture(respondent, "respond-number-error", lang);
+    await respondent.getByLabel("How many people did you come with?").fill(given);
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    await expect(respondent.locator("h1")).toBeVisible({ timeout: submitTimeout });
+    await context.close();
+  }
+  const numberEditor = "/surveys/" + numberShare.split("/").pop();
+  await page.goto(numberEditor + "/results");
+  await capture(page, "results-number", "en");
+
   // The creator in Spanish.
   const { context: spanish, page: es } = await visitor(browser, "es");
   await spanish.addCookies(await creatorContext.cookies());
