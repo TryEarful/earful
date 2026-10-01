@@ -301,3 +301,30 @@ func dialAuthed(t *testing.T, ctx context.Context, app *apptest.App, client *htt
 	}
 	return conn
 }
+
+// TestGenerate_AllowOther: a drafted choice question may offer Other,
+// and only a choice question keeps it.
+func TestGenerate_AllowOther(t *testing.T) {
+	t.Parallel()
+	fake := &ai.Fake{GenerateScript: [][]string{{
+		`{"type":"single_choice","text":"Where did you hear of us?","options":["Radio","Friends"],"allow_other":true}` + "\n" +
+			`{"type":"long_text","text":"Anything else?","allow_other":true}` + "\n",
+	}}}
+	app := apptest.New(t, apptest.Options{AI: fake})
+	creator := app.Login(t, apptest.UniqueEmail("other-generate"))
+	id := app.CreateSurvey(t, creator, "Drafted Other", true)
+	resp := app.PostForm(t, creator, "/surveys/"+id+"/generate", url.Values{"prompt": {"marketing"}})
+	body := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if !bodyContains(body, "Added 2 questions") {
+		t.Fatalf("the drafted questions were not added:\n%s", body)
+	}
+	if !strings.Contains(fake.GenerateCalls[0].System, `"allow_other"`) {
+		t.Errorf("the system prompt does not mention allow_other:\n%s", fake.GenerateCalls[0].System)
+	}
+	app.Publish(t, creator, id)
+	page := mustGet(t, &http.Client{}, app.Server.URL+"/s/"+id)
+	if strings.Count(page, "js-other-choice") != 1 {
+		t.Errorf("want Other on the choice question alone:\n%s", page)
+	}
+}

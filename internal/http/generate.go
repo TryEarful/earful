@@ -44,9 +44,11 @@ func generateSystemPrompt(withTitle bool) string {
 	return "You write survey questions. Reply with one JSON object per line and nothing else: " +
 		"no prose, no numbering, no markdown fences.\n\n" +
 		`Each line: {"type":"<type>","text":"<question>","required":<bool>,` +
-		`"options":["…"],"scale_min":<int>,"scale_max":<int>}` + "\n\n" +
+		`"options":["…"],"allow_other":<bool>,"scale_min":<int>,"scale_max":<int>}` + "\n\n" +
 		"Allowed types: " + strings.Join(types, ", ") + ".\n" +
 		"Include \"options\" only for single_choice, multiple_choice and dropdown (at least two, all distinct). " +
+		"Set \"allow_other\" to true on those types when the options may not cover every answer: " +
+		"the respondent then also gets an Other choice with a box to write in, so do not list an Other option yourself. " +
 		"Include \"scale_min\" and \"scale_max\" only for rating_scale (scale_min 0 or 1, scale_max 2–10) and number. " +
 		"nps is always 0–10 and needs neither.\n" +
 		"date asks for a day on the calendar, such as when something happened, and needs neither.\n" +
@@ -363,13 +365,14 @@ func parseGeneratedQuestions(output string) []domain.Question {
 			continue
 		}
 		var raw struct {
-			Title    string   `json:"title"`
-			Type     string   `json:"type"`
-			Text     string   `json:"text"`
-			Options  []string `json:"options"`
-			Required bool     `json:"required"`
-			ScaleMin int      `json:"scale_min"`
-			ScaleMax int      `json:"scale_max"`
+			Title      string   `json:"title"`
+			Type       string   `json:"type"`
+			Text       string   `json:"text"`
+			Options    []string `json:"options"`
+			Required   bool     `json:"required"`
+			AllowOther bool     `json:"allow_other"`
+			ScaleMin   int      `json:"scale_min"`
+			ScaleMax   int      `json:"scale_max"`
 		}
 		if err := json.Unmarshal([]byte(line), &raw); err != nil {
 			continue
@@ -388,6 +391,7 @@ func parseGeneratedQuestions(output string) []domain.Question {
 		// what it means.
 		if question.Type.NeedsOptions() {
 			question.Options = raw.Options
+			question.AllowOther = raw.AllowOther
 		}
 		if question.Type.HasBounds() {
 			question.ScaleMin, question.ScaleMax = raw.ScaleMin, raw.ScaleMax
