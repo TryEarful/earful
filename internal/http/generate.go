@@ -266,7 +266,9 @@ func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID
 	}
 	counted := ai.Counted(stream)
 	defer counted.Close()
-	defer s.recordGeneration(ctx, workspaceID, &surveyID, prompt, counted.Chars(), 0)
+	// In a closure: a deferred call's arguments are evaluated when the
+	// defer is set up, which would charge the run for no output at all.
+	defer func() { s.recordGeneration(ctx, workspaceID, &surveyID, prompt, counted.Chars(), 0) }()
 
 	var output strings.Builder
 	for {

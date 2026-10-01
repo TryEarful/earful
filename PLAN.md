@@ -534,6 +534,7 @@ docker compose is the contract: app + Postgres; optional ollama/llamafile profil
 | Email | Brevo API + net/smtp fallback | ADR-0005 |
 | Auth | OIDC (coreos/go-oidc) + hand-rolled magic links | no auth SaaS |
 | Logging | slog JSON | scrubbing middleware |
+| Uploads (issue #5) | stdlib archive/zip + encoding/xml; golang.org/x/net/html for HTML text | nothing on disk; no document-conversion service |
 | CSS/JS | hand-written, no frameworks, progressive enhancement | accessibility budget: axe clean |
 
 ---

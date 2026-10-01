@@ -173,6 +173,46 @@ func TestGenerate_StreamsOverTheSocket(t *testing.T) {
 	}
 }
 
+// TestGenerate_TheSocketChargesWhatItStreamed: a streamed run is charged
+// for the output it delivered, not only for its prompt. About 140 tokens
+// of output spend a 100 token allowance; the prompt alone would not.
+func TestGenerate_TheSocketChargesWhatItStreamed(t *testing.T) {
+	t.Parallel()
+	fake := generatorFake()
+	app := apptest.New(t, apptest.Options{AI: fake, AIQuota: 100})
+	creator := app.Login(t, apptest.UniqueEmail("generatewscharge"))
+	id := app.CreateSurvey(t, creator, "Charged", true)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	conn := dialAuthed(t, ctx, app, creator, "/surveys/"+id+"/generate/stream")
+	start, _ := json.Marshal(map[string]any{"action": "generate", "params": map[string]string{"prompt": "onboarding"}})
+	if err := conn.Write(ctx, websocket.MessageText, start); err != nil {
+		t.Fatalf("send generate: %v", err)
+	}
+	for {
+		_, data, err := conn.Read(ctx)
+		if err != nil {
+			t.Fatalf("read frame: %v", err)
+		}
+		var frame voiceFrame
+		_ = json.Unmarshal(data, &frame)
+		if frame.Type == "error" {
+			t.Fatalf("generation failed: %+v", frame)
+		}
+		if frame.Type == "done" {
+			break
+		}
+	}
+	conn.CloseNow()
+
+	resp := app.PostForm(t, creator, "/surveys/"+id+"/generate", url.Values{"prompt": {"again"}})
+	defer resp.Body.Close()
+	if body := apptest.ReadBody(t, resp); !bodyContains(body, "used today's AI allowance") {
+		t.Errorf("the streamed run was not charged for its output:\n%s", body)
+	}
+}
+
 // TestGenerate_QuotaIsRefusedKindly: exhausting the allowance must read as
 // a temporary state, and must not touch the model (stories 21, 67).
 func TestGenerate_QuotaIsRefusedKindly(t *testing.T) {
