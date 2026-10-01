@@ -97,6 +97,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | 0018 | Proposed. A survey's look (one Voice colour, a start and an end image) is chosen in the draft and frozen with the version; images uploaded, re-encoded, stored in Postgres and served first party; no CSP change; amends 0016 |
 | 0019 | Proposed. Survey Defaults belong to the Workspace, in a table of their own where a missing row means the product's values; a default only pre-fills the new survey and add question forms, never a field on the server; brand and typeface left to ADR-0018; export format 3 |
 | 0020 | Proposed. Survey logic is forward-only jumps on a question's own answer, frozen in `questions.logic` with the version; the server evaluates the path and stores nothing about it; amends 0001 and 0012 |
+| 0021 | Proposed. Pictures in questions are re-encoded on upload (no metadata, no uploaded bytes served) and stored in Postgres behind `internal/media`, shared with the logo (0018); served first-party at /media/{id}; alt text required and localized; options become label plus optional picture with string-compatible JSON; export format 3; amends 0010, extends 0001 |
 
 ## MVP scope
 
