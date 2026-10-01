@@ -165,6 +165,11 @@ func TestRespond_RequiredAnswerValidation(t *testing.T) {
 	if !bodyContains(body, "this question needs an answer") {
 		t.Errorf("missing required-answer message:\n%s", body)
 	}
+	// Beside its question the message stands alone, so it starts with a
+	// capital; in the summary it follows a colon and does not.
+	if !bodyContains(body, ">This question needs an answer</p>") {
+		t.Errorf("the message beside the question does not start a sentence:\n%s", body)
+	}
 	if !bodyContains(body, "Some optional thoughts I typed") {
 		t.Errorf("re-render lost what the respondent already typed:\n%s", body)
 	}

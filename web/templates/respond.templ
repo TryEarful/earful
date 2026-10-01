@@ -378,7 +378,7 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 				}
 			</legend>
 			if data.Errors[q.IdentityID] != "" {
-				<p class="error-text" id={ "err-" + q.IdentityID }>{ data.Errors[q.IdentityID] }</p>
+				<p class="error-text" id={ "err-" + q.IdentityID }>{ sentence(data.Errors[q.IdentityID]) }</p>
 			}
 			@answerControl(q, data)
 			if data.Preview && q.Type.AcceptsVoice() {

@@ -2,6 +2,8 @@ package templates
 
 import (
 	"context"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/a-h/templ"
 
@@ -118,4 +120,16 @@ func OwnName(lang string) uitext.ID {
 
 func ownName(ctx context.Context, lang string) string {
 	return Named(uitext.From(ctx), OwnName(lang), lang)
+}
+
+// sentence starts a message fragment with a capital, for where it stands
+// alone rather than after a colon. The fragments are written in lower
+// case because the error summary puts them after one, which Spanish
+// requires to stay lower case.
+func sentence(s string) string {
+	r, n := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError {
+		return s
+	}
+	return string(unicode.ToUpper(r)) + s[n:]
 }
