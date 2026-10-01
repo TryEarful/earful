@@ -2732,6 +2732,10 @@ main.standalone {
   text-align: center;
 }
 
+main.standalone .button-row {
+  justify-content: center;
+}
+
 main.standalone > .owl {
   margin: 0 auto var(--space-5);
 }

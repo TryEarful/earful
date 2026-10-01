@@ -2,7 +2,7 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-fdefc234c50a2cb0651924d7cb77b0b7471327689da178480c1a431e3150162d
+hash: sha256-b3f45b1acfda2df5360b1aac49b27f0af2476d105b2e3476868ae1eac6e445b6
 last_update: 2026-10-01
 source_hash: sha256-c0aa3d92d5889cc515657197c047ccb40be7c9eefc635c87c959c5ca4f204f6d
 ---
@@ -57,7 +57,7 @@ Si elige un tema claro u oscuro, en cualquier página de este sitio, incluida la
 - **Un servicio de IA elegido por el operador** transcribe, redacta, resume y traduce. Ve el audio en tránsito, que nunca se guarda, el texto de preguntas y respuestas, y el texto de cualquier archivo que un creador adjunte al redactar preguntas, que tampoco se guarda, allí donde lo haya dispuesto el operador de esta instalación.
 {{- end}}
 {{- if .VirusTotal}}
-- **VirusTotal** comprueba si un archivo que un creador adjunta al redactar preguntas se conoce como dañino. Recibe el hash `SHA-256` del archivo, nunca el archivo.
+- **VirusTotal** comprueba si se sabe que es dañino un archivo que un creador adjunta al redactar preguntas. Recibe el hash `SHA-256` del archivo, nunca el archivo.
 {{- end}}
 {{- if .GoogleLogin}}
 - **Google Identity** inicia la sesión de quienes eligen Google. Ve su correo electrónico y el identificador de su cuenta de Google.
