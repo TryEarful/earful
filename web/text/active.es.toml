@@ -494,6 +494,10 @@ other = "Panorama general"
 hash = "sha1-a36008372807c922a809b75df95445c475ea9564"
 other = "Tasa de finalización"
 
+[stats.picture.perday]
+hash = "sha1-0650518d554e99a2d821ef9f44209891c2f7e12a"
+other = "Envíos por día"
+
 [stats.picture.time]
 hash = "sha1-e21705832ad34557a27336a30329ef7c1c7b75bf"
 other = "Tiempo para completarla"
@@ -1665,6 +1669,12 @@ hash = "sha1-a516d64d6e4ef2ee6ad1b630c611a9cd40e09e87"
 one = "mediana de 1 envío cronometrado"
 many = "mediana de {{.Count}} envíos cronometrados"
 other = "mediana de {{.Count}} envíos cronometrados"
+
+[stats.perday]
+hash = "sha1-ea3b19be33a664bdcc9c48f5405bb3f7dd65f016"
+one = "media de 1 día"
+many = "media de {{.Count}} días"
+other = "media de {{.Count}} días"
 
 [stats.earlier.included]
 hash = "sha1-08db6ae64fb70024d18d1c0417a3f9ac1b586f46"

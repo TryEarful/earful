@@ -2,8 +2,10 @@ package http_test
 
 import (
 	"context"
+	"html"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -251,4 +253,78 @@ func TestStatsPage_CSV(t *testing.T) {
 	if !strings.Contains(body, `"'=HYPERLINK(""https://evil"")",short_text,1,100%`) {
 		t.Errorf("formula-shaped question not defused:\n%s", body)
 	}
+	if !strings.HasSuffix(body, "\nmeasure,value\ndays,1\nsubmissions_per_day,1.0\n") {
+		t.Errorf("no per-day figure block at the end:\n%s", body)
+	}
+}
+
+// TestStatsPage_SubmissionsPerDay: the average is taken over every day in
+// the range, the empty ones too, so a quiet spell lowers it; the page and
+// the CSV agree, and the page writes it with the reader's decimal mark.
+func TestStatsPage_SubmissionsPerDay(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("statsperday"))
+	id := app.CreateSurvey(t, creator, "Per day", true)
+	app.AddQuestion(t, creator, id, "short_text", "A question", nil)
+	app.Publish(t, creator, id)
+
+	firstDay := app.Clock.Now().UTC().Format("2006-01-02")
+	answerSurvey(t, app, id, map[int]string{0: "one"})
+	answerSurvey(t, app, id, map[int]string{0: "two"})
+	// Three quiet days follow, so all time is four days with two
+	// submissions between them.
+	app.Clock.Advance(3 * 24 * time.Hour)
+	today := app.Clock.Now().UTC().Format("2006-01-02")
+
+	base := app.Server.URL + "/surveys/" + id + "/stats"
+	all := mustGet(t, creator, base)
+	if !perDayShown(all, "0.5", "average over 4 days") {
+		t.Errorf("all time should read 0.5 a day over 4 days:\n%s", all)
+	}
+	// The seven day preset is clamped to the survey's life, so it divides
+	// by the same four days rather than by seven.
+	if week := mustGet(t, creator, base+"?range=7d"); !perDayShown(week, "0.5", "average over 4 days") {
+		t.Errorf("7 day range should divide by the 4 days the survey has existed:\n%s", week)
+	}
+	first := mustGet(t, creator, base+"?from="+firstDay+"&to="+firstDay)
+	if !perDayShown(first, "2.0", "average over 1 day") {
+		t.Errorf("the first day alone should read 2.0 a day:\n%s", first)
+	}
+	quiet := mustGet(t, creator, base+"?from="+today+"&to="+today)
+	if !perDayShown(quiet, "0.0", "average over 1 day") {
+		t.Errorf("a day with no submissions should read 0.0:\n%s", quiet)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, base, nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	req.Header.Set("Accept-Language", "es")
+	resp, err := creator.Do(req)
+	if err != nil {
+		t.Fatalf("GET stats in Spanish: %v", err)
+	}
+	spanish := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if !bodyContains(spanish, "<dt>Envíos por día</dt>") || !perDayShown(spanish, "0,5", "media de 4 días") {
+		t.Errorf("Spanish page should read 0,5 a day over 4 days:\n%s", spanish)
+	}
+
+	resp, err = creator.Get(app.Server.URL + "/surveys/" + id + "/stats.csv")
+	if err != nil {
+		t.Fatalf("GET stats.csv: %v", err)
+	}
+	body := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if !strings.HasSuffix(body, "\nmeasure,value\ndays,4\nsubmissions_per_day,0.5\n") {
+		t.Errorf("CSV per-day figure should match the page:\n%s", body)
+	}
+}
+
+// perDayShown reports whether the page shows the per-day average as
+// value, followed by the note saying how many days it is taken over.
+func perDayShown(page, value, note string) bool {
+	re := regexp.MustCompile(`(?s)<dd>` + regexp.QuoteMeta(value) + `</dd>\s*<dd class="stat-sub">` + regexp.QuoteMeta(note) + `</dd>`)
+	return re.MatchString(html.UnescapeString(page))
 }

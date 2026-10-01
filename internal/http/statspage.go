@@ -107,6 +107,18 @@ type statsReport struct {
 	Audience           []store.SurveyStat
 }
 
+// SubmissionsPerDay is the mean number of submissions a day over the
+// range: the Submissions figure shown beside it, divided by every day in
+// the range, empty days included. The undated totals stay in the
+// all-time sum because they were counted within the survey's life, which
+// is exactly the span the all-time range divides by.
+func (r statsReport) SubmissionsPerDay() float64 {
+	if len(r.Days) == 0 {
+		return 0
+	}
+	return float64(r.Submissions) / float64(len(r.Days))
+}
+
 type statsDay struct {
 	Day                 time.Time
 	Opened, Submissions int
@@ -241,6 +253,8 @@ func viewStatsPage(l uitext.Localizer, survey templates.SurveyView, report stats
 	if opened > 0 {
 		data.CompletionRate = l.Percent(int(float64(report.Submissions)/float64(opened)*100 + 0.5))
 	}
+	data.PerDay = l.Decimal(report.SubmissionsPerDay(), 1)
+	data.PerDayNote = l.N("stats.perday", len(report.Days))
 	if n := len(report.Durations); n > 0 {
 		data.TimeToComplete = l.Duration(median(report.Durations))
 		data.TimedNote = l.N("stats.timed", n)
@@ -332,8 +346,9 @@ func median(sorted []int) int {
 }
 
 // surveyStatsCSV is the page as a spreadsheet: one row per day in range,
-// then a blank line and one row per question. Two blocks with their own
-// headers open fine in Excel and Sheets, and the range is in the file
+// then a blank line and one row per question, then a blank line and the
+// figures worked out over the whole range. Blocks with their own headers
+// open fine in Excel and Sheets, and the range is in the file
 // name so two downloads never look alike.
 func (s *server) surveyStatsCSV(w http.ResponseWriter, r *http.Request) {
 	survey, ok := s.loadSurvey(w, r)
@@ -389,6 +404,24 @@ func writeStatsCSV(w io.Writer, report statsReport) error {
 		if err := cw.Write([]string{
 			csvSafe(stop.Question.Text), string(stop.Question.Type), strconv.Itoa(stop.Stopped), share,
 		}); err != nil {
+			return err
+		}
+	}
+	cw.Flush()
+	if err := cw.Error(); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, "\n"); err != nil {
+		return err
+	}
+	// Spreadsheets read a decimal point whatever the reader's language,
+	// so this figure is not localised the way the page's is.
+	for _, row := range [][]string{
+		{"measure", "value"},
+		{"days", strconv.Itoa(len(report.Days))},
+		{"submissions_per_day", strconv.FormatFloat(report.SubmissionsPerDay(), 'f', 1, 64)},
+	} {
+		if err := cw.Write(row); err != nil {
 			return err
 		}
 	}

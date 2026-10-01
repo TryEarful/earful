@@ -342,6 +342,7 @@ label = "Submissions"
 [stats.picture]
 heading = "Big picture"
 completion = "Completion rate"
+perday = "Submissions per day"
 time = "Time to complete"
 note = '"Opened" counts times the survey page was loaded, so it is an upper bound on people. Days are counted in UTC. Nothing here is linked to any individual response.'
 
@@ -936,6 +937,10 @@ no = "No"
 [stats.timed]
 one = "median of 1 timed response"
 other = "median of {{.Count}} timed responses"
+
+[stats.perday]
+one = "average over 1 day"
+other = "average over {{.Count}} days"
 
 [stats.earlier]
 included = "Includes {{.Opened}} opens and {{.Submissions}} submissions counted before daily tracking began. Those have no date and don't appear on the chart."

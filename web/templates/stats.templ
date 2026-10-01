@@ -8,8 +8,8 @@ import (
 )
 
 // SurveyStats is the creator's read of how a survey is going over time
-// (issue #2, ADR-0012): opened, submitted, completion rate and time to
-// complete for a date range, a chart of the same, and the question where
+// (issue #2, ADR-0012): opened, submitted, completion rate, submissions a
+// day and time to complete for a date range, a chart of the same, and the question where
 // answers stop. The audience section keeps no dates on purpose and says
 // so — see ADR-0012 for the subtraction attack a dated audience count
 // would allow.
@@ -51,6 +51,11 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 							<dd>{ data.CompletionRate }</dd>
 						</div>
 					}
+					<div>
+						<dt>{ t(ctx, "stats.picture.perday") }</dt>
+						<dd>{ data.PerDay }</dd>
+						<dd class="stat-sub">{ data.PerDayNote }</dd>
+					</div>
 					if data.TimeToComplete != "" {
 						<div>
 							<dt>{ t(ctx, "stats.picture.time") }</dt>

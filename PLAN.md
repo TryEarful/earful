@@ -33,7 +33,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | M10 — Cross-respondent insights | [x] done | 2/2 |
 | M11 — Localization & translation | [x] done | 3/3 |
 | M12 — Private beta gate | [x] done | 1/1 · live on pro (BETA_MODE=true, founder codes minted); turning it off is a manual decision with no date on it |
-| Issue #2 — Stats over time | [x] done | 1/1 · post-MVP, added 2026-09-27 |
+| Issue #2 — Stats over time | [x] done | 2/2 · post-MVP, added 2026-09-27 |
 | Interface text | [x] done | 6/6 · post-MVP, added 2026-09-29 (ADR-0014); English and Spanish |
 | Starter Survey | [x] done | 4/4 · post-MVP, added 2026-09-29 (ADR-0015); English and Spanish |
 | Visual identity | [x] done | 7/7 · post-MVP, added 2026-09-30 (ADR-0016); stories 87 and 88 |
@@ -347,6 +347,7 @@ schema one (ADR-0012).
 
 - [x] **S1 Stats page.** Goal: `/surveys/{id}/stats` beside the results page, with a date range (presets and two date inputs, all-time by default), Big picture (opened, submissions, completion rate, median time to complete with its sample size), a Trends chart of opened or submissions per day, a Question by question table of where answers stop keyed by Question Identity, and the ADR-0009 audience totals stated as undated. A per-range stats CSV; the workspace export gains `stats_daily` (format version 2). AC: a range narrower than the survey's life sums dated rows only and says where the undated counts went; counters from before migration 00016 appear in all-time totals with a note; inserting a question ahead of another in a later version leaves the earlier "stopped here" counts on the right row; the schema guard covers the new table; the export round-trips. Deps: M7-T4
   _Note (2026-09-27): the chart is hand-written SVG from a same-origin script over numbers the page already holds in a JSON block, with the same numbers as a table for a browser without scripts — no library, no endpoint, no CSP change. The Views/Starts split and the per-question Views column in the issue's mockup are not built: both need respondent pages to report behaviour before submit, which M7-T4 declined and ADR-0012 records declining again. The device filter is not built either, for the subtraction reason in the ADR. Two things the tests caught: a pointer into a growing slice (the zero-filled day list) that went stale on reallocation, and the unchallenged-submit limiter quietly dropping a test's sixth response, which the old test never noticed because it counted responses from the table rather than from the counter._
+- [x] **S2 Submissions per day.** Goal: Big picture shows the mean of submissions a day over the range, with the number of days it is taken over, and stats.csv ends with a `measure,value` block holding `days` and `submissions_per_day`. AC: the mean divides by every day in range, empty days included; a preset longer than the survey's life divides by the days the survey has existed; the page uses the reader's decimal mark and the CSV a decimal point. Deps: S1
 
 ### Starter Survey (added 2026-09-29)
 

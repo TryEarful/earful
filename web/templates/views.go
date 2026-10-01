@@ -367,6 +367,10 @@ type SurveyStatsData struct {
 	Opened         string
 	Submissions    string
 	CompletionRate string
+	// PerDay is the mean of submissions a day over the range, and
+	// PerDayNote says how many days that mean is taken over.
+	PerDay         string
+	PerDayNote     string
 	TimeToComplete string
 	TimedNote      string
 	// LumpNote explains counts from before per-day tracking, when any.
