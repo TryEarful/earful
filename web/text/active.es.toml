@@ -584,11 +584,11 @@ other = "Intervalos predefinidos"
 
 [stats.range.week]
 hash = "sha1-df833fe88d3888a1ce9d1dbefea78fe4d4cffc4e"
-other = "Últimos 7 días"
+other = "7 días"
 
 [stats.range.month]
 hash = "sha1-6b32985251a1f00785875492de31de15b7e04116"
-other = "Últimos 30 días"
+other = "30 días"
 
 [stats.range.all]
 hash = "sha1-dbad49d891235d758443e82ef009973685e3a639"
@@ -1742,9 +1742,9 @@ other = "No"
 
 [stats.timed]
 hash = "sha1-a516d64d6e4ef2ee6ad1b630c611a9cd40e09e87"
-one = "mediana de 1 envío cronometrado"
-many = "mediana de {{.Count}} envíos cronometrados"
-other = "mediana de {{.Count}} envíos cronometrados"
+one = "mediana de 1 envío medido"
+many = "mediana de {{.Count}} envíos medidos"
+other = "mediana de {{.Count}} envíos medidos"
 
 [stats.perday]
 hash = "sha1-ea3b19be33a664bdcc9c48f5405bb3f7dd65f016"
