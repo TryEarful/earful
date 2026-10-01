@@ -45,6 +45,8 @@ func QuestionTypeName(kind domain.QuestionType) uitext.ID {
 		return "question.type.yes_no.name"
 	case domain.Dropdown:
 		return "question.type.dropdown.name"
+	case domain.Date:
+		return "question.type.date.name"
 	}
 	return ""
 }
@@ -69,6 +71,8 @@ func QuestionTypeHint(kind domain.QuestionType) uitext.ID {
 		return "question.type.yes_no.hint"
 	case domain.Dropdown:
 		return "question.type.dropdown.hint"
+	case domain.Date:
+		return "question.type.date.hint"
 	}
 	return ""
 }

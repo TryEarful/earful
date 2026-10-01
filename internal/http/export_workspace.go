@@ -184,7 +184,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 			for identity, value := range response.Answers {
 				exportedResponse.Answers[identity] = export.Answer{
 					Text: value.Text, Choice: value.Choice, Choices: value.Choices,
-					Number: value.Number, Bool: value.Bool,
+					Number: value.Number, Bool: value.Bool, Date: value.Date,
 				}
 			}
 			exported.Responses = append(exported.Responses, exportedResponse)

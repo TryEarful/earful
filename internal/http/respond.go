@@ -472,6 +472,8 @@ func parseSubmission(r *http.Request, questions []domain.Question) domain.Submis
 				no := false
 				value.Bool = &no
 			}
+		case domain.Date:
+			value.Date = strings.TrimSpace(r.PostFormValue(field))
 		}
 		answers[q.IdentityID] = value
 	}

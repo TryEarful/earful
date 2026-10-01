@@ -46,6 +46,7 @@ func generateSystemPrompt() string {
 		"Include \"options\" only for single_choice, multiple_choice and dropdown (at least two, all distinct). " +
 		"Include \"scale_min\" and \"scale_max\" only for rating_scale (scale_min 0 or 1, scale_max 2–10). " +
 		"nps is always 0–10 and needs neither.\n" +
+		"date asks for a day on the calendar, such as when something happened, and needs neither.\n" +
 		"Write neutral, specific, answerable questions in the language of the request. " +
 		"Prefer a mix of types, and at most " + fmt.Sprint(maxGeneratedQuestions) + " questions."
 }

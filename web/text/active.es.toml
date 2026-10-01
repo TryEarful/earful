@@ -1915,6 +1915,10 @@ other = "elija una de las opciones que se ofrecen"
 hash = "sha1-be6d5887a3203eff08ac0376702ee70cfc854ca4"
 other = "elija un valor de la escala"
 
+[answer.error.date]
+hash = "sha1-676ff802b228d175b54f6501940333924eeb82b2"
+other = "escriba una fecha con año, mes y día"
+
 [question.error.empty]
 hash = "sha1-67e2b8571d7b7a76b7add0a6201cfdd90f2c587d"
 other = "escriba el texto de la pregunta"
@@ -2072,6 +2076,14 @@ other = "Lista desplegable"
 [question.type.dropdown.hint]
 hash = "sha1-02f192b138365f453543a5f934c7430d3e4a1e83"
 other = "Una opción de una lista larga, en un control compacto."
+
+[question.type.date.name]
+hash = "sha1-eb9a4bc1c0c153e4e4b042a79113b815b7e3021d"
+other = "Fecha"
+
+[question.type.date.hint]
+hash = "sha1-09f898de376100f9241c4c03678007975364d52d"
+other = "Un día del calendario, por ejemplo cuándo vino alguien de visita."
 
 
 # ── En qué estado está un participante ─────────────────────────────────

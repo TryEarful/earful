@@ -691,6 +691,10 @@ input[type="number"] {
   max-width: 8rem;
 }
 
+input[type="date"] {
+  max-width: 16rem;
+}
+
 input[type="radio"],
 input[type="checkbox"] {
   width: 1.125rem;

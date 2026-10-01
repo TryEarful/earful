@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // AnswerValue is one respondent's answer to one question. It is stored as
@@ -18,12 +19,20 @@ type AnswerValue struct {
 	Choices []string `json:"choices,omitempty"`
 	Number  *int     `json:"number,omitempty"`
 	Bool    *bool    `json:"bool,omitempty"`
+	// Date is a calendar day in ISO 8601 form (DateLayout), with no time
+	// and no zone: the day the respondent picked, not an instant.
+	Date string `json:"date,omitempty"`
 }
+
+// DateLayout is the only form a date answer is accepted and stored in. It
+// is what a browser's date control submits, whatever the respondent's
+// locale shows them, and it sorts as text in calendar order.
+const DateLayout = "2006-01-02"
 
 // IsEmpty reports whether the respondent left the question unanswered.
 func (v AnswerValue) IsEmpty() bool {
 	return strings.TrimSpace(v.Text) == "" && v.Choice == "" && len(v.Choices) == 0 &&
-		v.Number == nil && v.Bool == nil
+		v.Number == nil && v.Bool == nil && strings.TrimSpace(v.Date) == ""
 }
 
 // Display renders an answer for a human reader (results, exports).
@@ -42,6 +51,8 @@ func (v AnswerValue) Display() string {
 			return "Yes"
 		}
 		return "No"
+	case v.Date != "":
+		return v.Date
 	}
 	return ""
 }
@@ -79,6 +90,7 @@ var (
 	ErrAnswerTooLong  = error(LimitError{Kind: LimitAnswerText, Limit: maxAnswerTextLen})
 	ErrNotAnOption    = errors.New("choose one of the options offered")
 	ErrOutOfRange     = errors.New("choose a value on the scale")
+	ErrNotADate       = errors.New("enter a date as year, month and day")
 )
 
 // ValidateAnswer checks one answer against the question as it was asked.
@@ -118,6 +130,10 @@ func ValidateAnswer(q Question, v AnswerValue) error {
 	case YesNo:
 		if v.Bool == nil {
 			return ErrRequiredAnswer
+		}
+	case Date:
+		if _, err := time.Parse(DateLayout, v.Date); err != nil {
+			return ErrNotADate
 		}
 	default:
 		return ErrUnknownType

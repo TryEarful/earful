@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// QuestionType is one of the eight MVP question types (SPEC.md story 8).
+// QuestionType is one of the supported question types (SPEC.md story 8).
 // The set is closed: the database CHECK constraint, the renderer and this
 // list must agree, so adding a type is a deliberate three-place change.
 type QuestionType string
@@ -22,14 +22,16 @@ const (
 	NPS            QuestionType = "nps"
 	YesNo          QuestionType = "yes_no"
 	Dropdown       QuestionType = "dropdown"
+	Date           QuestionType = "date"
 )
 
 // QuestionTypes lists every supported type in the order the editor offers
 // them: the two text types first (the ones voice answering serves), then
-// choice, then scales.
+// choice, then scales, then the typed values.
 var QuestionTypes = []QuestionType{
 	LongText, ShortText, SingleChoice, MultipleChoice,
 	RatingScale, NPS, YesNo, Dropdown,
+	Date,
 }
 
 // Label is the human name shown in the editor.
@@ -51,6 +53,8 @@ func (t QuestionType) Label() string {
 		return "Yes / No"
 	case Dropdown:
 		return "Dropdown"
+	case Date:
+		return "Date"
 	default:
 		return string(t)
 	}
@@ -75,6 +79,8 @@ func (t QuestionType) Hint() string {
 		return "A straight yes or no."
 	case Dropdown:
 		return "One option from a long list, in a compact control."
+	case Date:
+		return "A day on the calendar, such as when someone visited."
 	}
 	return ""
 }

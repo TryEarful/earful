@@ -26,6 +26,7 @@ var plainErrors = []struct {
 	{domain.ErrRequiredAnswer, "answer.error.required"},
 	{domain.ErrNotAnOption, "answer.error.option"},
 	{domain.ErrOutOfRange, "answer.error.range"},
+	{domain.ErrNotADate, "answer.error.date"},
 	{domain.ErrEmptyQuestionText, "question.error.empty"},
 	{domain.ErrUnknownType, "question.error.kind"},
 	{domain.ErrTooFewOptions, "question.error.options"},

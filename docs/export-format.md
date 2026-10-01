@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 2.**
+**Format version 3.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -24,7 +24,7 @@ spreadsheets and contain nothing the JSON doesn't.
 
 ```jsonc
 {
-  "format_version": 2,
+  "format_version": 3,
   "exported_at": "2026-07-25T14:03:11Z",
   "workspace": { "id": "uuid", "name": "sam's workspace" },
   "surveys": [
@@ -117,6 +117,10 @@ An answer object carries exactly one field, chosen by the question type:
 | `multiple_choice` | `choices` | `{"choices": ["Email", "Slack"]}` |
 | `rating_scale`, `nps` | `number` | `{"number": 7}` |
 | `yes_no` | `bool` | `{"bool": true}` |
+| `date` | `date` | `{"date": "2026-04-18"}` |
+
+A `date` is a calendar day in ISO 8601 form, `yyyy-mm-dd`, with no time
+and no time zone: the day the respondent picked, not an instant.
 
 A question a respondent skipped has **no entry** in `answers`. That is
 deliberate and worth preserving on import: it is what distinguishes "left
@@ -163,5 +167,6 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 3 | The `date` question type, and its `date` answer field. Everything in version 2 is unchanged. |
 | 2 | `stats_daily` added: per-day opened, submitted and reached counters (ADR-0012). Everything in version 1 is unchanged. |
 | 1 | First published format (M7-T3). |

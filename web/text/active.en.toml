@@ -1075,6 +1075,7 @@ required = "this question needs an answer"
 long = "please keep the answer under {{.Limit}} characters"
 option = "choose one of the options offered"
 range = "choose a value on the scale"
+date = "enter a date as year, month and day"
 
 [question.error]
 empty = "give the question some text"
@@ -1146,6 +1147,10 @@ hint = "A straight yes or no."
 [question.type.dropdown]
 name = "Dropdown"
 hint = "One option from a long list, in a compact control."
+
+[question.type.date]
+name = "Date"
+hint = "A day on the calendar, such as when someone visited."
 
 
 # ── Where a participant stands ─────────────────────────────────────────

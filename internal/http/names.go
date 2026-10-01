@@ -2,6 +2,7 @@ package http
 
 import (
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -118,8 +119,9 @@ func audienceGroupName(metric, bucket string) uitext.ID {
 }
 
 // displayAnswer is an answer as a reader of the results sees it. An
-// answer of yes or no is stored as true or false, and is a word only
-// when it is shown; every other answer is what the respondent gave.
+// answer of yes or no is stored as true or false, and a date as
+// yyyy-mm-dd; each is put in the reader's language only when it is
+// shown. Every other answer is what the respondent gave.
 func displayAnswer(l uitext.Localizer, value domain.AnswerValue) string {
 	if value.Bool != nil && value.Text == "" && value.Choice == "" && len(value.Choices) == 0 && value.Number == nil {
 		if *value.Bool {
@@ -127,5 +129,19 @@ func displayAnswer(l uitext.Localizer, value domain.AnswerValue) string {
 		}
 		return l.T("answer.no")
 	}
+	if value.Date != "" {
+		return displayDate(l, value.Date)
+	}
 	return value.Display()
+}
+
+// displayDate is a stored date answer as a day in the reader's language,
+// or the stored text itself if it is not a date, so that nothing a
+// respondent gave is ever hidden from the results.
+func displayDate(l uitext.Localizer, stored string) string {
+	day, err := time.Parse(domain.DateLayout, stored)
+	if err != nil {
+		return stored
+	}
+	return l.Day(day)
 }

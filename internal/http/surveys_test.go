@@ -35,9 +35,9 @@ func TestSurvey_CreateAndAppearInList(t *testing.T) {
 	}
 }
 
-// TestSurvey_AllEightQuestionTypes covers story 8: the editor accepts
-// each supported type.
-func TestSurvey_AllEightQuestionTypes(t *testing.T) {
+// TestSurvey_EveryQuestionType covers story 8: the editor accepts each
+// supported type.
+func TestSurvey_EveryQuestionType(t *testing.T) {
 	t.Parallel()
 	app := apptest.New(t, apptest.Options{})
 	client := app.Login(t, apptest.UniqueEmail("types"))
@@ -55,6 +55,7 @@ func TestSurvey_AllEightQuestionTypes(t *testing.T) {
 		{"nps", "How likely are you to recommend us?", nil},
 		{"yes_no", "Did you have what you needed?", nil},
 		{"dropdown", "Where are you based?", url.Values{"options": {"Amsterdam\nBerlin\nLisbon"}}},
+		{"date", "When did you join?", nil},
 	}
 	for _, tc := range cases {
 		body := app.AddQuestion(t, client, id, tc.qType, tc.text, tc.extra)

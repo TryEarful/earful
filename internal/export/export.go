@@ -24,7 +24,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 2
+const FormatVersion = 3
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {
@@ -123,6 +123,8 @@ type Answer struct {
 	Choices []string `json:"choices,omitempty"`
 	Number  *int     `json:"number,omitempty"`
 	Bool    *bool    `json:"bool,omitempty"`
+	// Date is a calendar day, yyyy-mm-dd, with no time or zone.
+	Date string `json:"date,omitempty"`
 }
 
 // Stat is one unlinked survey-level counter (ADR-0009). It travels so an

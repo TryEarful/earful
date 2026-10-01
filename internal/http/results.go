@@ -125,6 +125,8 @@ func viewQuestionResults(l uitext.Localizer, results store.Results, translations
 		case domain.RatingScale, domain.NPS:
 			view.Distribution = scaleDistribution(l, question)
 			view.Summary = scaleSummary(l, question)
+		case domain.Date:
+			view.Distribution = dateDistribution(l, question)
 		}
 		out = append(out, view)
 	}
@@ -197,6 +199,36 @@ func yesNoDistribution(l uitext.Localizer, question store.QuestionResults) []tem
 		total++
 	}
 	return toCountViews(l, []string{yes, no}, counts, total)
+}
+
+// dateDistribution counts the answers given for each day, in calendar
+// order. Only days somebody gave are listed: a range of every day in
+// between would be mostly empty rows. Stored dates are yyyy-mm-dd, so
+// sorting the text sorts the days.
+func dateDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {
+	perDay := map[string]int{}
+	total := 0
+	for _, answer := range question.Answers {
+		if answer.Value.Date == "" {
+			continue
+		}
+		perDay[answer.Value.Date]++
+		total++
+	}
+	days := make([]string, 0, len(perDay))
+	for day := range perDay {
+		days = append(days, day)
+	}
+	sort.Strings(days)
+
+	labels := make([]string, 0, len(days))
+	counts := make(map[string]int, len(days))
+	for _, day := range days {
+		label := displayDate(l, day)
+		labels = append(labels, label)
+		counts[label] = perDay[day]
+	}
+	return toCountViews(l, labels, counts, total)
 }
 
 func scaleDistribution(l uitext.Localizer, question store.QuestionResults) []templates.CountView {

@@ -146,6 +146,40 @@ test("gallery", async ({ browser }) => {
   await page.goto(editor);
   await capture(page, "editor-after-answers", "en");
 
+  // A survey asking for a date: the browser's own date control, the
+  // message for a required date left empty, and the days in the results.
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill("Your visit");
+  await page.getByRole("button", { name: "Create survey" }).click();
+  const addDate = page.locator('form[action$="/questions"]');
+  await addDate.locator('select[name="type"]').selectOption("date");
+  await addDate.locator('input[name="text"]').fill("When did you visit?");
+  await addDate.getByLabel("Required").check();
+  await addDate.getByRole("button", { name: "Add question" }).click();
+  await capture(page, "editor-date", "en");
+  await page.getByRole("button", { name: "Publish version 1" }).click();
+  await expect(page.getByText("Published version 1")).toBeVisible();
+  const dateShare = await page.locator(".js-share-link a").getAttribute("href");
+  if (!dateShare) throw new Error("no share link after publishing");
+  for (const lang of ["en", "es"]) {
+    const { context, page: respondent } = await visitor(browser, lang);
+    await respondent.goto(dateShare);
+    await capture(respondent, "respond-date", lang);
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    const needed = lang === "es" ? "esta pregunta necesita una respuesta" : "this question needs an answer";
+    await expect(respondent.getByText(needed).first()).toBeVisible({ timeout: submitTimeout });
+    await capture(respondent, "respond-date-error", lang);
+    await respondent.getByLabel("When did you visit?").fill("2026-04-18");
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    await expect(respondent.locator("h1")).toBeVisible({ timeout: submitTimeout });
+    await context.close();
+  }
+  const dateEditor = "/surveys/" + dateShare.split("/").pop();
+  await page.goto(dateEditor + "/results");
+  await capture(page, "results-date", "en");
+
   // The creator in Spanish.
   const { context: spanish, page: es } = await visitor(browser, "es");
   await spanish.addCookies(await creatorContext.cookies());

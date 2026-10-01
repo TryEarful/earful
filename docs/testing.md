@@ -471,7 +471,7 @@ Infrastructure and behaviour covered so far:
 - Token entropy/hashing — `internal/auth/tokens_test.go`; rate limiter —
   `internal/antibot/ratelimit_test.go`; clock — `internal/clock/clock_test.go`;
   email senders — `internal/email/email_test.go`
-- Survey building end to end: creation, all eight question types,
+- Survey building end to end: creation, every question type,
   validation messages, publish, republish refusal, identity preservation
   across rewording, reorder/delete, close/reopen, Close Date via the fake
   clock, audit log, soft delete, and cross-workspace denial on every

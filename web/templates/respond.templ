@@ -485,6 +485,24 @@ templ answerControl(q domain.Question, data RespondData) {
 					<span>{ t(ctx, "answer.no") }</span>
 				</label>
 			</div>
+		case domain.Date:
+			// The browser's own date control: it shows the day in the
+			// respondent's locale and submits it as yyyy-mm-dd, which is
+			// the form the server accepts. A browser without one shows a
+			// text field, and the server's check covers that too.
+			<input
+				type="date"
+				name={ "q_" + q.IdentityID }
+				value={ data.Answers[q.IdentityID].Date }
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				aria-labelledby={ "qt-" + q.IdentityID }
+				if data.Errors[q.IdentityID] != "" {
+					aria-describedby={ "err-" + q.IdentityID }
+				}
+			/>
 	}
 }
 
