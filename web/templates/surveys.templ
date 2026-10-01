@@ -36,28 +36,53 @@ templ StatusChip(s domain.Status) {
 // autocomplete="off" and the password manager opt outs, for the reason
 // given at answerControl: survey wording is never a login, and a value
 // the browser remembers from another survey does not belong in this one.
-templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) {
+//
+// With AI on, the title is optional: a description alone is enough, and
+// the model proposes the title from it. The server still refuses a form
+// with neither.
+templ NewSurvey(email string, workspaceName string, csrf string, data NewSurveyData) {
 	@Layout(t(ctx, "survey.new.title")) {
 		@AuthedHeader(email, csrf)
 		<main>
 			<h1>{ t(ctx, "survey.new.heading") }</h1>
-			<form method="post" action="/surveys" class="card js-panel">
+			<form method="post" action="/surveys" class="card js-panel js-new-survey">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<label class="field">
 					<span>{ t(ctx, "survey.name.label") }</span>
-					<input type="text" name="title" required autofocus maxlength="200" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+					<input type="text" name="title" value={ data.Title } required?={ !data.AIEnabled } autofocus maxlength="200" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 				</label>
+				if data.AIEnabled {
+					// The hint sits outside the label and describes the field,
+					// so the field's name stays the short label alone.
+					<div class="field">
+						<label for="new-survey-prompt"><span>{ t(ctx, "survey.new.prompt.label") }</span></label>
+						<textarea
+							id="new-survey-prompt"
+							aria-describedby="new-survey-prompt-hint"
+							name="prompt"
+							class="js-new-survey-prompt"
+							rows="3"
+							maxlength="1000"
+							autocomplete="off"
+							data-1p-ignore
+							data-lpignore="true"
+							data-bwignore
+							placeholder={ t(ctx, "editor.generate.prompt.placeholder") }
+						>{ data.Prompt }</textarea>
+						<small id="new-survey-prompt-hint">{ t(ctx, "survey.new.prompt.hint") }</small>
+					</div>
+				}
 				<fieldset class="field">
 					<legend>{ t(ctx, "survey.audience.legend") }</legend>
 					<label class="choice">
-						<input type="radio" name="anonymity" value="anonymous" checked autocomplete="off"/>
+						<input type="radio" name="anonymity" value="anonymous" checked?={ data.Anonymous } autocomplete="off"/>
 						<span>
 							<strong>{ t(ctx, "survey.audience.anonymous.name") }</strong>
 							<small>{ t(ctx, "survey.audience.anonymous.hint") }</small>
 						</span>
 					</label>
 					<label class="choice">
-						<input type="radio" name="anonymity" value="invited" autocomplete="off"/>
+						<input type="radio" name="anonymity" value="invited" checked?={ !data.Anonymous } autocomplete="off"/>
 						<span>
 							<strong>{ t(ctx, "survey.audience.invited.name") }</strong>
 							<small>{ t(ctx, "survey.audience.invited.hint") }</small>
@@ -69,10 +94,10 @@ templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) 
 					<span>
 						@thtml(ctx, "survey.close_date.label_html")
 					</span>
-					<input type="date" name="close_at" autocomplete="off"/>
+					<input type="date" name="close_at" value={ data.CloseAt } autocomplete="off"/>
 				</label>
-				if errMsg != "" {
-					<p class="error-text">{ errMsg }</p>
+				if data.Error != "" {
+					<p class="error-text js-new-survey-error">{ data.Error }</p>
 				}
 				<button type="submit">{ t(ctx, "survey.new.submit.label") }</button>
 				<a class="button secondary" href="/surveys">{ t(ctx, "survey.new.cancel.label") }</a>

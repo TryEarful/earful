@@ -33,17 +33,24 @@ func (s *server) surveyList(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 	info, _ := authFrom(r.Context())
+	form := newSurveyForm(r)
 
-	closeAt, err := parseCloseDate(r.PostFormValue("close_at"))
+	closeAt, err := parseCloseDate(form.CloseAt)
 	if err != nil {
-		s.renderNewSurvey(w, r, sayError(r, err))
+		s.renderNewSurvey(w, r, form, sayError(r, err))
+		return
+	}
+	// A description is read only where AI is offered; on an instance
+	// without it the field is absent and a posted one is ignored.
+	if form.Prompt != "" && s.canGenerate() {
+		s.surveyCreateFromPrompt(w, r, form, closeAt)
 		return
 	}
 	survey, err := s.surveys.Create(r.Context(), info.WorkspaceID, info.UserID,
-		r.PostFormValue("title"), r.PostFormValue("anonymity") == "anonymous", closeAt)
+		form.Title, form.Anonymous, closeAt)
 	if err != nil {
 		if isUserError(err) {
-			s.renderNewSurvey(w, r, sayError(r, err))
+			s.renderNewSurvey(w, r, form, sayError(r, err))
 			return
 		}
 		s.internalError(w, r, "create survey", err)
@@ -52,17 +59,30 @@ func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/surveys/"+survey.ID.String(), http.StatusSeeOther)
 }
 
-func (s *server) newSurveyPage(w http.ResponseWriter, r *http.Request) {
-	s.renderNewSurvey(w, r, "")
+// newSurveyForm reads the new-survey form, keeping what was typed so an
+// error can hand it back unchanged.
+func newSurveyForm(r *http.Request) templates.NewSurveyData {
+	return templates.NewSurveyData{
+		Title:     r.PostFormValue("title"),
+		Prompt:    strings.TrimSpace(r.PostFormValue("prompt")),
+		Anonymous: r.PostFormValue("anonymity") == "anonymous",
+		CloseAt:   r.PostFormValue("close_at"),
+	}
 }
 
-func (s *server) renderNewSurvey(w http.ResponseWriter, r *http.Request, errMsg string) {
+func (s *server) newSurveyPage(w http.ResponseWriter, r *http.Request) {
+	s.renderNewSurvey(w, r, templates.NewSurveyData{Anonymous: true}, "")
+}
+
+func (s *server) renderNewSurvey(w http.ResponseWriter, r *http.Request, data templates.NewSurveyData, errMsg string) {
 	info, _ := authFrom(r.Context())
 	status := http.StatusOK
 	if errMsg != "" {
 		status = http.StatusUnprocessableEntity
 	}
-	render(w, r, status, templates.NewSurvey(info.Email, info.WorkspaceName, info.CSRFToken, errMsg))
+	data.AIEnabled = s.canGenerate()
+	data.Error = errMsg
+	render(w, r, status, templates.NewSurvey(info.Email, info.WorkspaceName, info.CSRFToken, data))
 }
 
 // surveyPage is the editor: draft questions, status, versions. A
@@ -75,6 +95,11 @@ func (s *server) surveyPage(w http.ResponseWriter, r *http.Request) {
 		notice = say(r, "editor.notice.published", uitext.Args{"Version": n})
 	} else if q.Get("notice") == "unchanged" {
 		notice = say(r, "editor.notice.unchanged")
+	} else if added, err := strconv.Atoi(q.Get("added")); err == nil && added >= 0 {
+		// A survey drafted from a description redirects here with what
+		// the run added and skipped, so the notice survives the redirect.
+		skipped, _ := strconv.Atoi(q.Get("skipped"))
+		notice = generationNotice(text(r), added, max(skipped, 0))
 	}
 	s.renderSurveyPage(w, r, "", notice)
 }

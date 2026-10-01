@@ -267,6 +267,12 @@ export async function offersAIDrafting(page: Page): Promise<boolean> {
   return (await page.locator("#ai-generate").count()) > 0;
 }
 
+// offersSurveyFromDescription: the description field on the new-survey
+// page, offered only where text AI is configured.
+export async function offersSurveyFromDescription(page: Page): Promise<boolean> {
+  return (await page.locator(".js-new-survey-prompt").count()) > 0;
+}
+
 // offersVoice: the M5 socket endpoint on a respondent page. voice.js
 // builds the mic from this attribute; without it there is no mic.
 export async function offersVoice(page: Page): Promise<boolean> {

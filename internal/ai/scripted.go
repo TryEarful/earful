@@ -37,6 +37,12 @@ func (s *Scripted) Generate(_ context.Context, req GenerateRequest) (Stream, err
 		`{"type":"nps","text":"How likely are you to recommend us?"}`,
 		`{"type":"short_text","text":"Anything we should change first?"}`,
 	}
+	// A survey started from a description alone asks for a title line
+	// before the questions; answering it here is what lets the browser
+	// suite drive that path with no model.
+	if strings.Contains(req.System, `{"title":`) {
+		lines = append([]string{`{"title":"Survey about ` + jsonEscape(topic) + `"}`}, lines...)
+	}
 	return s.fragments(joinLines(lines)), nil
 }
 

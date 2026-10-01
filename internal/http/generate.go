@@ -8,6 +8,7 @@ import (
 	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/internal/ws"
+	"github.com/TryEarful/earful/web/templates"
 )
 
 // AI-drafted questions (M6-T3).
@@ -32,8 +34,9 @@ import (
 
 // generateSystemPrompt asks for NDJSON — one question per line — so a
 // reader can surface each question the moment its line completes, rather
-// than waiting for a whole JSON document to close.
-func generateSystemPrompt() string {
+// than waiting for a whole JSON document to close. withTitle also asks for
+// a title line first, for a survey started from a description alone.
+func generateSystemPrompt(withTitle bool) string {
 	types := make([]string, 0, len(domain.QuestionTypes))
 	for _, t := range domain.QuestionTypes {
 		types = append(types, string(t))
@@ -48,7 +51,19 @@ func generateSystemPrompt() string {
 		"nps is always 0–10 and needs neither.\n" +
 		"date asks for a day on the calendar, such as when something happened, and needs neither.\n" +
 		"Write neutral, specific, answerable questions in the language of the request. " +
-		"Prefer a mix of types, and at most " + fmt.Sprint(maxGeneratedQuestions) + " questions."
+		"Prefer a mix of types, and at most " + fmt.Sprint(maxGeneratedQuestions) + " questions." +
+		titleInstruction(withTitle)
+}
+
+// titleInstruction asks for the title as one more NDJSON line, so the
+// questions keep their shape and parse, and a reply without it still
+// yields its questions.
+func titleInstruction(withTitle bool) string {
+	if !withTitle {
+		return ""
+	}
+	return "\n\nBefore the questions, write one line " + `{"title":"<title>"}` +
+		": a short, plain title for the survey, under 80 characters, in the language of the request."
 }
 
 // maxGeneratedQuestions bounds one run. The draft itself caps at 100
@@ -75,7 +90,7 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	stream, err := s.ai.Generate(r.Context(), ai.GenerateRequest{
-		System: generateSystemPrompt(),
+		System: generateSystemPrompt(false),
 		Prompt: prompt,
 	})
 	if err != nil {
@@ -84,7 +99,7 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	counted := ai.Counted(stream)
 	output, err := ai.Collect(counted)
-	s.recordGeneration(r.Context(), info.WorkspaceID, survey.ID, prompt, counted.Chars())
+	s.recordGeneration(r.Context(), info.WorkspaceID, &survey.ID, prompt, counted.Chars())
 	if err != nil && output == "" {
 		s.logger.Error("question generation failed", "error", err)
 		s.renderSurveyPage(w, r, say(r, "generate.error.silent"), "")
@@ -97,6 +112,75 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderSurveyPage(w, r, "", generationNotice(text(r), added, skipped))
+}
+
+// surveyCreateFromPrompt starts a survey from a description: the same
+// metered model call the editor's panel makes, then a survey whose draft
+// holds what it produced, opened in the editor where every question is
+// edited like any other.
+//
+// Nothing is created until the model has answered. A refusal (quota,
+// breaker, provider) or a silent model hands the form back as typed, so
+// the creator can try again or remove the description and create the
+// survey by hand; an empty survey left behind by a failed run would be
+// one more thing to find and delete. A run that answers but yields no
+// usable question still creates the survey, as the creator asked, and
+// the editor says so.
+func (s *server) surveyCreateFromPrompt(w http.ResponseWriter, r *http.Request, form templates.NewSurveyData, closeAt *time.Time) {
+	info, _ := authFrom(r.Context())
+	ctx := r.Context()
+
+	// A typed title is checked before the run, so a mistake in it does
+	// not cost a generation.
+	withTitle := strings.TrimSpace(form.Title) == ""
+	if !withTitle {
+		if err := domain.ValidateTitle(form.Title); err != nil {
+			s.renderNewSurvey(w, r, form, sayError(r, err))
+			return
+		}
+	}
+
+	if err := s.aiMeter.Check(ctx, info.WorkspaceID); err != nil {
+		s.renderNewSurvey(w, r, form, aiRefusalMessage(text(r), err))
+		return
+	}
+	stream, err := s.ai.Generate(ctx, ai.GenerateRequest{
+		System: generateSystemPrompt(withTitle),
+		Prompt: form.Prompt,
+	})
+	if err != nil {
+		s.renderNewSurvey(w, r, form, aiRefusalMessage(text(r), err))
+		return
+	}
+	counted := ai.Counted(stream)
+	output, err := ai.Collect(counted)
+	if err != nil && output == "" {
+		s.recordGeneration(ctx, info.WorkspaceID, nil, form.Prompt, counted.Chars())
+		s.logger.Error("question generation failed", "error", err)
+		s.renderNewSurvey(w, r, form, say(r, "generate.error.silent"))
+		return
+	}
+
+	title := form.Title
+	if withTitle {
+		if title = parseGeneratedTitle(output); title == "" {
+			title = say(r, "survey.new.default_title")
+		}
+	}
+	survey, err := s.surveys.Create(ctx, info.WorkspaceID, info.UserID, title, form.Anonymous, closeAt)
+	if err != nil {
+		s.recordGeneration(ctx, info.WorkspaceID, nil, form.Prompt, counted.Chars())
+		s.internalError(w, r, "create survey from a description", err)
+		return
+	}
+	s.recordGeneration(ctx, info.WorkspaceID, &survey.ID, form.Prompt, counted.Chars())
+
+	added, skipped, err := s.appendGenerated(ctx, info.UserID, survey, output)
+	if err != nil {
+		s.internalError(w, r, "save generated questions", err)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/surveys/%s?added=%d&skipped=%d", survey.ID, added, skipped), http.StatusSeeOther)
 }
 
 // surveyGenerateSocket is the same operation with the questions visible
@@ -149,7 +233,7 @@ func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID
 		return "", false
 	}
 	stream, err := s.ai.Generate(ctx, ai.GenerateRequest{
-		System: generateSystemPrompt(),
+		System: generateSystemPrompt(false),
 		Prompt: prompt,
 	})
 	if err != nil {
@@ -158,7 +242,7 @@ func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID
 	}
 	counted := ai.Counted(stream)
 	defer counted.Close()
-	defer s.recordGeneration(ctx, workspaceID, surveyID, prompt, counted.Chars())
+	defer s.recordGeneration(ctx, workspaceID, &surveyID, prompt, counted.Chars())
 
 	var output strings.Builder
 	for {
@@ -184,9 +268,10 @@ func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID
 	}
 }
 
-func (s *server) recordGeneration(ctx context.Context, workspaceID, surveyID uuid.UUID, prompt string, outChars int) {
-	id := surveyID
-	if err := s.aiMeter.Record(ctx, workspaceID, &id, string(ai.OpGenerate), outChars+len(prompt)); err != nil {
+// recordGeneration charges a run to the workspace. surveyID is nil when
+// the run produced no survey to attribute it to; it is charged anyway.
+func (s *server) recordGeneration(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, prompt string, outChars int) {
+	if err := s.aiMeter.Record(ctx, workspaceID, surveyID, string(ai.OpGenerate), outChars+len(prompt)); err != nil {
 		s.logger.Error("recording generation usage failed", "error", err)
 	}
 }
@@ -235,6 +320,7 @@ func parseGeneratedQuestions(output string) []domain.Question {
 			continue
 		}
 		var raw struct {
+			Title    string   `json:"title"`
 			Type     string   `json:"type"`
 			Text     string   `json:"text"`
 			Options  []string `json:"options"`
@@ -244,6 +330,9 @@ func parseGeneratedQuestions(output string) []domain.Question {
 		}
 		if err := json.Unmarshal([]byte(line), &raw); err != nil {
 			continue
+		}
+		if raw.Type == "" && raw.Title != "" {
+			continue // the title line is not a question, and not a skipped one
 		}
 		question := domain.Question{
 			Type:     domain.QuestionType(strings.TrimSpace(raw.Type)),
@@ -263,6 +352,31 @@ func parseGeneratedQuestions(output string) []domain.Question {
 		questions = append(questions, question)
 	}
 	return questions
+}
+
+// parseGeneratedTitle returns the title line's title, or "" when the
+// reply has none a survey could carry; the caller then names the survey
+// itself rather than refusing a run that produced questions.
+func parseGeneratedTitle(output string) string {
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSuffix(strings.TrimSpace(line), ",")
+		if !strings.HasPrefix(line, "{") || !strings.HasSuffix(line, "}") {
+			continue
+		}
+		var raw struct {
+			Title string `json:"title"`
+			Type  string `json:"type"`
+		}
+		if err := json.Unmarshal([]byte(line), &raw); err != nil || raw.Type != "" || raw.Title == "" {
+			continue
+		}
+		title := strings.Join(strings.Fields(raw.Title), " ")
+		if domain.ValidateTitle(title) != nil {
+			return ""
+		}
+		return title
+	}
+	return ""
 }
 
 func generationNotice(l uitext.Localizer, added, skipped int) string {

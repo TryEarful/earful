@@ -766,6 +766,18 @@ other = "Nueva encuesta · Earful"
 hash = "sha1-64504ed4744725ff4b74b5bad54c6d11fc28bf3f"
 other = "Nueva encuesta"
 
+[survey.new.default_title]
+hash = "sha1-9f1a728d8386e74c3309e19151d96e79304aca0a"
+other = "Encuesta sin título"
+
+[survey.new.prompt.label]
+hash = "sha1-c749cd1d366775c78b5ab40827b1dce334016725"
+other = "Describa su encuesta"
+
+[survey.new.prompt.hint]
+hash = "sha1-b4d290df5d3414bc9627c798f5511baa284b3c5f"
+other = "Opcional. La IA redacta las preguntas a partir de esto, y usted puede editarlas todas. Si deja el título vacío, la IA también propone uno."
+
 [survey.new.submit.label]
 hash = "sha1-7257e56663856b94c227f6d4150efbe604be3542"
 other = "Crear encuesta"

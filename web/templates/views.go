@@ -86,6 +86,19 @@ type SurveyListData struct {
 	Surveys []SurveyView
 }
 
+// NewSurveyData is the new-survey form, with what was typed into it
+// kept when the form comes back with an error.
+type NewSurveyData struct {
+	// AIEnabled offers the description from which questions, and a
+	// title when none is typed, are drafted.
+	AIEnabled bool
+	Title     string
+	Prompt    string
+	Anonymous bool
+	CloseAt   string
+	Error     string
+}
+
 // ParticipantView is one row of the participants list.
 type ParticipantView struct {
 	Email  string

@@ -302,6 +302,30 @@ func TestScripted_ProducesUsableOutputForEveryOperation(t *testing.T) {
 		}
 	}
 
+	// Asked for a title, as a survey started from a description asks, it
+	// leads with the title line and keeps every question after it.
+	stream, err = provider.Generate(context.Background(), ai.GenerateRequest{
+		System: `Before the questions, write one line {"title":"<title>"}`,
+		Prompt: "customer onboarding",
+	})
+	if err != nil {
+		t.Fatalf("Generate with a title: %v", err)
+	}
+	titled, err := ai.Collect(stream)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(titled), "\n")
+	var head struct {
+		Title string `json:"title"`
+	}
+	if err := json.Unmarshal([]byte(lines[0]), &head); err != nil || !strings.Contains(head.Title, "customer onboarding") {
+		t.Errorf("scripted title line = %q (%v)", lines[0], err)
+	}
+	if got, want := len(lines)-1, len(strings.Split(strings.TrimSpace(generated), "\n")); got != want {
+		t.Errorf("questions after the title line = %d, want %d", got, want)
+	}
+
 	stream, err = provider.Translate(context.Background(), ai.TranslateRequest{Text: "How was it?", TargetLang: "nl"})
 	if err != nil {
 		t.Fatalf("Translate: %v", err)

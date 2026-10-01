@@ -3,7 +3,16 @@ import AxeBuilder from "@axe-core/playwright";
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { createPublishedSurvey, latestLinkTo, minFillWait, signIn, submitTimeout, uniqueEmail } from "../tests/helpers";
+import {
+  aiTimeout,
+  createPublishedSurvey,
+  latestLinkTo,
+  minFillWait,
+  offersSurveyFromDescription,
+  signIn,
+  submitTimeout,
+  uniqueEmail,
+} from "../tests/helpers";
 
 // The design gallery: every page, at a phone's width and a desktop's, in
 // the light theme and the dark, in English and Spanish, with an axe
@@ -126,6 +135,21 @@ test("gallery", async ({ browser }) => {
   await page.getByRole("button", { name: "Create survey" }).click();
   await capture(page, "editor-draft", "en");
 
+  // With text AI configured the form also takes a description, and the
+  // title may be left empty. Sent with neither, it comes back with its
+  // error; sent with a description, it opens the drafted survey.
+  await page.goto("/surveys/new");
+  if (await offersSurveyFromDescription(page)) {
+    await page.getByRole("button", { name: "Create survey" }).click();
+    await capture(page, "survey-new-error", "en");
+    await page.goto("/surveys/new");
+    await page.locator(".js-new-survey-prompt").fill("How new customers found their first week, especially onboarding");
+    await capture(page, "survey-new-described", "en");
+    await page.getByRole("button", { name: "Create survey" }).click();
+    await expect(page).toHaveURL(/\?added=\d+/, { timeout: aiTimeout + 5000 });
+    await capture(page, "editor-from-description", "en");
+  }
+
   // A respondent answers, in each language.
   for (const lang of ["en", "es"]) {
     const { context, page: respondent } = await visitor(browser, lang);
@@ -202,6 +226,8 @@ test("gallery", async ({ browser }) => {
   await spanish.addCookies(await creatorContext.cookies());
   await es.goto("/dashboard");
   await capture(es, "dashboard", "es");
+  await es.goto("/surveys/new");
+  await capture(es, "survey-new", "es");
   await es.goto(editor);
   await capture(es, "editor-published", "es");
   await es.goto(editor + "/preview");

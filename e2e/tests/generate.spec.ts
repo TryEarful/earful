@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { aiTimeout, offersAIDrafting, scriptedAI } from "./helpers";
+import { aiTimeout, offersAIDrafting, offersSurveyFromDescription, scriptedAI } from "./helpers";
 
 // AI-drafted questions in a real browser (M6-T3). The compose stack runs
 // the scripted provider, which emits the same NDJSON shape the prompt
@@ -85,3 +85,42 @@ test("drafting with AI works without JavaScript", async ({ browser }) => {
 
   await context.close();
 });
+
+// A survey started from a description (issue #20). The form is a plain
+// POST that waits for the model, so it is driven with JavaScript on and
+// off; the scripted provider answers with a title line and questions.
+for (const javaScriptEnabled of [true, false]) {
+  test(`a survey starts from a description${javaScriptEnabled ? "" : " without JavaScript"}`, async ({ browser }) => {
+    if (!scriptedAI) test.slow();
+    const context = await browser.newContext({ storageState: ".auth/creator.json", javaScriptEnabled });
+    const page = await context.newPage();
+
+    await page.goto("/surveys/new");
+    const offered = await offersSurveyFromDescription(page);
+    if (!offered) {
+      // No description, but the form still creates a survey by hand.
+      await expect(page.getByLabel("Title")).toBeVisible();
+      await context.close();
+    }
+    test.skip(!offered, "this instance has no AI configured, so it offers no description");
+
+    // The title is left empty: the model proposes it.
+    const topic = `what to ask after a support call ${Date.now()}`;
+    await page.locator(".js-new-survey-prompt").fill(topic);
+    await page.getByRole("button", { name: "Create survey" }).click();
+
+    await expect(page).toHaveURL(/\/surveys\/[0-9a-f-]+\?added=\d+/, { timeout: aiTimeout + 5000 });
+    await expect(page.getByText(/Added \d+ questions? to your draft/)).toBeVisible();
+    if (scriptedAI) {
+      await expect(page.locator("h1")).toHaveText(`Survey about ${topic}`);
+    } else {
+      await expect(page.locator("h1")).not.toBeEmpty();
+    }
+
+    // They are ordinary draft questions: listed, and ready to publish.
+    expect(await page.locator(".js-questions .js-question").count()).toBeGreaterThan(2);
+    await expect(page.getByRole("button", { name: "Publish version 1" })).toBeVisible();
+
+    await context.close();
+  });
+}

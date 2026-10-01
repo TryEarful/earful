@@ -472,6 +472,11 @@ translated_by = "Translated by {{.Model}}; the original is above."
 [survey.new]
 title = "New survey · Earful"
 heading = "New survey"
+default_title = "Untitled survey"
+
+[survey.new.prompt]
+label = "Describe your survey"
+hint = "Optional. AI drafts the questions from this, and you can edit every one. Leave the title empty and AI suggests one too."
 
 [survey.new.submit]
 label = "Create survey"
