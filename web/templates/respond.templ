@@ -63,6 +63,9 @@ type RespondData struct {
 	// without JavaScript sees exactly the form they can actually use.
 	VoicePath       string
 	VoiceMaxSeconds int
+	// CSRF is the creator's session token, set on a preview only: the
+	// preview posts to a signed in route, which refuses a form without it.
+	CSRF string
 }
 
 // VoiceEnabled reports whether this page offers spoken answers.
@@ -192,6 +195,9 @@ templ Respond(data RespondData) {
 				<input type="hidden" name="form_ts" value={ data.FormToken }/>
 				<input type="hidden" name="form_nonce" value={ data.Nonce }/>
 				<input type="hidden" name="altcha" value="" data-altcha/>
+				if data.Preview {
+					<input type="hidden" name="_csrf" value={ data.CSRF }/>
+				}
 				// Honeypot: a real respondent never sees this, so anything
 				// filling it in is automated (M4-T5).
 				<div class="hp" aria-hidden="true">

@@ -498,6 +498,32 @@ func TestPreview_LayoutToggle(t *testing.T) {
 	}
 }
 
+// TestPreview_FormPassesTheCSRFCheck: the preview posts to a signed in
+// route, so the form must carry the session's token itself. A browser
+// sends exactly the fields the form holds, nothing a test helper adds.
+func TestPreview_FormPassesTheCSRFCheck(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("preview-csrf"))
+	id := app.CreateSurvey(t, creator, "Preview posts", true)
+	app.AddQuestion(t, creator, id, "short_text", "A draft question", nil)
+
+	page := getBody(t, creator, app.Server.URL+"/surveys/"+id+"/preview")
+	m := regexp.MustCompile(`name="_csrf" value="([^"]+)"`).FindStringSubmatch(page)
+	if m == nil {
+		t.Fatalf("the preview form carries no CSRF token:\n%s", page)
+	}
+	resp, err := creator.PostForm(app.Server.URL+"/surveys/"+id+"/preview", url.Values{"_csrf": {m[1]}})
+	if err != nil {
+		t.Fatalf("POST preview: %v", err)
+	}
+	body := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || !bodyContains(body, "Nothing was submitted") {
+		t.Errorf("submitting the preview form was refused (status %d):\n%s", resp.StatusCode, body)
+	}
+}
+
 // TestPreview_RequiresOwnership: a preview shows unpublished questions, so
 // it is at least as sensitive as the editor.
 func TestPreview_RequiresOwnership(t *testing.T) {

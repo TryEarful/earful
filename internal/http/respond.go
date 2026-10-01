@@ -328,6 +328,7 @@ func (s *server) previewPage(w http.ResponseWriter, r *http.Request) {
 		Preview:           true,
 		PreviewAll:        all,
 		PreviewLayoutLink: other,
+		CSRF:              info.CSRFToken,
 	}))
 }
 
