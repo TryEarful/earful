@@ -114,7 +114,7 @@ textarea the server rendered is the whole interface (story 38).
    is the edited text.
 9. **Cap**: keep talking past `VOICE_MAX_SECONDS_PER_ANSWER`; the take
    ends by itself and still transcribes what was said.
-10. **Refusal**: with `AI_WORKSPACE_DAILY_TOKENS=1`, the status line reads
+10. **Refusal**: with `AI_TIER_NORMAL_DAILY_TOKENS=1`, the status line reads
    "Voice isn't available right now — please type your answer", boxed in
    red, and typing still submits.
 11. **Choosing a microphone**: in a browser that already has permission,

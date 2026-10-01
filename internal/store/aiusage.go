@@ -2,10 +2,12 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/TryEarful/earful/internal/store/db"
 )
@@ -86,4 +88,52 @@ func (s *Surveys) GlobalCostOnDay(ctx context.Context, day time.Time) (float64, 
 		return 0, fmt.Errorf("store: global cost: %w", err)
 	}
 	return cost, nil
+}
+
+// WorkspaceAITier reads a workspace's AI tier (issue #3); a missing
+// workspace is ErrNotFound.
+func (s *Surveys) WorkspaceAITier(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	tier, err := s.q.WorkspaceAITier(ctx, workspaceID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("store: workspace ai tier: %w", err)
+	}
+	return tier, nil
+}
+
+// SetWorkspaceAITier changes a live workspace's tier. The database
+// rejects a tier it does not know; a deleted or missing workspace is
+// ErrNotFound.
+func (s *Surveys) SetWorkspaceAITier(ctx context.Context, workspaceID uuid.UUID, tier string) error {
+	n, err := s.q.SetWorkspaceAITier(ctx, db.SetWorkspaceAITierParams{ID: workspaceID, AiTier: tier})
+	if err != nil {
+		return fmt.Errorf("store: set workspace ai tier: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// WorkspaceTier is one workspace as the tier control lists it.
+type WorkspaceTier struct {
+	ID   uuid.UUID
+	Name string
+	Tier string
+}
+
+// WorkspacesForAITier lists the live workspaces a live account belongs
+// to. The address is matched as stored, which is lower case.
+func (s *Surveys) WorkspacesForAITier(ctx context.Context, email string) ([]WorkspaceTier, error) {
+	rows, err := s.q.WorkspacesForAITier(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("store: workspaces for ai tier: %w", err)
+	}
+	out := make([]WorkspaceTier, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, WorkspaceTier{ID: r.ID, Name: r.Name, Tier: r.AiTier})
+	}
+	return out, nil
 }

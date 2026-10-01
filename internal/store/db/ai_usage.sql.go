@@ -51,6 +51,23 @@ func (q *Queries) GlobalCostOnDay(ctx context.Context, day time.Time) (float64, 
 	return column_1, err
 }
 
+const setWorkspaceAITier = `-- name: SetWorkspaceAITier :execrows
+UPDATE workspaces SET ai_tier = $2 WHERE id = $1 AND deleted_at IS NULL
+`
+
+type SetWorkspaceAITierParams struct {
+	ID     uuid.UUID `json:"id"`
+	AiTier string    `json:"ai_tier"`
+}
+
+func (q *Queries) SetWorkspaceAITier(ctx context.Context, arg SetWorkspaceAITierParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setWorkspaceAITier, arg.ID, arg.AiTier)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const surveyVoiceSecondsOnDay = `-- name: SurveyVoiceSecondsOnDay :one
 SELECT coalesce(sum(duration_secs), 0)::bigint FROM ai_usage
 WHERE survey_id = $1 AND day = $2
@@ -70,6 +87,17 @@ func (q *Queries) SurveyVoiceSecondsOnDay(ctx context.Context, arg SurveyVoiceSe
 	return column_1, err
 }
 
+const workspaceAITier = `-- name: WorkspaceAITier :one
+SELECT ai_tier FROM workspaces WHERE id = $1
+`
+
+func (q *Queries) WorkspaceAITier(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, workspaceAITier, id)
+	var ai_tier string
+	err := row.Scan(&ai_tier)
+	return ai_tier, err
+}
+
 const workspaceTokensOnDay = `-- name: WorkspaceTokensOnDay :one
 SELECT coalesce(sum(tokens), 0)::bigint FROM ai_usage
 WHERE workspace_id = $1 AND day = $2
@@ -85,4 +113,43 @@ func (q *Queries) WorkspaceTokensOnDay(ctx context.Context, arg WorkspaceTokensO
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const workspacesForAITier = `-- name: WorkspacesForAITier :many
+SELECT w.id, w.name, w.ai_tier
+FROM workspaces w
+JOIN workspace_members m ON m.workspace_id = w.id
+JOIN users u ON u.id = m.user_id
+WHERE u.email = $1::text
+  AND u.deleted_at IS NULL AND w.deleted_at IS NULL
+ORDER BY w.created_at, w.id
+`
+
+type WorkspacesForAITierRow struct {
+	ID     uuid.UUID `json:"id"`
+	Name   string    `json:"name"`
+	AiTier string    `json:"ai_tier"`
+}
+
+// The super-admin tier control finds workspaces by a member's address,
+// the same way the other support tools find an account. Addresses are
+// stored lower case, so the caller lowers the one it is given.
+func (q *Queries) WorkspacesForAITier(ctx context.Context, email string) ([]WorkspacesForAITierRow, error) {
+	rows, err := q.db.Query(ctx, workspacesForAITier, email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkspacesForAITierRow
+	for rows.Next() {
+		var i WorkspacesForAITierRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.AiTier); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

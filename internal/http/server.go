@@ -146,9 +146,13 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		text:        deps.Text,
 		pages:       documents,
 		aiMeter: &ai.Meter{
-			Store:                   surveys,
-			Clock:                   deps.Clock,
-			WorkspaceDailyTokens:    cfg.AIWorkspaceDailyTokens,
+			Store: surveys,
+			Clock: deps.Clock,
+			DailyTokens: ai.TierCaps{
+				LowNormal: cfg.AITierLowNormalDailyTokens,
+				Normal:    cfg.AITierNormalDailyTokens,
+				High:      cfg.AITierHighDailyTokens,
+			},
 			DailyBudgetEUR:          cfg.AIDailyBudgetEUR,
 			CostPer1KTokensEUR:      cfg.AICostPer1KTokensEUR,
 			VoiceSurveyDailySeconds: cfg.VoiceSurveyDailySeconds,

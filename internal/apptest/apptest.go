@@ -68,6 +68,9 @@ type Options struct {
 	// reachable without burning a real budget.
 	AIQuota     int64
 	AIBudgetEUR float64
+	// AIHighQuota is the high tier's cap; zero means the same as
+	// AIQuota, which is also the low normal and normal tiers' cap.
+	AIHighQuota int64
 	// HostingRegion and ContactEmail are what /trust states about the
 	// instance. Empty by default, which is what an operator who
 	// configures neither gets, and the case worth testing: the page has
@@ -130,6 +133,10 @@ func New(t *testing.T, opts Options) *App {
 	if quota == 0 {
 		quota = 1_000_000
 	}
+	highQuota := opts.AIHighQuota
+	if highQuota == 0 {
+		highQuota = quota
+	}
 	budget := opts.AIBudgetEUR
 	if budget == 0 {
 		budget = 1_000
@@ -143,13 +150,15 @@ func New(t *testing.T, opts Options) *App {
 		BaseURL:     baseURL,
 		EmailSender: "console",
 		// Fixed secret so tests can drive the ESP webhook.
-		EmailWebhookSecret:     WebhookSecret,
-		BetaMode:               opts.BetaMode,
-		HostingRegion:          opts.HostingRegion,
-		ContactEmail:           opts.ContactEmail,
-		AIWorkspaceDailyTokens: quota,
-		AIDailyBudgetEUR:       budget,
-		AICostPer1KTokensEUR:   0.001,
+		EmailWebhookSecret:         WebhookSecret,
+		BetaMode:                   opts.BetaMode,
+		HostingRegion:              opts.HostingRegion,
+		ContactEmail:               opts.ContactEmail,
+		AITierLowNormalDailyTokens: quota,
+		AITierNormalDailyTokens:    quota,
+		AITierHighDailyTokens:      highQuota,
+		AIDailyBudgetEUR:           budget,
+		AICostPer1KTokensEUR:       0.001,
 	}
 	if opts.AI != nil {
 		// An injected provider stands for a configured one, so the model

@@ -91,11 +91,14 @@ type Config struct {
 	WhisperBin         string
 	WhisperModel       string
 	// AIDailyBudgetEUR is the global daily breaker (story 67);
-	// AIWorkspaceDailyTokens the per-workspace cap (story 21);
-	// AICostPer1KTokensEUR converts token estimates to cost estimates.
-	AIDailyBudgetEUR       float64
-	AIWorkspaceDailyTokens int64
-	AICostPer1KTokensEUR   float64
+	// the AITier*DailyTokens are the per-workspace caps (story 21), one
+	// per AI tier (issue #3); AICostPer1KTokensEUR converts token
+	// estimates to cost estimates.
+	AIDailyBudgetEUR           float64
+	AITierLowNormalDailyTokens int64
+	AITierNormalDailyTokens    int64
+	AITierHighDailyTokens      int64
+	AICostPer1KTokensEUR       float64
 	// Voice caps (M5-T4), all in seconds of audio: one take, one
 	// respondent's whole response, and one survey per day. Exceeding any
 	// of them degrades to typing rather than failing (story 39). Zero
@@ -222,9 +225,24 @@ func load(serving bool) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("config: invalid AI_DAILY_BUDGET_EUR: %w", err)
 	}
-	cfg.AIWorkspaceDailyTokens, err = strconv.ParseInt(getEnv("AI_WORKSPACE_DAILY_TOKENS", "200000"), 10, 64)
-	if err != nil {
-		return Config{}, fmt.Errorf("config: invalid AI_WORKSPACE_DAILY_TOKENS: %w", err)
+	// AI_WORKSPACE_DAILY_TOKENS was the single cap before tiers existed;
+	// it still sets the normal tier, so an existing deployment keeps its
+	// limit. AI_TIER_NORMAL_DAILY_TOKENS wins when both are set.
+	for _, v := range []struct {
+		key    string
+		raw    string
+		target *int64
+	}{
+		{"AI_TIER_LOW_NORMAL_DAILY_TOKENS", getEnv("AI_TIER_LOW_NORMAL_DAILY_TOKENS", "50000"), &cfg.AITierLowNormalDailyTokens},
+		{"AI_TIER_NORMAL_DAILY_TOKENS or AI_WORKSPACE_DAILY_TOKENS", getEnv("AI_TIER_NORMAL_DAILY_TOKENS",
+			getEnv("AI_WORKSPACE_DAILY_TOKENS", "200000")), &cfg.AITierNormalDailyTokens},
+		{"AI_TIER_HIGH_DAILY_TOKENS", getEnv("AI_TIER_HIGH_DAILY_TOKENS", "1000000"), &cfg.AITierHighDailyTokens},
+	} {
+		n, err := strconv.ParseInt(v.raw, 10, 64)
+		if err != nil || n < 0 {
+			return Config{}, fmt.Errorf("config: invalid %s: %q is not a whole number of tokens", v.key, v.raw)
+		}
+		*v.target = n
 	}
 	cfg.AICostPer1KTokensEUR, err = strconv.ParseFloat(getEnv("AI_COST_PER_1K_TOKENS_EUR", "0.001"), 64)
 	if err != nil {

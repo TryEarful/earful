@@ -34,6 +34,7 @@ resp, _ := client.Get(app.Server.URL + "/dashboard")
 | `apptest.Options{GoogleIssuer: ...}` | enables Google login against `internal/oidctest` |
 | `apptest.Options{AI: fake}` | injects an `ai.Fake`; without it an instance has no AI at all, which is itself the "degrades gracefully when absent" proof |
 | `apptest.Options{AIQuota: 1}` | a quota small enough to trip, for the refusal paths |
+| `apptest.Options{AIHighQuota: n}` | the high AI tier's cap, when a test moves a workspace between tiers; otherwise it equals `AIQuota` |
 | `app.LoginAsSuperAdmin(t, addr)` | a session on the support surfaces (invite codes, erasure, metrics) |
 | `apptest.NewIsolatedDB(t, "purge")` | a separate database for tests that operate on the whole of it — see below |
 

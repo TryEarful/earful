@@ -190,6 +190,7 @@ type Querier interface {
 	SetUserGoogleSub(ctx context.Context, arg SetUserGoogleSubParams) error
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	SetUserSuperAdmin(ctx context.Context, arg SetUserSuperAdminParams) (uuid.UUID, error)
+	SetWorkspaceAITier(ctx context.Context, arg SetWorkspaceAITierParams) (int64, error)
 	// M8-T1: a creator can remove a response; support can restore it until
 	// the purge job hard-deletes it 30 days later.
 	SoftDeleteResponse(ctx context.Context, arg SoftDeleteResponseParams) (int64, error)
@@ -205,7 +206,12 @@ type Querier interface {
 	UpdateSurveySettings(ctx context.Context, arg UpdateSurveySettingsParams) error
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
 	UpsertAnswerTranslation(ctx context.Context, arg UpsertAnswerTranslationParams) error
+	WorkspaceAITier(ctx context.Context, id uuid.UUID) (string, error)
 	WorkspaceTokensOnDay(ctx context.Context, arg WorkspaceTokensOnDayParams) (int64, error)
+	// The super-admin tier control finds workspaces by a member's address,
+	// the same way the other support tools find an account. Addresses are
+	// stored lower case, so the caller lowers the one it is given.
+	WorkspacesForAITier(ctx context.Context, email string) ([]WorkspacesForAITierRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

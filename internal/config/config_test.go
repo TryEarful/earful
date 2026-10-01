@@ -322,3 +322,37 @@ func TestLoad_ScriptedProviderNeverServesRealRespondents(t *testing.T) {
 		}
 	})
 }
+
+// TestLoad_AITierCaps: each tier has its own cap, and the single cap
+// that predates tiers still sets the normal one (issue #3).
+func TestLoad_AITierCaps(t *testing.T) {
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.AITierLowNormalDailyTokens != 50000 || cfg.AITierNormalDailyTokens != 200000 || cfg.AITierHighDailyTokens != 1000000 {
+		t.Errorf("tier defaults = %d/%d/%d, want 50000/200000/1000000",
+			cfg.AITierLowNormalDailyTokens, cfg.AITierNormalDailyTokens, cfg.AITierHighDailyTokens)
+	}
+
+	t.Setenv("AI_WORKSPACE_DAILY_TOKENS", "1234")
+	if cfg, _ = config.Load(); cfg.AITierNormalDailyTokens != 1234 {
+		t.Errorf("AI_WORKSPACE_DAILY_TOKENS set normal to %d, want 1234", cfg.AITierNormalDailyTokens)
+	}
+	t.Setenv("AI_TIER_NORMAL_DAILY_TOKENS", "5678")
+	t.Setenv("AI_TIER_LOW_NORMAL_DAILY_TOKENS", "10")
+	t.Setenv("AI_TIER_HIGH_DAILY_TOKENS", "99")
+	cfg, err = config.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.AITierLowNormalDailyTokens != 10 || cfg.AITierNormalDailyTokens != 5678 || cfg.AITierHighDailyTokens != 99 {
+		t.Errorf("tier overrides = %d/%d/%d, want 10/5678/99",
+			cfg.AITierLowNormalDailyTokens, cfg.AITierNormalDailyTokens, cfg.AITierHighDailyTokens)
+	}
+
+	t.Setenv("AI_TIER_HIGH_DAILY_TOKENS", "lots")
+	if _, err := config.Load(); err == nil {
+		t.Error("Load() accepted a cap that is not a number")
+	}
+}

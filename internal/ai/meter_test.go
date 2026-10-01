@@ -18,8 +18,29 @@ import (
 // memoryUsage is an in-memory UsageStore for meter-logic tests; the SQL
 // half is covered by internal/store's own test against real Postgres.
 type memoryUsage struct {
-	mu   sync.Mutex
-	rows []usageRow
+	mu    sync.Mutex
+	rows  []usageRow
+	tiers map[uuid.UUID]string
+}
+
+func (m *memoryUsage) setTier(workspaceID uuid.UUID, tier string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.tiers == nil {
+		m.tiers = map[uuid.UUID]string{}
+	}
+	m.tiers[workspaceID] = tier
+}
+
+// WorkspaceAITier answers "normal" for a workspace never set, as the
+// column default does.
+func (m *memoryUsage) WorkspaceAITier(_ context.Context, workspaceID uuid.UUID) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if tier, ok := m.tiers[workspaceID]; ok {
+		return tier, nil
+	}
+	return "normal", nil
 }
 
 type usageRow struct {
@@ -80,12 +101,12 @@ func (m *memoryUsage) GlobalCostOnDay(_ context.Context, day time.Time) (float64
 
 func newMeter(store ai.UsageStore, c clock.Clock) *ai.Meter {
 	return &ai.Meter{
-		Store:                store,
-		Clock:                c,
-		WorkspaceDailyTokens: 1000,
-		DailyBudgetEUR:       1.0,
-		CostPer1KTokensEUR:   0.5,
-		Logger:               slog.New(slog.DiscardHandler),
+		Store:              store,
+		Clock:              c,
+		DailyTokens:        ai.TierCaps{LowNormal: 500, Normal: 1000, High: 5000},
+		DailyBudgetEUR:     1.0,
+		CostPer1KTokensEUR: 0.5,
+		Logger:             slog.New(slog.DiscardHandler),
 	}
 }
 
@@ -110,6 +131,80 @@ func TestMeter_WorkspaceQuotaTrips(t *testing.T) {
 	}
 	if err := meter.Check(ctx, frugal); err != nil {
 		t.Errorf("another workspace was caught in the quota: %v", err)
+	}
+}
+
+// TestMeter_EachTierHasItsOwnCap: the same spend is over the low normal
+// cap, under the normal one, and well under the high one (issue #3).
+func TestMeter_EachTierHasItsOwnCap(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// Each case has a store of its own, so the spend stays under the
+	// € breaker. About 700 tokens each: over 500, under 1000 and 5000.
+	cases := []struct {
+		tier    string
+		refused bool
+		cap     int64
+	}{
+		{"low_normal", true, 500},
+		{"normal", false, 1000},
+		{"high", false, 5000},
+	}
+	for _, c := range cases {
+		store := &memoryUsage{}
+		meter := newMeter(store, clock.NewFake(time.Now()))
+		workspace := uuid.New()
+		store.setTier(workspace, c.tier)
+		if err := meter.Record(ctx, workspace, nil, "generate", 2800); err != nil {
+			t.Fatalf("record: %v", err)
+		}
+		err := meter.Check(ctx, workspace)
+		if refused := errors.Is(err, ai.ErrQuotaExceeded); refused != c.refused {
+			t.Errorf("%s: refused = %v (%v), want %v", c.tier, refused, err, c.refused)
+		}
+		usage, err := meter.Usage(ctx, workspace)
+		if err != nil {
+			t.Fatalf("usage: %v", err)
+		}
+		if string(usage.Tier) != c.tier || usage.Cap != c.cap || usage.Tokens != 701 {
+			t.Errorf("%s: usage = %+v, want tier %s, cap %d, 701 tokens", c.tier, usage, c.tier, c.cap)
+		}
+	}
+
+	// Moving a workspace up a tier lifts the refusal the same day.
+	store := &memoryUsage{}
+	meter := newMeter(store, clock.NewFake(time.Now()))
+	workspace := uuid.New()
+	store.setTier(workspace, "normal")
+	if err := meter.Record(ctx, workspace, nil, "generate", 4100); err != nil {
+		t.Fatalf("record: %v", err)
+	}
+	if err := meter.Check(ctx, workspace); !errors.Is(err, ai.ErrQuotaExceeded) {
+		t.Fatalf("over the normal cap: err = %v, want ErrQuotaExceeded", err)
+	}
+	store.setTier(workspace, "high")
+	if err := meter.Check(ctx, workspace); err != nil {
+		t.Errorf("after moving to high: %v", err)
+	}
+}
+
+// TestMeter_BreakerOutranksATier: a high tier is no way past the € breaker.
+func TestMeter_BreakerOutranksATier(t *testing.T) {
+	t.Parallel()
+	store := &memoryUsage{}
+	meter := newMeter(store, clock.NewFake(time.Now()))
+	ctx := context.Background()
+	workspace := uuid.New()
+	store.setTier(workspace, "high")
+
+	// 4800 tokens at €0.5/1k is €2.40, past the €1 budget but under the
+	// high tier's 5000 tokens.
+	if err := meter.Record(ctx, workspace, nil, "generate", 4*4800); err != nil {
+		t.Fatalf("record: %v", err)
+	}
+	if err := meter.Check(ctx, workspace); !errors.Is(err, ai.ErrBreakerTripped) {
+		t.Errorf("err = %v, want ErrBreakerTripped", err)
 	}
 }
 

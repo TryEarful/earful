@@ -240,7 +240,7 @@ func (q *Queries) CreateUserWithPassword(ctx context.Context, arg CreateUserWith
 const createWorkspace = `-- name: CreateWorkspace :one
 INSERT INTO workspaces (name)
 VALUES ($1)
-RETURNING id, name, created_at, deleted_at
+RETURNING id, name, created_at, deleted_at, ai_tier
 `
 
 func (q *Queries) CreateWorkspace(ctx context.Context, name string) (Workspace, error) {
@@ -251,6 +251,7 @@ func (q *Queries) CreateWorkspace(ctx context.Context, name string) (Workspace, 
 		&i.Name,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.AiTier,
 	)
 	return i, err
 }
@@ -384,7 +385,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const getWorkspaceForUser = `-- name: GetWorkspaceForUser :one
-SELECT w.id, w.name, w.created_at, w.deleted_at FROM workspaces w
+SELECT w.id, w.name, w.created_at, w.deleted_at, w.ai_tier FROM workspaces w
 JOIN workspace_members m ON m.workspace_id = w.id
 WHERE m.user_id = $1 AND w.deleted_at IS NULL
 ORDER BY w.created_at
@@ -399,6 +400,7 @@ func (q *Queries) GetWorkspaceForUser(ctx context.Context, userID uuid.UUID) (Wo
 		&i.Name,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.AiTier,
 	)
 	return i, err
 }

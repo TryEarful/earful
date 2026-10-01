@@ -20,6 +20,53 @@ type UsageStore interface {
 	WorkspaceTokensOnDay(ctx context.Context, workspaceID uuid.UUID, day time.Time) (int64, error)
 	GlobalCostOnDay(ctx context.Context, day time.Time) (float64, error)
 	SurveyVoiceSecondsOnDay(ctx context.Context, surveyID uuid.UUID, day time.Time) (int64, error)
+	// WorkspaceAITier is the workspace's tier as stored; the meter maps
+	// it onto a cap.
+	WorkspaceAITier(ctx context.Context, workspaceID uuid.UUID) (string, error)
+}
+
+// Tier names a workspace's daily AI allowance. The stored values match
+// the CHECK constraint on workspaces.ai_tier.
+type Tier string
+
+const (
+	TierLowNormal Tier = "low_normal"
+	TierNormal    Tier = "normal"
+	TierHigh      Tier = "high"
+)
+
+// Tiers lists every tier from the smallest allowance to the largest.
+var Tiers = []Tier{TierLowNormal, TierNormal, TierHigh}
+
+// ParseTier accepts exactly the stored spellings.
+func ParseTier(s string) (Tier, bool) {
+	for _, t := range Tiers {
+		if string(t) == s {
+			return t, true
+		}
+	}
+	return "", false
+}
+
+// TierCaps holds each tier's daily token cap.
+type TierCaps struct {
+	LowNormal int64
+	Normal    int64
+	High      int64
+}
+
+// For returns the cap of a tier. An unrecognised tier gets the normal
+// cap: the database constraint makes that unreachable, and the normal
+// cap is what every workspace had before tiers existed.
+func (c TierCaps) For(t Tier) int64 {
+	switch t {
+	case TierLowNormal:
+		return c.LowNormal
+	case TierHigh:
+		return c.High
+	default:
+		return c.Normal
+	}
 }
 
 var (
@@ -33,15 +80,16 @@ var (
 	ErrBreakerTripped = errors.New("ai: daily budget breaker tripped")
 )
 
-// Meter enforces M6-T2: per-workspace daily token caps and the global
+// Meter enforces M6-T2: per-workspace daily token caps, chosen by the
+// workspace's tier (issue #3), and the global
 // daily € breaker, both computed from the ai_usage table so restarts and
 // multiple instances agree. Callers Check before an AI call and Record
 // after it.
 type Meter struct {
 	Store UsageStore
 	Clock clock.Clock
-	// WorkspaceDailyTokens caps each workspace per day.
-	WorkspaceDailyTokens int64
+	// DailyTokens caps each workspace per day, by the workspace's tier.
+	DailyTokens TierCaps
 	// DailyBudgetEUR is the global breaker threshold.
 	DailyBudgetEUR float64
 	// CostPer1KTokensEUR converts token estimates to cost estimates;
@@ -80,14 +128,39 @@ func (m *Meter) Check(ctx context.Context, workspaceID uuid.UUID) error {
 		return ErrBreakerTripped
 	}
 
-	tokens, err := m.Store.WorkspaceTokensOnDay(ctx, workspaceID, m.day())
+	usage, err := m.Usage(ctx, workspaceID)
 	if err != nil {
 		return err
 	}
-	if tokens >= m.WorkspaceDailyTokens {
+	if usage.Tokens >= usage.Cap {
 		return ErrQuotaExceeded
 	}
 	return nil
+}
+
+// WorkspaceUsage is where a workspace stands against its allowance today.
+type WorkspaceUsage struct {
+	Tier   Tier
+	Tokens int64
+	Cap    int64
+}
+
+// Usage reads a workspace's tier and today's spend. It is what Check
+// decides by, so a page that shows it shows the number the meter uses.
+func (m *Meter) Usage(ctx context.Context, workspaceID uuid.UUID) (WorkspaceUsage, error) {
+	stored, err := m.Store.WorkspaceAITier(ctx, workspaceID)
+	if err != nil {
+		return WorkspaceUsage{}, err
+	}
+	tier, ok := ParseTier(stored)
+	if !ok {
+		tier = TierNormal
+	}
+	tokens, err := m.Store.WorkspaceTokensOnDay(ctx, workspaceID, m.day())
+	if err != nil {
+		return WorkspaceUsage{}, err
+	}
+	return WorkspaceUsage{Tier: tier, Tokens: tokens, Cap: m.DailyTokens.For(tier)}, nil
 }
 
 // Counted wraps a stream and tallies the characters it delivers, so a

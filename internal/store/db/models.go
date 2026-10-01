@@ -221,6 +221,8 @@ type Workspace struct {
 	Name      string     `json:"name"`
 	CreatedAt time.Time  `json:"created_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
+	// Which daily AI token cap applies to the workspace: low_normal, normal or high. Set by a super admin.
+	AiTier string `json:"ai_tier"`
 }
 
 type WorkspaceMember struct {

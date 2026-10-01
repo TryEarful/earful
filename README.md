@@ -206,8 +206,11 @@ report themselves absent and the features degrade (Appendix D).
 | `TRANSCRIBE_PROVIDER` | `none` | `none`, `whisper-cli`, `openai`, `vertex`, or `scripted`; voice is selected separately from text because they routinely come from different places |
 | `WHISPER_BIN` / `WHISPER_MODEL` | `whisper-cli` / *(empty)* | whisper.cpp binary and `ggml-*.bin` model path |
 | `AI_DAILY_BUDGET_EUR` | `3` | Global daily breaker: every AI endpoint refuses once the day's estimated spend reaches it |
-| `AI_WORKSPACE_DAILY_TOKENS` | `200000` | Per-workspace daily cap |
-| `AI_COST_PER_1K_TOKENS_EUR` | `0.001` | Token-to-cost estimate feeding both limits |
+| `AI_TIER_LOW_NORMAL_DAILY_TOKENS` | `50000` | Daily token cap of a workspace on the low normal AI tier |
+| `AI_TIER_NORMAL_DAILY_TOKENS` | `200000` | Daily token cap of a workspace on the normal AI tier, which every workspace starts on |
+| `AI_TIER_HIGH_DAILY_TOKENS` | `1000000` | Daily token cap of a workspace on the high AI tier. A super admin sets a workspace's tier at `/admin/ai-tiers`; the global breaker applies to every tier |
+| `AI_WORKSPACE_DAILY_TOKENS` | *(empty)* | The single cap from before tiers existed: sets the normal tier when `AI_TIER_NORMAL_DAILY_TOKENS` is not set |
+| `AI_COST_PER_1K_TOKENS_EUR` | `0.001` | Token-to-cost estimate feeding the breaker and the caps |
 
 Local setups that need everything working:
 
