@@ -4,7 +4,12 @@ import "github.com/TryEarful/earful/web/static"
 
 templ Layout(title string) {
 	<!DOCTYPE html>
-	<html lang={ interfaceLang(ctx) }>
+	<html
+		lang={ interfaceLang(ctx) }
+		if theme(ctx) != "" {
+			data-theme={ theme(ctx) }
+		}
+	>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -15,7 +20,10 @@ templ Layout(title string) {
 			{ children... }
 			<footer class="site-footer">
 				@footerLinks("")
-				@languageSwitcher()
+				<div class="switchers">
+					@languageSwitcher()
+					@themeSwitcher()
+				</div>
 			</footer>
 		</body>
 	</html>
@@ -31,7 +39,7 @@ templ Layout(title string) {
 // language of a survey is chosen in its address (story 25).
 templ languageSwitcher() {
 	if len(languages(ctx)) > 1 {
-		<form method="post" action="/language" class="language-switcher">
+		<form method="post" action="/language" class="switcher">
 				<input type="hidden" name="next" value={ currentPath(ctx) }/>
 				<label>
 					<span>{ t(ctx, "switcher.label") }</span>
@@ -46,14 +54,37 @@ templ languageSwitcher() {
 	}
 }
 
+// themeSwitcher chooses between the light theme, the dark, and following
+// the system. It is a form with a button and works without a script;
+// theme.js applies a choice as it is made and hides the button. It is on
+// every page, a respondent's too, and comes back to the page it is on.
+templ themeSwitcher() {
+	<form method="post" action="/theme" class="switcher js-theme-switcher">
+		<input type="hidden" name="next" value={ currentPath(ctx) }/>
+		<label>
+			<span>{ t(ctx, "theme.label") }</span>
+			<select name="theme" class="js-theme-select">
+				<option value="system" selected?={ theme(ctx) == "" }>{ t(ctx, "theme.system") }</option>
+				<option value="light" selected?={ theme(ctx) == "light" }>{ t(ctx, "theme.light") }</option>
+				<option value="dark" selected?={ theme(ctx) == "dark" }>{ t(ctx, "theme.dark") }</option>
+			</select>
+		</label>
+		<button type="submit" class="secondary js-theme-submit">{ t(ctx, "theme.submit") }</button>
+	</form>
+	<script src={ static.AssetURL("js/theme.js") } defer></script>
+}
+
 // headAssets are the stylesheet and the icons, the same on every page.
+// The browser's own chrome takes the ground of the theme the page is
+// drawn in: the system's, or the one the reader chose over it. Each tag
+// carries both grounds for theme.js, which repaints it on a new choice.
 templ headAssets() {
 	<link rel="preload" href={ static.AssetURL("fonts/manrope-latin.woff2") } as="font" type="font/woff2" crossorigin/>
 	<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
 	<link rel="icon" type="image/svg+xml" href={ static.AssetURL("img/favicon.svg") }/>
 	<link rel="apple-touch-icon" href={ static.AssetURL("img/apple-touch-icon.png") }/>
-	<meta name="theme-color" content="#F7F2E8" media="(prefers-color-scheme: light)"/>
-	<meta name="theme-color" content="#101823" media="(prefers-color-scheme: dark)"/>
+	<meta name="theme-color" class="js-theme-color" data-scheme="light" data-light={ lightGround } data-dark={ darkGround } content={ themeColor(ctx, "light") } media="(prefers-color-scheme: light)"/>
+	<meta name="theme-color" class="js-theme-color" data-scheme="dark" data-light={ lightGround } data-dark={ darkGround } content={ themeColor(ctx, "dark") } media="(prefers-color-scheme: dark)"/>
 }
 
 // footerLinks are the pages anyone may need from anywhere: help, and

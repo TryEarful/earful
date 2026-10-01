@@ -395,6 +395,8 @@ everywhere (stories 87 and 88, ADR-0016, docs/style-guide.md).
 - [x] **VI-5 The gallery.** Goal: `make gallery` pictures every page at phone and desktop widths, both themes, both languages, with an axe report. Deps: VI-3
 - [x] **VI-7 Naming a workspace.** Goal: the account page renames the workspace respondents see as who runs a survey. AC: the new name shows on the dashboard and a respondent's page; an empty name is refused and the old one kept. Deps: VI-3
 - [x] **VI-6 Reviewed.** Goal: every page reviewed against the style guide's rubric and fixed until a round finds nothing to change. Along the way: publishing redirects instead of answering the POST; the account page offers a change of address only to accounts with a password; the phone layout no longer scrolls sideways. Deps: VI-5
+- [x] **VI-8 Choosing the theme (issue #15).** Goal: a light, dark or follow system switcher beside the language switcher on every layout, the respondent's included. AC: the choice is a cookie the server draws as `data-theme`, so there is no flash and no script is needed; color-scheme, theme-color and the owl follow it; a test fails if the two dark token blocks differ; the gallery pictures pages with a theme chosen against the system's. Deps: VI-3
+  _Note: a localStorage choice applied by an inline head script is refused by the CSP and gives no choice without JavaScript, so the switcher is a form and a cookie like the language one (ADR-0016 amended)._
 
 ### Interface text (added 2026-09-29)
 

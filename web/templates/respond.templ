@@ -74,12 +74,17 @@ func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Previe
 // RespondLayout is a self-contained page shell for respondent pages. It
 // deliberately does not reuse the creator chrome: a respondent has no
 // account, no navigation, and nothing to sign out of. Its footer holds
-// only what a respondent may need before answering: help, and what
-// happens to their answers. `noindex` keeps surveys out of search
-// results and LLM scrapes (M4-T5).
+// only what a respondent may need before answering: help, what
+// happens to their answers, and the theme to read them in. `noindex`
+// keeps surveys out of search results and LLM scrapes (M4-T5).
 templ RespondLayout(title string, lang string) {
 	<!DOCTYPE html>
-	<html lang={ htmlLang(ctx, lang) }>
+	<html
+		lang={ htmlLang(ctx, lang) }
+		if theme(ctx) != "" {
+			data-theme={ theme(ctx) }
+		}
+	>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -95,6 +100,9 @@ templ RespondLayout(title string, lang string) {
 					Earful
 				</span>
 				@footerLinks(lang)
+				<div class="switchers">
+					@themeSwitcher()
+				</div>
 			</footer>
 		</body>
 	</html>

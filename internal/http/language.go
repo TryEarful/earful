@@ -99,6 +99,7 @@ func (s *server) interfaceText(next http.Handler) http.Handler {
 		ctx := uitext.With(r.Context(), s.localizerFor(r))
 		// Where the switcher comes back to.
 		ctx = templates.WithPath(ctx, r.URL.RequestURI())
+		ctx = templates.WithTheme(ctx, themeOf(r))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -126,13 +127,20 @@ func (s *server) chooseLanguage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, localPath(r.PostFormValue("next")), http.StatusSeeOther)
 }
 
-// localPath is next if it is a path on this site, and the home page if
+// sitePath is next if it is a path on this site, and the home page if
 // it is anything else. A redirect to wherever a form says would send a
 // person to any site that could get them to press a button here.
-func localPath(next string) string {
+func sitePath(next string) string {
 	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.ContainsAny(next, "\\\r\n") {
 		return "/"
 	}
+	return next
+}
+
+// localPath is where the language switcher comes back to: a path on
+// this site, as sitePath, and never a survey.
+func localPath(next string) string {
+	next = sitePath(next)
 	// A survey is answered in the language its address names and the
 	// switcher is not shown there, so nothing sends anybody back to one.
 	if strings.HasPrefix(next, "/s/") || strings.HasPrefix(next, "/p/") {

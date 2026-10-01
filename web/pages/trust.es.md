@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-25fb0bc448d2c4042036dbb5ef1eb6c60094b2f876f38db31e7ecbd0999df7ba
-last_update: 2026-09-30
-source_hash: sha256-c943c01ec3e11973aeb7d442db1de4d38cc6d47b188ed89a5a3db5a8a18b008c
+hash: sha256-fcab5dbfe8f4c7f832d87099b43a3a5f242ce55ba484d65d890190108f647c9e
+last_update: 2026-10-01
+source_hash: sha256-7a83c05791b89163f9acb344b3409dd6af0af01f2dfa99e118dd763392507f33
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -35,6 +35,10 @@ Responder una encuesta no carga analíticas, ni fuentes, ni gestores de etiqueta
 ## El idioma de la interfaz
 
 Si elige un idioma para la interfaz, su elección se guarda en una cookie de su navegador, llamada `interface_lang`, durante un año. No se crea ni se lee en la página de una encuesta: allí el idioma se elige en la dirección de la página y no se guarda en ningún lugar.
+
+## El tema
+
+Si elige un tema claro u oscuro, en cualquier página de este sitio, incluida la de una encuesta, su elección se guarda en una cookie de su navegador, llamada `theme`, durante un año. Contiene la palabra `light` o `dark` y nada más, se crea solo cuando usted elige y se lee solo para dibujar la página. Si elige seguir al sistema, se borra.
 
 ## Dónde están los datos y quién los toca
 

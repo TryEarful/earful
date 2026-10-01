@@ -65,6 +65,39 @@ func currentPath(ctx context.Context) string {
 	return path
 }
 
+type themeKey struct{}
+
+// WithTheme returns a context that knows the theme the reader chose:
+// "light", "dark", or "" to follow their system.
+func WithTheme(ctx context.Context, theme string) context.Context {
+	return context.WithValue(ctx, themeKey{}, theme)
+}
+
+func theme(ctx context.Context) string {
+	t, _ := ctx.Value(themeKey{}).(string)
+	return t
+}
+
+// The ground of the page in each theme, for the browser's own chrome.
+// They repeat --paper and --ink in web/static/css/app.css.
+const (
+	lightGround = "#F7F2E8"
+	darkGround  = "#101823"
+)
+
+// themeColor is the colour the browser's chrome takes where the system
+// asks for scheme: the ground of that scheme, or of the theme the reader
+// chose over it.
+func themeColor(ctx context.Context, scheme string) string {
+	if t := theme(ctx); t != "" {
+		scheme = t
+	}
+	if scheme == "dark" {
+		return darkGround
+	}
+	return lightGround
+}
+
 // languages are the languages the page can be read in.
 func languages(ctx context.Context) []string {
 	return uitext.From(ctx).Languages()

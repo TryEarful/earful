@@ -138,9 +138,52 @@
 
 /* The dark theme is Ink ground and Paper type, with the same accents
    lifted until they read on it. Contrast for every pair is listed in
-   docs/style-guide.md. */
+   docs/style-guide.md.
+
+   It is drawn where the system asks for it and the reader has not chosen
+   light, and wherever the reader has chosen dark: the server writes the
+   choice as data-theme on <html>. CSS cannot put a media query and a
+   selector in one rule, so the dark tokens are written twice, here and
+   below, and web/static/static_test.go fails the build if the two
+   differ. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #101823;
+  --surface: #1a2534;
+  --surface-2: #151f2c;
+  --text: #f7f2e8;
+  --muted: #c3c9d1;
+  --link: #74cdc6;
+  --focus: #74cdc6;
+  --accent: #74cdc6;
+  --accent-contrast: #101823;
+  --border: rgb(247 242 232 / 12%);
+  --border-strong: rgb(247 242 232 / 28%);
+  --danger: #f28b82;
+  --good: #7fcf97;
+  --warning: #f0b35c;
+  --button: var(--paper);
+  --button-text: var(--ink);
+  --ring: rgb(247 242 232 / 60%);
+  --tint-good: rgb(46 125 70 / 28%);
+  --tint-warning: rgb(178 106 0 / 28%);
+  --tint-serious: rgb(196 61 61 / 28%);
+  --tint-info: rgb(23 122 119 / 26%);
+  --owl-body: #2a3a4c;
+  --owl-outline: var(--feather);
+  --owl-rim: var(--feather);
+  --chart-1: #7b98ea;
+  --chart-3: #19b3a6;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 8px rgb(0 0 0 / 20%);
+  --shadow-2: 0 4px 12px rgb(0 0 0 / 35%), 0 12px 32px rgb(0 0 0 / 35%);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #101823;
     --surface: #1a2534;
     --surface-2: #151f2c;
@@ -2608,13 +2651,21 @@ th[aria-sort="descending"] .sort-button::after {
   gap: 0.75rem;
 }
 
-/* --- the language switcher -------------------------------------------------
+/* --- the switchers ---------------------------------------------------------
 
-   In the footer: it is for somebody who cannot read the page, so it is
-   where a person looks when nothing else on the page has helped, and it
-   is quiet for everybody else. */
+   The language and the theme, in the footer. The language is for
+   somebody who cannot read the page, so it is where a person looks when
+   nothing else on the page has helped; both are quiet for everybody
+   else. */
 
-.language-switcher {
+.switchers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-5);
+}
+
+.switcher {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2622,7 +2673,7 @@ th[aria-sort="descending"] .sort-button::after {
   font-size: 0.9rem;
 }
 
-.language-switcher label {
+.switcher label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2772,14 +2823,14 @@ main.home h1 {
   display: none;
 }
 
-/* The language switcher is a quiet control in the footer. */
-.language-switcher button {
+/* A switcher is a quiet control in the footer. */
+.switcher button {
   min-height: 2.75rem;
   padding: 0.375rem 1rem;
   font-size: 0.875rem;
 }
 
-.language-switcher select {
+.switcher select {
   min-height: 2.75rem;
   width: auto;
   padding-top: 0.375rem;

@@ -76,10 +76,25 @@ Paper with Ink type. Links and focus become a lighter teal, the owl's
 body lifts to `#2A3A4C` with a Feather outline so it does not vanish,
 and chart 1 and 3 are lifted until they hold 3:1 on the dark card.
 
+A page follows the reader's system until they choose otherwise with
+the theme switcher in the footer of every page, a survey's included:
+follow system, light or dark. The choice is kept in a `theme` cookie
+and the server writes it as `data-theme` on `<html>`, so the page
+arrives in its theme with no flash and no script. The stylesheet draws
+the dark tokens in two places: under `prefers-color-scheme: dark` where
+`data-theme` is not `light`, and under `data-theme="dark"`. The two
+blocks hold the same values, and a test fails the build if they drift
+apart, so a change to a dark token is made in both. `color-scheme` and
+the `theme-color` tags follow a chosen theme too, and the owl, coloured
+by the `--owl-*` tokens, follows with them. The favicon is a file in
+fixed colours and does not.
+
 ### Contrast
 
 Measured, WCAG 2.1. The axe scan in the e2e suite and in the gallery
-checks every page in both themes.
+checks every page in both themes, and the gallery also pictures a few
+pages with a theme chosen against the system's, dark on a light system
+and light on a dark one.
 
 | Pair | Light | Dark |
 |---|---|---|
@@ -143,6 +158,7 @@ times use tabular figures.
 | `.responses` inside `.table-scroll` | A table, which scrolls sideways on its own |
 | `.empty-state` | The owl, a line and what to do |
 | `.site-header`, `.site-footer`, `.respond-footer` | The chrome |
+| `.switchers`, `.switcher` | The footer's quiet choices: the language and the theme |
 
 Every link and control is at least 44px tall. Focus is a 3px teal ring,
 two pixels out.

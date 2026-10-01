@@ -16,7 +16,8 @@ import {
 
 // The design gallery: every page, at a phone's width and a desktop's, in
 // the light theme and the dark, in English and Spanish, with an axe
-// report beside each picture. It asserts nothing about the product; it
+// report beside each picture; a few pages also with a theme chosen
+// against the system's. It asserts nothing about the product; it
 // is how the design is looked at as a whole (docs/style-guide.md). Run it
 // with `make gallery`; the pictures land in GALLERY_DIR.
 
@@ -51,6 +52,40 @@ async function capture(page: Page, name: string, lang: string) {
   if (page.url() !== url) await page.goto(url);
 }
 
+// A theme chosen with the switcher is drawn against the system's: dark
+// on a light system and light on a dark one. Every token a theme sets
+// must then win over the system's, so these pages are pictured and
+// scanned that way too. The pictures are named for the chosen theme.
+const forced = [
+  { chosen: "dark", system: "light" },
+  { chosen: "light", system: "dark" },
+] as const;
+
+async function captureForced(page: Page, name: string, lang: string) {
+  fs.mkdirSync(out, { recursive: true });
+  const context = page.context();
+  const url = page.url();
+  for (const { chosen, system } of forced) {
+    await context.addCookies([{ name: "theme", value: chosen, url: new URL(url).origin }]);
+    await page.emulateMedia({ colorScheme: system });
+    await page.goto(url);
+    for (const v of viewports) {
+      await page.setViewportSize({ width: v.width, height: v.height });
+      await page.waitForTimeout(150);
+      await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.chosen-${chosen}.png`), fullPage: true });
+    }
+    const result = await new AxeBuilder({ page }).analyze();
+    axe.push({
+      page: `${name} (${chosen} chosen on a ${system} system)`,
+      lang,
+      violations: result.violations.map((x) => ({ id: x.id, impact: x.impact ?? null, nodes: x.nodes.length, help: x.help })),
+    });
+  }
+  await context.clearCookies({ name: "theme" });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto(url);
+}
+
 async function visitor(browser: Browser, lang: string) {
   const context = await browser.newContext({ locale: lang === "es" ? "es-ES" : "en-US" });
   return { context, page: await context.newPage() };
@@ -79,6 +114,8 @@ test("gallery", async ({ browser }) => {
       await page.goto(url);
       await capture(page, name, lang);
     }
+    await page.goto("/login");
+    await captureForced(page, "login", lang);
     await context.close();
   }
 
@@ -113,6 +150,7 @@ test("gallery", async ({ browser }) => {
   await capture(page, "preview-all", "en");
   await page.goto("/dashboard");
   await capture(page, "dashboard-surveys", "en");
+  await captureForced(page, "dashboard-surveys", "en");
   // The account page ends with the delete form and its copy checkbox.
   await page.goto("/account");
   await capture(page, "account", "en");
@@ -155,6 +193,7 @@ test("gallery", async ({ browser }) => {
     const { context, page: respondent } = await visitor(browser, lang);
     await respondent.goto(share);
     await capture(respondent, "respond-first", lang);
+    await captureForced(respondent, "respond-first", lang);
     await respondent.locator("textarea").fill("Shorter sessions and more time to try things ourselves.");
     await respondent.getByRole("button", { name: lang === "es" ? "Siguiente" : "Next" }).click();
     await respondent.getByLabel(/Monthly/).check();
@@ -170,6 +209,7 @@ test("gallery", async ({ browser }) => {
   // What the creator reads afterwards.
   await page.goto(editor + "/results");
   await capture(page, "results", "en");
+  await captureForced(page, "results", "en");
   await page.goto(editor + "/stats");
   await capture(page, "stats", "en");
   await page.goto(editor + "/localizations");

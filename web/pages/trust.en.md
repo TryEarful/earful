@@ -2,8 +2,8 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-c943c01ec3e11973aeb7d442db1de4d38cc6d47b188ed89a5a3db5a8a18b008c
-last_update: 2026-09-30
+hash: sha256-7a83c05791b89163f9acb344b3409dd6af0af01f2dfa99e118dd763392507f33
+last_update: 2026-10-01
 ---
 
 This page describes {{if .Instance}}{{.Instance}}{{else}}this instance{{end}}. Earful is open source (AGPL 3.0), so every claim here can be checked against the code that serves it.
@@ -32,6 +32,10 @@ Answering a survey loads no analytics, no fonts, no tag managers and no CDN scri
 ## The language of the interface
 
 If you choose a language for the interface, your choice is kept in a cookie in your browser, named `interface_lang`, for a year. It is not set or read on a survey page: there the language is chosen in the address of the page and stored nowhere.
+
+## The theme
+
+If you choose a light or a dark theme, on any page here, a survey's included, your choice is kept in a cookie in your browser, named `theme`, for a year. It holds the word `light` or `dark` and nothing else, is set only when you choose, and is read only to draw the page. Choosing to follow your system removes it.
 
 ## Where the data lives, and who touches it
 
