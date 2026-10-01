@@ -127,6 +127,11 @@ type Config struct {
 	// site. Required on staging and only active there; /healthz and
 	// /health stay open for probes (see BasicAuthGate).
 	StagingBasicAuth string
+	// VirusTotalAPIKey turns on a hash lookup of every file a creator
+	// attaches to an AI prompt (issue #5). Only the SHA-256 is sent. Empty,
+	// the default, makes no such call: an instance talks to a third party
+	// only when its operator chose it.
+	VirusTotalAPIKey string
 }
 
 // GoogleLoginEnabled reports whether Google OIDC is configured.
@@ -207,6 +212,7 @@ func load(serving bool) (Config, error) {
 		GoogleIssuer:       getEnv("GOOGLE_OIDC_ISSUER", "https://accounts.google.com"),
 		BetaMode:           getEnv("BETA_MODE", "false") == "true",
 		StagingBasicAuth:   getEnv("STAGING_BASIC_AUTH", ""),
+		VirusTotalAPIKey:   getEnv("VIRUSTOTAL_API_KEY", ""),
 	}
 
 	port, err := strconv.Atoi(getEnv("PORT", "8080"))

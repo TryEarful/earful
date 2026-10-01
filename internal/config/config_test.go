@@ -79,6 +79,22 @@ func TestLoad_InvalidLogLevel(t *testing.T) {
 	}
 }
 
+// TestLoad_VirusTotalIsOffUnlessConfigured: the lookup is a call to a
+// third party, so an instance makes it only when its operator set a key.
+func TestLoad_VirusTotalIsOffUnlessConfigured(t *testing.T) {
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.VirusTotalAPIKey != "" {
+		t.Errorf("VirusTotalAPIKey = %q by default, want empty", cfg.VirusTotalAPIKey)
+	}
+	t.Setenv("VIRUSTOTAL_API_KEY", "vt-key")
+	if cfg, _ = config.Load(); cfg.VirusTotalAPIKey != "vt-key" {
+		t.Errorf("VirusTotalAPIKey = %q, want the configured key", cfg.VirusTotalAPIKey)
+	}
+}
+
 func TestLoad_M2Defaults(t *testing.T) {
 	cfg, err := config.Load()
 	if err != nil {

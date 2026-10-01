@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-fcab5dbfe8f4c7f832d87099b43a3a5f242ce55ba484d65d890190108f647c9e
+hash: sha256-fdefc234c50a2cb0651924d7cb77b0b7471327689da178480c1a431e3150162d
 last_update: 2026-10-01
-source_hash: sha256-7a83c05791b89163f9acb344b3409dd6af0af01f2dfa99e118dd763392507f33
+source_hash: sha256-c0aa3d92d5889cc515657197c047ccb40be7c9eefc635c87c959c5ca4f204f6d
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -51,10 +51,13 @@ Si elige un tema claro u oscuro, en cualquier página de este sitio, incluida la
 - **Brevo** envía los enlaces de acceso y las invitaciones a encuestas. Ve los correos de titulares de cuentas y de participantes invitados. UE (Francia).
 {{- end}}
 {{- if eq .AI "vertex"}}
-- **Google Vertex AI** transcribe las respuestas habladas y redacta preguntas, resúmenes y traducciones. Ve el audio en tránsito, que nunca se guarda, y el texto de preguntas y respuestas. {{if eq .VertexLocation "eu"}}UE, procesado solo en Estados miembros de la UE.{{else if eq .VertexLocation "us"}}Estados Unidos.{{else}}Región `{{.VertexLocation}}`.{{end}}
+- **Google Vertex AI** transcribe las respuestas habladas y redacta preguntas, resúmenes y traducciones. Ve el audio en tránsito, que nunca se guarda, el texto de preguntas y respuestas, y cualquier archivo que un creador adjunte al redactar preguntas, que tampoco se guarda. {{if eq .VertexLocation "eu"}}UE, procesado solo en Estados miembros de la UE.{{else if eq .VertexLocation "us"}}Estados Unidos.{{else}}Región `{{.VertexLocation}}`.{{end}}
 {{- end}}
 {{- if eq .AI "openai"}}
-- **Un servicio de IA elegido por el operador** transcribe, redacta, resume y traduce. Ve el audio en tránsito, que nunca se guarda, y el texto de preguntas y respuestas, allí donde lo haya dispuesto el operador de esta instalación.
+- **Un servicio de IA elegido por el operador** transcribe, redacta, resume y traduce. Ve el audio en tránsito, que nunca se guarda, el texto de preguntas y respuestas, y el texto de cualquier archivo que un creador adjunte al redactar preguntas, que tampoco se guarda, allí donde lo haya dispuesto el operador de esta instalación.
+{{- end}}
+{{- if .VirusTotal}}
+- **VirusTotal** comprueba si un archivo que un creador adjunta al redactar preguntas se conoce como dañino. Recibe el hash `SHA-256` del archivo, nunca el archivo.
 {{- end}}
 {{- if .GoogleLogin}}
 - **Google Identity** inicia la sesión de quienes eligen Google. Ve su correo electrónico y el identificador de su cuenta de Google.

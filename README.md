@@ -211,6 +211,7 @@ report themselves absent and the features degrade (Appendix D).
 | `AI_TIER_HIGH_DAILY_TOKENS` | `1000000` | Daily token cap of a workspace on the high AI tier. A super admin sets a workspace's tier at `/admin/ai-tiers`; the global breaker applies to every tier |
 | `AI_WORKSPACE_DAILY_TOKENS` | *(empty)* | The single cap from before tiers existed: sets the normal tier when `AI_TIER_NORMAL_DAILY_TOKENS` is not set |
 | `AI_COST_PER_1K_TOKENS_EUR` | `0.001` | Token-to-cost estimate feeding the breaker and the caps |
+| `VIRUSTOTAL_API_KEY` | *(empty)* | When set, every file a creator attaches to an AI prompt is looked up in VirusTotal by its SHA-256 (the file itself is never sent) and refused if reported malicious. A lookup that fails or times out (5 s) is logged and does not block the upload: a hash lookup only knows files it has seen, so it cannot vouch for a new one either way. Empty makes no such call, and the trust page lists VirusTotal only when it is set |
 
 Local setups that need everything working:
 

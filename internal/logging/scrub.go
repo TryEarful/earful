@@ -15,6 +15,9 @@ import (
 var sensitiveSubstrings = []string{
 	"email", "token", "transcript", "answer",
 	"password", "secret", "cookie", "authorization", "credential",
+	// What a creator attaches to an AI prompt is never logged (issue #5);
+	// a file's name can say as much as its content.
+	"filename", "attachment",
 }
 
 const redacted = "[REDACTED]"

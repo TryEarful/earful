@@ -47,6 +47,22 @@ func TestScrubbingHandler_RedactsSensitiveAttrs(t *testing.T) {
 	}
 }
 
+// TestScrubbingHandler_RedactsAttachments: files attached to an AI
+// prompt are never logged, and neither are their names.
+func TestScrubbingHandler_RedactsAttachments(t *testing.T) {
+	var buf bytes.Buffer
+	logger := newLogger(&buf)
+	logger.Info("upload", "filename", "salaries 2026.xlsx", "attachment_name", "notes.md", "files", 2)
+
+	m := decode(t, &buf)
+	if m["filename"] != "[REDACTED]" || m["attachment_name"] != "[REDACTED]" {
+		t.Errorf("attachment names were logged: %v", m)
+	}
+	if m["files"] != float64(2) {
+		t.Errorf("files = %v, want the count unredacted", m["files"])
+	}
+}
+
 func TestScrubbingHandler_RedactsNestedGroups(t *testing.T) {
 	var buf bytes.Buffer
 	logger := newLogger(&buf)

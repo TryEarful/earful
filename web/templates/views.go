@@ -120,6 +120,8 @@ type SurveyEditorData struct {
 	// provider is configured: an absent capability is an absent feature,
 	// not a button that fails (Appendix D).
 	AIEnabled bool
+	// GeneratePrompt refills the drafting panel after a refused run.
+	GeneratePrompt string
 	// Participants is populated for invited surveys only.
 	Participants []ParticipantView
 	PendingCount int

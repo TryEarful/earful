@@ -40,9 +40,10 @@ func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 		s.renderNewSurvey(w, r, form, sayError(r, err))
 		return
 	}
-	// A description is read only where AI is offered; on an instance
-	// without it the field is absent and a posted one is ignored.
-	if form.Prompt != "" && s.canGenerate() {
+	// A description or attached files are read only where AI is offered;
+	// on an instance without it the fields are absent and posted ones are
+	// ignored.
+	if (form.Prompt != "" || hasUploads(r)) && s.canGenerate() {
 		s.surveyCreateFromPrompt(w, r, form, closeAt)
 		return
 	}
@@ -113,13 +114,20 @@ func (s *server) surveyPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg, notice string) {
-	s.renderSurveyEditor(w, r, errMsg, notice, nil)
+	s.renderSurveyEditor(w, r, errMsg, notice, nil, "")
+}
+
+// renderEditor is renderSurveyPage with the drafting panel's prompt
+// filled in, for a refused run that hands back what was typed.
+func (s *server) renderEditor(w http.ResponseWriter, r *http.Request, errMsg, notice, generatePrompt string) {
+	s.renderSurveyEditor(w, r, errMsg, notice, nil, generatePrompt)
 }
 
 // renderSurveyEditor draws the editor. thanks, when given, is what the
 // creator just typed into the thank you page form, shown back to them
-// beside the error that refused it rather than lost.
-func (s *server) renderSurveyEditor(w http.ResponseWriter, r *http.Request, errMsg, notice string, thanks *templates.ThanksFormView) {
+// beside the error that refused it rather than lost; generatePrompt is
+// the drafting panel's prompt, handed back after a refused run.
+func (s *server) renderSurveyEditor(w http.ResponseWriter, r *http.Request, errMsg, notice string, thanks *templates.ThanksFormView, generatePrompt string) {
 	info, _ := authFrom(r.Context())
 	survey, draft, ok := s.loadSurveyAndDraft(w, r)
 	if !ok {
@@ -155,8 +163,9 @@ func (s *server) renderSurveyEditor(w http.ResponseWriter, r *http.Request, errM
 			LinkLabel: draft.Thanks.LinkLabel,
 			LinkURL:   draft.Thanks.LinkURL,
 		},
-		Error:  errMsg,
-		Notice: notice,
+		Error:          errMsg,
+		Notice:         notice,
+		GeneratePrompt: generatePrompt,
 	}
 	if thanks != nil {
 		data.Thanks = *thanks
@@ -289,7 +298,7 @@ func (s *server) surveyThanks(w http.ResponseWriter, r *http.Request) {
 		err = draft.SetThanks(thanks)
 	}
 	if err != nil {
-		s.renderSurveyEditor(w, r, sayError(r, err), "", &typed)
+		s.renderSurveyEditor(w, r, sayError(r, err), "", &typed, "")
 		return
 	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {

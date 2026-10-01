@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 
 	"github.com/TryEarful/earful/internal/ai"
 	"github.com/TryEarful/earful/internal/antibot"
+	"github.com/TryEarful/earful/internal/attach"
 	"github.com/TryEarful/earful/internal/auth"
 	"github.com/TryEarful/earful/internal/clock"
 	"github.com/TryEarful/earful/internal/config"
@@ -51,6 +53,10 @@ type Deps struct {
 	// default. Tests lower it to reach the path where an archive is too
 	// large, which no test can afford to build for real.
 	ExportMaxBytes int
+	// AttachScanner looks up files attached to an AI prompt (issue #5).
+	// Nil means the one configured: VirusTotal when VIRUSTOTAL_API_KEY is
+	// set, none otherwise. Tests inject a stub.
+	AttachScanner attach.Scanner
 }
 
 type server struct {
@@ -72,6 +78,10 @@ type server struct {
 
 	// exportMaxBytes caps one workspace archive (Deps.ExportMaxBytes).
 	exportMaxBytes int
+
+	// attachScanner, when set, is asked about every file attached to an
+	// AI prompt before it is read.
+	attachScanner attach.Scanner
 
 	// text is the interface's wording, in every language it is served in.
 	text *uitext.Catalog
@@ -128,6 +138,9 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	if deps.ExportMaxBytes <= 0 {
 		deps.ExportMaxBytes = exportMaxBytes
 	}
+	if deps.AttachScanner == nil && cfg.VirusTotalAPIKey != "" {
+		deps.AttachScanner = &attach.VirusTotal{APIKey: cfg.VirusTotalAPIKey}
+	}
 	// The documents are part of the binary, and one that does not render
 	// is a fault in the build: better no service than a trust page that
 	// is missing.
@@ -155,6 +168,7 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		ai:             deps.AI,
 		text:           deps.Text,
 		exportMaxBytes: deps.ExportMaxBytes,
+		attachScanner:  deps.AttachScanner,
 		pages:          documents,
 		aiMeter: &ai.Meter{
 			Store: surveys,
@@ -227,16 +241,40 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 // handlers keep their own tighter limits (the CSV read is 1 MB).
 const maxRequestBytes = 4 << 20
 
+// maxUploadRequestBytes caps the two forms that take files for the AI
+// (issue #5): attach.Defaults allows 10 MB of files, and the rest is
+// room for the form's fields and the multipart framing. Only those
+// routes get it, so every other body keeps the tighter cap.
+const maxUploadRequestBytes = 12 << 20
+
 // limitBody wraps each request body in http.MaxBytesReader so no handler
 // can be made to read an unbounded amount. A handler that reads past the
 // cap gets an error from the body reader (surfaced as 413 on write).
 func limitBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
-			r.Body = http.MaxBytesReader(w, r.Body, maxRequestBytes)
+			r.Body = http.MaxBytesReader(w, r.Body, bodyLimit(r))
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// bodyLimit is the cap for one request. It runs before routing, so the
+// upload routes are matched by hand: POST /surveys (a survey from a
+// description) and POST /surveys/{id}/generate (the editor's panel).
+func bodyLimit(r *http.Request) int64 {
+	if r.Method == http.MethodPost && isUploadPath(r.URL.Path) {
+		return maxUploadRequestBytes
+	}
+	return maxRequestBytes
+}
+
+func isUploadPath(p string) bool {
+	if p == "/surveys" {
+		return true
+	}
+	parts := strings.Split(strings.TrimPrefix(p, "/"), "/")
+	return len(parts) == 3 && parts[0] == "surveys" && parts[1] != "" && parts[2] == "generate"
 }
 
 // render writes a templ component with an explicit status code.

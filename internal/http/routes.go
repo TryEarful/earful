@@ -68,6 +68,11 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post := func(pattern string, h http.HandlerFunc) {
 		mux.Handle("POST "+pattern, s.requireAuth(s.requireCSRF(h)))
 	}
+	// The two forms that take files for the AI (issue #5) parse their
+	// body in memory first; see readUploads.
+	upload := func(pattern string, h http.HandlerFunc) {
+		mux.Handle("POST "+pattern, s.requireAuth(s.readUploads(s.requireCSRF(h))))
+	}
 
 	get("/dashboard", s.surveyList)
 	get("/account", s.accountPage)
@@ -102,7 +107,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// indistinguishable from one that does not exist.
 	get("/surveys", s.surveyList)
 	get("/surveys/new", s.newSurveyPage)
-	post("/surveys", s.surveyCreate)
+	upload("/surveys", s.surveyCreate)
 	get("/surveys/{surveyID}", s.surveyPage)
 	get("/surveys/{surveyID}/audit", s.surveyAudit)
 	// Results and exports (M7). Both read the same fold-by-identity view.
@@ -133,7 +138,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/surveys/{surveyID}/participants/send", s.participantsSend)
 	// AI-drafted questions (M6-T3). The POST is the whole feature; the
 	// socket is the same operation with the output visible as it arrives.
-	post("/surveys/{surveyID}/generate", s.surveyGenerate)
+	upload("/surveys/{surveyID}/generate", s.surveyGenerate)
 	mux.Handle("GET /surveys/{surveyID}/generate/stream", s.requireAuth(http.HandlerFunc(s.surveyGenerateSocket)))
 	// Localization (M11-T1): drafted by AI, reviewed by a person, frozen
 	// into the version at publish.

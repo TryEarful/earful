@@ -780,6 +780,10 @@ body = "We couldn't complete that action. Please try again."
 title = "Request blocked"
 body = "This form was missing its security token. Go back, reload the page, and try again."
 
+[error.upload]
+title = "Files too large"
+body = "Together the files were over {{.Size}} MB. Go back and attach fewer or smaller files."
+
 [error.survey]
 title = "Survey not found"
 body = "This survey doesn't exist, or it isn't in your workspace."
@@ -952,6 +956,24 @@ quota = "This workspace has used today's AI allowance. It resets tomorrow, and e
 paused = "AI features are paused for today while we keep costs in check. They'll be back tomorrow."
 absent = "AI isn't configured on this instance, so questions have to be written by hand."
 silent = "The AI service didn't respond. Try again in a moment."
+attachment = "This instance's AI reads text only. Leave out images and PDFs, or attach their text instead."
+
+[attach.field]
+label = "Attach files"
+hint = "Optional. PDF, images, text, Office or OpenDocument files, or a zip of them, up to {{.Total}} MB in all. They're sent to the AI with what you write here, and never stored."
+
+[attach.error]
+type = "{{.Name}} can't be used. Attach a PDF, an image, a text file, an Office or OpenDocument file, or a zip of them."
+legacy = "{{.Name}} is in an older format. Save it as .{{.Modern}} and attach it again."
+too_large = "{{.Name}} is over {{.Size}} MB. Attach a smaller file."
+total = "The files are over {{.Total}} MB together. Attach fewer or smaller ones."
+count = "That's more than {{.Limit}} files. Attach fewer."
+nested = "{{.Name}} is a zip inside a zip. Unzip it and attach what's inside."
+bomb = "{{.Name}} unpacks to far more than its own size, so it can't be used."
+unreadable = "{{.Name}} couldn't be read. It may be damaged or protected by a password."
+unreadable_upload = "The files couldn't be read. Try attaching them again."
+empty = "{{.Name}} has no text to read."
+malicious = "{{.Name}} was reported as harmful, so it wasn't used."
 
 [ai.model]
 unnamed = "an unnamed model"

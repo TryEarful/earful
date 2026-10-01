@@ -18,7 +18,8 @@ var meteredAIMethods = map[string]bool{
 // TestAIProviderCallsAreMetered is a build-time guardrail (security audit
 // C2). ai.Meter enforces the per-workspace daily token cap and the global
 // daily € breaker, but it only protects the bill if every ai.Provider call
-// is preceded by aiMeter.Check in the same function. No handler calls the
+// is preceded by aiMeter.Check (or CheckFor, the same check with an
+// estimate of a large input) in the same function. No handler calls the
 // provider today, so this test passes; it exists to FAIL the build the
 // moment a metered operation (Generate/Transcribe/Translate/Analyze) on
 // the server's `ai` field is wired up without gating it through the meter.
@@ -60,7 +61,7 @@ func TestAIProviderCallsAreMetered(t *testing.T) {
 				switch {
 				case meteredAIMethods[sel.Sel.Name] && trailingIdent(sel.X) == "ai":
 					providerCalls = append(providerCalls, sel.Sel.Name)
-				case sel.Sel.Name == "Check" && trailingIdent(sel.X) == "aiMeter":
+				case (sel.Sel.Name == "Check" || sel.Sel.Name == "CheckFor") && trailingIdent(sel.X) == "aiMeter":
 					metered = true
 				}
 				return true

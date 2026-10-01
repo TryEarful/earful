@@ -32,6 +32,7 @@ func pageFacts(cfg config.Config) pages.Facts {
 		ai = cfg.AIProvider
 	}
 	google := cfg.GoogleLoginEnabled()
+	virusTotal := cfg.VirusTotalAPIKey != ""
 	return pages.Facts{
 		"Instance":     instanceName(cfg),
 		"Region":       cfg.HostingRegion,
@@ -45,7 +46,8 @@ func pageFacts(cfg config.Config) pages.Facts {
 		// that ever stopped being true.
 		"VertexLocation":    cfg.VertexLocation,
 		"GoogleLogin":       google,
-		"NoProcessors":      !hosted && !brevo && ai == "" && !google,
+		"VirusTotal":        virusTotal,
+		"NoProcessors":      !hosted && !brevo && ai == "" && !google && !virusTotal,
 		"GeoAttribution":    geoip.Attribution,
 		"GeoAttributionURL": geoip.AttributionURL,
 		"GeoSource":         geoip.Source,

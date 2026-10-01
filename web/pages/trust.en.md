@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-38562ee07b8ee0a574d44af3b2d16e3a9b1f09b9da88f54e4409daef6b79dd56
+hash: sha256-b35ce64de0105f0700233e0d3c580034269058fcbd60aaa0b8cf466c5c4243e8
 last_update: 2026-10-01
 ---
 
@@ -48,10 +48,13 @@ If you choose a light or a dark theme on any page here, a survey included, your 
 - **Brevo** sends links to sign in and survey invitations. It sees the email addresses of account holders and invited participants. EU (France).
 {{- end}}
 {{- if eq .AI "vertex"}}
-- **Google Vertex AI** transcribes spoken answers and drafts questions, summaries and translations. It sees audio in transit, never stored, and the text of questions and answers. {{if eq .VertexLocation "eu"}}EU, processed only in EU member states.{{else if eq .VertexLocation "us"}}United States.{{else}}Region `{{.VertexLocation}}`.{{end}}
+- **Google Vertex AI** transcribes spoken answers and drafts questions, summaries and translations. It sees audio in transit, never stored, the text of questions and answers, and any file a creator attaches when drafting questions, also never stored. {{if eq .VertexLocation "eu"}}EU, processed only in EU member states.{{else if eq .VertexLocation "us"}}United States.{{else}}Region `{{.VertexLocation}}`.{{end}}
 {{- end}}
 {{- if eq .AI "openai"}}
-- **An AI service chosen by the operator** transcribes, drafts, summarises and translates. It sees audio in transit, never stored, and the text of questions and answers, wherever this instance's operator points it.
+- **An AI service chosen by the operator** transcribes, drafts, summarises and translates. It sees audio in transit, never stored, the text of questions and answers, and the text of any file a creator attaches when drafting questions, also never stored, wherever this instance's operator points it.
+{{- end}}
+{{- if .VirusTotal}}
+- **VirusTotal** is asked whether a file a creator attaches when drafting questions is known to be harmful. It is sent the file's `SHA-256` hash, never the file.
 {{- end}}
 {{- if .GoogleLogin}}
 - **Google Identity** signs in the people who choose Google. It sees their email address and Google account id.

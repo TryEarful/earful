@@ -10,12 +10,14 @@
 package apptest
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
 	"html"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -32,6 +34,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
 
 	"github.com/TryEarful/earful/internal/ai"
+	"github.com/TryEarful/earful/internal/attach"
 	"github.com/TryEarful/earful/internal/auth"
 	"github.com/TryEarful/earful/internal/clock"
 	"github.com/TryEarful/earful/internal/config"
@@ -81,6 +84,12 @@ type Options struct {
 	// an export is too large is reachable with a workspace a test can
 	// afford to build. Zero keeps the real cap.
 	ExportMaxBytes int
+	// AttachScanner stands in for the hash lookup of files attached to an
+	// AI prompt, so the refusal of a flagged file is reachable without a
+	// third party. VirusTotalAPIKey is what the operator configured, for
+	// what the trust page says about it.
+	AttachScanner    attach.Scanner
+	VirusTotalAPIKey string
 }
 
 // App is one booted application instance plus the fakes tests observe
@@ -163,6 +172,7 @@ func New(t *testing.T, opts Options) *App {
 		AITierHighDailyTokens:      highQuota,
 		AIDailyBudgetEUR:           budget,
 		AICostPer1KTokensEUR:       0.001,
+		VirusTotalAPIKey:           opts.VirusTotalAPIKey,
 	}
 	if opts.AI != nil {
 		// An injected provider stands for a configured one, so the model
@@ -195,6 +205,7 @@ func New(t *testing.T, opts Options) *App {
 		Text:   strictText(t),
 
 		ExportMaxBytes: opts.ExportMaxBytes,
+		AttachScanner:  opts.AttachScanner,
 	})
 	srv.Start()
 	t.Cleanup(srv.Close)
@@ -402,6 +413,53 @@ func (a *App) PostForm(t *testing.T, client *http.Client, path string, form url.
 		form.Set("_csrf", a.CSRFToken(t, client))
 	}
 	resp, err := client.PostForm(a.Server.URL+path, form)
+	if err != nil {
+		t.Fatalf("apptest: POST %s: %v", path, err)
+	}
+	return resp
+}
+
+// Upload is one file in a multipart form, as a browser's file input
+// sends it.
+type Upload struct {
+	Field string
+	Name  string
+	Data  []byte
+}
+
+// PostMultipart submits a multipart form, files and all, with the
+// session's CSRF token attached, as a form with enctype
+// multipart/form-data is sent.
+func (a *App) PostMultipart(t *testing.T, client *http.Client, path string, form url.Values, files ...Upload) *http.Response {
+	t.Helper()
+	var body bytes.Buffer
+	w := multipart.NewWriter(&body)
+	if form.Get("_csrf") == "" {
+		if form == nil {
+			form = url.Values{}
+		}
+		form.Set("_csrf", a.CSRFToken(t, client))
+	}
+	for key, values := range form {
+		for _, v := range values {
+			if err := w.WriteField(key, v); err != nil {
+				t.Fatalf("apptest: multipart field: %v", err)
+			}
+		}
+	}
+	for _, f := range files {
+		part, err := w.CreateFormFile(f.Field, f.Name)
+		if err != nil {
+			t.Fatalf("apptest: multipart file: %v", err)
+		}
+		if _, err := part.Write(f.Data); err != nil {
+			t.Fatalf("apptest: multipart file: %v", err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("apptest: multipart close: %v", err)
+	}
+	resp, err := client.Post(a.Server.URL+path, w.FormDataContentType(), &body)
 	if err != nil {
 		t.Fatalf("apptest: POST %s: %v", path, err)
 	}

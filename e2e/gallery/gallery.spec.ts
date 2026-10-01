@@ -8,6 +8,7 @@ import {
   createPublishedSurvey,
   latestLinkTo,
   minFillWait,
+  offersAIDrafting,
   offersSurveyFromDescription,
   signIn,
   submitTimeout,
@@ -172,6 +173,27 @@ test("gallery", async ({ browser }) => {
   await page.getByLabel("Title").fill("Team offsite ideas");
   await page.getByRole("button", { name: "Create survey" }).click();
   await capture(page, "editor-draft", "en");
+
+  // The drafting panel with files chosen, and with a file it refused
+  // (issue #5). The refusal hands the prompt back as typed.
+  if (await offersAIDrafting(page)) {
+    const panel = page.locator("#ai-generate");
+    await panel.locator('textarea[name="prompt"]').fill("Use the attached notes and answers");
+    await panel.locator(".js-attach-files").setInputFiles([
+      { name: "notes.md", mimeType: "text/markdown", buffer: Buffer.from("# Onboarding\n") },
+      { name: "answers.csv", mimeType: "text/csv", buffer: Buffer.from("question,answer\n") },
+    ]);
+    await capture(page, "editor-files-chosen", "en");
+    await panel.locator('textarea[name="prompt"]').fill("Use the attached notes and answers");
+    await panel.locator(".js-attach-files").setInputFiles({
+      name: "setup.exe",
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from("MZ"),
+    });
+    await panel.getByRole("button", { name: "Draft questions" }).click();
+    await expect(page.getByText("setup.exe can't be used")).toBeVisible({ timeout: aiTimeout });
+    await capture(page, "editor-file-refused", "en");
+  }
 
   // With text AI configured the form also takes a description, and the
   // title may be left empty. Sent with neither, it comes back with its

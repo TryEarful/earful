@@ -124,3 +124,65 @@ for (const javaScriptEnabled of [true, false]) {
     await context.close();
   });
 }
+
+// Files attached to the panel (issue #5). They go with the plain post,
+// with JavaScript on or off: the socket carries text only. The scripted
+// provider names what it was sent in one more question, which is how a
+// browser can see the files reached the model.
+for (const javaScriptEnabled of [true, false]) {
+  test(`attached files reach the model${javaScriptEnabled ? "" : " without JavaScript"}`, async ({ browser }) => {
+    if (!scriptedAI) test.slow();
+    const context = await browser.newContext({ storageState: ".auth/creator.json", javaScriptEnabled });
+    const page = await context.newPage();
+
+    await page.goto("/surveys/new");
+    await page.getByLabel("Title").fill(`E2E attach ${Date.now()}`);
+    await page.getByRole("button", { name: "Create survey" }).click();
+
+    const offered = await offersAIDrafting(page);
+    if (!offered) {
+      await expect(page.locator('form[action$="/questions"]')).toBeVisible();
+      await context.close();
+    }
+    test.skip(!offered, "this instance has no AI configured, so it offers no drafting panel");
+
+    const panel = page.locator("#ai-generate");
+    if (javaScriptEnabled) await expect(panel.locator(".js-generate-form[data-enhanced]")).toBeAttached();
+    await panel.locator('textarea[name="prompt"]').fill("use the attached notes and answers");
+    await panel.locator(".js-attach-files").setInputFiles([
+      { name: "notes.md", mimeType: "text/markdown", buffer: Buffer.from("# Onboarding\n\n- What helped in week one?\n") },
+      { name: "answers.csv", mimeType: "text/csv", buffer: Buffer.from("question,answer\nHow did you find us?,A friend\n") },
+    ]);
+    await panel.getByRole("button", { name: "Draft questions" }).click();
+
+    await expect(page.getByText(/Added \d+ questions? to your draft/)).toBeVisible({ timeout: aiTimeout + 5000 });
+    const questions = page.locator(".js-questions .js-question");
+    expect(await questions.count()).toBeGreaterThan(2);
+    if (scriptedAI) {
+      await expect(questions.filter({ hasText: "notes.md, answers.csv" })).toHaveCount(1);
+    }
+
+    await context.close();
+  });
+}
+
+// A file the panel cannot use comes back with the prompt as typed and a
+// message naming the file.
+test("a file that cannot be used is refused by name", async ({ page }) => {
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill(`E2E attach refused ${Date.now()}`);
+  await page.getByRole("button", { name: "Create survey" }).click();
+  const offered = await offersAIDrafting(page);
+  test.skip(!offered, "this instance has no AI configured, so it offers no drafting panel");
+
+  const panel = page.locator("#ai-generate");
+  await panel.locator('textarea[name="prompt"]').fill("about this program");
+  await panel.locator(".js-attach-files").setInputFiles({
+    name: "setup.exe",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from("MZ\x90\x00"),
+  });
+  await panel.getByRole("button", { name: "Draft questions" }).click();
+  await expect(page.getByText("setup.exe can't be used")).toBeVisible({ timeout: aiTimeout });
+  await expect(page.locator('#ai-generate textarea[name="prompt"]')).toHaveValue("about this program");
+});

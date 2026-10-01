@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TryEarful/earful/internal/attach"
 	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/static"
@@ -52,7 +53,7 @@ templ NewSurvey(email string, workspaceName string, csrf string, data NewSurveyD
 		@AuthedHeader(email, csrf)
 		<main>
 			<h1>{ t(ctx, "survey.new.heading") }</h1>
-			<form method="post" action="/surveys" class="card js-panel js-new-survey">
+			<form method="post" action="/surveys" enctype="multipart/form-data" class="card js-panel js-new-survey">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<label class="field">
 					<span>{ t(ctx, "survey.name.label") }</span>
@@ -78,6 +79,7 @@ templ NewSurvey(email string, workspaceName string, csrf string, data NewSurveyD
 						>{ data.Prompt }</textarea>
 						<small id="new-survey-prompt-hint">{ t(ctx, "survey.new.prompt.hint") }</small>
 					</div>
+					@attachFiles("new-survey-files", "new-survey-files-hint")
 				}
 				<fieldset class="field">
 					<legend>{ t(ctx, "survey.audience.legend") }</legend>
@@ -158,7 +160,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 				</section>
 			}
 			if data.AIEnabled {
-				@generatePanel(csrf, data.Survey.ID)
+				@generatePanel(csrf, data.Survey.ID, data.GeneratePrompt)
 			}
 			@addQuestionForm(csrf, data.Survey.ID, len(data.Questions) == 0)
 			if !data.Survey.IsAnonymous {
@@ -267,7 +269,7 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 // generatePanel is M6-T3's entrance. The form works on its own: without
 // JavaScript it posts, waits, and comes back with the questions added.
 // generate.js upgrades it to a live stream against the same handler.
-templ generatePanel(csrf string, surveyID string) {
+templ generatePanel(csrf string, surveyID string, prompt string) {
 	<section class="card js-panel" id="ai-generate">
 		<h2>{ t(ctx, "editor.generate.heading") }</h2>
 		<p class="muted">
@@ -275,6 +277,7 @@ templ generatePanel(csrf string, surveyID string) {
 		</p>
 		<form
 			method="post"
+			enctype="multipart/form-data"
 			action={ templ.SafeURL("/surveys/" + surveyID + "/generate") }
 			class="generate-form js-generate-form"
 			data-generate-path={ "/surveys/" + surveyID + "/generate/stream" }
@@ -291,12 +294,34 @@ templ generatePanel(csrf string, surveyID string) {
 					data-lpignore="true"
 					data-bwignore
 					placeholder={ t(ctx, "editor.generate.prompt.placeholder") }
-				></textarea>
+				>{ prompt }</textarea>
 			</label>
+			@attachFiles("generate-files", "generate-files-hint")
 			<button type="submit" class="secondary">{ t(ctx, "editor.generate.submit.label") }</button>
 		</form>
 		<pre class="generate-output js-generate-output" aria-live="polite" hidden></pre>
 	</section>
+}
+
+// attachFiles is the file field of the forms that draft with AI (issue
+// #5): files sent to the model with the prompt, read in memory and never
+// stored. The hint sits outside the label and describes the field, as
+// the description's does. The form posts them as it is; generate.js
+// leaves a submit with files to that post rather than its socket.
+templ attachFiles(id string, hintID string) {
+	<div class="field">
+		<label for={ id }><span>{ t(ctx, "attach.field.label") }</span></label>
+		<input
+			type="file"
+			id={ id }
+			name="files"
+			class="js-attach-files"
+			multiple
+			accept={ attach.Accept() }
+			aria-describedby={ hintID }
+		/>
+		<small id={ hintID }>{ t(ctx, "attach.field.hint", uitext.Args{"Total": attach.Defaults.MaxTotalBytes >> 20}) }</small>
+	</div>
 }
 
 // addQuestionForm is the page's main action while the survey has no

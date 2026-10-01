@@ -1402,6 +1402,14 @@ other = "Solicitud bloqueada"
 hash = "sha1-dbc8b59184b89dd3f1ac5005c4ab50fdb5d7f73c"
 other = "A este formulario le faltaba su código de seguridad. Vuelva atrás, recargue la página e inténtelo de nuevo."
 
+[error.upload.title]
+hash = "sha1-6daf9db7509e5f2f00f7829e35fb86c047893542"
+other = "Archivos demasiado grandes"
+
+[error.upload.body]
+hash = "sha1-73b4231bf66de52d3353d9ed19e0af7d2fe113f5"
+other = "Entre todos, los archivos superaban los {{.Size}} MB. Vuelva atrás y adjunte menos o más pequeños."
+
 [error.survey.title]
 hash = "sha1-fd601ec01fe3c175a5a0ce3bcf1f579a19327a66"
 other = "No se encontró la encuesta"
@@ -1736,6 +1744,62 @@ other = "La IA no está configurada en esta instalación, así que las preguntas
 [ai.refused.silent]
 hash = "sha1-b82d54e4d49659873f0322ada23fc61174dd3012"
 other = "El servicio de IA no respondió. Inténtelo de nuevo en un momento."
+
+[ai.refused.attachment]
+hash = "sha1-cc97a3f1a10927f6159d2180d13f7582307e30d8"
+other = "La IA de esta instalación solo lee texto. Quite las imágenes y los PDF, o adjunte su texto."
+
+[attach.field.label]
+hash = "sha1-137135dbf6a625bcb20d0ad3c16043e19c22a03e"
+other = "Adjuntar archivos"
+
+[attach.field.hint]
+hash = "sha1-4e7d80c450b90c5653ec1d7edce41ea6c788a972"
+other = "Opcional. PDF, imágenes, texto, archivos de Office u OpenDocument, o un zip con ellos, hasta {{.Total}} MB en total. Se envían a la IA con lo que escriba aquí y nunca se guardan."
+
+[attach.error.type]
+hash = "sha1-87d6e7878a34629a8e4413b6cd8fd01cbd9a9dc8"
+other = "No se puede usar {{.Name}}. Adjunte un PDF, una imagen, un archivo de texto, de Office u OpenDocument, o un zip con ellos."
+
+[attach.error.legacy]
+hash = "sha1-30ddbeb33c39dd99292ecdce2f9c57995654dc8e"
+other = "{{.Name}} está en un formato antiguo. Guárdelo como .{{.Modern}} y vuelva a adjuntarlo."
+
+[attach.error.too_large]
+hash = "sha1-5126fd811ac86e0319b9954b7a3a113b712a51d9"
+other = "{{.Name}} supera los {{.Size}} MB. Adjunte un archivo más pequeño."
+
+[attach.error.total]
+hash = "sha1-7805b60dc159ca87b4adfa9f80275ff5613475e7"
+other = "Entre todos, los archivos superan los {{.Total}} MB. Adjunte menos o más pequeños."
+
+[attach.error.count]
+hash = "sha1-c78b898402bf39b560d8b3d343004e74afe1ec87"
+other = "Son más de {{.Limit}} archivos. Adjunte menos."
+
+[attach.error.nested]
+hash = "sha1-c34aceb30ee6f11f38801013d5788d2b215dbbf1"
+other = "{{.Name}} es un zip dentro de otro zip. Descomprímalo y adjunte lo que contiene."
+
+[attach.error.bomb]
+hash = "sha1-b940067f768b36f9f8d54c1a6115cb9987bb703c"
+other = "{{.Name}} ocupa muchísimo más al descomprimirse, así que no se puede usar."
+
+[attach.error.unreadable]
+hash = "sha1-b3635ecedd67d682db70a073240cfad14ee39867"
+other = "No se pudo leer {{.Name}}. Puede que esté dañado o protegido con contraseña."
+
+[attach.error.unreadable_upload]
+hash = "sha1-1713154c06dac6b475eb033e87e91eb14faddb99"
+other = "No se pudieron leer los archivos. Vuelva a adjuntarlos."
+
+[attach.error.empty]
+hash = "sha1-65eeef0c4a9952da89dacee2c492f2372345c9ff"
+other = "{{.Name}} no tiene texto que leer."
+
+[attach.error.malicious]
+hash = "sha1-4668d3497229a69fc8e5ec309977cf0296b15984"
+other = "{{.Name}} figura como dañino, así que no se ha usado."
 
 [ai.model.unnamed]
 hash = "sha1-60df4dcb80e4b36b796b2ddc3d178f2895a7253a"

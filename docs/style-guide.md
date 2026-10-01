@@ -154,6 +154,7 @@ times use tabular figures.
 | `.notice`, `.error-summary` | A message about what just happened |
 | `.field`, `.choice`, `.option`, `.scale-point` | Form rows |
 | `.checkbox` | A single tickable row, at least 44px tall |
+| `input[type="file"]` | A file picker inside a `.field`: its button is the outlined pill, with a hint below saying what it takes |
 | `.facts` | Labels and their values; one under the other on a page that stands alone, such as the answers read back after sending |
 | `.tabs` | The views of one survey |
 | `.responses` inside `.table-scroll` | A table, which scrolls sideways on its own |

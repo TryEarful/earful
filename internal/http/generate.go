@@ -83,29 +83,42 @@ func (s *server) surveyGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	prompt := strings.TrimSpace(r.PostFormValue("prompt"))
-	if prompt == "" {
+	if prompt == "" && !hasUploads(r) {
 		s.renderSurveyPage(w, r, say(r, "generate.error.empty"), "")
 		return
 	}
+	// Every refusal from here on hands the prompt back as typed. A file
+	// input cannot be refilled by the server, so the files are chosen
+	// again.
+	refuse := func(message string) {
+		s.renderEditor(w, r, message, "", prompt)
+	}
+	attachments, refused := s.promptAttachments(r)
+	if refused != "" {
+		refuse(refused)
+		return
+	}
 
-	if err := s.aiMeter.Check(r.Context(), info.WorkspaceID); err != nil {
-		s.renderSurveyPage(w, r, aiRefusalMessage(text(r), err), "")
+	attachmentTokens := ai.EstimateTokens(attachments)
+	if err := s.aiMeter.CheckFor(r.Context(), info.WorkspaceID, attachmentTokens); err != nil {
+		refuse(aiRefusalMessage(text(r), err))
 		return
 	}
 	stream, err := s.ai.Generate(r.Context(), ai.GenerateRequest{
-		System: generateSystemPrompt(false),
-		Prompt: prompt,
+		System:      generateSystemPrompt(false),
+		Prompt:      modelPrompt(prompt),
+		Attachments: attachments,
 	})
 	if err != nil {
-		s.renderSurveyPage(w, r, aiRefusalMessage(text(r), err), "")
+		refuse(aiRefusalMessage(text(r), err))
 		return
 	}
 	counted := ai.Counted(stream)
 	output, err := ai.Collect(counted)
-	s.recordGeneration(r.Context(), info.WorkspaceID, &survey.ID, prompt, counted.Chars())
+	s.recordGeneration(r.Context(), info.WorkspaceID, &survey.ID, prompt, counted.Chars(), attachmentTokens)
 	if err != nil && output == "" {
 		s.logger.Error("question generation failed", "error", err)
-		s.renderSurveyPage(w, r, say(r, "generate.error.silent"), "")
+		refuse(say(r, "generate.error.silent"))
 		return
 	}
 
@@ -143,13 +156,21 @@ func (s *server) surveyCreateFromPrompt(w http.ResponseWriter, r *http.Request, 
 		}
 	}
 
-	if err := s.aiMeter.Check(ctx, info.WorkspaceID); err != nil {
+	attachments, refused := s.promptAttachments(r)
+	if refused != "" {
+		s.renderNewSurvey(w, r, form, refused)
+		return
+	}
+
+	attachmentTokens := ai.EstimateTokens(attachments)
+	if err := s.aiMeter.CheckFor(ctx, info.WorkspaceID, attachmentTokens); err != nil {
 		s.renderNewSurvey(w, r, form, aiRefusalMessage(text(r), err))
 		return
 	}
 	stream, err := s.ai.Generate(ctx, ai.GenerateRequest{
-		System: generateSystemPrompt(withTitle),
-		Prompt: form.Prompt,
+		System:      generateSystemPrompt(withTitle),
+		Prompt:      modelPrompt(form.Prompt),
+		Attachments: attachments,
 	})
 	if err != nil {
 		s.renderNewSurvey(w, r, form, aiRefusalMessage(text(r), err))
@@ -158,7 +179,7 @@ func (s *server) surveyCreateFromPrompt(w http.ResponseWriter, r *http.Request, 
 	counted := ai.Counted(stream)
 	output, err := ai.Collect(counted)
 	if err != nil && output == "" {
-		s.recordGeneration(ctx, info.WorkspaceID, nil, form.Prompt, counted.Chars())
+		s.recordGeneration(ctx, info.WorkspaceID, nil, form.Prompt, counted.Chars(), attachmentTokens)
 		s.logger.Error("question generation failed", "error", err)
 		s.renderNewSurvey(w, r, form, say(r, "generate.error.silent"))
 		return
@@ -172,11 +193,11 @@ func (s *server) surveyCreateFromPrompt(w http.ResponseWriter, r *http.Request, 
 	}
 	survey, err := s.surveys.Create(ctx, info.WorkspaceID, info.UserID, title, form.Anonymous, closeAt)
 	if err != nil {
-		s.recordGeneration(ctx, info.WorkspaceID, nil, form.Prompt, counted.Chars())
+		s.recordGeneration(ctx, info.WorkspaceID, nil, form.Prompt, counted.Chars(), attachmentTokens)
 		s.internalError(w, r, "create survey from a description", err)
 		return
 	}
-	s.recordGeneration(ctx, info.WorkspaceID, &survey.ID, form.Prompt, counted.Chars())
+	s.recordGeneration(ctx, info.WorkspaceID, &survey.ID, form.Prompt, counted.Chars(), attachmentTokens)
 
 	added, skipped, err := s.appendGenerated(ctx, info.UserID, survey, output)
 	if err != nil {
@@ -245,7 +266,7 @@ func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID
 	}
 	counted := ai.Counted(stream)
 	defer counted.Close()
-	defer s.recordGeneration(ctx, workspaceID, &surveyID, prompt, counted.Chars())
+	defer s.recordGeneration(ctx, workspaceID, &surveyID, prompt, counted.Chars(), 0)
 
 	var output strings.Builder
 	for {
@@ -273,10 +294,27 @@ func (s *server) streamGeneration(conn *ws.Conn, l uitext.Localizer, workspaceID
 
 // recordGeneration charges a run to the workspace. surveyID is nil when
 // the run produced no survey to attribute it to; it is charged anyway.
-func (s *server) recordGeneration(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, prompt string, outChars int) {
-	if err := s.aiMeter.Record(ctx, workspaceID, surveyID, string(ai.OpGenerate), outChars+len(prompt)); err != nil {
+// attachmentTokens is the estimate the run was checked against for its
+// attached files (ai.EstimateTokens), charged with the text it sent and
+// the text it got back.
+func (s *server) recordGeneration(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, prompt string, outChars int, attachmentTokens int64) {
+	if err := s.aiMeter.RecordWith(ctx, workspaceID, surveyID, string(ai.OpGenerate), outChars+len(prompt), attachmentTokens); err != nil {
 		s.logger.Error("recording generation usage failed", "error", err)
 	}
+}
+
+// attachmentsOnlyPrompt is what the model is asked when a creator sent
+// files and no description. It is an instruction to the model, like the
+// system prompt, not wording a creator reads.
+const attachmentsOnlyPrompt = "Draft survey questions from the attached files."
+
+// modelPrompt is the creator's prompt, or the instruction above when
+// they wrote none and let the files speak for themselves.
+func modelPrompt(prompt string) string {
+	if prompt == "" {
+		return attachmentsOnlyPrompt
+	}
+	return prompt
 }
 
 // appendGenerated parses the model's lines and adds every valid question
@@ -404,6 +442,8 @@ func aiRefusalMessage(l uitext.Localizer, err error) string {
 		return l.T("ai.refused.quota")
 	case errors.Is(err, ai.ErrBreakerTripped):
 		return l.T("ai.refused.paused")
+	case errors.Is(err, ai.ErrAttachmentUnsupported):
+		return l.T("ai.refused.attachment")
 	case errors.Is(err, ai.ErrUnsupported):
 		return l.T("ai.refused.absent")
 	default:

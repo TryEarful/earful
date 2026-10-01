@@ -32,7 +32,16 @@
   // while triggering the fallback.
   form.setAttribute("data-enhanced", "1");
 
+  // Attached files go with the ordinary post, which takes them as a
+  // multipart form; the socket carries text only.
+  var files = form.querySelector(".js-attach-files");
+
   form.addEventListener("submit", function (event) {
+    if (files && files.files && files.files.length > 0) {
+      button.disabled = true;
+      button.textContent = T.t("js.generate.working");
+      return;
+    }
     var text = prompt.value.trim();
     if (!text) return; // let the server say what it wants said
     event.preventDefault();

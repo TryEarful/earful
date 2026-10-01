@@ -35,6 +35,8 @@ resp, _ := client.Get(app.Server.URL + "/dashboard")
 | `apptest.Options{AI: fake}` | injects an `ai.Fake`; without it an instance has no AI at all, which is itself the "degrades gracefully when absent" proof |
 | `apptest.Options{AIQuota: 1}` | a quota small enough to trip, for the refusal paths |
 | `apptest.Options{AIHighQuota: n}` | the high AI tier's cap, when a test moves a workspace between tiers; otherwise it equals `AIQuota` |
+| `app.PostMultipart(t, client, path, form, uploads...)` | a multipart post with files, as a form with `enctype="multipart/form-data"` sends it (the AI drafting forms, issue #5) |
+| `apptest.Options{AttachScanner: s}` | stands in for the VirusTotal hash lookup, so a flagged file's refusal is reachable with no third party; `VirusTotalAPIKey` sets what the trust page says |
 | `app.LoginAsSuperAdmin(t, addr)` | a session on the support surfaces (invite codes, erasure, metrics) |
 | `apptest.NewIsolatedDB(t, "purge")` | a separate database for tests that operate on the whole of it — see below |
 
@@ -249,7 +251,7 @@ check today's behaviour. They are worth knowing before you trip one:
 
 | Guard | Where | Rule |
 |---|---|---|
-| Metered AI | `internal/http/ai_meter_guard_test.go` | Every `ai.Provider` call has an `aiMeter.Check` in the same function. It has caught two real gaps — a wired-up-but-unchecked call, and a translation batch checking quota once for twenty calls. |
+| Metered AI | `internal/http/ai_meter_guard_test.go` | Every `ai.Provider` call has an `aiMeter.Check` (or `CheckFor`, the same check with an estimate of attached files) in the same function. It has caught two real gaps — a wired-up-but-unchecked call, and a translation batch checking quota once for twenty calls. |
 | Aggregate unlinkability | `internal/http/stats_test.go` | No query mentions `survey_stats` or `survey_stats_daily` together with `responses`/`answers`, and neither table holds an FK to either (ADR-0009, ADR-0012). The scan matches on the `survey_stats` prefix, so a third counter table named that way is guarded on arrival. |
 | Audio non-persistence | `internal/voice/voice_test.go` | The one package holding audio has no way to write it anywhere (ADR-0004). |
 | No third-party origins | `internal/http/respond_test.go` | Respondent pages reference only first-party URLs (ADR-0006). |

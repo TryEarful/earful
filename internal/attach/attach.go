@@ -34,6 +34,7 @@ import (
 	"log/slog"
 	"net/http"
 	"path"
+	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -304,6 +305,21 @@ var byExtension = map[string]kind{
 
 // legacy maps each refused binary Office format to the one to save as.
 var legacy = map[string]string{"doc": "docx", "ppt": "pptx", "xls": "xlsx"}
+
+// Accept is the file picker's filter: every name on the allowlist, and
+// the legacy formats too, so that choosing one gets the message saying
+// what to save it as rather than a picker that hides the file.
+func Accept() string {
+	var exts []string
+	for ext := range byExtension {
+		exts = append(exts, "."+ext)
+	}
+	for ext := range legacy {
+		exts = append(exts, "."+ext)
+	}
+	sort.Strings(exts)
+	return strings.Join(exts, ",")
+}
 
 // identify decides what a file is from its content, and refuses it
 // unless that agrees with its name. The name alone is never trusted: a
