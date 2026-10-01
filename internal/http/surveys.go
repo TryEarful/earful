@@ -200,12 +200,12 @@ func (s *server) surveySettings(w http.ResponseWriter, r *http.Request) {
 	}
 	closeAt, err := parseCloseDate(r.PostFormValue("close_at"))
 	if err != nil {
-		s.renderSurveyPage(w, r, sayError(r, err), "")
+		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	}
 	if err := s.surveys.UpdateSettings(r.Context(), info.WorkspaceID, survey.ID, r.PostFormValue("title"), closeAt); err != nil {
 		if isUserError(err) {
-			s.renderSurveyPage(w, r, sayError(r, err), "")
+			s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 			return
 		}
 		s.internalError(w, r, "update survey settings", err)
@@ -226,7 +226,7 @@ func (s *server) questionAdd(w http.ResponseWriter, r *http.Request) {
 	q := questionFromForm(r)
 	q.IdentityID = uuid.NewString() // a new question starts a new identity
 	if err := draft.Add(q); err != nil {
-		s.renderSurveyPage(w, r, sayError(r, err), "")
+		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -242,7 +242,7 @@ func (s *server) questionUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := draft.Replace(r.PathValue("questionID"), questionFromForm(r)); err != nil {
-		s.renderSurveyPage(w, r, sayError(r, err), "")
+		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -255,7 +255,7 @@ func (s *server) questionDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := draft.Remove(r.PathValue("questionID")); err != nil {
-		s.renderSurveyPage(w, r, sayError(r, err), "")
+		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -272,7 +272,7 @@ func (s *server) questionMove(w http.ResponseWriter, r *http.Request) {
 		delta = -1
 	}
 	if err := draft.Move(r.PathValue("questionID"), delta); err != nil {
-		s.renderSurveyPage(w, r, sayError(r, err), "")
+		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
@@ -298,7 +298,7 @@ func (s *server) surveyThanks(w http.ResponseWriter, r *http.Request) {
 		err = draft.SetThanks(thanks)
 	}
 	if err != nil {
-		s.renderSurveyEditor(w, r, sayError(r, err), "", &typed, "")
+		s.renderSurveyEditor(w, r, sayErrorAlone(r, err), "", &typed, "")
 		return
 	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
@@ -320,7 +320,7 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/surveys/"+survey.ID.String()+"?notice=unchanged", http.StatusSeeOther)
 		return
 	case isUserError(err):
-		s.renderSurveyPage(w, r, sayError(r, err), "")
+		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	case err != nil:
 		s.internalError(w, r, "publish survey", err)

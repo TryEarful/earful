@@ -22,7 +22,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 			</p>
 
 			if data.Error != "" {
-				<p class="notice error-text">{ data.Error }</p>
+				<p class="notice error-text" role="alert">{ data.Error }</p>
 			}
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
@@ -38,7 +38,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 						</span>
 						<input type="text" name="lang" required maxlength="8" placeholder={ t(ctx, "languages.add.code.placeholder") } autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 					</label>
-					<button type="submit">{ t(ctx, "languages.add.submit.label") }</button>
+					<button type="submit" class={ templ.KV("secondary", len(data.Languages) > 0) }>{ t(ctx, "languages.add.submit.label") }</button>
 				</form>
 				if len(data.Questions) == 0 {
 					<p class="muted">{ t(ctx, "languages.add.empty") }</p>

@@ -40,6 +40,7 @@ async function capture(page: Page, name: string, lang: string) {
     for (const v of viewports) {
       await page.setViewportSize({ width: v.width, height: v.height });
       await page.waitForTimeout(150);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.${theme}.png`), fullPage: true });
     }
     const result = await new AxeBuilder({ page }).analyze();
@@ -73,6 +74,7 @@ async function captureForced(page: Page, name: string, lang: string) {
     for (const v of viewports) {
       await page.setViewportSize({ width: v.width, height: v.height });
       await page.waitForTimeout(150);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.chosen-${chosen}.png`), fullPage: true });
     }
     const result = await new AxeBuilder({ page }).analyze();

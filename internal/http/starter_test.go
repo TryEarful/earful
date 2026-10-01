@@ -194,7 +194,7 @@ func TestStarterSurvey_IsItsOwnersToReword(t *testing.T) {
 		"type": {"long_text"}, "text": {"How did you first hear about Kettle & Crow?"},
 	}).Body.Close()
 
-	if body := app.Publish(t, owner, id); !bodyContains(body, "review every translation") {
+	if body := app.Publish(t, owner, id); !bodyContains(body, "Review every translation") {
 		t.Errorf("a reworded question was published with the Spanish of the old one:\n%s", body)
 	}
 	app.PostForm(t, owner, "/surveys/"+id+"/localizations/es", url.Values{

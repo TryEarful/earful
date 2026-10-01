@@ -2394,6 +2394,11 @@ input.is-live {
 
 /* Available to screen readers, invisible on screen — for a table column
    whose header would otherwise be an empty cell. */
+/* An error notice is tinted as serious, not as information. */
+.notice.error-text {
+  background: var(--tint-serious);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

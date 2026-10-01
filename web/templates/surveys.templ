@@ -146,7 +146,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
 			if data.Error != "" {
-				<p class="notice error-text">{ data.Error }</p>
+				<p class="notice error-text" role="alert">{ data.Error }</p>
 			}
 			@lifecyclePanel(csrf, data.Survey, data.Origin)
 			if len(data.Questions) > 0 {

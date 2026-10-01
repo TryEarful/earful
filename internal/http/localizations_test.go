@@ -50,7 +50,7 @@ func TestLocalization_UnreviewedTranslationsCannotBePublished(t *testing.T) {
 
 	// Publishing is refused while anything is unreviewed.
 	body := app.Publish(t, creator, id)
-	if !bodyContains(body, "review every translation before publishing") {
+	if !bodyContains(body, "Review every translation before publishing") {
 		t.Errorf("publish was allowed with an unreviewed translation:\n%s", body)
 	}
 
@@ -110,7 +110,7 @@ func TestLocalization_RewordingUnreviewsTheTranslation(t *testing.T) {
 	if !bodyContains(page, "The question changed after this was translated") {
 		t.Errorf("a stale translation is not flagged:\n%s", page)
 	}
-	if body := app.Publish(t, creator, id); !bodyContains(body, "review every translation") {
+	if body := app.Publish(t, creator, id); !bodyContains(body, "Review every translation") {
 		t.Errorf("publish was allowed with a stale translation:\n%s", body)
 	}
 }

@@ -243,7 +243,7 @@ func TestThanksMessage_RefusesUnsafeLinks(t *testing.T) {
 		if resp.StatusCode != http.StatusUnprocessableEntity {
 			t.Errorf("%s: status %d, want 422", link, resp.StatusCode)
 		}
-		if !bodyContains(body, "the link address must start with http:// or https://") {
+		if !bodyContains(body, "The link address must start with http:// or https://") {
 			t.Errorf("%s: the refusal is not explained:\n%s", link, body)
 		}
 		if !bodyContains(body, "Kept message") || !bodyContains(body, link) {
@@ -251,7 +251,7 @@ func TestThanksMessage_RefusesUnsafeLinks(t *testing.T) {
 		}
 	}
 	_, body := saveThanks(t, app, creator, id, "Kept message", "", "https://example.com")
-	if !bodyContains(body, "give the link a label") {
+	if !bodyContains(body, "Give the link a label") {
 		t.Errorf("an unlabelled link is not refused:\n%s", body)
 	}
 	if editor := app.SurveyPage(t, creator, id); bodyContains(editor, "Kept message") {

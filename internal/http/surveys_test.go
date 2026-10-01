@@ -86,11 +86,11 @@ func TestSurvey_QuestionValidation(t *testing.T) {
 		extra             url.Values
 		wantMsg           string
 	}{
-		{"empty text", "long_text", "   ", nil, "give the question some text"},
+		{"empty text", "long_text", "   ", nil, "Give the question some text"},
 		{"one option", "single_choice", "Pick one", url.Values{"options": {"Only"}}, "at least two options"},
 		{"duplicate options", "single_choice", "Pick one", url.Values{"options": {"Yes\nyes"}}, "identical"},
 		{"bad scale", "rating_scale", "Rate it", url.Values{"scale_min": {"1"}, "scale_max": {"99"}}, "scale must start"},
-		{"unknown type", "telepathy", "Think it", nil, "choose a question type"},
+		{"unknown type", "telepathy", "Think it", nil, "Choose a question type"},
 		{"inverted number", "number", "How many?", url.Values{"number_min": {"12"}, "number_max": {"1"}}, "lowest answer must be below the highest"},
 		{"number past the limit", "number", "How many?", url.Values{"number_min": {"0"}, "number_max": {"5000000"}}, "between -1,000,000 and 1,000,000"},
 		{"number with no limits", "number", "How many?", nil, "lowest answer must be below the highest"},

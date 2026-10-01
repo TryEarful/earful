@@ -99,7 +99,7 @@ templ workspaceExport(csrf string, export ExportView) {
 			</p>
 			<p><a class="button" href={ templ.SafeURL(export.DownloadPath) } download>{ t(ctx, "account.export.download.label") }</a></p>
 		} else if export.Failed && export.Error != "" {
-			<p class="notice error-text">{ export.Error }</p>
+			<p class="notice error-text" role="alert">{ export.Error }</p>
 		}
 		<form method="post" action="/account/export">
 			<input type="hidden" name="_csrf" value={ csrf }/>
