@@ -66,6 +66,14 @@
     return;
   }
 
+  // A creator previewing with every question on one page (?layout=all)
+  // reads the form as it renders without a script. The server sets this
+  // only on a preview, never on a respondent's page.
+  if (form.getAttribute("data-layout") === "all") {
+    stampStartTime();
+    return;
+  }
+
   var current = 0;
   form.classList.add("is-paged");
 

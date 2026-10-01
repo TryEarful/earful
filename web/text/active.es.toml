@@ -2473,6 +2473,14 @@ other = "<strong>Vista previa</strong>: esto es exactamente lo que ven quienes r
 hash = "sha1-1a922bb79dbaf02941e72e79165633381e4c1bb8"
 other = "Quienes responden pueden contestar esto hablando; sus palabras se transcriben y el audio nunca se guarda."
 
+[respond.preview.layout_all]
+hash = "sha1-13ade70c67e62ff45e76ff1e908d8b711660bfb8"
+other = "Ver todas las preguntas"
+
+[respond.preview.layout_paged]
+hash = "sha1-598d5c92c42fe63bae0efbabbd1f597ed1533102"
+other = "Ver de una en una"
+
 [respond.preview.submitted.title]
 hash = "sha1-66681a49ae998c974afafb936da19437c3f65401"
 other = "Vista previa · {{.Survey}}"

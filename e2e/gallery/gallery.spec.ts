@@ -92,6 +92,11 @@ test("gallery", async ({ browser }) => {
   // built from the survey's ID rather than read from the address bar.
   const editor = "/surveys/" + share.split("/").pop();
   await capture(page, "editor-published", "en");
+  // The preview, one question at a time and every question on one page.
+  await page.goto(editor + "/preview");
+  await capture(page, "preview", "en");
+  await page.goto(editor + "/preview?layout=all");
+  await capture(page, "preview-all", "en");
   await page.goto("/dashboard");
   await capture(page, "dashboard-surveys", "en");
   await page.goto("/account");
@@ -148,6 +153,10 @@ test("gallery", async ({ browser }) => {
   await capture(es, "dashboard", "es");
   await es.goto(editor);
   await capture(es, "editor-published", "es");
+  await es.goto(editor + "/preview");
+  await capture(es, "preview", "es");
+  await es.goto(editor + "/preview?layout=all");
+  await capture(es, "preview-all", "es");
   await es.goto(editor + "/results");
   await capture(es, "results", "es");
 

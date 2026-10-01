@@ -1075,10 +1075,20 @@ button:disabled,
 }
 
 .preview-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   border-radius: var(--radius-m);
   background: var(--tint-info);
   padding: 0.6rem 0.9rem;
   margin-bottom: 1.5rem;
+}
+
+.preview-banner p {
+  flex: 1 1 16rem;
+  margin: 0;
 }
 
 .disclosure {

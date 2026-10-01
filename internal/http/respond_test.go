@@ -462,6 +462,42 @@ func TestPreview_UsesTheRealRendererAndRecordsNothing(t *testing.T) {
 	}
 }
 
+// TestPreview_LayoutToggle: a creator can read a preview with every
+// question on one page, and switch back, keeping the rest of the
+// address. Only a preview offers it; a respondent's page ignores the
+// parameter.
+func TestPreview_LayoutToggle(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{})
+	creator := app.Login(t, apptest.UniqueEmail("preview-layout"))
+	id := app.CreateSurvey(t, creator, "Layout preview", true)
+	app.AddQuestion(t, creator, id, "short_text", "First question", nil)
+	app.AddQuestion(t, creator, id, "long_text", "Second question", nil)
+	preview := "/surveys/" + id + "/preview"
+
+	paged := getBody(t, creator, app.Server.URL+preview)
+	if bodyContains(paged, `data-layout="all"`) {
+		t.Errorf("a plain preview should page one question at a time:\n%s", paged)
+	}
+	if !bodyContains(paged, `href="`+preview+`?layout=all"`) || !bodyContains(paged, "Show all questions") {
+		t.Errorf("preview does not offer every question on one page:\n%s", paged)
+	}
+
+	all := getBody(t, creator, app.Server.URL+preview+"?layout=all&lang=es")
+	if !bodyContains(all, `data-layout="all"`) {
+		t.Errorf("?layout=all does not mark the form to stay on one page:\n%s", all)
+	}
+	if !bodyContains(all, `href="`+preview+`?lang=es"`) || !bodyContains(all, "Show one at a time") {
+		t.Errorf("the way back to one at a time is missing or drops ?lang:\n%s", all)
+	}
+
+	app.Publish(t, creator, id)
+	respondent := getBody(t, &http.Client{}, app.Server.URL+"/s/"+id+"?layout=all")
+	if bodyContains(respondent, `data-layout="all"`) || bodyContains(respondent, "js-preview-layout") {
+		t.Errorf("a respondent's page honours the preview layout:\n%s", respondent)
+	}
+}
+
 // TestPreview_RequiresOwnership: a preview shows unpublished questions, so
 // it is at least as sensitive as the editor.
 func TestPreview_RequiresOwnership(t *testing.T) {

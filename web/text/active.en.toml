@@ -1389,6 +1389,8 @@ text = "How likely are you to recommend Earful to a friend or colleague?"
 [respond.preview]
 banner_html = "<strong>Preview.</strong> This is exactly what respondents see. Nothing you enter here is recorded."
 voice = "Respondents can answer this by speaking; their words are transcribed and the audio is never stored."
+layout_all = "Show all questions"
+layout_paged = "Show one at a time"
 
 [respond.preview.submitted]
 title = "Preview · {{.Survey}}"

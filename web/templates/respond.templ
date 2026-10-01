@@ -33,6 +33,13 @@ type RespondData struct {
 	// resubmit"), distinct from validation errors.
 	Notice  string
 	Preview bool
+	// PreviewAll shows a preview with every question on one page, as it
+	// renders without a script, instead of one at a time; the creator
+	// reads a long survey without stepping through it. PreviewLayoutLink
+	// is the address of the other layout. Both mean nothing outside a
+	// preview.
+	PreviewAll        bool
+	PreviewLayoutLink string
 	// FormToken is the HMAC-signed render timestamp (antibot.FormTokens);
 	// Nonce identifies this render for double-click dedupe.
 	FormToken string
@@ -127,7 +134,16 @@ templ Respond(data RespondData) {
 		<main>
 			if data.Preview {
 				<div class="preview-banner" role="status">
-					@thtml(ctx, "respond.preview.banner_html")
+					<p>
+						@thtml(ctx, "respond.preview.banner_html")
+					</p>
+					<a class="button secondary js-preview-layout" href={ templ.SafeURL(data.PreviewLayoutLink) }>
+						if data.PreviewAll {
+							{ t(ctx, "respond.preview.layout_paged") }
+						} else {
+							{ t(ctx, "respond.preview.layout_all") }
+						}
+					</a>
 				</div>
 			}
 			<h1>{ data.Title }</h1>
@@ -154,6 +170,9 @@ templ Respond(data RespondData) {
 				action={ templ.SafeURL(respondAction(data)) }
 				class="respond-form js-respond-form"
 				data-question-count={ strconv.Itoa(len(data.Questions)) }
+				if data.Preview && data.PreviewAll {
+					data-layout="all"
+				}
 				if !data.Preview && data.ParticipantToken == "" {
 					data-challenge-url={ "/s/" + data.SurveyID + "/challenge" }
 				}

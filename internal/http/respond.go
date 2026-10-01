@@ -314,18 +314,41 @@ func (s *server) previewPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	info, _ := authFrom(r.Context())
+	all, other := previewLayout(r)
 	render(w, r, http.StatusOK, templates.Respond(templates.RespondData{
 		SurveyID:      survey.ID.String(),
 		Title:         survey.Title,
 		WorkspaceName: info.WorkspaceName,
 		IsAnonymous:   survey.IsAnonymous,
 		// A draft has no version; preview submissions are refused anyway.
-		VersionID: "",
-		Questions: draft.Questions,
-		Answers:   map[string]domain.AnswerValue{},
-		Errors:    map[string]string{},
-		Preview:   true,
+		VersionID:         "",
+		Questions:         draft.Questions,
+		Answers:           map[string]domain.AnswerValue{},
+		Errors:            map[string]string{},
+		Preview:           true,
+		PreviewAll:        all,
+		PreviewLayoutLink: other,
 	}))
+}
+
+// previewLayout reads whether the creator asked to see every question at
+// once (?layout=all), and builds the address of the other layout. Only
+// the preview reads the parameter: a respondent is always offered one
+// question at a time where the script runs. The rest of the query is
+// kept, so a ?lang= on the address survives the switch.
+func previewLayout(r *http.Request) (all bool, other string) {
+	q := r.URL.Query()
+	all = q.Get("layout") == "all"
+	if all {
+		q.Del("layout")
+	} else {
+		q.Set("layout", "all")
+	}
+	other = r.URL.Path
+	if enc := q.Encode(); enc != "" {
+		other += "?" + enc
+	}
+	return all, other
 }
 
 // previewSubmit exists so the preview form has somewhere honest to go. It
