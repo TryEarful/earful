@@ -7,6 +7,10 @@ import { latestLinkTo, signIn, uniqueEmail } from "./helpers";
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test("closing an account emails a copy that downloads without signing in", async ({ page, browser }) => {
+  // Where mail is read back from Cloud Logging, each email waits on log
+  // ingestion, and this test reads two of them (the sign in link, then the
+  // copy, which is sent once its archive is built).
+  if (process.env.E2E_LINK_SOURCE === "logging") test.slow();
   const addr = uniqueEmail("e2e-closure");
   await signIn(page, addr);
 
