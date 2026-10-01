@@ -93,6 +93,9 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	}
 	lang := domain.NormalizeLang(r.PathValue("lang"))
 	pending := draft.Pending(lang)
+	if draft.ThanksPending(lang) {
+		pending = append(pending, thanksToTranslate(draft)...)
+	}
 	if len(pending) == 0 {
 		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": languageName(text(r), lang)}))
 		return
@@ -111,7 +114,17 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var thanksMessage, thanksLabel string
+	draftedThanks := false
 	for identity, text := range translated {
+		switch identity {
+		case thanksMessageKey:
+			thanksMessage, draftedThanks = text, true
+			continue
+		case thanksLabelKey:
+			thanksLabel, draftedThanks = text, true
+			continue
+		}
 		// Options are left in the source language deliberately: a
 		// mistranslated option changes what an answer means, and the
 		// creator can edit them here question by question.
@@ -120,12 +133,38 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 			s.logger.Error("storing a drafted translation failed", "error", err)
 		}
 	}
+	if draftedThanks {
+		if err := draft.SetThanksTranslation(lang, thanksMessage, thanksLabel, false); err != nil {
+			s.logger.Error("storing a drafted thank you page failed", "error", err)
+		}
+	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
 		s.internalError(w, r, "save draft", err)
 		return
 	}
 	s.renderLocalizations(w, r, "",
 		sayN(r, "languages.notice.drafted", len(translated), uitext.Args{"Language": languageName(text(r), lang)}))
+}
+
+// The thank you page's message and link label are drafted alongside the
+// questions, under keys no Question Identity can take, since identities
+// are UUIDs.
+const (
+	thanksMessageKey = "thanks:message"
+	thanksLabelKey   = "thanks:link_label"
+)
+
+// thanksToTranslate is the thank you page's wording, shaped as the
+// questions translateQuestions takes.
+func thanksToTranslate(draft domain.Draft) []domain.Question {
+	var out []domain.Question
+	if draft.Thanks.Message != "" {
+		out = append(out, domain.Question{IdentityID: thanksMessageKey, Text: draft.Thanks.Message})
+	}
+	if draft.Thanks.LinkLabel != "" {
+		out = append(out, domain.Question{IdentityID: thanksLabelKey, Text: draft.Thanks.LinkLabel})
+	}
+	return out
 }
 
 // translateQuestions runs one model call per question, re-checking the
@@ -189,6 +228,17 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 		}
 		saved++
 	}
+	if draft.HasThanksToTranslate() {
+		message := r.PostFormValue("thanks_message")
+		label := r.PostFormValue("thanks_link_label")
+		if strings.TrimSpace(message) != "" || strings.TrimSpace(label) != "" {
+			if err := draft.SetThanksTranslation(lang, message, label, true); err != nil {
+				s.renderLocalizations(w, r, sayError(r, err), "")
+				return
+			}
+			saved++
+		}
+	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
 		s.internalError(w, r, "save draft", err)
 		return
@@ -225,6 +275,7 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 	for _, lang := range draft.Languages() {
 		localization := draft.Localizations[lang]
 		pending := draft.Pending(lang)
+		thanksPending := draft.ThanksPending(lang)
 		view := templates.LanguageView{
 			Code:         lang,
 			Name:         languageName(l, lang),
@@ -232,7 +283,22 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 			Total:        len(draft.Questions),
 			Reviewed:     len(draft.Questions) - len(pending),
 			PendingCount: len(pending),
-			Ready:        len(pending) == 0 && len(draft.Questions) > 0,
+			Ready:        len(pending) == 0 && !thanksPending && len(draft.Questions) > 0,
+		}
+		if thanksPending {
+			view.PendingCount++
+		}
+		if draft.HasThanksToTranslate() {
+			thanks := templates.LocalizedThanksView{
+				SourceMessage:   draft.Thanks.Message,
+				SourceLinkLabel: draft.Thanks.LinkLabel,
+				Reviewed:        !thanksPending,
+				Stale:           draft.ThanksStale(lang),
+			}
+			if translated := localization.Thanks; translated != nil {
+				thanks.Message, thanks.LinkLabel = translated.Message, translated.LinkLabel
+			}
+			view.Thanks = &thanks
 		}
 		for _, question := range draft.Questions {
 			translated := localization.Questions[question.IdentityID]
@@ -290,6 +356,11 @@ func (s *server) applyLanguage(r *http.Request, version *store.ServedVersion) {
 	}
 	version.Questions = questions
 	version.Lang = chosen
+	// A version whose thank you page was not translated shows it as
+	// written, as it does its questions when a language is missing.
+	if thanks, ok := version.LocalizedThanks[chosen]; ok {
+		version.Thanks = thanks
+	}
 }
 
 // shownVersion is the version as the respondent saw it: in the language

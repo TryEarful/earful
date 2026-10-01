@@ -125,7 +125,7 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 	// one-submission index caps abuse at one row.
 	if r.PostFormValue("website") != "" {
 		s.logAbuse(r, "honeypot")
-		render(w, r, http.StatusOK, templates.RespondThanks(thanksFor(survey, "", nil)))
+		render(w, r, http.StatusOK, templates.RespondThanks(s.unrecordedThanks(r, survey)))
 		return
 	}
 	servedID, err := uuid.Parse(r.PostFormValue("version_id"))
@@ -178,7 +178,7 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 	}
 	s.recordCompletion(r, survey.ID, version.Questions, submission)
 	render(w, r, http.StatusOK, templates.RespondThanks(
-		thanksFor(survey, shown.Lang, answerSummary(r, shown.Questions, asSubmitted))))
+		thanksFor(survey, shown, answerSummary(r, shown.Questions, asSubmitted))))
 }
 
 // loadParticipantSurvey resolves an invite token to its participant and

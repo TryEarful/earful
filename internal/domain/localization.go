@@ -24,6 +24,23 @@ type Localization struct {
 	// source language keeps its translation attached (and marks it
 	// unreviewed again — see MarkStale).
 	Questions map[string]LocalizedQuestion `json:"questions"`
+	// Thanks translates the thank you message and link label. It is
+	// reviewed like a question, and a language with a message to
+	// translate is not complete until it has been.
+	Thanks *LocalizedThanks `json:"thanks,omitempty"`
+}
+
+// LocalizedThanks is the thank you page in one language. The link's
+// address is not translated: it is the same page in every language, and
+// a creator who wants another sends it in a separate survey.
+type LocalizedThanks struct {
+	Message   string `json:"message,omitempty"`
+	LinkLabel string `json:"link_label,omitempty"`
+	Reviewed  bool   `json:"reviewed"`
+	// SourceMessage and SourceLinkLabel are the wording this translation
+	// was made from, which is how a change in the source is detected.
+	SourceMessage   string `json:"source_message,omitempty"`
+	SourceLinkLabel string `json:"source_link_label,omitempty"`
 }
 
 // LocalizedQuestion is one question in one language.
@@ -141,11 +158,104 @@ func (d Draft) Pending(lang string) []Question {
 // unreviewed machine translation is ever published.
 func (d Draft) ReadyToPublish() error {
 	for _, lang := range d.Languages() {
-		if len(d.Pending(lang)) > 0 {
+		if len(d.Pending(lang)) > 0 || d.ThanksPending(lang) {
 			return ErrUnreviewedTrans
 		}
 	}
 	return nil
+}
+
+// HasThanksToTranslate reports whether the thank you page carries any
+// words of the creator's: a message, or a link's label.
+func (d Draft) HasThanksToTranslate() bool {
+	return d.Thanks.Message != "" || d.Thanks.LinkLabel != ""
+}
+
+// ThanksPending reports whether a language still needs the thank you
+// page translated or reviewed: never translated, not yet read, missing a
+// part the source has, or made from a wording since changed.
+func (d Draft) ThanksPending(lang string) bool {
+	localization, ok := d.Localizations[NormalizeLang(lang)]
+	if !ok || !d.HasThanksToTranslate() {
+		return false
+	}
+	translated := localization.Thanks
+	switch {
+	case translated == nil, !translated.Reviewed:
+		return true
+	case translated.SourceMessage != d.Thanks.Message,
+		translated.SourceLinkLabel != d.Thanks.LinkLabel:
+		return true
+	case d.Thanks.Message != "" && translated.Message == "",
+		d.Thanks.LinkLabel != "" && translated.LinkLabel == "":
+		return true
+	}
+	return false
+}
+
+// ThanksStale reports whether a language's thank you page was translated
+// from a wording the creator has since changed.
+func (d Draft) ThanksStale(lang string) bool {
+	localization, ok := d.Localizations[NormalizeLang(lang)]
+	if !ok || localization.Thanks == nil {
+		return false
+	}
+	t := localization.Thanks
+	return (t.Message != "" || t.LinkLabel != "") &&
+		(t.SourceMessage != d.Thanks.Message || t.SourceLinkLabel != d.Thanks.LinkLabel)
+}
+
+// SetThanksTranslation records the thank you page in one language, as
+// read by the creator when reviewed is true. A part the source does not
+// have is dropped, so a translation never shows more than the original.
+func (d *Draft) SetThanksTranslation(lang, message, linkLabel string, reviewed bool) error {
+	lang = NormalizeLang(lang)
+	localization, ok := d.Localizations[lang]
+	if !ok {
+		return ErrUnknownLanguage
+	}
+	t := LocalizedThanks{
+		Message:         normalizeMessage(message),
+		LinkLabel:       strings.TrimSpace(linkLabel),
+		Reviewed:        reviewed,
+		SourceMessage:   d.Thanks.Message,
+		SourceLinkLabel: d.Thanks.LinkLabel,
+	}
+	if d.Thanks.Message == "" {
+		t.Message = ""
+	}
+	if d.Thanks.LinkLabel == "" {
+		t.LinkLabel = ""
+	}
+	if len([]rune(t.Message)) > maxThanksMessageLen {
+		return LimitError{Kind: LimitThanksMessage, Limit: maxThanksMessageLen}
+	}
+	if len([]rune(t.LinkLabel)) > maxThanksLabelLen {
+		return LimitError{Kind: LimitThanksLabel, Limit: maxThanksLabelLen}
+	}
+	localization.Thanks = &t
+	d.Localizations[lang] = localization
+	return nil
+}
+
+// LocalizedThanks returns the thank you page as a respondent reading lang
+// sees it: the translated words with the creator's link address. It is
+// what publishing freezes, so it reports false until the language is
+// reviewed against the current wording.
+func (d Draft) LocalizedThanks(lang string) (ThankYou, bool) {
+	lang = NormalizeLang(lang)
+	if !d.HasThanksToTranslate() || d.ThanksPending(lang) {
+		return ThankYou{}, false
+	}
+	translated := d.Localizations[lang].Thanks
+	if translated == nil {
+		return ThankYou{}, false
+	}
+	return ThankYou{
+		Message:   translated.Message,
+		LinkLabel: translated.LinkLabel,
+		LinkURL:   d.Thanks.LinkURL,
+	}, true
 }
 
 // NormalizeLang lowercases the subtag and title-cases the region, so

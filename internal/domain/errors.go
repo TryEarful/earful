@@ -28,6 +28,9 @@ const (
 	LimitBounds       LimitKind = "bounds"
 	LimitQuestions    LimitKind = "questions"
 	LimitLanguages    LimitKind = "languages"
+	// The thank you page's message and link label.
+	LimitThanksMessage LimitKind = "thanks_message"
+	LimitThanksLabel   LimitKind = "thanks_label"
 )
 
 // LimitError reports something longer, higher or more numerous than it
@@ -55,6 +58,10 @@ func (e LimitError) Error() string {
 		return fmt.Sprintf("a survey can hold at most %d questions", e.Limit)
 	case LimitLanguages:
 		return fmt.Sprintf("a survey can carry at most %d languages", e.Limit)
+	case LimitThanksMessage:
+		return fmt.Sprintf("keep the thank you message under %d characters", e.Limit)
+	case LimitThanksLabel:
+		return fmt.Sprintf("keep the link label under %d characters", e.Limit)
 	}
 	return fmt.Sprintf("over the limit of %d", e.Limit)
 }

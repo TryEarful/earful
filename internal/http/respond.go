@@ -144,7 +144,7 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 	// echoed back either, so the endpoint cannot be used as a mirror.
 	if r.PostFormValue("website") != "" {
 		s.logAbuse(r, "honeypot")
-		render(w, r, http.StatusOK, templates.RespondThanks(thanksFor(survey, "", nil)))
+		render(w, r, http.StatusOK, templates.RespondThanks(s.unrecordedThanks(r, survey)))
 		return
 	}
 
@@ -226,7 +226,7 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 	// allowed — the stated trade-off of anonymity. It reads back no
 	// answers, since this request recorded none.
 	if nonce := r.PostFormValue("form_nonce"); nonce != "" && !s.submitNonces.FirstUse(nonce) {
-		render(w, r, http.StatusOK, templates.RespondThanks(thanksFor(survey, shown.Lang, nil)))
+		render(w, r, http.StatusOK, templates.RespondThanks(thanksFor(survey, shown, nil)))
 		return
 	}
 
@@ -238,7 +238,7 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 	s.recordCompletion(r, surveyID, version.Questions, submission)
 	s.setAnsweredCookie(w, surveyID)
 	render(w, r, http.StatusOK, templates.RespondThanks(
-		thanksFor(survey, shown.Lang, answerSummary(r, shown.Questions, asSubmitted))))
+		thanksFor(survey, shown, answerSummary(r, shown.Questions, asSubmitted))))
 }
 
 // thanksFor is the page after a submission. It is only ever the body of
@@ -246,13 +246,33 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 // own would show the answers again to whoever opens that address next on
 // a shared device, and the no-store header every dynamic page carries
 // keeps it out of the history cache too.
-func thanksFor(survey store.PublicSurvey, lang string, answers []templates.AnsweredQuestion) templates.ThanksData {
+//
+// shown is the version as the respondent saw it, so the creator's thank
+// you message is the one that version was published with, in the
+// language it was read in.
+func thanksFor(survey store.PublicSurvey, shown store.ServedVersion, answers []templates.AnsweredQuestion) templates.ThanksData {
 	return templates.ThanksData{
 		Title:     survey.Title,
 		Anonymous: survey.IsAnonymous,
-		Lang:      lang,
+		Lang:      shown.Lang,
 		Answers:   answers,
+		Thanks:    shown.Thanks,
 	}
+}
+
+// unrecordedThanks is the thanks page for a request that recorded
+// nothing and was read against no version, the honeypot's: the page a
+// person answering the current version would see, so that what caught
+// the request cannot be told apart from success. It reads back no
+// answers.
+func (s *server) unrecordedThanks(r *http.Request, survey store.PublicSurvey) templates.ThanksData {
+	version, err := s.surveys.LatestServedVersion(r.Context(), survey.ID)
+	if err != nil {
+		s.logger.Error("loading the thanks page failed", "error", err)
+		return thanksFor(survey, store.ServedVersion{}, nil)
+	}
+	s.applyLanguage(r, &version)
+	return thanksFor(survey, version, nil)
 }
 
 // answerSummary reads a submission back in the words its respondent saw:

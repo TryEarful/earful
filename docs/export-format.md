@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 4.**
+**Format version 5.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -52,7 +52,12 @@ spreadsheets and contain nothing the JSON doesn't.
               "scale_min": 1,              // rating_scale, nps and number only
               "scale_max": 7
             }
-          ]
+          ],
+          "thanks": {                      // omitted when the default was shown
+            "message": "Thank you. See you soon.",
+            "link_label": "Book a table",  // link_label and link_url come
+            "link_url": "https://example.com/book"  // together, or not at all
+          }
         }
       ],
 
@@ -105,6 +110,14 @@ counting began has its earlier opens and submissions in `stats` and
 its later ones in `stats_daily`; the two are added, never overlapping.
 The `reached` rows in `stats` are keyed by question position, an older
 shape kept as it was; the dated rows are keyed by identity.
+
+### Thank you page
+
+`thanks` is what a respondent read after sending their answers to that
+version, in the creator's wording. It belongs to the version, like its
+questions: a later version may change it, and a response was thanked
+with the one its own version carries. A version without it showed the
+default text. The message is plain text; line breaks are the writer's.
 
 ### Answer values
 
@@ -178,6 +191,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 5 | `thanks` on a version: the creator's own thank you message and link, as that version was published with them. Everything in version 4 is unchanged. |
 | 4 | The `number` question type: its answers use the existing `number` field and its limits the existing `scale_min` and `scale_max`. Everything in version 3 is unchanged. |
 | 3 | The `date` question type, and its `date` answer field. Everything in version 2 is unchanged. |
 | 2 | `stats_daily` added: per-day opened, submitted and reached counters (ADR-0012). Everything in version 1 is unchanged. |

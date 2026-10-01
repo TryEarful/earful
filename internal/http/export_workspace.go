@@ -138,6 +138,13 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 				Number:      version.Number,
 				PublishedAt: version.PublishedAt.UTC(),
 			}
+			if !version.Thanks.IsZero() {
+				exportedVersion.Thanks = &export.Thanks{
+					Message:   version.Thanks.Message,
+					LinkLabel: version.Thanks.LinkLabel,
+					LinkURL:   version.Thanks.LinkURL,
+				}
+			}
 			for i, question := range questions {
 				min, max := question.Scale()
 				exportedQuestion := export.Question{

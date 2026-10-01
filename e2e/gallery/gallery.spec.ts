@@ -300,6 +300,50 @@ test("gallery", async ({ browser }) => {
   const numberEditor = "/surveys/" + numberShare.split("/").pop();
   await page.goto(numberEditor + "/results");
   await capture(page, "results-number", "en");
+  // A thank you page of the creator's own: the editor's section refusing
+  // an address that is not a web page, then saved; the page a respondent
+  // reads after sending, in each language; and its translation beside
+  // the questions'.
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill("Dinner at the corner");
+  await page.getByRole("button", { name: "Create survey" }).click();
+  const addThanksQuestion = page.locator('form[action$="/questions"]');
+  await addThanksQuestion.locator('select[name="type"]').selectOption("short_text");
+  await addThanksQuestion.locator('input[name="text"]').fill("What did you order?");
+  await addThanksQuestion.getByRole("button", { name: "Add question" }).click();
+  const thanksForm = page.locator(".js-thanks-form");
+  await thanksForm.locator('textarea[name="thanks_message"]').fill(
+    "Thanks for dining with us!\nWe read every answer.\n\nSee you soon at the corner.",
+  );
+  await thanksForm.locator('input[name="thanks_link_label"]').fill("Book a table");
+  await thanksForm.locator('input[name="thanks_link_url"]').fill("javascript:alert(1)");
+  await thanksForm.getByRole("button", { name: "Save thank you page" }).click();
+  await expect(page.getByText("the link address must start with http:// or https://")).toBeVisible();
+  await capture(page, "editor-thanks-error", "en");
+  await page.locator('.js-thanks-form input[name="thanks_link_url"]').fill("https://example.com/book");
+  await page.locator(".js-thanks-form").getByRole("button", { name: "Save thank you page" }).click();
+  await expect(page.getByText("Thank you page saved")).toBeVisible();
+  await capture(page, "editor-thanks", "en");
+  await page.getByRole("button", { name: "Publish version 1" }).click();
+  await expect(page.getByText("Published version 1")).toBeVisible();
+  const thanksShare = await page.locator(".js-share-link a").getAttribute("href");
+  if (!thanksShare) throw new Error("no share link after publishing");
+  const thanksEditor = "/surveys/" + thanksShare.split("/").pop();
+  for (const lang of ["en", "es"]) {
+    const { context, page: respondent } = await visitor(browser, lang);
+    await respondent.goto(thanksShare);
+    await respondent.getByLabel("What did you order?").fill("The soup of the day");
+    await minFillWait(respondent);
+    await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+    await expect(respondent.locator(".js-thanks-message")).toBeVisible({ timeout: submitTimeout });
+    await capture(respondent, "respond-thanks-custom", lang);
+    await context.close();
+  }
+  await page.goto(thanksEditor + "/localizations");
+  await page.locator('input[name="lang"]').fill("nl");
+  await page.getByRole("button", { name: "Add language" }).click();
+  await expect(page.locator(".js-thanks-translation")).toBeVisible();
+  await capture(page, "languages-thanks", "en");
 
   // The creator in Spanish.
   const { context: spanish, page: es } = await visitor(browser, "es");
@@ -310,6 +354,8 @@ test("gallery", async ({ browser }) => {
   await capture(es, "survey-new", "es");
   await es.goto(editor);
   await capture(es, "editor-published", "es");
+  await es.goto(thanksEditor);
+  await capture(es, "editor-thanks", "es");
   await es.goto(editor + "/preview");
   await capture(es, "preview", "es");
   await es.goto(editor + "/preview?layout=all");

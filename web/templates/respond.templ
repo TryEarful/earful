@@ -618,6 +618,10 @@ type ThanksData struct {
 	// so a shared device cannot reveal it later. It is empty wherever
 	// nothing was recorded from this request.
 	Answers []AnsweredQuestion
+	// Thanks is the creator's own message and link, as the version the
+	// respondent answered was published with. When its message is empty
+	// the default text is shown.
+	Thanks domain.ThankYou
 }
 
 // AnsweredQuestion is one line of a submission read back to the person
@@ -634,13 +638,37 @@ templ RespondThanks(data ThanksData) {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
-			<p>{ t(ctx, "respond.thanks.body") }</p>
+			if data.Thanks.Message != "" {
+				@thanksMessage(data.Thanks)
+			} else {
+				<p>{ t(ctx, "respond.thanks.body") }</p>
+			}
+			if data.Thanks.HasLink() {
+				<p><a class="button secondary js-thanks-link" href={ templ.URL(data.Thanks.LinkURL) } rel="noopener noreferrer">{ data.Thanks.LinkLabel }</a></p>
+			}
 			if data.Anonymous {
 				<p class="muted">{ t(ctx, "respond.thanks.anonymous") }</p>
 			}
 			@answerSummary(data.Answers)
 		</main>
 	}
+}
+
+// thanksMessage is the creator's message as plain text: their paragraphs
+// and line breaks are kept, and nothing they wrote is read as markup.
+templ thanksMessage(thanks domain.ThankYou) {
+	<div class="js-thanks-message">
+		for _, paragraph := range thanks.Paragraphs() {
+			<p>
+				for i, line := range paragraph {
+					if i > 0 {
+						<br/>
+					}
+					{ line }
+				}
+			</p>
+		}
+	</div>
 }
 
 // answerSummary reads a submission back to the person who sent it.

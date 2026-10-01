@@ -36,6 +36,7 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | Issue #2 — Stats over time | [x] done | 2/2 · post-MVP, added 2026-09-27 |
 | Issue #3 — AI quota per account | [x] done | 1/1 · post-MVP; migration 00018 |
 | Issue #20 — AI-assisted creation | [x] done | 1/1 · post-MVP |
+| Issue #9 — A thank you page of the creator's own | [x] done | 1/1 · post-MVP; migration 00022 |
 | Interface text | [x] done | 6/6 · post-MVP, added 2026-09-29 (ADR-0014); English and Spanish |
 | Starter Survey | [x] done | 4/4 · post-MVP, added 2026-09-29 (ADR-0015); English and Spanish |
 | Visual identity | [x] done | 7/7 · post-MVP, added 2026-09-30 (ADR-0016); stories 87 and 88 |
@@ -368,6 +369,10 @@ Post-MVP, from the GitHub issue "AI-assisted creation": create a survey from a p
 
 - [x] **S1 Survey from a description.** Goal: an optional "Describe your survey" field on `/surveys/new`, shown only with text AI configured; one metered generation drafts the questions into the new survey's draft and the editor opens; with the title left empty the model proposes it, and any reply without a usable one falls back to a default title. AC: a typed title is kept; a quota, breaker or provider refusal returns the form with 422, as typed, and creates nothing; with no text AI the field is absent and the title required; works without JavaScript. Deps: M6-T3, Issue #3 S1
   _Note: a per-question "refine with AI" was not built; editing drafted questions by hand covers the issue's second story. `surveys.origin` stays creator (ADR-0015)._
+
+### Issue #9 — A thank you page of the creator's own
+
+- [x] **S1 Thank you message and link.** Goal: a "Thank you page" section in the editor saves a message, a link label and a link address to the draft; publishing freezes them into the version (migration 00022: `survey_versions.thanks_message`, `thanks_link_label`, `thanks_link_url`, `thanks_localizations`); the thanks page shows them in place of the default body, on the honeypot and double-submit paths too, never with answers. AC: an empty message keeps today's text exactly; the address must be absolute http or https with a host and no credentials; the message is escaped with line breaks kept; the link has rel="noopener noreferrer"; editing the draft leaves the live page alone until publish, and a change to the thank you page alone can be published; the message and label are translated and reviewed with the questions; the workspace export carries `versions[].thanks` (format version 5). Deps: M3-T3, M11-T1, issue #7
 
 ### Starter Survey (added 2026-09-29)
 

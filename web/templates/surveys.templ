@@ -164,6 +164,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			if !data.Survey.IsAnonymous {
 				@participantsPanel(csrf, data)
 			}
+			@thanksPanel(csrf, data.Survey.ID, data.Thanks)
 			if !data.Survey.Published() || data.DraftChanged {
 				@publishPanel(csrf, data.Survey, len(data.Questions), data.DraftChanged)
 			}
@@ -397,6 +398,40 @@ templ participantsPanel(csrf string, data SurveyEditorData) {
 			</form>
 			<p class="muted">{ t(ctx, "editor.participants.drip") }</p>
 		}
+	</section>
+}
+
+// thanksPanel sets what a respondent reads after sending their answers.
+// It is saved to the draft, so it reaches respondents with the next
+// version published, as a question edit does. The fields opt out of
+// autocomplete and password managers for the same reason as the
+// question fields.
+templ thanksPanel(csrf string, surveyID string, thanks ThanksFormView) {
+	<section class="card js-panel js-thanks-panel" id="thanks">
+		<h2>{ t(ctx, "editor.thanks.heading") }</h2>
+		<p class="muted">{ t(ctx, "editor.thanks.intro") }</p>
+		<form method="post" action={ templ.SafeURL("/surveys/" + surveyID + "/thanks") } class="js-thanks-form">
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<label class="field">
+				<span>
+					@thtml(ctx, "editor.thanks.message_html")
+				</span>
+				<textarea name="thanks_message" rows="4" maxlength="1000" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore>{ thanks.Message }</textarea>
+			</label>
+			<label class="field">
+				<span>
+					@thtml(ctx, "editor.thanks.link_label_html")
+				</span>
+				<input type="text" name="thanks_link_label" value={ thanks.LinkLabel } maxlength="60" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+			<label class="field">
+				<span>
+					@thtml(ctx, "editor.thanks.link_url_html")
+				</span>
+				<input type="url" name="thanks_link_url" value={ thanks.LinkURL } maxlength="2000" inputmode="url" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+			<button type="submit" class="secondary">{ t(ctx, "editor.thanks.save.label") }</button>
+		</form>
 	</section>
 }
 

@@ -202,11 +202,15 @@ type SurveyStatsDaily struct {
 }
 
 type SurveyVersion struct {
-	ID          uuid.UUID     `json:"id"`
-	SurveyID    uuid.UUID     `json:"survey_id"`
-	Number      int32         `json:"number"`
-	PublishedBy uuid.NullUUID `json:"published_by"`
-	PublishedAt time.Time     `json:"published_at"`
+	ID                  uuid.UUID     `json:"id"`
+	SurveyID            uuid.UUID     `json:"survey_id"`
+	Number              int32         `json:"number"`
+	PublishedBy         uuid.NullUUID `json:"published_by"`
+	PublishedAt         time.Time     `json:"published_at"`
+	ThanksMessage       *string       `json:"thanks_message"`
+	ThanksLinkLabel     *string       `json:"thanks_link_label"`
+	ThanksLinkUrl       *string       `json:"thanks_link_url"`
+	ThanksLocalizations []byte        `json:"thanks_localizations"`
 }
 
 type User struct {

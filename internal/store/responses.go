@@ -50,6 +50,11 @@ type ServedVersion struct {
 	// choice is never stored (story 25).
 	Languages []string
 	Lang      string
+	// Thanks is the thank you page this version was published with, in
+	// Lang once a language is applied. LocalizedThanks holds it in each
+	// language the version carries a translation of it for.
+	Thanks          domain.ThankYou
+	LocalizedThanks map[string]domain.ThankYou
 }
 
 // PublicSurvey resolves a share link. The link itself is the credential,
@@ -80,11 +85,7 @@ func (s *Surveys) LatestServedVersion(ctx context.Context, surveyID uuid.UUID) (
 	if err != nil {
 		return ServedVersion{}, fmt.Errorf("store: latest version: %w", err)
 	}
-	questions, err := s.QuestionsForVersion(ctx, latest.ID)
-	if err != nil {
-		return ServedVersion{}, err
-	}
-	return ServedVersion{ID: latest.ID, Number: int(latest.Number), Questions: questions}, nil
+	return s.servedVersion(ctx, latest)
 }
 
 // ServedVersionByID reloads the exact version a respondent's form was
@@ -100,11 +101,22 @@ func (s *Surveys) ServedVersionByID(ctx context.Context, surveyID, versionID uui
 	if err != nil {
 		return ServedVersion{}, fmt.Errorf("store: get version: %w", err)
 	}
+	return s.servedVersion(ctx, row)
+}
+
+func (s *Surveys) servedVersion(ctx context.Context, row db.SurveyVersion) (ServedVersion, error) {
 	questions, err := s.QuestionsForVersion(ctx, row.ID)
 	if err != nil {
 		return ServedVersion{}, err
 	}
-	return ServedVersion{ID: row.ID, Number: int(row.Number), Questions: questions}, nil
+	thanks, localized, err := thanksFromVersion(row)
+	if err != nil {
+		return ServedVersion{}, err
+	}
+	return ServedVersion{
+		ID: row.ID, Number: int(row.Number), Questions: questions,
+		Thanks: thanks, LocalizedThanks: localized,
+	}, nil
 }
 
 // ErrAlreadySubmitted is returned when an invited participant tries to

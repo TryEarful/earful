@@ -75,8 +75,10 @@ ORDER BY r.saved_at DESC, r.id DESC;
 SELECT coalesce(max(number), 0) + 1 AS next FROM survey_versions WHERE survey_id = $1;
 
 -- name: CreateVersion :one
-INSERT INTO survey_versions (survey_id, number, published_by, published_at)
-VALUES ($1, $2, $3, $4)
+INSERT INTO survey_versions (survey_id, number, published_by, published_at,
+                             thanks_message, thanks_link_label, thanks_link_url,
+                             thanks_localizations)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING *;
 
 -- name: GetLatestVersion :one
@@ -86,7 +88,8 @@ SELECT * FROM survey_versions WHERE survey_id = $1 ORDER BY number DESC LIMIT 1;
 SELECT * FROM survey_versions WHERE id = $1 AND survey_id = $2;
 
 -- name: ListVersions :many
-SELECT v.id, v.number, v.published_at, u.email AS published_by_email
+SELECT v.id, v.number, v.published_at, u.email AS published_by_email,
+       v.thanks_message, v.thanks_link_label, v.thanks_link_url
 FROM survey_versions v
 LEFT JOIN users u ON u.id = v.published_by
 WHERE v.survey_id = $1

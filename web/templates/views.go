@@ -123,8 +123,18 @@ type SurveyEditorData struct {
 	// Participants is populated for invited surveys only.
 	Participants []ParticipantView
 	PendingCount int
-	Error        string
-	Notice       string
+	// Thanks is what the thank you page form shows: the draft's, or what
+	// was just typed when it was refused.
+	Thanks ThanksFormView
+	Error  string
+	Notice string
+}
+
+// ThanksFormView is the editor's thank you page form.
+type ThanksFormView struct {
+	Message   string
+	LinkLabel string
+	LinkURL   string
 }
 
 type SurveyAuditData struct {
@@ -341,6 +351,20 @@ type LanguageView struct {
 	// current wording — the condition publishing requires.
 	Ready     bool
 	Questions []LocalizedQuestionView
+	// Thanks is the thank you page in this language, nil when the
+	// creator has written none to translate.
+	Thanks *LocalizedThanksView
+}
+
+// LocalizedThanksView is the thank you page in one language, beside the
+// creator's wording. A part the source does not have is not offered.
+type LocalizedThanksView struct {
+	SourceMessage   string
+	SourceLinkLabel string
+	Message         string
+	LinkLabel       string
+	Reviewed        bool
+	Stale           bool
 }
 
 // LocalizedQuestionView is one question in one language, beside its

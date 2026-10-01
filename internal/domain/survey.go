@@ -18,6 +18,9 @@ type Draft struct {
 	// save appends a revision, like any other draft change — and are
 	// frozen into the published version at publish.
 	Localizations map[string]Localization `json:"localizations,omitempty"`
+	// Thanks is the creator's own thank you page, frozen into the
+	// published version with the questions. Empty means the default.
+	Thanks ThankYou `json:"thanks,omitzero"`
 }
 
 // maxQuestionsPerSurvey bounds a single survey. A survey this long is a
@@ -143,7 +146,7 @@ func (d Draft) ValidateForPublish() error {
 			return QuestionError{Position: i + 1, Err: err}
 		}
 	}
-	return nil
+	return d.Thanks.Validate()
 }
 
 // Status is the Survey Status a creator sees (SPEC.md story 14). It is

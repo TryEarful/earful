@@ -124,6 +124,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	get("/surveys/{surveyID}/preview", s.previewPage)
 	post("/surveys/{surveyID}/preview", s.previewSubmit)
 	post("/surveys/{surveyID}/settings", s.surveySettings)
+	post("/surveys/{surveyID}/thanks", s.surveyThanks)
 	post("/surveys/{surveyID}/publish", s.surveyPublish)
 	post("/surveys/{surveyID}/close", s.surveyClose)
 	post("/surveys/{surveyID}/reopen", s.surveyReopen)

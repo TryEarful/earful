@@ -39,6 +39,9 @@ var plainErrors = []struct {
 	{domain.ErrLanguageInvalid, "language.error.invalid"},
 	{domain.ErrLanguageExists, "language.error.exists"},
 	{domain.ErrUnreviewedTrans, "language.error.unreviewed"},
+	{domain.ErrThanksLinkURL, "thanks.error.address"},
+	{domain.ErrThanksLinkLabel, "thanks.error.label"},
+	{domain.ErrThanksLinkAddress, "thanks.error.missing"},
 }
 
 // limitError is the message for an error that carries a limit, by what
@@ -60,6 +63,10 @@ func limitError(kind domain.LimitKind) (uitext.ID, bool) {
 		return "question.error.bounds", true
 	case domain.LimitLanguages:
 		return "language.error.limit", true
+	case domain.LimitThanksMessage:
+		return "thanks.error.long", true
+	case domain.LimitThanksLabel:
+		return "thanks.error.label_long", true
 	}
 	return "", false
 }

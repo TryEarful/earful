@@ -101,6 +101,8 @@ func (s *server) surveyPage(w http.ResponseWriter, r *http.Request) {
 		notice = say(r, "editor.notice.published", uitext.Args{"Version": n})
 	} else if q.Get("notice") == "unchanged" {
 		notice = say(r, "editor.notice.unchanged")
+	} else if q.Get("notice") == "thanks" {
+		notice = say(r, "editor.notice.thanks")
 	} else if added, err := strconv.Atoi(q.Get("added")); err == nil && added >= 0 {
 		// A survey drafted from a description redirects here with what
 		// the run added and skipped, so the notice survives the redirect.
@@ -111,6 +113,13 @@ func (s *server) surveyPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg, notice string) {
+	s.renderSurveyEditor(w, r, errMsg, notice, nil)
+}
+
+// renderSurveyEditor draws the editor. thanks, when given, is what the
+// creator just typed into the thank you page form, shown back to them
+// beside the error that refused it rather than lost.
+func (s *server) renderSurveyEditor(w http.ResponseWriter, r *http.Request, errMsg, notice string, thanks *templates.ThanksFormView) {
 	info, _ := authFrom(r.Context())
 	survey, draft, ok := s.loadSurveyAndDraft(w, r)
 	if !ok {
@@ -127,7 +136,7 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 		return
 	}
 
-	changed, err := s.surveys.HasUnpublishedChanges(r.Context(), survey.ID, draft.Questions)
+	changed, err := s.surveys.HasUnpublishedChanges(r.Context(), survey.ID, draft)
 	if err != nil {
 		s.internalError(w, r, "compare draft", err)
 		return
@@ -141,8 +150,16 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 		Versions:      viewVersions(text(r), versions),
 		ResponseCount: responses,
 		AIEnabled:     s.canGenerate(),
-		Error:         errMsg,
-		Notice:        notice,
+		Thanks: templates.ThanksFormView{
+			Message:   draft.Thanks.Message,
+			LinkLabel: draft.Thanks.LinkLabel,
+			LinkURL:   draft.Thanks.LinkURL,
+		},
+		Error:  errMsg,
+		Notice: notice,
+	}
+	if thanks != nil {
+		data.Thanks = *thanks
 	}
 	if !survey.IsAnonymous {
 		participants, err := s.surveys.Participants(r.Context(), survey.ID)
@@ -250,6 +267,36 @@ func (s *server) questionMove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.saveDraftAndRedirect(w, r, survey.ID, info.UserID, draft)
+}
+
+// surveyThanks saves the thank you page. It is a draft change like a
+// question edit: it appends a revision, and respondents see it only once
+// the next version is published (ADR-0001), so a live survey's thank you
+// page never changes under a respondent who is answering it.
+func (s *server) surveyThanks(w http.ResponseWriter, r *http.Request) {
+	info, _ := authFrom(r.Context())
+	survey, draft, ok := s.loadSurveyAndDraft(w, r)
+	if !ok {
+		return
+	}
+	typed := templates.ThanksFormView{
+		Message:   r.PostFormValue("thanks_message"),
+		LinkLabel: r.PostFormValue("thanks_link_label"),
+		LinkURL:   r.PostFormValue("thanks_link_url"),
+	}
+	thanks, err := domain.NewThankYou(typed.Message, typed.LinkLabel, typed.LinkURL)
+	if err == nil {
+		err = draft.SetThanks(thanks)
+	}
+	if err != nil {
+		s.renderSurveyEditor(w, r, sayError(r, err), "", &typed)
+		return
+	}
+	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
+		s.internalError(w, r, "save draft", err)
+		return
+	}
+	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"?notice=thanks", http.StatusSeeOther)
 }
 
 func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {

@@ -105,7 +105,37 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 					</li>
 				}
 			</ol>
+			if lang.Thanks != nil {
+				@thanksTranslation(lang)
+			}
 			<button type="submit">{ t(ctx, "languages.save.label") }</button>
 		</form>
 	</section>
+}
+
+// thanksTranslation is the thank you page in one language, each part
+// beside the creator's wording, reviewed like a question.
+templ thanksTranslation(lang LanguageView) {
+	<div class="js-thanks-translation">
+		<h3>{ t(ctx, "languages.thanks.heading") }</h3>
+		if lang.Thanks.Stale {
+			<p class="notice">{ t(ctx, "languages.thanks.stale") }</p>
+		} else if !lang.Thanks.Reviewed && lang.Thanks.Message != "" {
+			<p class="muted">{ t(ctx, "languages.question.unreviewed") }</p>
+		}
+		if lang.Thanks.SourceMessage != "" {
+			<p class="source-text">{ lang.Thanks.SourceMessage }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.thanks.message", uitext.Args{"Language": lang.Name}) }</span>
+				<textarea name="thanks_message" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="4" maxlength="1000">{ lang.Thanks.Message }</textarea>
+			</label>
+		}
+		if lang.Thanks.SourceLinkLabel != "" {
+			<p class="source-text">{ lang.Thanks.SourceLinkLabel }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.thanks.link_label", uitext.Args{"Language": lang.Name}) }</span>
+				<input type="text" name="thanks_link_label" value={ lang.Thanks.LinkLabel } maxlength="60" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+		}
+	</div>
 }

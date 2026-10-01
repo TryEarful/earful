@@ -324,6 +324,12 @@ label_html = 'Options <small class="muted">(one per line; leave empty to keep th
 [languages.save]
 label = "Save and mark reviewed"
 
+[languages.thanks]
+heading = "Thank you page"
+message = "Message in {{.Language}}"
+link_label = "Link label in {{.Language}}"
+stale = "The thank you page changed after this was translated. Read it again."
+
 
 # ── The two views of a survey's answers ─────────────────────────────────
 
@@ -620,6 +626,16 @@ invited = "By invitation. This can't be changed."
 [editor.settings.save]
 label = "Save settings"
 
+[editor.thanks]
+heading = "Thank you page"
+intro = "What people read after they send their answers. Leave the message empty to show the usual thank you. Changes go live with the next version you publish."
+message_html = 'Message <small class="muted">(optional)</small>'
+link_label_html = 'Link label <small class="muted">(optional, like Book a table)</small>'
+link_url_html = 'Link address <small class="muted">(starts with https://)</small>'
+
+[editor.thanks.save]
+label = "Save thank you page"
+
 [editor.settings.delete]
 label = "Delete survey"
 hint = "Support can restore it for 30 days."
@@ -850,6 +866,7 @@ revoked = "revoked"
 
 [editor.notice]
 unchanged = "Nothing to publish. The draft matches the live version."
+thanks = "Thank you page saved. Respondents see it once you publish."
 published = "Published version {{.Version}}. Respondents now see this version."
 
 
@@ -1120,6 +1137,13 @@ invalid = 'use a language code like "nl" or "pt-BR"'
 exists = "that language is already on this survey"
 unreviewed = "review every translation before publishing, or remove the language"
 limit = "a survey can carry at most {{.Limit}} languages"
+
+[thanks.error]
+address = "the link address must start with http:// or https:// and name a website"
+label = "give the link a label, so people know where it goes"
+missing = "add the address the link goes to, or clear its label"
+long = "keep the thank you message under {{.Limit}} characters"
+label_long = "keep the link label under {{.Limit}} characters"
 
 [editor.refused]
 # The "store:" has always been shown.

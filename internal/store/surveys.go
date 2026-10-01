@@ -241,6 +241,8 @@ type Version struct {
 	Number      int
 	PublishedAt time.Time
 	PublishedBy string
+	// Thanks is the thank you page this version was published with.
+	Thanks domain.ThankYou
 }
 
 // Revision is one saved draft state as the audit log lists it.
@@ -271,11 +273,11 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 	}
 
 	// Refuse a republish that would change nothing.
-	latestQuestions, err := s.LatestQuestions(ctx, surveyID)
+	changed, err := s.HasUnpublishedChanges(ctx, surveyID, draft)
 	if err != nil {
 		return Version{}, err
 	}
-	if latestQuestions != nil && questionsEqual(latestQuestions, draft.Questions) {
+	if !changed {
 		return Version{}, ErrNothingToPublish
 	}
 
@@ -303,11 +305,21 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 	if err != nil {
 		return db.SurveyVersion{}, fmt.Errorf("store: next version number: %w", err)
 	}
+	// The thank you page freezes with the questions: a respondent reads
+	// the one their version was published with (ADR-0001).
+	thanksMessage, thanksLabel, thanksURL, thanksLocalized, err := thanksColumns(draft)
+	if err != nil {
+		return db.SurveyVersion{}, err
+	}
 	version, err := qtx.CreateVersion(ctx, db.CreateVersionParams{
-		SurveyID:    surveyID,
-		Number:      int32(next),
-		PublishedBy: uuid.NullUUID{UUID: userID, Valid: true},
-		PublishedAt: now,
+		SurveyID:            surveyID,
+		Number:              int32(next),
+		PublishedBy:         uuid.NullUUID{UUID: userID, Valid: true},
+		PublishedAt:         now,
+		ThanksMessage:       thanksMessage,
+		ThanksLinkLabel:     thanksLabel,
+		ThanksLinkUrl:       thanksURL,
+		ThanksLocalizations: thanksLocalized,
 	})
 	if err != nil {
 		return db.SurveyVersion{}, fmt.Errorf("store: create version: %w", err)
@@ -377,21 +389,35 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 	return version, nil
 }
 
-// LatestQuestions returns the questions of the most recent published
-// version, or nil when the survey has never been published.
 // HasUnpublishedChanges reports whether publishing the given draft would
 // make a new version: always before the first publish, and afterwards
-// only when its questions differ from the live version's. It is the
-// comparison Publish refuses by, so the editor offers the button only
-// where pressing it would do something.
-func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID, draft []domain.Question) (bool, error) {
-	latest, err := s.LatestQuestions(ctx, surveyID)
+// only when its questions or its thank you page differ from the live
+// version's. It is the comparison Publish refuses by, so the editor
+// offers the button only where pressing it would do something.
+func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID, draft domain.Draft) (bool, error) {
+	latest, err := s.q.GetLatestVersion(ctx, surveyID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("store: get latest version: %w", err)
+	}
+	questions, err := s.QuestionsForVersion(ctx, latest.ID)
 	if err != nil {
 		return false, err
 	}
-	return latest == nil || !questionsEqual(latest, draft), nil
+	if !questionsEqual(questions, draft.Questions) {
+		return true, nil
+	}
+	thanks, _, err := thanksFromVersion(latest)
+	if err != nil {
+		return false, err
+	}
+	return thanks != draft.Thanks, nil
 }
 
+// LatestQuestions returns the questions of the most recent published
+// version, or nil when the survey has never been published.
 func (s *Surveys) LatestQuestions(ctx context.Context, surveyID uuid.UUID) ([]domain.Question, error) {
 	latest, err := s.q.GetLatestVersion(ctx, surveyID)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -446,7 +472,12 @@ func (s *Surveys) Versions(ctx context.Context, surveyID uuid.UUID) ([]Version, 
 	}
 	out := make([]Version, 0, len(rows))
 	for _, r := range rows {
-		v := Version{ID: r.ID, Number: int(r.Number), PublishedAt: r.PublishedAt}
+		v := Version{ID: r.ID, Number: int(r.Number), PublishedAt: r.PublishedAt,
+			Thanks: domain.ThankYou{
+				Message:   deref(r.ThanksMessage),
+				LinkLabel: deref(r.ThanksLinkLabel),
+				LinkURL:   deref(r.ThanksLinkUrl),
+			}}
 		if r.PublishedByEmail != nil {
 			v.PublishedBy = *r.PublishedByEmail
 		}

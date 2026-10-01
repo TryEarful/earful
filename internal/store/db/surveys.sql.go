@@ -167,16 +167,22 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (Sur
 }
 
 const createVersion = `-- name: CreateVersion :one
-INSERT INTO survey_versions (survey_id, number, published_by, published_at)
-VALUES ($1, $2, $3, $4)
-RETURNING id, survey_id, number, published_by, published_at
+INSERT INTO survey_versions (survey_id, number, published_by, published_at,
+                             thanks_message, thanks_link_label, thanks_link_url,
+                             thanks_localizations)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, survey_id, number, published_by, published_at, thanks_message, thanks_link_label, thanks_link_url, thanks_localizations
 `
 
 type CreateVersionParams struct {
-	SurveyID    uuid.UUID     `json:"survey_id"`
-	Number      int32         `json:"number"`
-	PublishedBy uuid.NullUUID `json:"published_by"`
-	PublishedAt time.Time     `json:"published_at"`
+	SurveyID            uuid.UUID     `json:"survey_id"`
+	Number              int32         `json:"number"`
+	PublishedBy         uuid.NullUUID `json:"published_by"`
+	PublishedAt         time.Time     `json:"published_at"`
+	ThanksMessage       *string       `json:"thanks_message"`
+	ThanksLinkLabel     *string       `json:"thanks_link_label"`
+	ThanksLinkUrl       *string       `json:"thanks_link_url"`
+	ThanksLocalizations []byte        `json:"thanks_localizations"`
 }
 
 func (q *Queries) CreateVersion(ctx context.Context, arg CreateVersionParams) (SurveyVersion, error) {
@@ -185,6 +191,10 @@ func (q *Queries) CreateVersion(ctx context.Context, arg CreateVersionParams) (S
 		arg.Number,
 		arg.PublishedBy,
 		arg.PublishedAt,
+		arg.ThanksMessage,
+		arg.ThanksLinkLabel,
+		arg.ThanksLinkUrl,
+		arg.ThanksLocalizations,
 	)
 	var i SurveyVersion
 	err := row.Scan(
@@ -193,6 +203,10 @@ func (q *Queries) CreateVersion(ctx context.Context, arg CreateVersionParams) (S
 		&i.Number,
 		&i.PublishedBy,
 		&i.PublishedAt,
+		&i.ThanksMessage,
+		&i.ThanksLinkLabel,
+		&i.ThanksLinkUrl,
+		&i.ThanksLocalizations,
 	)
 	return i, err
 }
@@ -234,7 +248,7 @@ func (q *Queries) GetDraftForSurvey(ctx context.Context, surveyID uuid.UUID) (Su
 }
 
 const getLatestVersion = `-- name: GetLatestVersion :one
-SELECT id, survey_id, number, published_by, published_at FROM survey_versions WHERE survey_id = $1 ORDER BY number DESC LIMIT 1
+SELECT id, survey_id, number, published_by, published_at, thanks_message, thanks_link_label, thanks_link_url, thanks_localizations FROM survey_versions WHERE survey_id = $1 ORDER BY number DESC LIMIT 1
 `
 
 func (q *Queries) GetLatestVersion(ctx context.Context, surveyID uuid.UUID) (SurveyVersion, error) {
@@ -246,6 +260,10 @@ func (q *Queries) GetLatestVersion(ctx context.Context, surveyID uuid.UUID) (Sur
 		&i.Number,
 		&i.PublishedBy,
 		&i.PublishedAt,
+		&i.ThanksMessage,
+		&i.ThanksLinkLabel,
+		&i.ThanksLinkUrl,
+		&i.ThanksLocalizations,
 	)
 	return i, err
 }
@@ -279,7 +297,7 @@ func (q *Queries) GetSurveyForWorkspace(ctx context.Context, arg GetSurveyForWor
 }
 
 const getVersion = `-- name: GetVersion :one
-SELECT id, survey_id, number, published_by, published_at FROM survey_versions WHERE id = $1 AND survey_id = $2
+SELECT id, survey_id, number, published_by, published_at, thanks_message, thanks_link_label, thanks_link_url, thanks_localizations FROM survey_versions WHERE id = $1 AND survey_id = $2
 `
 
 type GetVersionParams struct {
@@ -296,6 +314,10 @@ func (q *Queries) GetVersion(ctx context.Context, arg GetVersionParams) (SurveyV
 		&i.Number,
 		&i.PublishedBy,
 		&i.PublishedAt,
+		&i.ThanksMessage,
+		&i.ThanksLinkLabel,
+		&i.ThanksLinkUrl,
+		&i.ThanksLocalizations,
 	)
 	return i, err
 }
@@ -439,7 +461,8 @@ func (q *Queries) ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.
 }
 
 const listVersions = `-- name: ListVersions :many
-SELECT v.id, v.number, v.published_at, u.email AS published_by_email
+SELECT v.id, v.number, v.published_at, u.email AS published_by_email,
+       v.thanks_message, v.thanks_link_label, v.thanks_link_url
 FROM survey_versions v
 LEFT JOIN users u ON u.id = v.published_by
 WHERE v.survey_id = $1
@@ -451,6 +474,9 @@ type ListVersionsRow struct {
 	Number           int32     `json:"number"`
 	PublishedAt      time.Time `json:"published_at"`
 	PublishedByEmail *string   `json:"published_by_email"`
+	ThanksMessage    *string   `json:"thanks_message"`
+	ThanksLinkLabel  *string   `json:"thanks_link_label"`
+	ThanksLinkUrl    *string   `json:"thanks_link_url"`
 }
 
 func (q *Queries) ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error) {
@@ -467,6 +493,9 @@ func (q *Queries) ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListV
 			&i.Number,
 			&i.PublishedAt,
 			&i.PublishedByEmail,
+			&i.ThanksMessage,
+			&i.ThanksLinkLabel,
+			&i.ThanksLinkUrl,
 		); err != nil {
 			return nil, err
 		}

@@ -24,7 +24,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 4
+const FormatVersion = 5
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {
@@ -79,6 +79,18 @@ type Version struct {
 	Number      int        `json:"number"`
 	PublishedAt time.Time  `json:"published_at"`
 	Questions   []Question `json:"questions"`
+	// Thanks is the creator's thank you page as this version was
+	// published with it, absent where the default was shown. Format
+	// version 4.
+	Thanks *Thanks `json:"thanks,omitempty"`
+}
+
+// Thanks is what a respondent read after sending their answers, in the
+// creator's wording. Each part is absent when it was not set.
+type Thanks struct {
+	Message   string `json:"message,omitempty"`
+	LinkLabel string `json:"link_label,omitempty"`
+	LinkURL   string `json:"link_url,omitempty"`
 }
 
 type Question struct {

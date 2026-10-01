@@ -468,6 +468,22 @@ other = 'Opciones <small class="muted">(una por línea; déjelo vacío para cons
 hash = "sha1-a26226ca5a7d7fdddfdded0eb89234632eeffbdb"
 other = "Guardar y marcar como revisado"
 
+[languages.thanks.heading]
+hash = "sha1-249a4127432b7706c0e0cf1cefb72f02cf535b36"
+other = "Página de agradecimiento"
+
+[languages.thanks.message]
+hash = "sha1-80a4c498c72307cc5b2f0bc713d29370209b6039"
+other = "Mensaje en {{.Language}}"
+
+[languages.thanks.link_label]
+hash = "sha1-a14583dcd30d9d4e8c432106d1948a3c81505990"
+other = "Texto del enlace en {{.Language}}"
+
+[languages.thanks.stale]
+hash = "sha1-99e920f883bab7d8740adb6becd65665537a6ff5"
+other = "La página de agradecimiento cambió después de traducirse. Léala de nuevo."
+
 
 # ── Las dos vistas de las respuestas de una encuesta ────────────────────
 
@@ -1051,6 +1067,30 @@ other = 'Fecha de cierre <small class="muted">(opcional)</small>'
 hash = "sha1-913aba9f96cf9e2134b6ab20645d49644c123585"
 other = "Guardar ajustes"
 
+[editor.thanks.heading]
+hash = "sha1-249a4127432b7706c0e0cf1cefb72f02cf535b36"
+other = "Página de agradecimiento"
+
+[editor.thanks.intro]
+hash = "sha1-17111c6782f9874a47cb01037b863e222253acbd"
+other = "Lo que leen las personas después de enviar sus respuestas. Deje el mensaje vacío para mostrar el agradecimiento habitual. Los cambios se publican con la próxima versión."
+
+[editor.thanks.message_html]
+hash = "sha1-3ef4f6da5bfdcabf0ca654509a648f469a1b5f2a"
+other = 'Mensaje <small class="muted">(opcional)</small>'
+
+[editor.thanks.link_label_html]
+hash = "sha1-afa33442fb8020c46e59f59e96a02bfa82146549"
+other = 'Texto del enlace <small class="muted">(opcional, como Reservar mesa)</small>'
+
+[editor.thanks.link_url_html]
+hash = "sha1-52f0f3b2cbc69ec8e15bc738190ca3530ec5e832"
+other = 'Dirección del enlace <small class="muted">(empieza por https://)</small>'
+
+[editor.thanks.save.label]
+hash = "sha1-5cb751dc6bb2e10934d3c4f742b720798417dc9f"
+other = "Guardar página de agradecimiento"
+
 [editor.settings.anonymous]
 hash = "sha1-422159435a4f4191fa0f7625a0fb6c9ebee4b855"
 other = "Anónima. Esto no se puede cambiar."
@@ -1545,6 +1585,10 @@ other = "revocado"
 [editor.notice.unchanged]
 hash = "sha1-70566f4fc9c8009b055acd0324364ecd9095710e"
 other = "No hay nada que publicar: el borrador coincide con la versión ya publicada."
+
+[editor.notice.thanks]
+hash = "sha1-8e9b4ed92ab3f102eecf2854b3347eae3e596b09"
+other = "Página de agradecimiento guardada. Quienes respondan la verán cuando publique."
 
 [editor.notice.published]
 hash = "sha1-84065ea23b0268b6f060c21a2cb010bb32443c64"
@@ -2046,6 +2090,26 @@ other = "revise todas las traducciones antes de publicar, o quite el idioma"
 [language.error.limit]
 hash = "sha1-02f2aaff4cb303dec49349fc9e22727ed93121a4"
 other = "una encuesta admite como máximo {{.Limit}} idiomas"
+
+[thanks.error.address]
+hash = "sha1-5a2fdd059189807833b3e83c2bd2ad4c2002f516"
+other = "la dirección del enlace debe empezar por http:// o https:// y nombrar un sitio web"
+
+[thanks.error.label]
+hash = "sha1-f8e4af98b25c629b2b7bb379bad0b3bd5984f063"
+other = "póngale un texto al enlace, para que se sepa adónde lleva"
+
+[thanks.error.missing]
+hash = "sha1-82e30e2def6a4e64e181ce604e1d62308cd48eb2"
+other = "añada la dirección a la que lleva el enlace, o borre su texto"
+
+[thanks.error.long]
+hash = "sha1-36f75dd037c3eec153ceae04b3285c7571673255"
+other = "que el mensaje de agradecimiento no pase de {{.Limit}} caracteres"
+
+[thanks.error.label_long]
+hash = "sha1-2c48d45067da11d6b0ef6de7236d6a4cf4112abe"
+other = "que el texto del enlace no pase de {{.Limit}} caracteres"
 
 [editor.refused.import]
 hash = "sha1-ec24e3beddd70786574fe0e7f0111f967e6a8d52"

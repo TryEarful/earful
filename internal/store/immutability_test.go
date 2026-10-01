@@ -86,6 +86,11 @@ func TestPublishedVersionsRejectUpdateAndDelete(t *testing.T) {
 		_, err := pool.Exec(ctx, `UPDATE survey_versions SET number = number + 100 WHERE id = $1`, versionID)
 		assertImmutable(t, err)
 	})
+	t.Run("thank you message cannot be rewritten", func(t *testing.T) {
+		_, err := pool.Exec(ctx,
+			`UPDATE survey_versions SET thanks_message = 'words nobody was ever thanked with' WHERE id = $1`, versionID)
+		assertImmutable(t, err)
+	})
 	t.Run("version row cannot be deleted", func(t *testing.T) {
 		_, err := pool.Exec(ctx, `DELETE FROM survey_versions WHERE id = $1`, versionID)
 		assertImmutable(t, err)
