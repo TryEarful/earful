@@ -97,7 +97,7 @@ templ NewSurvey(email string, workspaceName string, csrf string, data NewSurveyD
 					<input type="date" name="close_at" value={ data.CloseAt } autocomplete="off"/>
 				</label>
 				if data.Error != "" {
-					<p class="error-text js-new-survey-error">{ data.Error }</p>
+					<p class="error-text js-new-survey-error">{ sentence(data.Error) }</p>
 				}
 				<button type="submit">{ t(ctx, "survey.new.submit.label") }</button>
 				<a class="button secondary" href="/surveys">{ t(ctx, "survey.new.cancel.label") }</a>
@@ -121,9 +121,9 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 					} else {
 						{ t(ctx, "survey.audience.invited.name") }
 					}
-					{ t(ctx, "editor.created", uitext.Args{"Date": data.Survey.CreatedAt}) }
+					<span class="meta-part">{ t(ctx, "editor.created", uitext.Args{"Date": data.Survey.CreatedAt}) }</span>
 					if data.Survey.Published() {
-						{ t(ctx, "editor.live", uitext.Args{"Version": data.Survey.LatestVersion}) } ·
+						<span class="meta-part">{ t(ctx, "editor.live", uitext.Args{"Version": data.Survey.LatestVersion}) }</span> ·
 						if data.ResponseCount > 0 {
 							<a href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results") }>{ responseCountLabel(ctx, data.ResponseCount) }</a>
 						} else {

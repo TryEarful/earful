@@ -2,7 +2,7 @@
 title: How Earful treats your data
 short_title: Trust
 sections: cards
-hash: sha256-7a83c05791b89163f9acb344b3409dd6af0af01f2dfa99e118dd763392507f33
+hash: sha256-38562ee07b8ee0a574d44af3b2d16e3a9b1f09b9da88f54e4409daef6b79dd56
 last_update: 2026-10-01
 ---
 
@@ -35,7 +35,7 @@ If you choose a language for the interface, your choice is kept in a cookie in y
 
 ## The theme
 
-If you choose a light or a dark theme, on any page here, a survey's included, your choice is kept in a cookie in your browser, named `theme`, for a year. It holds the word `light` or `dark` and nothing else, is set only when you choose, and is read only to draw the page. Choosing to follow your system removes it.
+If you choose a light or a dark theme on any page here, a survey included, your choice is kept for a year in a cookie in your browser named `theme`. It holds the word `light` or `dark` and nothing else, is set only when you choose, and is read only to draw the page. Choosing to follow your system removes it.
 
 ## Where the data lives, and who touches it
 

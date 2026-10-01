@@ -185,17 +185,36 @@ func TestCreateFromPrompt_AbsentWithoutAProvider(t *testing.T) {
 		t.Errorf("the title is not required without AI:\n%s", page)
 	}
 
-	resp, _ := createFromPrompt(t, app, creator, url.Values{"prompt": {"anything"}})
+	resp, body := createFromPrompt(t, app, creator, url.Values{"prompt": {"anything"}})
 	if resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("an untitled survey with no AI: status %d, want 422", resp.StatusCode)
 	}
+	if !bodyContains(body, "Give the survey a title") || bodyContains(body, "describe it") {
+		t.Errorf("with no AI the error should ask for a title only:\n%s", body)
+	}
 
-	resp, body := createFromPrompt(t, app, creator, url.Values{"title": {"By hand"}, "prompt": {"anything"}})
+	resp, body = createFromPrompt(t, app, creator, url.Values{"title": {"By hand"}, "prompt": {"anything"}})
 	if !strings.HasPrefix(resp.Request.URL.Path, "/surveys/") || !bodyContains(body, "<h1>By hand</h1>") {
 		t.Fatalf("a titled survey was not created as usual: %s", resp.Request.URL)
 	}
 	id := strings.TrimPrefix(resp.Request.URL.Path, "/surveys/")
 	if n := len(app.QuestionIdentities(t, creator, id)); n != 0 {
 		t.Errorf("draft holds %d questions with no AI configured", n)
+	}
+}
+
+// With AI offered, a survey with neither a title nor a description is
+// refused with an error that names both ways out.
+func TestCreateFromPrompt_NeitherTitleNorDescription(t *testing.T) {
+	t.Parallel()
+	app := apptest.New(t, apptest.Options{AI: generatorFake()})
+	creator := app.Login(t, apptest.UniqueEmail("fromprompt-neither"))
+
+	resp, body := createFromPrompt(t, app, creator, url.Values{})
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("status %d, want 422", resp.StatusCode)
+	}
+	if !bodyContains(body, "Give the survey a title, or describe it and AI suggests one") {
+		t.Errorf("the error does not offer a description as the other way:\n%s", body)
 	}
 }

@@ -49,6 +49,12 @@ func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 	survey, err := s.surveys.Create(r.Context(), info.WorkspaceID, info.UserID,
 		form.Title, form.Anonymous, closeAt)
 	if err != nil {
+		// Where AI is offered an empty title is allowed with a description,
+		// so the error names both ways out.
+		if errors.Is(err, domain.ErrEmptyTitle) && s.canGenerate() {
+			s.renderNewSurvey(w, r, form, say(r, "survey.error.untitled_or_described"))
+			return
+		}
 		if isUserError(err) {
 			s.renderNewSurvey(w, r, form, sayError(r, err))
 			return

@@ -181,7 +181,7 @@ test("gallery", async ({ browser }) => {
     await page.getByRole("button", { name: "Create survey" }).click();
     await capture(page, "survey-new-error", "en");
     await page.goto("/surveys/new");
-    await page.locator(".js-new-survey-prompt").fill("How new customers found their first week, especially onboarding");
+    await page.locator(".js-new-survey-prompt").fill("the first week of new customers");
     await capture(page, "survey-new-described", "en");
     await page.getByRole("button", { name: "Create survey" }).click();
     await expect(page).toHaveURL(/\?added=\d+/, { timeout: aiTimeout + 5000 });

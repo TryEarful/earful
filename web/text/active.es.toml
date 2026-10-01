@@ -1660,10 +1660,10 @@ many = "Ninguna de las {{.Count}} preguntas redactadas era utilizable. Pruebe a 
 other = "Ninguna de las {{.Count}} preguntas redactadas era utilizable. Pruebe a describir su objetivo de otra manera."
 
 [generate.notice.added]
-hash = "sha1-5ba10efc45e68a8bf9a1d35eb588bb154d1d213a"
-one = "Se añadió 1 pregunta a su borrador: edítela como cualquier otra."
-many = "Se añadieron {{.Count}} preguntas a su borrador: edítelas como cualquier otra."
-other = "Se añadieron {{.Count}} preguntas a su borrador: edítelas como cualquier otra."
+hash = "sha1-06dd6dc6b3edbcc3b245979053973b06b3c9e7b6"
+one = "Se añadió 1 pregunta a su borrador."
+many = "Se añadieron {{.Count}} preguntas a su borrador."
+other = "Se añadieron {{.Count}} preguntas a su borrador."
 
 [generate.notice.added_some]
 hash = "sha1-3031abbc2c1b840e45e44a6f02d4770ec188dbf3"
@@ -1994,6 +1994,10 @@ other = "una encuesta admite como máximo {{.Limit}} preguntas"
 [survey.error.question]
 hash = "sha1-fa0b56d16900e1ad9f18e3fa8b072ff4e8b30155"
 other = "esa pregunta no forma parte de este borrador"
+
+[survey.error.untitled_or_described]
+hash = "sha1-ea74f5a3c9ef3c7fc7050eac4ad2abeef28079db"
+other = "póngale un título a la encuesta, o descríbala y la IA propone uno"
 
 [survey.error.untitled]
 hash = "sha1-db7f9cb9bcf39e656e9ea4c4ca329f37a1102e80"

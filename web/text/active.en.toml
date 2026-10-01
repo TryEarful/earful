@@ -925,8 +925,8 @@ one = "None of the {{.Count}} drafted questions were usable. Try describing your
 other = "None of the {{.Count}} drafted questions were usable. Try describing your goal differently."
 
 [generate.notice.added]
-one = "Added 1 question to your draft. Edit it like any other."
-other = "Added {{.Count}} questions to your draft. Edit them like any others."
+one = "Added 1 question to your draft."
+other = "Added {{.Count}} questions to your draft."
 
 [ai.refused]
 quota = "This workspace has used today's AI allowance. It resets tomorrow, and everything else keeps working."
@@ -1106,6 +1106,7 @@ empty = "add at least one question before publishing"
 long = "a survey can hold at most {{.Limit}} questions"
 question = "that question is not part of this draft"
 untitled = "give the survey a title"
+untitled_or_described = "give the survey a title, or describe it and AI suggests one"
 title = "keep the title under {{.Limit}} characters"
 
 [language.error]

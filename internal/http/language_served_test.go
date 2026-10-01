@@ -213,7 +213,7 @@ func TestLanguage_WhatIsWordedOutsideATemplate(t *testing.T) {
 	resp = app.PostForm(t, creator, "/surveys", url.Values{"title": {"   "}, "anonymity": {"anonymous"}})
 	page = apptest.ReadBody(t, resp)
 	resp.Body.Close()
-	if !bodyContains(page, "póngale un título a la encuesta") {
+	if !bodyContains(page, "Póngale un título a la encuesta") {
 		t.Errorf("a survey with no title:\n%s", page)
 	}
 

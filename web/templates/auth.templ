@@ -152,7 +152,7 @@ templ ErrorPage(title string, msg string) {
 		<main class="standalone">
 			<h1>{ title }</h1>
 			<p>{ msg }</p>
-			<p><a href="/">{ t(ctx, "page.home.label") }</a></p>
+			<p><a class="button-link" href="/">{ t(ctx, "page.home.label") }</a></p>
 		</main>
 	}
 }
@@ -169,7 +169,7 @@ templ Goodbye(copySent bool) {
 				<p class="notice js-goodbye-copy" role="status">{ t(ctx, "goodbye.copy") }</p>
 			}
 			<p class="muted">{ t(ctx, "goodbye.again") }</p>
-			<p><a href="/">{ t(ctx, "page.home.label") }</a></p>
+			<p><a class="button-link" href="/">{ t(ctx, "page.home.label") }</a></p>
 		</main>
 	}
 }
