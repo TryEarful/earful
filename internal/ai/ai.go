@@ -40,6 +40,50 @@ type GenerateRequest struct {
 	// System frames the task; Prompt is the creator's input.
 	System string
 	Prompt string
+	// Attachments are files the creator sent with the prompt, already
+	// checked and, where a model cannot read the original format,
+	// converted to text (internal/attach). They live in memory for one
+	// request and are never stored.
+	Attachments []Attachment
+}
+
+// Attachment is one file forwarded to a model. MIME is one of the kinds
+// a provider can be asked to read: MIMEText for anything turned into
+// text, MIMEPDF, MIMEPNG or MIMEJPEG for what goes to the model as it
+// was uploaded. Name is the file's name as the creator gave it, which
+// the model is told, so a prompt can refer to "the attached
+// spreadsheet".
+type Attachment struct {
+	Name string
+	MIME string
+	Data []byte
+}
+
+// The attachment kinds a provider may be handed.
+const (
+	MIMEText = "text/plain"
+	MIMEPDF  = "application/pdf"
+	MIMEPNG  = "image/png"
+	MIMEJPEG = "image/jpeg"
+)
+
+// IsText reports whether the attachment is text a text-only model can
+// read inline.
+func (a Attachment) IsText() bool { return a.MIME == MIMEText }
+
+// ErrAttachmentUnsupported marks an attachment a provider cannot read,
+// such as an image sent to a text-only model. Callers show it as a
+// refusal of that file, not as the AI being down.
+var ErrAttachmentUnsupported = errors.New("ai: this provider cannot read the attachment")
+
+// attachmentNames lists the attachments' names, for the providers that
+// acknowledge what they were sent instead of reading it.
+func attachmentNames(attachments []Attachment) []string {
+	names := make([]string, 0, len(attachments))
+	for _, a := range attachments {
+		names = append(names, a.Name)
+	}
+	return names
 }
 
 type TranscribeRequest struct {

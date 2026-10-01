@@ -42,7 +42,50 @@ func (o *OpenAICompat) client() *http.Client {
 }
 
 func (o *OpenAICompat) Generate(ctx context.Context, req GenerateRequest) (Stream, error) {
-	return o.chat(ctx, OpGenerate, req.System, req.Prompt)
+	prompt, err := withTextAttachments(req.Prompt, req.Attachments)
+	if err != nil {
+		return nil, err
+	}
+	return o.chat(ctx, OpGenerate, req.System, prompt)
+}
+
+// withTextAttachments appends each attachment to the prompt as a fenced
+// block under its name. The OpenAI-compatible backends this provider
+// speaks to (ollama, llamafile, self-hosted gateways) agree on text
+// content and disagree on everything else: image parts exist only for
+// vision models, and no common shape exists for PDF. So this provider
+// takes text only, and refuses an image or a PDF by name rather than
+// sending a request the model behind it may silently ignore.
+func withTextAttachments(prompt string, attachments []Attachment) (string, error) {
+	if len(attachments) == 0 {
+		return prompt, nil
+	}
+	var b strings.Builder
+	b.WriteString(prompt)
+	for _, a := range attachments {
+		if !a.IsText() {
+			return "", fmt.Errorf("%w: %s (%s)", ErrAttachmentUnsupported, a.Name, a.MIME)
+		}
+		fence := fenceFor(a.Data)
+		fmt.Fprintf(&b, "\n\nAttached file: %s\n%s\n%s\n%s", a.Name, fence, strings.TrimRight(string(a.Data), "\n"), fence)
+	}
+	return b.String(), nil
+}
+
+// fenceFor returns a backtick fence longer than any run of backticks in
+// the content, so a file that itself holds a fenced block cannot close
+// the one it is wrapped in.
+func fenceFor(content []byte) string {
+	longest, run := 0, 0
+	for _, c := range content {
+		if c == '`' {
+			run++
+			longest = max(longest, run)
+		} else {
+			run = 0
+		}
+	}
+	return strings.Repeat("`", max(3, longest+1))
 }
 
 func (o *OpenAICompat) Analyze(ctx context.Context, req AnalyzeRequest) (Stream, error) {

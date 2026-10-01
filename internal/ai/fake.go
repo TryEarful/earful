@@ -3,6 +3,8 @@ package ai
 import (
 	"context"
 	"io"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 )
@@ -58,7 +60,14 @@ func (f *Fake) Generate(_ context.Context, req GenerateRequest) (Stream, error) 
 		return nil, f.Err
 	}
 	f.GenerateCalls = append(f.GenerateCalls, req)
-	return f.stream(takeScript(&f.GenerateScript, len(f.GenerateCalls))), nil
+	fragments := takeScript(&f.GenerateScript, len(f.GenerateCalls))
+	if len(req.Attachments) > 0 {
+		// Echoed after the script, so a test reading the output sees
+		// which files arrived without scripting for them.
+		fragments = append(slices.Clone(fragments),
+			"\nattached: "+strings.Join(attachmentNames(req.Attachments), ", ")+"\n")
+	}
+	return f.stream(fragments), nil
 }
 
 func (f *Fake) Transcribe(_ context.Context, req TranscribeRequest) (Stream, error) {

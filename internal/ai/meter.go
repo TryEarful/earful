@@ -116,11 +116,21 @@ func (m *Meter) day() time.Time {
 // breaker outranks the quota, because a tripped breaker must present the
 // same refusal to everyone.
 func (m *Meter) Check(ctx context.Context, workspaceID uuid.UUID) error {
+	return m.CheckFor(ctx, workspaceID, 0)
+}
+
+// CheckFor is Check for a call whose input is known to be large before
+// it is made, such as one carrying attached files: it refuses when
+// today's spend plus estimatedTokens would pass the cap or the breaker,
+// so one upload cannot overrun an allowance by more than its own size.
+// With an estimate of zero it is exactly Check.
+func (m *Meter) CheckFor(ctx context.Context, workspaceID uuid.UUID, estimatedTokens int64) error {
 	cost, err := m.Store.GlobalCostOnDay(ctx, m.day())
 	if err != nil {
 		return err
 	}
-	if cost >= m.DailyBudgetEUR {
+	estimatedCost := float64(estimatedTokens) / 1000 * m.CostPer1KTokensEUR
+	if cost >= m.DailyBudgetEUR || (estimatedTokens > 0 && cost+estimatedCost > m.DailyBudgetEUR) {
 		// This IS the alert until Cloud Monitoring exists (M9-T2): an
 		// Error-level line is what the log-based alerting will match.
 		m.Logger.Error("AI budget breaker tripped — all AI endpoints disabled until tomorrow",
@@ -132,10 +142,41 @@ func (m *Meter) Check(ctx context.Context, workspaceID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	if usage.Tokens >= usage.Cap {
+	if usage.Tokens >= usage.Cap || (estimatedTokens > 0 && usage.Tokens+estimatedTokens > usage.Cap) {
 		return ErrQuotaExceeded
 	}
 	return nil
+}
+
+// Attachment token estimates. Text is charged like every other prompt,
+// by characters. Gemini bills an image as 258 tokens per 768px tile and
+// a PDF page as 258 tokens plus its text; neither size is known without
+// decoding the file, so both are estimated from bytes at rates that err
+// high for ordinary files: an image as one tile per 200 KB, a PDF as one
+// token per 16 bytes, which covers a text-dense page.
+const (
+	imageTileTokens = 258
+	imageTileBytes  = 200 << 10
+	pdfBytesToken   = 16
+)
+
+// EstimateTokens is what a request's attachments are expected to cost a
+// model, before the call. It is charged with the call's own text, so
+// the estimate checked is the amount recorded.
+func EstimateTokens(attachments []Attachment) int64 {
+	var tokens int64
+	for _, a := range attachments {
+		size := int64(len(a.Data))
+		switch a.MIME {
+		case MIMEPNG, MIMEJPEG:
+			tokens += imageTileTokens * (size/imageTileBytes + 1)
+		case MIMEPDF:
+			tokens += imageTileTokens + size/pdfBytesToken
+		default:
+			tokens += size/4 + 1
+		}
+	}
+	return tokens
 }
 
 // WorkspaceUsage is where a workspace stands against its allowance today.
@@ -196,6 +237,13 @@ func (c *CountedStream) Chars() int { return c.chars }
 // budget guard.
 func (m *Meter) Record(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, chars int) error {
 	return m.record(ctx, workspaceID, surveyID, kind, int64(chars/4)+1, 0)
+}
+
+// RecordWith accounts a call that also carried attachments: the
+// characters as Record counts them, plus the attachments' estimate
+// (EstimateTokens), the same figure CheckFor was asked about.
+func (m *Meter) RecordWith(ctx context.Context, workspaceID uuid.UUID, surveyID *uuid.UUID, kind string, chars int, attachmentTokens int64) error {
+	return m.record(ctx, workspaceID, surveyID, kind, int64(chars/4)+1+attachmentTokens, 0)
 }
 
 // RecordVoice accounts one transcription. Audio is billed by duration

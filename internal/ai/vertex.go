@@ -110,7 +110,36 @@ func isMultiRegion(location string) bool {
 }
 
 func (v *Vertex) Generate(ctx context.Context, req GenerateRequest) (Stream, error) {
-	return v.stream(ctx, OpGenerate, req.System, []vertexPart{{Text: req.Prompt}})
+	parts, err := vertexAttachmentParts(req.Attachments)
+	if err != nil {
+		return nil, err
+	}
+	return v.stream(ctx, OpGenerate, req.System, append(parts, vertexPart{Text: req.Prompt}))
+}
+
+// vertexInlineKinds are the attachment kinds Gemini reads natively as
+// inline data. Office and OpenDocument files arrive here already turned
+// into text by internal/attach, so plain text covers them.
+var vertexInlineKinds = map[string]bool{
+	MIMEText: true, MIMEPDF: true, MIMEPNG: true, MIMEJPEG: true,
+}
+
+// vertexAttachmentParts sends each attachment inline, after a line
+// naming it, ahead of the prompt: the model reads the files first and
+// the request about them last, and a prompt can say "the attached
+// spreadsheet" because the model was told which file that is.
+func vertexAttachmentParts(attachments []Attachment) ([]vertexPart, error) {
+	var parts []vertexPart
+	for _, a := range attachments {
+		if !vertexInlineKinds[a.MIME] {
+			return nil, fmt.Errorf("%w: %s (%s)", ErrAttachmentUnsupported, a.Name, a.MIME)
+		}
+		parts = append(parts,
+			vertexPart{Text: "Attached file: " + a.Name},
+			vertexPart{InlineData: &vertexBlob{MIMEType: a.MIME, Data: base64.StdEncoding.EncodeToString(a.Data)}},
+		)
+	}
+	return parts, nil
 }
 
 func (v *Vertex) Analyze(ctx context.Context, req AnalyzeRequest) (Stream, error) {

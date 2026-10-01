@@ -37,6 +37,13 @@ func (s *Scripted) Generate(_ context.Context, req GenerateRequest) (Stream, err
 		`{"type":"nps","text":"How likely are you to recommend us?"}`,
 		`{"type":"short_text","text":"Anything we should change first?"}`,
 	}
+	// Attached files are acknowledged by name in one more question, which
+	// is what lets the browser suite see that an upload reached the
+	// model without a model to read it.
+	if len(req.Attachments) > 0 {
+		lines = append(lines, `{"type":"long_text","text":"What stands out in `+
+			jsonEscape(strings.Join(attachmentNames(req.Attachments), ", "))+`?"}`)
+	}
 	// A survey started from a description alone asks for a title line
 	// before the questions; answering it here is what lets the browser
 	// suite drive that path with no model.
