@@ -106,7 +106,7 @@ templ NewSurvey(email string, workspaceName string, csrf string, data NewSurveyD
 					<input type="date" name="close_at" value={ data.CloseAt } autocomplete="off"/>
 				</label>
 				if data.Error != "" {
-					<p class="error-text js-new-survey-error">{ sentence(data.Error) }</p>
+					<p class="error-text js-new-survey-error">{ data.Error }</p>
 				}
 				<button type="submit">{ t(ctx, "survey.new.submit.label") }</button>
 				<a class="button secondary" href="/surveys">{ t(ctx, "survey.new.cancel.label") }</a>

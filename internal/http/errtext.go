@@ -3,6 +3,8 @@ package http
 import (
 	"errors"
 	"net/http"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/store"
@@ -127,6 +129,22 @@ func isUserError(err error) bool {
 // sayError words a validation error for the request it is shown to. An
 // error with no message of its own is shown as it describes itself,
 // which is how every error was shown before any had one.
+// sayErrorAlone is sayError for a message that stands on its own rather
+// than after a colon: the domain's errors are worded as fragments in
+// lower case, so the first letter is raised.
+func sayErrorAlone(r *http.Request, err error) string {
+	return sentence(sayError(r, err))
+}
+
+// sentence raises the first letter of a fragment.
+func sentence(s string) string {
+	first, size := utf8.DecodeRuneInString(s)
+	if first == utf8.RuneError {
+		return s
+	}
+	return string(unicode.ToUpper(first)) + s[size:]
+}
+
 func sayError(r *http.Request, err error) string {
 	if message, ok := errorText(text(r), err); ok {
 		return message

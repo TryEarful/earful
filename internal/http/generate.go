@@ -151,7 +151,7 @@ func (s *server) surveyCreateFromPrompt(w http.ResponseWriter, r *http.Request, 
 	withTitle := strings.TrimSpace(form.Title) == ""
 	if !withTitle {
 		if err := domain.ValidateTitle(form.Title); err != nil {
-			s.renderNewSurvey(w, r, form, sayError(r, err))
+			s.renderNewSurvey(w, r, form, sayErrorAlone(r, err))
 			return
 		}
 	}

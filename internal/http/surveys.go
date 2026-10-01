@@ -37,7 +37,7 @@ func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 
 	closeAt, err := parseCloseDate(form.CloseAt)
 	if err != nil {
-		s.renderNewSurvey(w, r, form, sayError(r, err))
+		s.renderNewSurvey(w, r, form, sayErrorAlone(r, err))
 		return
 	}
 	// A description or attached files are read only where AI is offered;
@@ -53,11 +53,11 @@ func (s *server) surveyCreate(w http.ResponseWriter, r *http.Request) {
 		// Where AI is offered an empty title is allowed with a description,
 		// so the error names both ways out.
 		if errors.Is(err, domain.ErrEmptyTitle) && s.canGenerate() {
-			s.renderNewSurvey(w, r, form, say(r, "survey.error.untitled_or_described"))
+			s.renderNewSurvey(w, r, form, sentence(say(r, "survey.error.untitled_or_described")))
 			return
 		}
 		if isUserError(err) {
-			s.renderNewSurvey(w, r, form, sayError(r, err))
+			s.renderNewSurvey(w, r, form, sayErrorAlone(r, err))
 			return
 		}
 		s.internalError(w, r, "create survey", err)
