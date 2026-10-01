@@ -14,7 +14,7 @@ import (
 // into (story 25). Choosing one the survey has no translation into words
 // the page in it, keeps the questions as written, and says so.
 
-const untranslatedNoticeES = "Esta encuesta no está disponible en español"
+const untranslatedNoticeES = "Las preguntas se muestran tal como se escribieron, sin traducir"
 
 // englishOnlySurvey publishes a survey with one required question and no
 // translation, and returns its id.

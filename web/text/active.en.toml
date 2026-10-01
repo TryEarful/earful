@@ -1524,7 +1524,7 @@ suggested = "{{.Language}} (suggested)"
 submit = "Change language"
 # Shown only to somebody who chose this file's language, so each
 # language's version names that language.
-untranslated = "This survey is not available in English, so its questions are shown as written."
+untranslated = "The page is in English. The questions are shown as written, without a translation."
 
 [respond.question]
 position = "Question {{.Current}} of {{.Total}}"

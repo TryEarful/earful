@@ -1453,8 +1453,8 @@ button:disabled,
 /* A number question's limits, set under its field as a scale's ends are
    under the scale. */
 .number-hint {
-  font-size: 0.8rem;
-  margin-top: 0.4rem;
+  font-size: 0.875rem;
+  margin-top: var(--space-2);
 }
 
 .respond-progress {

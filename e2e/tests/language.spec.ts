@@ -63,7 +63,7 @@ test("a respondent chooses a language the survey was not translated into", async
   // script.
   await respondent.locator(".js-language-picker").selectOption("es");
   await expect(respondent).toHaveURL(/[?&]lang=es/);
-  await expect(respondent.locator(".js-untranslated-notice")).toContainText("no está disponible en español");
+  await expect(respondent.locator(".js-untranslated-notice")).toContainText("sin traducir");
   await expect(respondent.getByRole("button", { name: "Siguiente" })).toBeVisible();
   await expect(respondent.getByText("What would make surveys less painful?")).toBeVisible();
   await expect(respondent.locator(".js-language-picker")).toHaveValue("es");

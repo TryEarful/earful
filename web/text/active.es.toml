@@ -2780,8 +2780,8 @@ hash = "sha1-789b14dfa8cb7b36e164a4ef9f37dbfc44c25ba0"
 other = "Cambiar de idioma"
 
 [respond.picker.untranslated]
-hash = "sha1-4ff53fd8f0c3e90cff5d1dd70a8e35089ec7bf5e"
-other = "Esta encuesta no está disponible en español, así que sus preguntas se muestran tal como se escribieron."
+hash = "sha1-0b5bb12d7e44c428e5dc2ebc8d1857b69eaff9af"
+other = "La página está en español. Las preguntas se muestran tal como se escribieron, sin traducir."
 
 [respond.question.position]
 hash = "sha1-f667f92a288a788985a6e7ef81be35ba98608e1f"
