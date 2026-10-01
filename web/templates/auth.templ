@@ -157,12 +157,17 @@ templ ErrorPage(title string, msg string) {
 	}
 }
 
-templ Goodbye() {
+// Goodbye closes an account's last page. copySent is whether a copy of
+// the data was asked for, which the page confirms is on its way.
+templ Goodbye(copySent bool) {
 	@Layout(t(ctx, "goodbye.title")) {
 		@authBrand()
 		<main class="standalone">
 			<h1>{ t(ctx, "goodbye.heading") }</h1>
 			<p>{ t(ctx, "goodbye.body") }</p>
+			if copySent {
+				<p class="notice js-goodbye-copy" role="status">{ t(ctx, "goodbye.copy") }</p>
+			}
 			<p class="muted">{ t(ctx, "goodbye.again") }</p>
 			<p><a href="/">{ t(ctx, "page.home.label") }</a></p>
 		</main>

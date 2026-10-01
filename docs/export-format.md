@@ -159,6 +159,13 @@ An export is built in the background and downloadable for **24 hours**.
 The link requires a session in the owning workspace, so it is not a
 bearer token; after it expires, build a fresh one.
 
+Closing an account offers the same archive as a parting copy ("Send me
+a copy of my data" on the delete form). Closing revokes every session,
+so that link is a bearer token instead: it is emailed to the address
+the account had, only its SHA-256 is stored, and it works for **7 days**
+from the moment the account closed. If the archive cannot be built, or
+is over the cap below, the email says so instead of carrying a link.
+
 A workspace whose archive would exceed 64 MB fails with a message
 explaining that, rather than trying to push it through a database row —
 see ADR-0010 for why the archive lives in Postgres at all.

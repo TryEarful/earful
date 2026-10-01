@@ -188,6 +188,11 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 				<p>{ t(ctx, "account.delete.body") }</p>
 				<form method="post" action="/account/delete">
 					<input type="hidden" name="_csrf" value={ csrf }/>
+					<label class="checkbox">
+						<input type="checkbox" name="send_copy" value="yes" class="js-delete-send-copy" aria-describedby="delete-copy-hint"/>
+						<span>{ t(ctx, "account.delete.copy.label") }</span>
+					</label>
+					<p class="muted" id="delete-copy-hint">{ t(ctx, "account.delete.copy.hint") }</p>
 					<button type="submit" class="secondary danger">{ t(ctx, "account.delete.submit.label") }</button>
 				</form>
 			</div>

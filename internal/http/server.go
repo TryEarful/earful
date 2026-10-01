@@ -47,6 +47,10 @@ type Deps struct {
 	Google *auth.GoogleOIDC
 	AI     ai.Provider
 	Text   *uitext.Catalog
+	// ExportMaxBytes caps one workspace archive; zero means the 64 MB
+	// default. Tests lower it to reach the path where an archive is too
+	// large, which no test can afford to build for real.
+	ExportMaxBytes int
 }
 
 type server struct {
@@ -65,6 +69,9 @@ type server struct {
 	// isn't.
 	ai      ai.Provider
 	aiMeter *ai.Meter
+
+	// exportMaxBytes caps one workspace archive (Deps.ExportMaxBytes).
+	exportMaxBytes int
 
 	// text is the interface's wording, in every language it is served in.
 	text *uitext.Catalog
@@ -118,6 +125,9 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	if deps.Text == nil {
 		deps.Text = uitext.Embedded()
 	}
+	if deps.ExportMaxBytes <= 0 {
+		deps.ExportMaxBytes = exportMaxBytes
+	}
 	// The documents are part of the binary, and one that does not render
 	// is a fault in the build: better no service than a trust page that
 	// is missing.
@@ -133,18 +143,19 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	// A workspace is created holding its Starter Survey (story 86).
 	authSvc.SetWorkspaceSeeder(starter.Seeder(deps.Text))
 	s := &server{
-		cfg:         cfg,
-		logger:      logger,
-		pool:        deps.Pool,
-		clock:       deps.Clock,
-		auth:        authSvc,
-		surveys:     surveys,
-		invites:     invites.NewService(surveys, deps.Email, deps.Clock, cfg.BaseURL),
-		emailSender: deps.Email,
-		google:      deps.Google,
-		ai:          deps.AI,
-		text:        deps.Text,
-		pages:       documents,
+		cfg:            cfg,
+		logger:         logger,
+		pool:           deps.Pool,
+		clock:          deps.Clock,
+		auth:           authSvc,
+		surveys:        surveys,
+		invites:        invites.NewService(surveys, deps.Email, deps.Clock, cfg.BaseURL),
+		emailSender:    deps.Email,
+		google:         deps.Google,
+		ai:             deps.AI,
+		text:           deps.Text,
+		exportMaxBytes: deps.ExportMaxBytes,
+		pages:          documents,
 		aiMeter: &ai.Meter{
 			Store: surveys,
 			Clock: deps.Clock,

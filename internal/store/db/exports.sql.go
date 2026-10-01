@@ -26,6 +26,59 @@ func (q *Queries) ClaimExportJob(ctx context.Context, id uuid.UUID) (uuid.UUID, 
 	return id_2, err
 }
 
+const createClosureExportJob = `-- name: CreateClosureExportJob :one
+INSERT INTO export_jobs (workspace_id, requested_by, status, created_at, expires_at,
+                         kind, download_token_hash)
+VALUES ($1, $2, 'pending', $3, $4, 'closure', $5)
+ON CONFLICT (workspace_id) WHERE kind = 'closure' DO NOTHING
+RETURNING id, workspace_id, status, size_bytes, error, created_at, finished_at, expires_at
+`
+
+type CreateClosureExportJobParams struct {
+	WorkspaceID       uuid.UUID     `json:"workspace_id"`
+	RequestedBy       uuid.NullUUID `json:"requested_by"`
+	CreatedAt         time.Time     `json:"created_at"`
+	ExpiresAt         *time.Time    `json:"expires_at"`
+	DownloadTokenHash []byte        `json:"download_token_hash"`
+}
+
+type CreateClosureExportJobRow struct {
+	ID          uuid.UUID  `json:"id"`
+	WorkspaceID uuid.UUID  `json:"workspace_id"`
+	Status      string     `json:"status"`
+	SizeBytes   int64      `json:"size_bytes"`
+	Error       *string    `json:"error"`
+	CreatedAt   time.Time  `json:"created_at"`
+	FinishedAt  *time.Time `json:"finished_at"`
+	ExpiresAt   *time.Time `json:"expires_at"`
+}
+
+// The copy sent when an account closes. Its expiry is set now, from the
+// moment of closure, and the token is the download's only credential.
+// A second job for the same workspace is refused by the unique index and
+// returns no row.
+func (q *Queries) CreateClosureExportJob(ctx context.Context, arg CreateClosureExportJobParams) (CreateClosureExportJobRow, error) {
+	row := q.db.QueryRow(ctx, createClosureExportJob,
+		arg.WorkspaceID,
+		arg.RequestedBy,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+		arg.DownloadTokenHash,
+	)
+	var i CreateClosureExportJobRow
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.Status,
+		&i.SizeBytes,
+		&i.Error,
+		&i.CreatedAt,
+		&i.FinishedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const createExportJob = `-- name: CreateExportJob :one
 
 INSERT INTO export_jobs (workspace_id, requested_by, status, created_at)
@@ -65,6 +118,15 @@ func (q *Queries) CreateExportJob(ctx context.Context, arg CreateExportJobParams
 		&i.ExpiresAt,
 	)
 	return i, err
+}
+
+const deleteExportJob = `-- name: DeleteExportJob :exec
+DELETE FROM export_jobs WHERE id = $1
+`
+
+func (q *Queries) DeleteExportJob(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteExportJob, id)
+	return err
 }
 
 const failExportJob = `-- name: FailExportJob :exec
@@ -108,10 +170,32 @@ func (q *Queries) FinishExportJob(ctx context.Context, arg FinishExportJobParams
 	return err
 }
 
+const getClosureArchive = `-- name: GetClosureArchive :one
+SELECT id, archive, expires_at
+FROM export_jobs
+WHERE download_token_hash = $1 AND kind = 'closure' AND status = 'ready'
+  AND archive IS NOT NULL
+`
+
+type GetClosureArchiveRow struct {
+	ID        uuid.UUID  `json:"id"`
+	Archive   []byte     `json:"archive"`
+	ExpiresAt *time.Time `json:"expires_at"`
+}
+
+// The bearer download: found by the token's hash alone, and only for a
+// built closure export.
+func (q *Queries) GetClosureArchive(ctx context.Context, downloadTokenHash []byte) (GetClosureArchiveRow, error) {
+	row := q.db.QueryRow(ctx, getClosureArchive, downloadTokenHash)
+	var i GetClosureArchiveRow
+	err := row.Scan(&i.ID, &i.Archive, &i.ExpiresAt)
+	return i, err
+}
+
 const getExportArchive = `-- name: GetExportArchive :one
 SELECT id, archive, size_bytes, expires_at
 FROM export_jobs
-WHERE id = $1 AND workspace_id = $2 AND status = 'ready'
+WHERE id = $1 AND workspace_id = $2 AND status = 'ready' AND kind = 'account'
 `
 
 type GetExportArchiveParams struct {
@@ -143,7 +227,7 @@ func (q *Queries) GetExportArchive(ctx context.Context, arg GetExportArchivePara
 const latestExportJob = `-- name: LatestExportJob :one
 SELECT id, workspace_id, status, size_bytes, error, created_at, finished_at, expires_at
 FROM export_jobs
-WHERE workspace_id = $1
+WHERE workspace_id = $1 AND kind = 'account'
 ORDER BY created_at DESC
 LIMIT 1
 `

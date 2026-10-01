@@ -145,6 +145,7 @@ title = "Account deleted · Earful"
 heading = "Your account is deleted"
 body = "Your account and workspace are now deactivated and scheduled for permanent deletion after 30 days. If this was a mistake, contact support within those 30 days to restore it."
 again = "You can create a fresh account with the same email at any time."
+copy = "A copy of your data is on its way to your email. The link in it works for 7 days."
 
 
 # ── The header of a signed-in page ──────────────────────────────────────
@@ -245,6 +246,10 @@ label = "Export my workspace"
 [account.delete]
 heading = "Delete account"
 body = "Your account closes right away. Your data is erased for good after 30 days, and until then support can restore it."
+
+[account.delete.copy]
+label = "Send me a copy of my data"
+hint = "A download link arrives by email and works for 7 days."
 
 [account.delete.submit]
 label = "Delete my account"
@@ -1027,6 +1032,10 @@ budget = "Daily breaker: {{.Budget}}. Estimates, not invoices. See docs/metrics.
 title = "Export not found"
 body = "This download link has expired or doesn't belong to your workspace. Start a new export from your account page."
 
+[export.closure.missing]
+title = "Copy not found"
+body = "This download link has expired or isn't valid. The copy sent when an account closes can be downloaded for 7 days."
+
 [export.failed]
 generic = "Something went wrong building the export. Try again, or ask support."
 large = "This workspace is too large to export in one archive. Export individual surveys as CSV, or ask support for a copy."
@@ -1342,6 +1351,32 @@ Your personal link:
 {{.Link}}
 
 The link is yours alone and works for one submission. If you weren't expecting this, you can ignore it.'''
+
+# Sent once the copy asked for when an account closes is built. Expires
+# is a date and time in UTC.
+[email.closure]
+subject = "Your copy of your Earful data"
+body = '''
+Here is the copy of your Earful data you asked for when you closed your account:
+
+{{.Link}}
+
+The link downloads one archive with every survey and response your workspace held. It works for 7 days, until {{.Expires}} UTC, and then the copy is deleted.
+
+Anyone with this link can download your data, so please don't forward this email.'''
+
+# Sent instead, when the copy could not be built. Reason is one of the
+# two sentences below.
+[email.closure.failed]
+subject = "Your copy of your Earful data could not be made"
+body = '''
+You asked for a copy of your data when you closed your Earful account, and it could not be made.
+
+{{.Reason}}
+
+Your data is kept for 30 days after the account closes. Within that time, support can restore your account or send you a copy.'''
+generic = "Something went wrong building the archive."
+large = "Your workspace is too large to send in one archive."
 
 
 # ── The name a workspace is given ──────────────────────────────────────

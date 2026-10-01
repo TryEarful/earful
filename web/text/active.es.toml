@@ -188,6 +188,10 @@ other = "Su cuenta y su espacio de trabajo están desactivados y programados par
 hash = "sha1-3b88d3287a5179dbde7200ea2c0c1209e30d90d3"
 other = "Puede crear una cuenta nueva con el mismo correo en cualquier momento."
 
+[goodbye.copy]
+hash = "sha1-7a2ead399b88c054cd0e42652761495995aa3ff7"
+other = "Una copia de sus datos va de camino a su correo. El enlace que contiene funciona durante 7 días."
+
 
 # ── La cabecera de una página con sesión iniciada ───────────────────────
 
@@ -342,6 +346,14 @@ other = "Eliminar la cuenta"
 [account.delete.body]
 hash = "sha1-5f2a152ce5e681898e46afbbfc68a82c6f5a03f8"
 other = "Su cuenta se cierra de inmediato. Sus datos se borran definitivamente pasados 30 días, y hasta entonces soporte puede restaurarla."
+
+[account.delete.copy.label]
+hash = "sha1-4e4137d89b0df073ca96acd9be054073fa51c8d2"
+other = "Enviarme una copia de mis datos"
+
+[account.delete.copy.hint]
+hash = "sha1-30f89f665cefab0ae9056c8920bf777455de2b58"
+other = "Recibirá por correo un enlace de descarga que funciona durante 7 días."
 
 [account.delete.submit.label]
 hash = "sha1-2ae3a019040b2afd5fa5c1c7f7a1766b7c4ae831"
@@ -1833,6 +1845,14 @@ other = "No se encontró la exportación"
 hash = "sha1-0b1818940e3d280b1560a2dd8a7478b2cff7bb1e"
 other = "Este enlace de descarga ha caducado o no pertenece a su espacio de trabajo. Inicie una exportación nueva desde la página de su cuenta."
 
+[export.closure.missing.title]
+hash = "sha1-952c99f786345269716de0dd91bcce4387533cfa"
+other = "No se encontró la copia"
+
+[export.closure.missing.body]
+hash = "sha1-3e819be564598df571c36faddaa34eb94883ec4f"
+other = "Este enlace de descarga ha caducado o no es válido. La copia que se envía al cerrar una cuenta puede descargarse durante 7 días."
+
 [export.failed.generic]
 hash = "sha1-364bb2f75608bc69374cb0cfb359690d18d3e16b"
 other = "Algo salió mal al preparar la exportación. Inténtelo de nuevo, o escriba a soporte."
@@ -2418,6 +2438,42 @@ Su enlace personal:
 {{.Link}}
 
 El enlace es solo suyo y sirve para un único envío. Si no esperaba este mensaje, puede no hacerle caso.'''
+
+[email.closure.subject]
+hash = "sha1-418589be68b04b3b786bb91859d0690e569f516f"
+other = "Su copia de los datos de Earful"
+
+[email.closure.body]
+hash = "sha1-255e0af854c32607b49f9c8b8dc7d23cce60f6b2"
+other = '''
+Aquí tiene la copia de sus datos de Earful que pidió al cerrar su cuenta:
+
+{{.Link}}
+
+El enlace descarga un archivo con todas las encuestas y respuestas de su espacio de trabajo. Funciona durante 7 días, hasta el {{.Expires}} UTC, y después la copia se borra.
+
+Cualquiera que tenga este enlace puede descargar sus datos, así que le rogamos que no reenvíe este correo.'''
+
+[email.closure.failed.subject]
+hash = "sha1-848e656bdb286414ebcc097966128ae937e6a416"
+other = "No se pudo hacer la copia de sus datos de Earful"
+
+[email.closure.failed.body]
+hash = "sha1-54d3275606f887d2424feccc322ff0b3df246d76"
+other = '''
+Pidió una copia de sus datos al cerrar su cuenta de Earful, y no se ha podido hacer.
+
+{{.Reason}}
+
+Sus datos se conservan durante 30 días después del cierre de la cuenta. Dentro de ese plazo, soporte puede restaurar su cuenta o enviarle una copia.'''
+
+[email.closure.failed.generic]
+hash = "sha1-a8bffc5304f39ff9e66d6e4542bb7369d97685d6"
+other = "Algo salió mal al preparar el archivo."
+
+[email.closure.failed.large]
+hash = "sha1-0358de8e10eebca8a25fd2e235e4270fa702d6ba"
+other = "Su espacio de trabajo es demasiado grande para enviarlo en un solo archivo."
 
 
 # ── El nombre que se le da a un espacio de trabajo ─────────────────────

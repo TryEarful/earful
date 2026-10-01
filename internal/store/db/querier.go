@@ -29,6 +29,11 @@ type Querier interface {
 	CountResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) (int64, error)
 	CreateAnswer(ctx context.Context, arg CreateAnswerParams) error
 	CreateBetaCode(ctx context.Context, arg CreateBetaCodeParams) (uuid.UUID, error)
+	// The copy sent when an account closes. Its expiry is set now, from the
+	// moment of closure, and the token is the download's only credential.
+	// A second job for the same workspace is refused by the unique index and
+	// returns no row.
+	CreateClosureExportJob(ctx context.Context, arg CreateClosureExportJobParams) (CreateClosureExportJobRow, error)
 	CreateDraft(ctx context.Context, arg CreateDraftParams) (SurveyDraft, error)
 	CreateDraftRevision(ctx context.Context, arg CreateDraftRevisionParams) error
 	// M7-T3: workspace export jobs.
@@ -59,6 +64,7 @@ type Querier interface {
 	CreateVersion(ctx context.Context, arg CreateVersionParams) (SurveyVersion, error)
 	CreateWorkspace(ctx context.Context, name string) (Workspace, error)
 	CreateWorkspaceMember(ctx context.Context, arg CreateWorkspaceMemberParams) error
+	DeleteExportJob(ctx context.Context, id uuid.UUID) error
 	DeleteSessionByTokenHash(ctx context.Context, tokenHash []byte) error
 	DeleteSessionsForUser(ctx context.Context, userID uuid.UUID) error
 	DeleteSurveyStats(ctx context.Context, surveyID uuid.UUID) error
@@ -74,6 +80,9 @@ type Querier interface {
 	// against ConsumeBetaCode below so two racing signups cannot both consume
 	// one code.
 	GetActiveBetaCodeForUpdate(ctx context.Context, codeHash []byte) (uuid.UUID, error)
+	// The bearer download: found by the token's hash alone, and only for a
+	// built closure export.
+	GetClosureArchive(ctx context.Context, downloadTokenHash []byte) (GetClosureArchiveRow, error)
 	GetDraftForSurvey(ctx context.Context, surveyID uuid.UUID) (SurveyDraft, error)
 	// The download, scoped to the workspace: the id alone is not a
 	// capability, because the route also requires a session here.

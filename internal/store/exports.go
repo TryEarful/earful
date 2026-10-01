@@ -94,8 +94,8 @@ func (s *Surveys) FailExportJob(ctx context.Context, jobID uuid.UUID, message st
 	return nil
 }
 
-// LatestExportJob is what the account page shows: the most recent export
-// and its state.
+// LatestExportJob is what the account page shows: the most recent
+// account export and its state.
 func (s *Surveys) LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (ExportJob, error) {
 	row, err := s.q.LatestExportJob(ctx, workspaceID)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -108,8 +108,9 @@ func (s *Surveys) LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (E
 		row.CreatedAt, row.FinishedAt, row.ExpiresAt), nil
 }
 
-// ExportArchive reads an archive back for download, for this workspace
-// and only while it is unexpired.
+// ExportArchive reads an account export back for download, for this
+// workspace and only while it is unexpired. A closure export is never
+// served here: its only route is its token.
 func (s *Surveys) ExportArchive(ctx context.Context, jobID, workspaceID uuid.UUID, now time.Time) ([]byte, error) {
 	row, err := s.q.GetExportArchive(ctx, db.GetExportArchiveParams{
 		ID: jobID, WorkspaceID: workspaceID,
@@ -119,6 +120,54 @@ func (s *Surveys) ExportArchive(ctx context.Context, jobID, workspaceID uuid.UUI
 	}
 	if err != nil {
 		return nil, fmt.Errorf("store: get export archive: %w", err)
+	}
+	if row.ExpiresAt == nil || !now.Before(*row.ExpiresAt) {
+		return nil, ErrNotFound
+	}
+	return row.Archive, nil
+}
+
+// CreateClosureExportJob queues the copy of a workspace sent when its
+// account closes, downloadable by the holder of the token whose hash is
+// given until expiresAt. It reports false, and creates nothing, when the
+// workspace already has one.
+func (s *Surveys) CreateClosureExportJob(ctx context.Context, workspaceID, userID uuid.UUID,
+	tokenHash []byte, now, expiresAt time.Time) (ExportJob, bool, error) {
+	row, err := s.q.CreateClosureExportJob(ctx, db.CreateClosureExportJobParams{
+		WorkspaceID:       workspaceID,
+		RequestedBy:       uuid.NullUUID{UUID: userID, Valid: true},
+		CreatedAt:         now,
+		ExpiresAt:         &expiresAt,
+		DownloadTokenHash: tokenHash,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ExportJob{}, false, nil
+	}
+	if err != nil {
+		return ExportJob{}, false, fmt.Errorf("store: create closure export job: %w", err)
+	}
+	return exportFromRow(row.ID, row.WorkspaceID, row.Status, row.SizeBytes, row.Error,
+		row.CreatedAt, row.FinishedAt, row.ExpiresAt), true, nil
+}
+
+// DeleteExportJob removes a job that will never be built.
+func (s *Surveys) DeleteExportJob(ctx context.Context, jobID uuid.UUID) error {
+	if err := s.q.DeleteExportJob(ctx, jobID); err != nil {
+		return fmt.Errorf("store: delete export job: %w", err)
+	}
+	return nil
+}
+
+// ClosureArchive reads a closure export back by its token's hash, only
+// while it is unexpired. Every other case is ErrNotFound, so the caller
+// cannot tell a wrong token from an expired or unbuilt one.
+func (s *Surveys) ClosureArchive(ctx context.Context, tokenHash []byte, now time.Time) ([]byte, error) {
+	row, err := s.q.GetClosureArchive(ctx, tokenHash)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("store: get closure archive: %w", err)
 	}
 	if row.ExpiresAt == nil || !now.Before(*row.ExpiresAt) {
 		return nil, ErrNotFound

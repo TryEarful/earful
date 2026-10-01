@@ -61,6 +61,11 @@ test("gallery", async ({ browser }) => {
       ["trust", "/trust"],
       ["magic-invalid", "/auth/magic/verify?token=not-a-token"],
       ["survey-missing", "/s/00000000-0000-0000-0000-000000000000"],
+      // After an account closes, without and with a copy of the data
+      // asked for.
+      ["goodbye", "/goodbye"],
+      ["goodbye-copy", "/goodbye?copy=sent"],
+      ["closure-missing", "/exports/closure/not-a-token"],
     ]) {
       await page.goto(url);
       await capture(page, name, lang);
@@ -99,6 +104,7 @@ test("gallery", async ({ browser }) => {
   await capture(page, "preview-all", "en");
   await page.goto("/dashboard");
   await capture(page, "dashboard-surveys", "en");
+  // The account page ends with the delete form and its copy checkbox.
   await page.goto("/account");
   await capture(page, "account", "en");
   await page.goto("/help");
@@ -206,6 +212,8 @@ test("gallery", async ({ browser }) => {
   await capture(es, "results", "es");
   await es.goto(editor + "/stats");
   await capture(es, "stats", "es");
+  await es.goto("/account");
+  await capture(es, "account", "es");
 
   // The AI tier control, a super admin's page. Only the CLI grants super
   // admin, so the creator is granted it inside the compose stack's app

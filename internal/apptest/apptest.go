@@ -77,6 +77,10 @@ type Options struct {
 	// to omit a claim it cannot make rather than fill one in.
 	HostingRegion string
 	ContactEmail  string
+	// ExportMaxBytes lowers the workspace archive cap, so the path where
+	// an export is too large is reachable with a workspace a test can
+	// afford to build. Zero keeps the real cap.
+	ExportMaxBytes int
 }
 
 // App is one booted application instance plus the fakes tests observe
@@ -189,6 +193,8 @@ func New(t *testing.T, opts Options) *App {
 		Google: google,
 		AI:     opts.AI,
 		Text:   strictText(t),
+
+		ExportMaxBytes: opts.ExportMaxBytes,
 	})
 	srv.Start()
 	t.Cleanup(srv.Close)

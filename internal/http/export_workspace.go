@@ -29,7 +29,7 @@ const (
 	// enough to notice the email-less "it's ready" on the account page,
 	// short enough that a copy of a whole workspace does not sit around.
 	exportTTL = 24 * time.Hour
-	// exportMaxBytes caps one archive. Past this the job fails with an
+	// exportMaxBytes caps one archive unless Deps lowers it. Past this the job fails with an
 	// explanation rather than trying to push a hundred megabytes through
 	// a database row (ADR-0010's stated trade-off).
 	exportMaxBytes = 64 << 20
@@ -97,7 +97,10 @@ func (s *server) startExport(job store.ExportJob, workspaceID uuid.UUID, workspa
 
 var errExportTooLarge = errors.New("export: archive exceeds the size limit")
 
-// buildWorkspaceArchive reads the whole workspace and zips it.
+// buildWorkspaceArchive reads the whole workspace and zips it. None of
+// the queries it uses filters on the workspace's own deleted_at, which
+// is what lets a closure export be built after the account is closed:
+// what a closed workspace holds stays readable until the purge.
 func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUID, workspaceName string) ([]byte, error) {
 	surveys, err := s.surveys.List(ctx, workspaceID)
 	if err != nil {
@@ -246,7 +249,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 	if err != nil {
 		return nil, err
 	}
-	if len(built) > exportMaxBytes {
+	if len(built) > s.exportMaxBytes {
 		return nil, errExportTooLarge
 	}
 	return built, nil

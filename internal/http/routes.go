@@ -38,6 +38,9 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /p/{token}", s.participantRespondPage)
 	mux.HandleFunc("POST /p/{token}", s.participantRespondSubmit)
 	mux.HandleFunc("GET /p/{token}/voice", s.participantVoiceSocket)
+	// The copy emailed when an account closes: no session survives the
+	// closure, so the token is the credential, and it expires.
+	mux.HandleFunc("GET /exports/closure/{token}", s.closureDownload)
 	// ESP events (M4-T6); a wrong or absent secret is a plain 404.
 	mux.HandleFunc("POST /webhooks/email/{secret}", s.emailWebhook)
 

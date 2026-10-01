@@ -99,9 +99,14 @@ var secretPathPrefixes = [][]string{
 	{"p"},
 	// The ESP webhook secret, a configuration value shared with Brevo.
 	{"webhooks", "email"},
-	// Not a bearer capability (exportDownload resolves the job through
-	// the session's workspace), but an export archive is the entire
-	// workspace, so its identifier is not something to spray into logs.
+	// The copy emailed when an account closes: its token is a bearer
+	// capability for a whole workspace. Listed before {"exports"}, which
+	// would otherwise redact the word "closure" and keep the token.
+	{"exports", "closure"},
+	// An account export is not a bearer capability (exportDownload
+	// resolves the job through the session's workspace), but an export
+	// archive is the entire workspace, so its identifier is not something
+	// to spray into logs.
 	{"exports"},
 }
 

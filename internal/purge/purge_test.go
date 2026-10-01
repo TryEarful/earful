@@ -343,6 +343,54 @@ func TestPurge_TrimsShortRetentionData(t *testing.T) {
 	}
 }
 
+// TestPurge_KeepsAClosureCopyForSevenDays: the copy emailed when an
+// account closes promises 7 days. The nightly purge must not drop it the
+// night after the account closes, and must drop it once the 7 days are
+// over, well before the closed workspace itself is erased.
+func TestPurge_KeepsAClosureCopyForSevenDays(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	ctx := context.Background()
+	addr := apptest.UniqueEmail("purge-closure")
+	creator := app.Login(t, addr)
+	seedAnsweredSurvey(t, app, creator, "Sent on closure")
+
+	app.PostForm(t, creator, "/account/delete", url.Values{"send_copy": {"yes"}}).Body.Close()
+
+	const job = `FROM export_jobs e JOIN users u ON u.id = e.requested_by
+WHERE u.email = $1 AND e.kind = 'closure'`
+	deadline := time.Now().Add(20 * time.Second)
+	for countRows(t, pool, `SELECT count(*) `+job+` AND e.status = 'ready'`, addr) != 1 {
+		if time.Now().After(deadline) {
+			t.Fatal("the closure copy was never built")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	archived := `SELECT count(*) ` + job + ` AND e.archive IS NOT NULL`
+
+	// The first night, then the sixth day.
+	for _, step := range []struct {
+		day     int
+		advance time.Duration
+	}{{1, 25 * time.Hour}, {6, 5 * 24 * time.Hour}} {
+		app.Clock.Advance(step.advance)
+		if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+			t.Fatalf("purge on day %d: %v", step.day, err)
+		}
+		if n := countRows(t, pool, archived, addr); n != 1 {
+			t.Fatalf("the closure copy was purged on day %d, inside its 7 days", step.day)
+		}
+	}
+
+	app.Clock.Advance(24*time.Hour + time.Minute)
+	if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge after day 7: %v", err)
+	}
+	if n := countRows(t, pool, archived, addr); n != 0 {
+		t.Error("the closure copy outlived its 7 days")
+	}
+}
+
 // TestPurge_KeepsTheNewestDraftRevision: trimming history is fine;
 // leaving a draft with no history at all is not.
 func TestPurge_KeepsTheNewestDraftRevision(t *testing.T) {

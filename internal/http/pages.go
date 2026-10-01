@@ -60,18 +60,47 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) accountDelete(w http.ResponseWriter, r *http.Request) {
 	info, _ := authFrom(r.Context())
+
+	// The closure export is queued before the account closes, while the
+	// session still says whose it is and where to write: afterwards there
+	// is no session, and the address may belong to a new account.
+	sendCopy := r.PostFormValue("send_copy") == "yes"
+	var closure *closureExport
+	if sendCopy {
+		var err error
+		closure, err = s.queueClosureExport(r, info)
+		if err != nil {
+			s.internalError(w, r, "queue closure export", err)
+			return
+		}
+	}
+
 	if err := s.auth.DeleteAccount(r.Context(), info.UserID); err != nil {
 		s.logger.Error("account deletion failed", "error", err)
+		if closure != nil {
+			// The account stays open, so nothing is sent; leaving the job
+			// would also stop the next attempt from queueing one.
+			if delErr := s.surveys.DeleteExportJob(r.Context(), closure.job.ID); delErr != nil {
+				s.logger.Error("removing an unused closure export failed", "error", delErr)
+			}
+		}
 		render(w, r, http.StatusInternalServerError, templates.ErrorPage(
 			say(r, "error.generic.title"), say(r, "account.error.delete")))
 		return
 	}
 	s.clearSessionCookie(w)
+	if sendCopy {
+		if closure != nil {
+			s.startClosureExport(*closure)
+		}
+		http.Redirect(w, r, "/goodbye?copy=sent", http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/goodbye", http.StatusSeeOther)
 }
 
 func (s *server) goodbye(w http.ResponseWriter, r *http.Request) {
-	render(w, r, http.StatusOK, templates.Goodbye())
+	render(w, r, http.StatusOK, templates.Goodbye(r.URL.Query().Get("copy") == "sent"))
 }
 
 // healthz reports process + database liveness. The endpoint half of

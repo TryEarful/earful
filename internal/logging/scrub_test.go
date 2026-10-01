@@ -120,6 +120,7 @@ func TestScrubURL_RedactsCredentialPathSegments(t *testing.T) {
 		{"invite voice socket", "/p/inv_abc123/voice", "/p/[REDACTED]/voice"},
 		{"esp webhook", "/webhooks/email/whsec_abc123", "/webhooks/email/[REDACTED]"},
 		{"export download", "/exports/8f14e45f-ea8b-4b41-9c1a-2b5d0e6c1234", "/exports/[REDACTED]"},
+		{"closure export download", "/exports/closure/a1B2c3D4e5F6g7H8i9J0kLmNoPqRsTuVwXyZ_-012345", "/exports/closure/[REDACTED]"},
 		// Public by design: the survey id must stay readable, or the
 		// request log stops being able to say which survey was hit.
 		{"survey share link", "/s/abc123", "/s/abc123"},

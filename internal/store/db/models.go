@@ -74,6 +74,9 @@ type ExportJob struct {
 	CreatedAt   time.Time     `json:"created_at"`
 	FinishedAt  *time.Time    `json:"finished_at"`
 	ExpiresAt   *time.Time    `json:"expires_at"`
+	Kind        string        `json:"kind"`
+	// SHA-256 of the emailed download token of a closure export. The token itself is never stored.
+	DownloadTokenHash []byte `json:"download_token_hash"`
 }
 
 type InsightRun struct {

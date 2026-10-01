@@ -33,3 +33,11 @@ There is no bucket, no signed URL and no lifecycle rule.
   workspace. It is not a shareable capability — acceptable while a
   workspace is single-member, and worth revisiting alongside member
   invites.
+- One exception, by necessity: the copy sent when an account closes
+  (migration 00020). Closing revokes every session and soft-deletes the
+  workspace, so a session-scoped link could never be used. That job's
+  link is a bearer token, stored only as its SHA-256 like a magic link,
+  emailed to the address the account had, and valid for 7 days. The
+  archive still lives in the same row and is cleared by the same purge
+  step, keyed on the row's own expiry; the backup growth it adds is
+  bounded by one archive per closed account for a week.
