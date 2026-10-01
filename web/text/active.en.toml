@@ -1456,6 +1456,10 @@ heading = "Thank you"
 body = "Your answers are in. You can close this page now."
 anonymous = "This survey was anonymous. Nothing you sent identifies you."
 
+[respond.summary]
+heading = "Your answers"
+skipped = "No answer"
+
 
 # ── Scripts: the keys they name ────────────────────────────────────────
 

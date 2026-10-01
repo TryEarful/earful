@@ -3367,6 +3367,24 @@ main.standalone h1 {
   }
 }
 
+/* A page that stands alone is one narrow column at every width, too
+   narrow to set a question beside its answer, so its facts read one
+   under the other. A written answer keeps the line breaks it was typed
+   with. */
+main.standalone .facts {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 0;
+  margin-bottom: 0;
+}
+
+main.standalone .facts dd + dt {
+  margin-top: var(--space-3);
+}
+
+main.standalone .facts dd {
+  white-space: pre-line;
+}
+
 .trend-value {
   fill: var(--text);
   font-size: 13px;

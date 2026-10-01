@@ -138,6 +138,7 @@ times use tabular figures.
 | `.chip`, `.chip-open`, `.chip-draft`, `.chip-closed` | Status, with a dot that repeats the word |
 | `.notice`, `.error-summary` | A message about what just happened |
 | `.field`, `.choice`, `.option`, `.scale-point` | Form rows |
+| `.facts` | Labels and their values; one under the other on a page that stands alone, such as the answers read back after sending |
 | `.tabs` | The views of one survey |
 | `.responses` inside `.table-scroll` | A table, which scrolls sideways on its own |
 | `.empty-state` | The owl, a line and what to do |

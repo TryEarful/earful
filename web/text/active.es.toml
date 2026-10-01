@@ -2627,6 +2627,14 @@ other = "Sus respuestas ya están enviadas. Puede cerrar esta página."
 hash = "sha1-6971900d9fcdfa7da247a018119ed56d86106ce9"
 other = "La encuesta era anónima. Nada de lo que envió le identifica."
 
+[respond.summary.heading]
+hash = "sha1-5cb44afe4d362514ef233c73badaca3ef5e1f99f"
+other = "Sus respuestas"
+
+[respond.summary.skipped]
+hash = "sha1-a9c16dd084ce3781568419133b0fa0c0f57aa727"
+other = "Sin respuesta"
+
 
 # ── Scripts: las teclas que nombran ────────────────────────────────────
 

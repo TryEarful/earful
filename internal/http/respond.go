@@ -140,10 +140,11 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// Honeypot: no person ever sees the field, so a value means
 	// automation. The bot is shown success and nothing is written —
-	// telling it what tripped would only train it.
+	// telling it what tripped would only train it. Nothing it sent is
+	// echoed back either, so the endpoint cannot be used as a mirror.
 	if r.PostFormValue("website") != "" {
 		s.logAbuse(r, "honeypot")
-		render(w, r, http.StatusOK, templates.RespondThanks(survey.Title, survey.IsAnonymous))
+		render(w, r, http.StatusOK, templates.RespondThanks(thanksFor(survey, "", nil)))
 		return
 	}
 
@@ -222,9 +223,10 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 	// Double-click dedupe (M4-T2): the nonce identifies one form render;
 	// a second submit of the same render is answered with the same thanks
 	// page and writes nothing. Deliberate re-answering (a fresh form) is
-	// allowed — the stated trade-off of anonymity.
+	// allowed — the stated trade-off of anonymity. It reads back no
+	// answers, since this request recorded none.
 	if nonce := r.PostFormValue("form_nonce"); nonce != "" && !s.submitNonces.FirstUse(nonce) {
-		render(w, r, http.StatusOK, templates.RespondThanks(survey.Title, survey.IsAnonymous))
+		render(w, r, http.StatusOK, templates.RespondThanks(thanksFor(survey, shown.Lang, nil)))
 		return
 	}
 
@@ -235,7 +237,48 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	s.recordCompletion(r, surveyID, version.Questions, submission)
 	s.setAnsweredCookie(w, surveyID)
-	render(w, r, http.StatusOK, templates.RespondThanks(survey.Title, survey.IsAnonymous))
+	render(w, r, http.StatusOK, templates.RespondThanks(
+		thanksFor(survey, shown.Lang, answerSummary(r, shown.Questions, asSubmitted))))
+}
+
+// thanksFor is the page after a submission. It is only ever the body of
+// the POST response, never a redirect target: a page at an address of its
+// own would show the answers again to whoever opens that address next on
+// a shared device, and the no-store header every dynamic page carries
+// keeps it out of the history cache too.
+func thanksFor(survey store.PublicSurvey, lang string, answers []templates.AnsweredQuestion) templates.ThanksData {
+	return templates.ThanksData{
+		Title:     survey.Title,
+		Anonymous: survey.IsAnonymous,
+		Lang:      lang,
+		Answers:   answers,
+	}
+}
+
+// answerSummary reads a submission back in the words its respondent saw:
+// each question as shown to them and each answer as they gave it, before
+// choices are mapped back to the creator's wording. A dictated answer is
+// its transcript, since that is the text the form carried.
+func answerSummary(r *http.Request, questions []domain.Question, submitted domain.Submission) []templates.AnsweredQuestion {
+	summary := make([]templates.AnsweredQuestion, 0, len(questions))
+	for _, q := range questions {
+		value := submitted.Answers[q.IdentityID]
+		line := templates.AnsweredQuestion{Question: q.Text}
+		// Display words a yes or no in English, for results and exports;
+		// the respondent picked one from the labels their own page showed,
+		// and reads it back in those.
+		switch {
+		case value.IsEmpty():
+		case value.Bool != nil && *value.Bool:
+			line.Answer = say(r, "answer.yes")
+		case value.Bool != nil:
+			line.Answer = say(r, "answer.no")
+		default:
+			line.Answer = value.Display()
+		}
+		summary = append(summary, line)
+	}
+	return summary
 }
 
 // minFillTime is the fastest plausible human submission: reading even one
@@ -354,13 +397,16 @@ func previewLayout(r *http.Request) (all bool, other string) {
 
 // previewSubmit exists so the preview form has somewhere honest to go. It
 // writes nothing: preview cannot create a response because this handler is
-// the only thing its form can reach, and it has no write path at all.
+// the only thing its form can reach, and it has no write path at all. It
+// reads the answers back as a respondent's thanks page would, against the
+// draft the form was drawn from.
 func (s *server) previewSubmit(w http.ResponseWriter, r *http.Request) {
-	survey, ok := s.loadSurvey(w, r)
+	survey, draft, ok := s.loadSurveyAndDraft(w, r)
 	if !ok {
 		return
 	}
-	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title))
+	answers := answerSummary(r, draft.Questions, parseSubmission(r, draft.Questions))
+	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title, answers))
 }
 
 // loadPublicSurvey resolves a share link to a survey and the version to

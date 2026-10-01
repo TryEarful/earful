@@ -46,6 +46,11 @@ test("core loop: build, publish, answer, count", async ({ page, browser }) => {
   await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
     timeout: submitTimeout,
   });
+  // The respondent reads back what they sent, once, in the POST response.
+  const summary = respondent.locator(".js-answer-summary");
+  await expect(summary).toContainText("What would make surveys less painful?");
+  await expect(summary).toContainText("Let me talk instead of type.");
+  await expect(summary).toContainText("Monthly");
   await respondentContext.close();
 
   // The creator sees the response counted.
@@ -73,6 +78,7 @@ test("respondent form works with JavaScript disabled", async ({ page, browser })
   await expect(respondent.getByRole("heading", { name: "Thank you" })).toBeVisible({
     timeout: submitTimeout,
   });
+  await expect(respondent.locator(".js-answer-summary")).toContainText("Typed without any JavaScript.");
   await noJS.close();
 });
 

@@ -104,6 +104,16 @@ test("gallery", async ({ browser }) => {
   await page.goto("/help");
   await capture(page, "help-signed-in", "en");
 
+  // The preview, submitted: nothing recorded, the answers read back.
+  await page.goto(editor + "/preview");
+  await page.locator("textarea").fill("Shorter sessions and more time to try things ourselves.");
+  const next = page.getByRole("button", { name: "Next" });
+  if (await next.isVisible()) await next.click();
+  await page.getByLabel(/Monthly/).check();
+  await page.getByRole("button", { name: "Submit answers" }).click();
+  await expect(page.locator(".js-answer-summary")).toBeVisible();
+  await capture(page, "preview-submitted", "en");
+
   // A draft, before anything is published.
   await page.goto("/surveys/new");
   await page.getByLabel("Title").fill("Team offsite ideas");
@@ -122,7 +132,8 @@ test("gallery", async ({ browser }) => {
     await minFillWait(respondent);
     await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
     await expect(respondent.locator("h1")).toBeVisible({ timeout: submitTimeout });
-    await capture(respondent, "respond-thanks", lang);
+    await expect(respondent.locator(".js-answer-summary")).toBeVisible();
+    await capture(respondent, "respond-thanks-with-answers", lang);
     await context.close();
   }
 

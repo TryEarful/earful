@@ -552,28 +552,72 @@ func numberEquals(got *int, want int) bool { return got != nil && *got == want }
 
 func boolEquals(got *bool, want bool) bool { return got != nil && *got == want }
 
+// ThanksData is what the page after a submission shows.
+type ThanksData struct {
+	Title     string
+	Anonymous bool
+	// Lang is the language the survey was answered in, empty for the
+	// original wording, so the page declares what its questions are in.
+	Lang string
+	// Answers is the respondent's own submission, shown only in the
+	// response to the POST that carried it: no address leads back to it,
+	// so a shared device cannot reveal it later. It is empty wherever
+	// nothing was recorded from this request.
+	Answers []AnsweredQuestion
+}
+
+// AnsweredQuestion is one line of a submission read back to the person
+// who sent it: the question as they read it and the answer as they gave
+// it. Answer is empty for a question they skipped.
+type AnsweredQuestion struct {
+	Question string
+	Answer   string
+}
+
 // RespondThanks closes the loop for the respondent.
-templ RespondThanks(title string, anonymous bool) {
-	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": title}), "") {
+templ RespondThanks(data ThanksData) {
+	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": data.Title}), data.Lang) {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
 			<p>{ t(ctx, "respond.thanks.body") }</p>
-			if anonymous {
+			if data.Anonymous {
 				<p class="muted">{ t(ctx, "respond.thanks.anonymous") }</p>
 			}
+			@answerSummary(data.Answers)
 		</main>
 	}
 }
 
+// answerSummary reads a submission back to the person who sent it.
+templ answerSummary(answers []AnsweredQuestion) {
+	if len(answers) > 0 {
+		<section class="card js-answer-summary" aria-labelledby="answer-summary-heading">
+			<h2 id="answer-summary-heading">{ t(ctx, "respond.summary.heading") }</h2>
+			<dl class="facts">
+				for _, a := range answers {
+					<dt>{ a.Question }</dt>
+					if a.Answer == "" {
+						<dd class="muted">{ t(ctx, "respond.summary.skipped") }</dd>
+					} else {
+						<dd>{ a.Answer }</dd>
+					}
+				}
+			</dl>
+		</section>
+	}
+}
+
 // RespondPreviewSubmitted is what a creator sees if they submit the
-// preview form. Nothing is written; the page says so plainly.
-templ RespondPreviewSubmitted(surveyID string, title string) {
+// preview form. Nothing is written; the page says so plainly, and reads
+// back what was entered the way a respondent would see it.
+templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQuestion) {
 	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "") {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.preview.submitted.heading") }</h1>
 			<p>{ t(ctx, "respond.preview.submitted.body") }</p>
+			@answerSummary(answers)
 			<p><a class="button" href={ templ.SafeURL("/surveys/" + surveyID) }>{ t(ctx, "respond.preview.submitted.back") }</a></p>
 		</main>
 	}
