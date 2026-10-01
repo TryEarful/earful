@@ -279,6 +279,7 @@ promise is that people answer, the page asking them is the product.
 87. As a creator or a respondent, I want every page to look and speak as one calm, professional product, in either light or dark, so that I trust it with my questions and my answers. [tested](internal/uitext/dash_test.go) — the wording carries no dashes in any language, a stylesheet never styles a hook a script or test relies on ([tested](web/static/static_test.go)), and every page is axe-clean in both themes ([tested](e2e/tests/smoke.spec.ts)); how it looks is reviewed page by page with `make gallery` against [the style guide](docs/style-guide.md)
 88. As anyone using Earful, I want a Help page in my language one link away from every page, so that I can find out how to make, share, read or answer a survey without asking. [tested](internal/http/documents_test.go)
 89. As a creator, I want to name my Workspace, so that respondents read who is asking in words I chose, in my language. [tested](internal/http/workspace_test.go)
+90. As a creator, I want a survey's results as an Excel workbook with the same columns and rows as the CSV, numbers as numeric cells and text defused against formula injection, so that I can open them in a spreadsheet without an import step. [tested](internal/http/export_xlsx_test.go)
 
 **The Starter Survey is its owner's survey, not Earful's.** It is
 written once, with the Workspace, and from then on nothing treats it

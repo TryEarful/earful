@@ -38,6 +38,9 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results.csv") }>
 					{ t(ctx, "results.csv.label") }
 				</a>
+				<a class="button secondary" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/results.xlsx") }>
+					{ t(ctx, "results.xlsx.label") }
+				</a>
 				if data.CanTranslate {
 					@translateForm(csrf, data)
 				}

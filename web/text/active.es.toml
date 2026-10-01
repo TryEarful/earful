@@ -637,6 +637,10 @@ other = "en {{.Count}} versiones"
 hash = "sha1-eaa216ad406cea80c9080f3bd9c4417c3a3a682d"
 other = "Descargar CSV"
 
+[results.xlsx.label]
+hash = "sha1-19ba236cbb99c3c0ac471f708b8b74f022fafcff"
+other = "Descargar Excel"
+
 [results.empty.heading]
 hash = "sha1-ff161bb9acca836d6ccd7e7d483bee4a60938118"
 other = "Todavía no hay envíos"

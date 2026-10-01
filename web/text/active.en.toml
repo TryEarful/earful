@@ -406,6 +406,9 @@ other = "across {{.Count}} versions"
 [results.csv]
 label = "Download CSV"
 
+[results.xlsx]
+label = "Download Excel"
+
 [results.empty]
 heading = "No responses yet"
 body = "Share the survey link and answers will appear here. Results are grouped by question, so you can keep improving the wording without losing comparability."

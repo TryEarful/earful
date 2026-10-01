@@ -100,6 +100,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// Results and exports (M7). Both read the same fold-by-identity view.
 	get("/surveys/{surveyID}/results", s.surveyResults)
 	get("/surveys/{surveyID}/results.csv", s.resultsCSV)
+	get("/surveys/{surveyID}/results.xlsx", s.resultsXLSX)
 	// Stats over time (issue #2, ADR-0012): dated flow counters, never
 	// joined to a response.
 	get("/surveys/{surveyID}/stats", s.surveyStatsPage)

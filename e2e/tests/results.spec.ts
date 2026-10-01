@@ -49,6 +49,14 @@ test("results read back what respondents said, and export cleanly", async ({ pag
   expect(csv).toContain("response_id,version,submitted_at,duration_secs");
   expect(csv).toContain("Loved it");
 
+  // The same table as a workbook: an .xlsx is a zip, so it starts "PK".
+  const xlsxDownload = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download Excel" }).click();
+  const xlsx = await xlsxDownload;
+  expect(xlsx.suggestedFilename()).toMatch(/-responses\.xlsx$/);
+  const xlsxBytes = new Uint8Array(await new Response((await xlsx.createReadStream()) as any).arrayBuffer());
+  expect(String.fromCharCode(xlsxBytes[0], xlsxBytes[1])).toBe("PK");
+
   // The stats page: the figures, honest about what "opened" means, and
   // the chart stats.js draws over the numbers the page already holds.
   await page.getByRole("link", { name: "Stats", exact: true }).click();
