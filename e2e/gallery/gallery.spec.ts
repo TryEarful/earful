@@ -159,6 +159,8 @@ test("gallery", async ({ browser }) => {
   await capture(es, "preview-all", "es");
   await es.goto(editor + "/results");
   await capture(es, "results", "es");
+  await es.goto(editor + "/stats");
+  await capture(es, "stats", "es");
 
   // The AI tier control, a super admin's page. Only the CLI grants super
   // admin, so the creator is granted it inside the compose stack's app

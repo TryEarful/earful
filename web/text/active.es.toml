@@ -2469,6 +2469,10 @@ other = "¿Qué probabilidad hay de que recomiende Earful a un amigo o colega?"
 
 # ── Responder una encuesta ─────────────────────────────────────────────
 
+[respond.preview.banner_all_html]
+hash = "sha1-91178ae1a3e7774524965e262f4b05498cdb8cd5"
+other = "<strong>Vista previa</strong>: quienes responden ven una pregunta cada vez. No se registra nada de lo que escriba aquí."
+
 [respond.preview.banner_html]
 hash = "sha1-c675a238caca28c3eec53c85a48345dc27c43668"
 other = "<strong>Vista previa</strong>: esto es exactamente lo que ven quienes responden. No se registra nada de lo que escriba aquí."

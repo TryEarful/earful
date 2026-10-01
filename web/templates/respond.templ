@@ -135,7 +135,11 @@ templ Respond(data RespondData) {
 			if data.Preview {
 				<div class="preview-banner" role="status">
 					<p>
-						@thtml(ctx, "respond.preview.banner_html")
+						if data.PreviewAll {
+							@thtml(ctx, "respond.preview.banner_all_html")
+						} else {
+							@thtml(ctx, "respond.preview.banner_html")
+						}
 					</p>
 					<a class="button secondary js-preview-layout" href={ templ.SafeURL(data.PreviewLayoutLink) }>
 						if data.PreviewAll {

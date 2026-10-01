@@ -1082,8 +1082,8 @@ button:disabled,
   gap: var(--space-3);
   border-radius: var(--radius-m);
   background: var(--tint-info);
-  padding: 0.6rem 0.9rem;
-  margin-bottom: 1.5rem;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .preview-banner p {
@@ -1148,11 +1148,11 @@ button:disabled,
 
 .q-position {
   display: block;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  margin-bottom: var(--space-1);
   color: var(--muted);
-  margin-bottom: 0.3rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .q-text {
@@ -2161,6 +2161,14 @@ input.is-live {
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: 1.25rem 1.5rem;
   margin: 0 0 0.75rem;
+}
+
+/* Three columns from a tablet up: five figures fall as three and two,
+   so none is left alone on a row and each note keeps to one line. */
+@media (min-width: 34.01rem) {
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .stat-grid dt {
