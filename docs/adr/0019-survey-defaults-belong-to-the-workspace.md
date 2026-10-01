@@ -119,7 +119,7 @@ it does today (story 23). Nothing about a Localization changes.
 
 ## Consequences
 
-- The workspace export moves to format version 3 with a `defaults`
+- The workspace export moves to its next format version, with a `defaults`
   object under `workspace`, documented in `docs/export-format.md`. A
   workspace with no row exports the product's values, so an importer
   never has to guess. The guidance is the workspace's own words and is

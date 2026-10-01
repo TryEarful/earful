@@ -192,7 +192,7 @@ than a day, is deleted, so that an upload abandoned in the editor does
 not count against the Workspace forever. Erasing an account erases its
 Workspace's pictures with the Workspace.
 
-**Export.** Format version 3: each question may carry `image`, and
+**Export.** The next format version: each question may carry `image`, and
 `options` stays an array of strings with a parallel `option_images`
 array (null where an option has none), each entry holding the media
 id, alt text, content type, dimensions, SHA 256 and the path of the
@@ -264,7 +264,7 @@ which can reuse `internal/media`'s pipeline.
 - An option is no longer a string anywhere in Go. Every reader of
   `Options` changes in one commit; the JSON stays compatible, so no
   data does.
-- The export format moves to version 3 and `docs/export-format.md`
+- The export format moves to its next version and `docs/export-format.md`
   records it.
 - The immutability test gains `media` and `version_media`; the purge
   schema test forces a purge step for each before it can pass.

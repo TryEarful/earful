@@ -88,7 +88,7 @@ sees it in the preview, publishes, and respondents see it.
   the same colour both keep it.
 - `internal/purge/purge_test.go`: `version_brands` joins the list of
   tables a purged survey leaves empty.
-- `internal/http/export_workspace_test.go`: format version 3, the brand
+- `internal/http/export_workspace_test.go`: the new format version, the brand
   round trips, a version without one has no `brand` key.
 - The existing first party test and the ADR-0001 trigger tests stand.
 - `e2e/tests/smoke.spec.ts`: a branded respondent page is axe clean in

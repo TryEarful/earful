@@ -129,7 +129,7 @@ guide's checklist by the reviewer agents, per CLAUDE.md.
   takes them and calls `Draft.AddLanguage` on the empty draft before it
   is encoded, in the same transaction. An invalid posted language is a
   user error on the form, as on the localizations page.
-- Export: `languages` in the `defaults` object (still format version 3
+- Export: `languages` in the `defaults` object (still the same new format version
   if SD-1 and SD-2 ship in one release; 4 otherwise).
 
 Tests: with Spanish as a default, the new survey form shows it ticked; a
@@ -230,4 +230,4 @@ ADR-0018 is accepted.
    issue and belongs to ADR-0018, and whether ADR-0018 should consider
    only open licence faces bundled with Earful.
 8. **Release grouping.** SD-1 and SD-2 in one release keeps the export at
-   format version 3 with both; shipping them apart means a version 4.
+   one format version with both; shipping them apart means two.

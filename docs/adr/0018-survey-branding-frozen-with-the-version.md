@@ -154,7 +154,7 @@ choice is kept.
   image where there is one; the page has one picture, not two. The
   footer keeps the owl, Help and the privacy page on every survey, so a
   respondent always knows what they are answering on.
-- The workspace export moves to format version 3: each version carries a
+- The workspace export moves to its next format version: each version carries a
   `brand` object, and the archive gains an `images/` folder named by
   hash. Images count toward the 64 MB cap. Version 2 fields are unchanged.
 - The purge job deletes `version_brands` and `survey_images` with the

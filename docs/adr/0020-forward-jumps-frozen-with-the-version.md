@@ -134,7 +134,7 @@ diagram is a picture of the jumps and nothing else.
   leaves a cell empty both for a skip and for a question not shown; the
   JSON export carries the logic, so the difference can always be worked
   out.
-- The workspace export moves to format version 3: each question in
+- The workspace export moves to its next format version: each question in
   `versions[].questions[]` carries `logic`. `docs/export-format.md` says
   how an importer recomputes a path, and that it must keep identities
   for jumps to mean anything.

@@ -143,12 +143,12 @@ Infrastructure only; nothing a creator can see yet.
   read; a survey published before this slice serves unchanged.
 - Gallery: the localization page with pictures, reviewed and stale.
 
-## Slice 5 · Export version 3 (S)
+## Slice 5 · Export format bump (S)
 
 - `internal/export`: `image` and `option_images` in `workspace.json`,
   files under `media/` in the zip, `format_version: 3`, `README.txt`
   updated.
-- `docs/export-format.md`: version 3 in the format and in "Changes".
+- `docs/export-format.md`: the next version in the format and in "Changes".
 - Tests in `export_workspace_test.go`: each exported file's SHA 256
   matches the JSON; a survey without pictures exports as before but
   for the version number; a Workspace over the cap fails with the

@@ -193,7 +193,7 @@ Stored and edited, with no effect on any response yet.
    survey's languages, or a text field the creator fills in?
 8. An instance setting for self hosters to switch framing off
    altogether, and its default?
-9. Are a survey's sites part of the export (format version 3,
+9. Are a survey's sites part of the export (a new format version,
    proposed), or instance configuration left out like `origin`?
 10. Should a change to a survey's sites appear in its Audit Log? The
     log is derived from drafts and versions today, and settings such as

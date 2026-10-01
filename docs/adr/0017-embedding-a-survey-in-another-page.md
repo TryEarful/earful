@@ -152,8 +152,8 @@ response.
   out of scope is replaced by a pointer here.
 - A migration adds the list of sites, removed with its survey by the
   purge job, which deletes children explicitly rather than by cascade.
-- The workspace export carries each survey's sites and moves to format
-  version 3, documented in `docs/export-format.md`, unless the owner
+- The workspace export carries each survey's sites and moves to its next
+  format version, documented in `docs/export-format.md`, unless the owner
   decides they are instance configuration and leaves them out.
 - A respondent reading an embedded survey is on a page Earful does not
   control. What Earful stores is unchanged, and the anonymity notice in
