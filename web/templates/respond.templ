@@ -52,11 +52,16 @@ type RespondData struct {
 	// disclosure names the invitee.
 	ParticipantToken string
 	ParticipantEmail string
-	// Lang is the language being served (empty for the original), and
-	// Languages are the choices offered. The choice lives in the URL and
-	// is stored nowhere (story 25).
-	Lang      string
-	Languages []LanguageChoice
+	// Lang is the language the questions are served in (empty for the
+	// original), Chosen the language the respondent chose, which the
+	// page's own addresses carry on, and Languages the choices offered.
+	// Chosen and Lang differ where the survey was not translated into a
+	// language the interface is written in; Untranslated then says so.
+	// The choice lives in the URL and is stored nowhere (story 25).
+	Lang         string
+	Chosen       string
+	Untranslated bool
+	Languages    []LanguageChoice
 	// VoicePath is the WebSocket endpoint for spoken answers, empty when
 	// no transcription is configured (M5). The mic is built entirely by
 	// voice.js: nothing about it is server-rendered, so a respondent
@@ -99,7 +104,7 @@ templ RespondLayout(title string, lang string) {
 					@owl(OwlNeutral, 20)
 					Earful
 				</span>
-				@footerLinks(lang)
+				@footerLinks(linkLang(ctx, lang))
 				<div class="switchers">
 					@themeSwitcher()
 				</div>
@@ -116,6 +121,24 @@ templ RespondLayout(title string, lang string) {
 func htmlLang(ctx context.Context, lang string) string {
 	if lang == "" {
 		return interfaceLang(ctx)
+	}
+	return lang
+}
+
+// linkLang is the language a respondent's page passes on to the pages it
+// links to: the language of its content where it has one, or else the one
+// its address names, which is the respondent's choice even where the
+// survey has no translation into it. A page answering a form, such as the
+// thanks page, has the address the form was posted to, which keeps the
+// choice too.
+func linkLang(ctx context.Context, lang string) string {
+	if lang != "" {
+		return lang
+	}
+	if u, err := url.Parse(currentPath(ctx)); err == nil {
+		if chosen := u.Query().Get("lang"); chosen != "" && domain.ValidLang(chosen) {
+			return chosen
+		}
 	}
 	return lang
 }
@@ -163,6 +186,7 @@ templ Respond(data RespondData) {
 			}
 			<h1>{ data.Title }</h1>
 			@languagePicker(data)
+			@untranslatedNotice(data)
 			@respondentDisclosure(data)
 			if data.AlreadyAnswered && !data.Preview {
 				<p class="notice">{ t(ctx, "respond.before.note") }</p>
@@ -259,9 +283,9 @@ func respondAction(data RespondData) string {
 	case data.Preview:
 		return "/surveys/" + data.SurveyID + "/preview"
 	case data.ParticipantToken != "":
-		return withLang("/p/"+data.ParticipantToken, data.Lang)
+		return withLang("/p/"+data.ParticipantToken, data.Chosen)
 	default:
-		return withLang("/s/"+data.SurveyID, data.Lang)
+		return withLang("/s/"+data.SurveyID, data.Chosen)
 	}
 }
 
@@ -276,29 +300,41 @@ func withLang(path string, lang string) string {
 	return path + "?lang=" + url.QueryEscape(lang)
 }
 
-// languagePicker offers the languages this version was published with
-// (story 25). It is a plain form: choosing reloads the page in that
-// language, and nothing about the choice is stored — no cookie, no
-// column, nothing that could later say what language a respondent reads.
+// languagePicker offers the languages the interface is written in and
+// the languages this version was published with (story 25). It is a
+// plain form: choosing reloads the page in that language, and nothing
+// about the choice is stored — no cookie, no column, nothing that could
+// later say what language a respondent reads. A preview has none: its
+// address is the creator's, which is worded in the creator's language.
 templ languagePicker(data RespondData) {
 	if len(data.Languages) > 1 && !data.Preview {
 		<form method="get" class="language-picker">
 			<label class="field">
 				<span>{ t(ctx, "respond.picker.label") }</span>
-				<select name="lang" data-language-picker>
+				<select name="lang" class="js-language-picker">
 					for _, choice := range data.Languages {
-						if choice.Selected {
-							<option value={ choice.Code } selected>{ choice.Name }</option>
-						} else if choice.Suggested {
+						if choice.Suggested {
+							// Worded in the page's language around the name,
+							// so it is not marked as the language's own.
 							<option value={ choice.Code }>{ t(ctx, "respond.picker.suggested", uitext.Args{"Language": choice.Name}) }</option>
+						} else if choice.Lang != "" {
+							<option value={ choice.Code } lang={ choice.Lang } selected?={ choice.Selected }>{ choice.Name }</option>
 						} else {
-							<option value={ choice.Code }>{ choice.Name }</option>
+							<option value={ choice.Code } selected?={ choice.Selected }>{ choice.Name }</option>
 						}
 					}
 				</select>
 			</label>
-			<button type="submit">{ t(ctx, "respond.picker.submit") }</button>
+			<button type="submit" class="secondary">{ t(ctx, "respond.picker.submit") }</button>
 		</form>
+	}
+}
+
+// untranslatedNotice says that the survey has no translation into the
+// language chosen for the page, and so is shown as the creator wrote it.
+templ untranslatedNotice(data RespondData) {
+	if data.Untranslated && !data.Preview {
+		<p class="notice js-untranslated-notice" role="status">{ t(ctx, "respond.picker.untranslated") }</p>
 	}
 }
 
@@ -340,7 +376,7 @@ templ respondentDisclosure(data RespondData) {
 			</p>
 		}
 		<p class="muted">
-			<a href={ templ.SafeURL(withLang("/trust", data.Lang)) }>{ t(ctx, "respond.disclosure.trust") }</a>
+			<a href={ templ.SafeURL(withLang("/trust", data.Chosen)) }>{ t(ctx, "respond.disclosure.trust") }</a>
 		</p>
 	</div>
 }

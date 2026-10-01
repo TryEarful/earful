@@ -384,10 +384,13 @@ type LocalizedQuestionView struct {
 
 // LanguageChoice is one option in the respondent's language picker.
 // Suggested marks the browser's own preference — a suggestion, never a
-// selection made for them.
+// selection made for them. Lang is the language Name is written in when
+// it is the name the language gives itself, so a screen reader says it
+// as its speakers do; it is empty when Name is in the page's language.
 type LanguageChoice struct {
 	Code      string
 	Name      string
+	Lang      string
 	Selected  bool
 	Suggested bool
 }

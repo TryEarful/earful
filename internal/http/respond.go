@@ -67,6 +67,8 @@ func (s *server) renderRespondPage(
 	data := templates.RespondData{
 		SurveyID:        survey.ID.String(),
 		Lang:            version.Lang,
+		Chosen:          chosenLanguage(r, version),
+		Untranslated:    untranslated(r, version),
 		Languages:       viewLanguageChoices(version, r),
 		Title:           survey.Title,
 		WorkspaceName:   survey.WorkspaceName,
@@ -96,8 +98,8 @@ func (s *server) renderRespondPage(
 		}
 		// What the socket says, it says in the language of the page that
 		// opened it, and the address is where that language is.
-		if version.Lang != "" {
-			data.VoicePath += "?lang=" + url.QueryEscape(version.Lang)
+		if data.Chosen != "" {
+			data.VoicePath += "?lang=" + url.QueryEscape(data.Chosen)
 		}
 		data.VoiceMaxSeconds = s.voiceAnswerSeconds()
 	}

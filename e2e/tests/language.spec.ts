@@ -49,6 +49,41 @@ test("a respondent with a Spanish browser answers in Spanish", async ({ page, br
   await context.close();
 });
 
+// A survey written only in English offers Spanish anyway: the page is
+// worded in it, the questions stay as written, and a notice says so.
+test("a respondent chooses a language the survey was not translated into", async ({ page, browser }) => {
+  const share = await createPublishedSurvey(page, `E2E sin traducir ${Date.now()}`);
+
+  const context = await browser.newContext({ storageState: undefined, locale: "en-US" });
+  const respondent = await context.newPage();
+  await respondent.goto(share);
+  await expect(respondent.locator(".js-untranslated-notice")).toHaveCount(0);
+
+  // The picker submits as it changes; its button is for a page with no
+  // script.
+  await respondent.locator(".js-language-picker").selectOption("es");
+  await expect(respondent).toHaveURL(/[?&]lang=es/);
+  await expect(respondent.locator(".js-untranslated-notice")).toContainText("no está disponible en español");
+  await expect(respondent.getByRole("button", { name: "Siguiente" })).toBeVisible();
+  await expect(respondent.getByText("What would make surveys less painful?")).toBeVisible();
+  await expect(respondent.locator(".js-language-picker")).toHaveValue("es");
+
+  const results = await new AxeBuilder({ page: respondent }).analyze();
+  expect(results.violations).toEqual([]);
+
+  await respondent.locator("textarea").fill("Fewer questions.");
+  await respondent.getByRole("button", { name: "Siguiente" }).click();
+  await respondent.getByLabel("Monthly").check();
+  await minFillWait(respondent);
+  await respondent.getByRole("button", { name: "Enviar respuestas" }).click();
+  await expect(respondent.getByRole("heading", { name: "Gracias" })).toBeVisible({ timeout: submitTimeout });
+
+  // Nothing about the language was kept.
+  const cookies = await context.cookies();
+  expect(cookies.filter((c) => c.name.toLowerCase().includes("lang"))).toEqual([]);
+  await context.close();
+});
+
 test("dictation asks for the microphone in Spanish", async ({ page, browser }) => {
   const share = await createPublishedSurvey(page, `E2E dictado ${Date.now()}`);
   const context = await browser.newContext({ storageState: undefined, locale: "es-ES" });

@@ -206,6 +206,17 @@ test("gallery", async ({ browser }) => {
     await context.close();
   }
 
+  // A respondent whose browser asks for the other language chooses this
+  // one, which the survey has no translation into: the page is worded in
+  // it, the questions are as written, and a notice says so.
+  for (const lang of ["en", "es"]) {
+    const { context, page: respondent } = await visitor(browser, lang === "es" ? "en" : "es");
+    await respondent.goto(share + "?lang=" + lang);
+    await expect(respondent.locator(".js-untranslated-notice")).toBeVisible();
+    await capture(respondent, "respond-language-banner", lang);
+    await context.close();
+  }
+
   // What the creator reads afterwards.
   await page.goto(editor + "/results");
   await capture(page, "results", "en");

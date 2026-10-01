@@ -20,7 +20,7 @@
   // The language picker (M11-T1) submits on change when JavaScript is
   // available; its button is what makes it work when it is not. No
   // inline handler: the CSP forbids them, deliberately.
-  var picker = document.querySelector("[data-language-picker]");
+  var picker = document.querySelector(".js-language-picker");
   if (picker && picker.form) {
     var pickerButton = picker.form.querySelector('button[type="submit"]');
     if (pickerButton) pickerButton.hidden = true;

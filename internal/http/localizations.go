@@ -345,7 +345,7 @@ func (s *server) applyLanguage(r *http.Request, version *store.ServedVersion) {
 	}
 	version.Languages = langs
 
-	chosen := domain.NormalizeLang(r.URL.Query().Get("lang"))
+	chosen := addressLanguage(r)
 	if chosen == "" || !contains(langs, chosen) {
 		return
 	}
@@ -422,29 +422,78 @@ func canonicalAnswers(submitted domain.Submission, shown, original []domain.Ques
 	return domain.Submission{Answers: answers}
 }
 
-// viewLanguageChoices offers the languages this version was published
-// with, ordered so the browser's own preference comes first — suggested,
-// never chosen for them, and never remembered.
+// viewLanguageChoices offers every language the interface is written in
+// and every language this version was published with, each once, with
+// the browser's own preference among the translations suggested: never
+// chosen for them, and never remembered. A language the interface is written in is offered by
+// the name it gives itself, since whoever looks for it may not read the
+// language the page is in. With fewer than two languages there is
+// nothing to choose between, and no picker.
 func viewLanguageChoices(version store.ServedVersion, r *http.Request) []templates.LanguageChoice {
-	if len(version.Languages) == 0 {
+	l := text(r)
+	offered := append([]string(nil), l.Languages()...)
+	for _, lang := range version.Languages {
+		if !contains(offered, lang) {
+			offered = append(offered, lang)
+		}
+	}
+	if len(offered) < 2 {
 		return nil
 	}
+	chosen := chosenLanguage(r, version)
+	// Only a translation is suggested: the page is already worded in the
+	// browser's language where the interface is written in it, and the
+	// questions are what a suggestion would change.
 	preferred := preferredLanguage(r.Header.Get("Accept-Language"), version.Languages)
 
 	choices := []templates.LanguageChoice{{
 		Code:     "",
 		Name:     say(r, "respond.language.original"),
-		Selected: version.Lang == "",
+		Selected: chosen == "",
 	}}
-	for _, lang := range version.Languages {
-		choices = append(choices, templates.LanguageChoice{
+	for _, lang := range offered {
+		choice := templates.LanguageChoice{
 			Code:      lang,
-			Name:      languageLabel(text(r), lang),
-			Selected:  version.Lang == lang,
-			Suggested: version.Lang == "" && lang == preferred,
-		})
+			Name:      languageLabel(l, lang),
+			Selected:  chosen == lang,
+			Suggested: chosen == "" && lang == preferred,
+		}
+		if id := templates.OwnName(lang); id != "" {
+			choice.Name = l.T(id)
+			choice.Lang = lang
+		}
+		choices = append(choices, choice)
 	}
 	return choices
+}
+
+// addressLanguage is the language a respondent's address names: one the
+// survey was translated into, one the interface is written in, both, or
+// neither. It is the only place the choice is kept (story 25).
+func addressLanguage(r *http.Request) string {
+	return domain.NormalizeLang(r.URL.Query().Get("lang"))
+}
+
+// chosenLanguage is the language the address names when it is one the
+// picker offers, and "" when it names none or one nothing is written in.
+// It is what the page's own addresses carry on, so that answering, being
+// corrected and being thanked all happen in the language chosen.
+func chosenLanguage(r *http.Request, version store.ServedVersion) string {
+	chosen := addressLanguage(r)
+	if contains(version.Languages, chosen) || contains(text(r).Languages(), chosen) {
+		return chosen
+	}
+	return ""
+}
+
+// untranslated reports whether the respondent chose a language the
+// interface is written in and the survey was not translated into, so the
+// page around the questions is in that language and the questions are as
+// the creator wrote them. The notice that says so is worded in the
+// chosen language, and is given only where the page is in it.
+func untranslated(r *http.Request, version store.ServedVersion) bool {
+	chosen := chosenLanguage(r, version)
+	return chosen != "" && version.Lang == "" && interfaceLanguage(r) == chosen
 }
 
 // preferredLanguage reads Accept-Language and returns the best available
