@@ -375,6 +375,12 @@ templ respondQuestion(q domain.Question, index int, total int, data RespondData)
 // offered saved logins, on top of whatever the respondent is typing.
 // autocomplete="off" is the standard way to say so; the vendor
 // attributes are for the managers that ignore the standard one.
+// On radios and checkboxes the same attribute stops the browser
+// restoring a choice from its own form history after a reload or a
+// return visit: the only answers a page shows are the ones the server
+// rendered, so a shared device never hands one respondent's choice to
+// the next. No control carries tabindex: native inputs are already in
+// the tab order, and only the honeypot opts out of it.
 templ answerControl(q domain.Question, data RespondData) {
 	switch q.Type {
 		case domain.LongText:
@@ -413,9 +419,9 @@ templ answerControl(q domain.Question, data RespondData) {
 				for i, opt := range q.Options {
 					<label class="option">
 						if data.Answers[q.IdentityID].Choice == opt {
-							<input type="radio" name={ "q_" + q.IdentityID } value={ opt } checked/>
+							<input type="radio" name={ "q_" + q.IdentityID } value={ opt } checked autocomplete="off"/>
 						} else {
-							<input type="radio" name={ "q_" + q.IdentityID } value={ opt }/>
+							<input type="radio" name={ "q_" + q.IdentityID } value={ opt } autocomplete="off"/>
 						}
 						@keyHint(optionKey(i))
 						<span>{ opt }</span>
@@ -427,9 +433,9 @@ templ answerControl(q domain.Question, data RespondData) {
 				for i, opt := range q.Options {
 					<label class="option">
 						if hasChoice(data.Answers[q.IdentityID].Choices, opt) {
-							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt } checked/>
+							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt } checked autocomplete="off"/>
 						} else {
-							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt }/>
+							<input type="checkbox" name={ "q_" + q.IdentityID } value={ opt } autocomplete="off"/>
 						}
 						@keyHint(optionKey(i))
 						<span>{ opt }</span>
@@ -441,9 +447,9 @@ templ answerControl(q domain.Question, data RespondData) {
 				for _, point := range q.ScalePoints() {
 					<label class="scale-point js-scale-point">
 						if numberEquals(data.Answers[q.IdentityID].Number, point) {
-							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) } checked/>
+							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) } checked autocomplete="off"/>
 						} else {
-							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) }/>
+							<input type="radio" name={ "q_" + q.IdentityID } value={ strconv.Itoa(point) } autocomplete="off"/>
 						}
 						<span>{ strconv.Itoa(point) }</span>
 					</label>
@@ -458,18 +464,18 @@ templ answerControl(q domain.Question, data RespondData) {
 			<div class="options">
 				<label class="option">
 					if boolEquals(data.Answers[q.IdentityID].Bool, true) {
-						<input type="radio" name={ "q_" + q.IdentityID } value="yes" checked/>
+						<input type="radio" name={ "q_" + q.IdentityID } value="yes" checked autocomplete="off"/>
 					} else {
-						<input type="radio" name={ "q_" + q.IdentityID } value="yes"/>
+						<input type="radio" name={ "q_" + q.IdentityID } value="yes" autocomplete="off"/>
 					}
 					@keyHint("Y")
 					<span>{ t(ctx, "answer.yes") }</span>
 				</label>
 				<label class="option">
 					if boolEquals(data.Answers[q.IdentityID].Bool, false) {
-						<input type="radio" name={ "q_" + q.IdentityID } value="no" checked/>
+						<input type="radio" name={ "q_" + q.IdentityID } value="no" checked autocomplete="off"/>
 					} else {
-						<input type="radio" name={ "q_" + q.IdentityID } value="no"/>
+						<input type="radio" name={ "q_" + q.IdentityID } value="no" autocomplete="off"/>
 					}
 					@keyHint("N")
 					<span>{ t(ctx, "answer.no") }</span>

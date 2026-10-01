@@ -36,7 +36,7 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 						<span>
 							@thtml(ctx, "languages.add.code.label_html")
 						</span>
-						<input type="text" name="lang" required maxlength="8" placeholder={ t(ctx, "languages.add.code.placeholder") }/>
+						<input type="text" name="lang" required maxlength="8" placeholder={ t(ctx, "languages.add.code.placeholder") } autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 					</label>
 					<button type="submit">{ t(ctx, "languages.add.submit.label") }</button>
 				</form>
@@ -52,6 +52,8 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 	}
 }
 
+// The translation fields opt out of autocomplete and password managers
+// for the same reason as the editor's (see NewSurvey).
 templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 	<section class="card js-panel" id={ "lang-" + lang.Code }>
 		<div class="title-row">
@@ -90,14 +92,14 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 						}
 						<label class="field">
 							<span>{ lang.Label }</span>
-							<textarea name={ "t_" + q.IdentityID } rows="2">{ q.Text }</textarea>
+							<textarea name={ "t_" + q.IdentityID } autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="2">{ q.Text }</textarea>
 						</label>
 						if q.NeedsOptions {
 							<label class="field">
 								<span>
 									@thtml(ctx, "languages.options.label_html")
 								</span>
-								<textarea name={ "o_" + q.IdentityID } rows="3" placeholder={ q.SourceOptions }>{ q.Options }</textarea>
+								<textarea name={ "o_" + q.IdentityID } autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3" placeholder={ q.SourceOptions }>{ q.Options }</textarea>
 							</label>
 						}
 					</li>

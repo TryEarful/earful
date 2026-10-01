@@ -32,6 +32,10 @@ templ StatusChip(s domain.Status) {
 	<span class={ statusClass(s) }>{ statusName(ctx, s) }</span>
 }
 
+// Every field an author types into, here and across the editor, carries
+// autocomplete="off" and the password manager opt outs, for the reason
+// given at answerControl: survey wording is never a login, and a value
+// the browser remembers from another survey does not belong in this one.
 templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) {
 	@Layout(t(ctx, "survey.new.title")) {
 		@AuthedHeader(email, csrf)
@@ -41,19 +45,19 @@ templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) 
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<label class="field">
 					<span>{ t(ctx, "survey.name.label") }</span>
-					<input type="text" name="title" required autofocus maxlength="200"/>
+					<input type="text" name="title" required autofocus maxlength="200" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 				</label>
 				<fieldset class="field">
 					<legend>{ t(ctx, "survey.audience.legend") }</legend>
 					<label class="choice">
-						<input type="radio" name="anonymity" value="anonymous" checked/>
+						<input type="radio" name="anonymity" value="anonymous" checked autocomplete="off"/>
 						<span>
 							<strong>{ t(ctx, "survey.audience.anonymous.name") }</strong>
 							<small>{ t(ctx, "survey.audience.anonymous.hint") }</small>
 						</span>
 					</label>
 					<label class="choice">
-						<input type="radio" name="anonymity" value="invited"/>
+						<input type="radio" name="anonymity" value="invited" autocomplete="off"/>
 						<span>
 							<strong>{ t(ctx, "survey.audience.invited.name") }</strong>
 							<small>{ t(ctx, "survey.audience.invited.hint") }</small>
@@ -65,7 +69,7 @@ templ NewSurvey(email string, workspaceName string, csrf string, errMsg string) 
 					<span>
 						@thtml(ctx, "survey.close_date.label_html")
 					</span>
-					<input type="date" name="close_at"/>
+					<input type="date" name="close_at" autocomplete="off"/>
 				</label>
 				if errMsg != "" {
 					<p class="error-text">{ errMsg }</p>
@@ -159,33 +163,33 @@ templ questionRow(csrf string, surveyID string, q domain.Question, index int, to
 				<input type="hidden" name="type" value={ string(q.Type) }/>
 				<label class="field">
 					<span>{ t(ctx, "editor.question.text") }</span>
-					<input type="text" name="text" value={ q.Text } required maxlength="500"/>
+					<input type="text" name="text" value={ q.Text } required maxlength="500" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 				</label>
 				if q.Type.NeedsOptions() {
 					<label class="field">
 						<span>
 							@thtml(ctx, "editor.question.options_html")
 						</span>
-						<textarea name="options" rows="4">{ strings.Join(q.Options, "\n") }</textarea>
+						<textarea name="options" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="4">{ strings.Join(q.Options, "\n") }</textarea>
 					</label>
 				}
 				if q.Type.NeedsScale() {
 					<div class="field-row">
 						<label class="field">
 							<span>{ t(ctx, "editor.question.scale_min") }</span>
-							<input type="number" name="scale_min" min="0" max="1" value={ fmt.Sprint(q.ScaleMin) }/>
+							<input type="number" name="scale_min" min="0" max="1" value={ fmt.Sprint(q.ScaleMin) } autocomplete="off"/>
 						</label>
 						<label class="field">
 							<span>{ t(ctx, "editor.question.scale_max") }</span>
-							<input type="number" name="scale_max" min="2" max="10" value={ fmt.Sprint(q.ScaleMax) }/>
+							<input type="number" name="scale_max" min="2" max="10" value={ fmt.Sprint(q.ScaleMax) } autocomplete="off"/>
 						</label>
 					</div>
 				}
 				<label class="checkbox">
 					if q.Required {
-						<input type="checkbox" name="required" checked/>
+						<input type="checkbox" name="required" checked autocomplete="off"/>
 					} else {
-						<input type="checkbox" name="required"/>
+						<input type="checkbox" name="required" autocomplete="off"/>
 					}
 					<span>{ t(ctx, "editor.question.required") }</span>
 				</label>
@@ -237,6 +241,10 @@ templ generatePanel(csrf string, surveyID string) {
 					name="prompt"
 					rows="3"
 					maxlength="1000"
+					autocomplete="off"
+					data-1p-ignore
+					data-lpignore="true"
+					data-bwignore
 					placeholder={ t(ctx, "editor.generate.prompt.placeholder") }
 				></textarea>
 			</label>
@@ -266,30 +274,30 @@ templ addQuestionForm(csrf string, surveyID string, first bool) {
 			</label>
 			<label class="field">
 				<span>{ t(ctx, "editor.question.text") }</span>
-				<input type="text" name="text" required maxlength="500" placeholder={ t(ctx, "editor.add.text.placeholder") }/>
+				<input type="text" name="text" required maxlength="500" placeholder={ t(ctx, "editor.add.text.placeholder") } autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 			</label>
 			<label class="field q-options">
 				<span>
 					@thtml(ctx, "editor.add.options_html")
 				</span>
-				<textarea name="options" rows="3"></textarea>
+				<textarea name="options" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3"></textarea>
 			</label>
 			<div class="field-row q-scale">
 				<label class="field">
 					<span>
 						@thtml(ctx, "editor.add.scale_min_html")
 					</span>
-					<input type="number" name="scale_min" min="0" max="1" value="1"/>
+					<input type="number" name="scale_min" min="0" max="1" value="1" autocomplete="off"/>
 				</label>
 				<label class="field">
 					<span>
 						@thtml(ctx, "editor.add.scale_max_html")
 					</span>
-					<input type="number" name="scale_max" min="2" max="10" value="5"/>
+					<input type="number" name="scale_max" min="2" max="10" value="5" autocomplete="off"/>
 				</label>
 			</div>
 			<label class="checkbox">
-				<input type="checkbox" name="required"/>
+				<input type="checkbox" name="required" autocomplete="off"/>
 				<span>{ t(ctx, "editor.question.required") }</span>
 			</label>
 			<button type="submit" class={ templ.KV("secondary", !first) }>{ t(ctx, "editor.add.submit.label") }</button>
@@ -318,7 +326,7 @@ templ participantsPanel(csrf string, data SurveyEditorData) {
 				<span>
 					@thtml(ctx, "editor.participants.emails_html")
 				</span>
-				<textarea name="emails" rows="3" placeholder="ada@example.org&#10;grace@example.org"></textarea>
+				<textarea name="emails" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3" placeholder="ada@example.org&#10;grace@example.org"></textarea>
 			</label>
 			<label class="field">
 				<span>{ t(ctx, "editor.participants.csv") }</span>
@@ -434,13 +442,13 @@ templ settingsPanel(csrf string, survey SurveyView) {
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
 				<span>{ t(ctx, "survey.name.label") }</span>
-				<input type="text" name="title" value={ survey.Title } required maxlength="200"/>
+				<input type="text" name="title" value={ survey.Title } required maxlength="200" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 			</label>
 			<label class="field">
 				<span>
 					@thtml(ctx, "editor.settings.close_date_html")
 				</span>
-				<input type="date" name="close_at" value={ survey.CloseAtInput }/>
+				<input type="date" name="close_at" value={ survey.CloseAtInput } autocomplete="off"/>
 			</label>
 			<button type="submit" class="secondary">{ t(ctx, "editor.settings.save.label") }</button>
 		</form>

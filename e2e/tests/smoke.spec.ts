@@ -76,6 +76,29 @@ test("respondent form works with JavaScript disabled", async ({ page, browser })
   await noJS.close();
 });
 
+// An answer is never a login: every control a respondent fills in opts
+// out of the browser's autofill and form history. Hidden fields are
+// excluded because the HTML standard forbids "off" on them; the honeypot
+// is the one control outside the tab order and is excluded by that.
+test("respondent controls opt out of autofill", async ({ page, browser }) => {
+  const share = await createPublishedSurvey(page, `E2E autofill ${Date.now()}`);
+
+  const respondentContext = await browser.newContext({ storageState: undefined });
+  const respondent = await respondentContext.newPage();
+  await respondent.goto(share);
+
+  const controls = respondent
+    .locator(".js-respond-form")
+    .locator('input:not([type="hidden"]):not([tabindex="-1"]), textarea');
+  const values = await controls.evaluateAll((els) =>
+    els.map((el) => `${el.getAttribute("name")}=${el.getAttribute("autocomplete")}`),
+  );
+  // One long answer plus three choices: the assertion must see them all.
+  expect(values.length).toBeGreaterThanOrEqual(4);
+  for (const value of values) expect(value).toMatch(/=off$/);
+  await respondentContext.close();
+});
+
 // Accessibility (M4-T1 AC: axe-core clean on respondent pages; login and
 // dashboard held to the same bar).
 test("respondent page is axe-clean", async ({ page, browser }) => {
