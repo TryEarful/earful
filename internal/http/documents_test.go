@@ -94,7 +94,7 @@ func TestDocuments_ADraftIsServedOnlyInDevelopment(t *testing.T) {
 	}
 
 	released := apptest.New(t, apptest.Options{Env: "staging"})
-	for _, address := range []string{"/terms", "/terms.md", "/privacy", "/privacy.md"} {
+	for _, address := range []string{"/privacy", "/privacy.md"} {
 		resp, err := anyone.Get(released.Server.URL + address)
 		if err != nil {
 			t.Fatalf("GET %s: %v", address, err)
@@ -107,5 +107,8 @@ func TestDocuments_ADraftIsServedOnlyInDevelopment(t *testing.T) {
 	// What is finished is served there as anywhere.
 	if page := mustGet(t, anyone, released.Server.URL+"/trust"); !bodyContains(page, "Your voice is never stored") {
 		t.Errorf("the trust page is not served on a released instance:\n%s", page)
+	}
+	if page := mustGet(t, anyone, released.Server.URL+"/terms"); !bodyContains(page, "Terms of use") {
+		t.Errorf("the terms are not served on a released instance:\n%s", page)
 	}
 }

@@ -2,10 +2,9 @@
 title: Condiciones de uso
 short_title: Condiciones
 sections: cards
-draft: true
-hash: sha256-8cfbd2a660429098018a5d1a0718e6f04ab8457ebc18b4bc962b27bdc4445b54
+hash: sha256-e6c644046e0b2f4f84f297de29cadd87fa27668a119d28e60e8d8aee3edf5a0c
 last_update: 2026-10-02
-source_hash: sha256-890053bfb46ad88ae360e7bff6595c4a0e82102c1057fa7a7399c424acb1eef0
+source_hash: sha256-67d4399d447f6d50ce096b31e0c62e06e3ee2306e05e21f19415aee550360307
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/terms?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -39,7 +38,7 @@ Usted conserva todos los derechos que tenga sobre sus preguntas, sus textos y su
 
 Una encuesta puede llevar un nombre, un logotipo, imágenes, textos y enlaces que usted elige. Use solo nombres, logotipos, marcas e imágenes que sean suyos o que tenga permiso para usar.
 
-No presente una encuesta como si viniera de una persona, una empresa o una institución de la que no viene. Cada página de una encuesta nombra el espacio de trabajo que pregunta, y esa línea no es suya para quitarla ni para contradecirla.
+No presente una encuesta como si viniera de una persona, una empresa o una institución de la que no viene. Cada página de una encuesta nombra el espacio de trabajo que pregunta, y usted no puede quitar ni contradecir esa línea.
 
 ## Para qué no puede usarse Earful
 
@@ -60,7 +59,7 @@ Si una encuesta parece engañar, hacerse pasar por quien no es o pedir cosas que
 Earful puede redactar preguntas, convertir la voz en texto, traducir y resumir respuestas. Esos resultados vienen de un modelo de lenguaje y pueden ser erróneos, incompletos o estar mal expresados.
 
 - Lea lo que la IA redacta o traduce antes de publicarlo. Lo que usted publica es suyo, se haya escrito como se haya escrito.
-- La transcripción se muestra a quien responde para que la lea y la corrija antes de enviarla. Aun así, vale lo que valga la lectura que esa persona le dio.
+- La transcripción se muestra a quien responde para que la lea y la corrija antes de enviarla. Aun así, solo es tan fiable como la revisión que esa persona hizo.
 - Un resumen es un punto de partida para leer sus respuestas, no un sustituto de leerlas. No tome una decisión sobre una persona basándose solo en un resumen.
 - Las funciones de IA tienen límites diarios y pueden detenerse cuando se alcanza uno. El resto del servicio sigue funcionando.
 
@@ -74,7 +73,7 @@ Puede exportar en cualquier momento todo lo que contiene su espacio de trabajo, 
 
 Cualquiera puede avisarnos de una encuesta, desde el enlace al pie de sus páginas. Cuando una encuesta o una cuenta incumple estas condiciones, o tenemos buenas razones para creerlo, podemos cerrar la encuesta, retirar contenido o suspender el espacio de trabajo. Cuando es posible, se lo decimos antes y le damos la oportunidad de corregirlo. Cuando se está dañando o engañando a personas, actuamos primero y se lo decimos después.
 
-Mientras su espacio de trabajo está suspendido, sus encuestas no reciben respuestas ni muestran su estilo, y usted no puede publicar, reabrir una encuesta, enviar invitaciones ni usar la IA. Sigue pudiendo iniciar sesión, leer sus resultados y exportar sus datos, y la suspensión no elimina nada. Cuando se levanta, todo vuelve a estar como antes. Si suspendemos su espacio de trabajo por error, díganoslo y lo revisaremos. Si se cierra su cuenta, le damos un plazo razonable para exportar sus datos, salvo que lo impidan la ley o la seguridad de otras personas.
+Mientras su espacio de trabajo está suspendido, sus encuestas no reciben respuestas ni muestran su estilo, y usted no puede publicar, reabrir una encuesta, enviar invitaciones ni usar la IA. Sigue pudiendo iniciar sesión, leer sus resultados, editar borradores y exportar sus datos, y la suspensión no elimina nada. Cuando se levanta, todo vuelve a estar como antes. Si suspendemos su espacio de trabajo por error, díganoslo y lo revisaremos. Si se cierra su cuenta, le damos un plazo razonable para exportar sus datos, salvo que lo impidan la ley o la seguridad de otras personas.
 
 ## El servicio
 
