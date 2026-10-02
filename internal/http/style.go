@@ -1,11 +1,9 @@
 package http
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/TryEarful/earful/internal/domain"
-	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/templates"
 )
@@ -41,23 +39,7 @@ func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed
 	status := http.StatusOK
 	if problem != nil {
 		status = http.StatusUnprocessableEntity
-		if typed != nil {
-			// The pictures shown are the draft's: one uploaded with a
-			// refused form was not stored, so there is nothing at its
-			// address to show.
-			saved := data.Style
-			data.Style = *typed
-			data.Style.Header.Banner, data.Style.Header.Logo = saved.Header.Banner, saved.Header.Logo
-			data.Style.Thanks.Image = saved.Thanks.Image
-		}
-		data.FilesLost = filesLost
-		data.Error = sayErrorAlone(r, problem)
-		var where domain.StyleError
-		if errors.As(problem, &where) && where.Part != domain.StyleTheme {
-			data.ErrorPart, data.ErrorLink = where.Part, where.Link
-			data.Error = say(r, styleErrorPlace(where), uitext.Args{"Position": where.Link, "Problem": sayError(r, where.Err)})
-			data.FieldError = sayErrorAlone(r, where.Err)
-		}
+		data.StyleForm = refusedStyleForm(r, data.StyleForm, typed, problem, filesLost)
 	}
 	// The tab shows the draft's pictures, which no version may show yet.
 	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
@@ -123,20 +105,8 @@ func (s *server) surveyStyleSave(w http.ResponseWriter, r *http.Request) {
 	// The pictures are stored only once the whole style is accepted, and
 	// with the draft that refers to them, in one transaction.
 	if err == nil {
-		stored := make([]store.NewImage, len(pictures))
-		for i, p := range pictures {
-			stored[i] = p.stored
-		}
-		err = s.surveys.SaveStyle(r.Context(), survey.ID, info.UserID, draft, stored, s.clock.Now())
-		var full store.ImageLimitError
-		if errors.As(err, &full) {
-			for _, p := range pictures {
-				if p.stored.SHA256 == full.SHA256 {
-					err = domain.StyleError{Part: p.part, Err: err}
-					break
-				}
-			}
-		}
+		err = s.surveys.SaveStyle(r.Context(), survey.ID, info.UserID, draft, storedPictures(pictures), s.clock.Now())
+		err = pictureLimitPart(err, pictures)
 		if err != nil && !isUserError(err) {
 			s.internalError(w, r, "save style", err)
 			return

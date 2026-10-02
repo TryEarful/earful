@@ -29,11 +29,10 @@ The defaults this records:
 
 A brand, meaning a theme, a header, a footer or a logo on a survey's
 pages, is not one of them. ADR-0018, accepted, makes it a survey's
-Style, chosen on its Style tab and frozen with each version. A
-workspace's default style, which a new survey would start from, is a
-property of the workspace beside these, under the same rules for
-export and purge; it copies a style into a new draft and needs no
-change to how a survey is drawn.
+Style, chosen on its Style tab and frozen with each version, and
+ADR-0023 gives the workspace an account style that its surveys follow
+until they make a part their own. It is followed, not copied, so it is
+not a default in this decision's sense.
 
 ## Why the workspace, not the user
 

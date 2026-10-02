@@ -104,11 +104,22 @@ type NewImage struct {
 
 // ImageLimitError refuses a picture for a survey that already stores
 // MaxSurveyImages, every one of them shown by a version, the draft, or
-// the style being saved. SHA256 names the picture that did not fit.
-type ImageLimitError struct{ SHA256 string }
+// the style being saved, or for an account that already stores
+// MaxWorkspaceImages. SHA256 names the picture that did not fit; Limit
+// is which limit it met, a survey's where it is nil.
+type ImageLimitError struct {
+	SHA256 string
+	Limit  error
+}
 
-func (e ImageLimitError) Error() string { return ErrTooManyImages.Error() }
-func (e ImageLimitError) Unwrap() error { return ErrTooManyImages }
+func (e ImageLimitError) Error() string { return e.Unwrap().Error() }
+
+func (e ImageLimitError) Unwrap() error {
+	if e.Limit == nil {
+		return ErrTooManyImages
+	}
+	return e.Limit
+}
 
 // SaveStyle stores the pictures a style brings and the draft that refers
 // to them, together: a draft never refers to a picture that is not

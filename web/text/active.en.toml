@@ -257,6 +257,19 @@ hint = "A download link arrives by email and works for 7 days."
 [account.delete.submit]
 label = "Delete my account"
 
+[account.style]
+title = "Account style · Earful"
+heading = "Account style"
+crumb = "Style"
+intro = "How your surveys look to the people answering them, unless a survey changes it on its own Style tab. A survey takes a change the next time it is published."
+header_hint = "Shown above every survey that follows your account style, so people know who is asking. Leave it all empty for no header."
+
+[account.style.save]
+label = "Save account style"
+
+[account.style.notice]
+saved = "Account style saved. Each survey takes it the next time it is published."
+
 
 # ── Documents: the trust page, the terms, help ──────────────────────────
 #
@@ -750,6 +763,7 @@ image_pixels = "that image has too many pixels, so use a smaller one"
 image_missing = "a picture of the survey's style is missing, so choose it again on the Style tab"
 image_unreadable = "that file could not be read as an image"
 images = "this survey already keeps {{.Limit}} images, which is the most it can"
+account_images = "your account style already keeps {{.Limit}} images, which is the most it can"
 files_again = "Choose your images again, since a file is not kept when a save is refused."
 thanks_picture = "choose one of the pictures offered"
 thanks_image = "choose an image to upload, or another picture"

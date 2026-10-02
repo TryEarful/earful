@@ -220,6 +220,17 @@ DELETE FROM export_jobs WHERE workspace_id IN (
 DELETE FROM ai_usage WHERE workspace_id IN (
     SELECT id FROM workspaces WHERE deleted_at IS NOT NULL AND deleted_at < $1
 )`},
+		// The account's style and its pictures (ADR-0023) go with the
+		// workspace. No version refers to an account's picture: a survey
+		// that showed one has its own copy, erased with the survey.
+		{name: "workspace_images_of_deleted_workspaces", args: []any{cutoff}, sql: `
+DELETE FROM workspace_images WHERE workspace_id IN (
+    SELECT id FROM workspaces WHERE deleted_at IS NOT NULL AND deleted_at < $1
+)`},
+		{name: "workspace_styles_of_deleted_workspaces", args: []any{cutoff}, sql: `
+DELETE FROM workspace_styles WHERE workspace_id IN (
+    SELECT id FROM workspaces WHERE deleted_at IS NOT NULL AND deleted_at < $1
+)`},
 		{name: "memberships_of_deleted_workspaces", args: []any{cutoff}, sql: `
 DELETE FROM workspace_members WHERE workspace_id IN (
     SELECT id FROM workspaces WHERE deleted_at IS NOT NULL AND deleted_at < $1
@@ -302,6 +313,26 @@ WHERE i.created_at < $1
       SELECT 1 FROM survey_drafts d
       WHERE d.survey_id = i.survey_id
         AND jsonb_path_exists(d.structure, '$.style.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
+  )`},
+		// An account's picture its style no longer shows (ADR-0023). No
+		// version refers to one, since a survey that showed it holds its
+		// own copy. A picture is stored only with its account's style row
+		// (SaveWorkspaceStyle), so the row is there to hold: an account
+		// whose style is being saved at this moment is held
+		// (LockWorkspaceStyle) and is skipped until the next run.
+		{name: "unused_workspace_images", args: []any{now.Add(-UnusedImageWindow)}, sql: `
+DELETE FROM workspace_images i
+WHERE i.created_at < $1
+  AND EXISTS (
+      SELECT 1 FROM workspace_styles w
+      WHERE w.workspace_id = i.workspace_id
+      FOR NO KEY UPDATE SKIP LOCKED
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM workspace_styles w
+      WHERE w.workspace_id = i.workspace_id
+        AND jsonb_path_exists(w.style, '$.** ? (@.sha256 == $hash)',
                               jsonb_build_object('hash', encode(i.sha256, 'hex')))
   )`},
 		// An expired export loses its archive immediately; the row stays

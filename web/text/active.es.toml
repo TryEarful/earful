@@ -359,6 +359,34 @@ other = "Recibirá por correo un enlace de descarga que funciona durante 7 días
 hash = "sha1-2ae3a019040b2afd5fa5c1c7f7a1766b7c4ae831"
 other = "Eliminar mi cuenta"
 
+[account.style.title]
+hash = "sha1-3fba0a634a65a222da016769f3def628ed27fd87"
+other = "Estilo de la cuenta · Earful"
+
+[account.style.heading]
+hash = "sha1-83098ba4a4d63a2181288c2ed70cce6f3dc36730"
+other = "Estilo de la cuenta"
+
+[account.style.crumb]
+hash = "sha1-99a0efc6cfd85d8ff2732a6718140f822cb90472"
+other = "Estilo"
+
+[account.style.intro]
+hash = "sha1-1c4b9976617307115e71af149aa0cf538b33d311"
+other = "Cómo ven sus encuestas quienes las responden, salvo que una encuesta lo cambie en su propia pestaña Estilo. Una encuesta adopta un cambio la próxima vez que se publica."
+
+[account.style.header_hint]
+hash = "sha1-4a637992da2959c371a191d33ba597c322710dec"
+other = "Aparece encima de cada encuesta que sigue el estilo de su cuenta, para que se sepa quién pregunta. Déjelo todo vacío si no quiere encabezado."
+
+[account.style.save.label]
+hash = "sha1-287c9e29750977b1dfab1f5a689c6dcebc185739"
+other = "Guardar estilo de la cuenta"
+
+[account.style.notice.saved]
+hash = "sha1-57029858fa4b5b13bca1ac5ceb0758c8cd344d8e"
+other = "Estilo de la cuenta guardado. Cada encuesta lo adopta la próxima vez que se publica."
+
 
 # ── Documentos: la página de confianza, los términos, la ayuda ──────────
 
@@ -3547,6 +3575,10 @@ other = "ese archivo no se pudo leer como imagen"
 [style.error.images]
 hash = "sha1-90361f6a1b7348dc9d2b5cd11dabf60bf3d46e7e"
 other = "esta encuesta ya guarda {{.Limit}} imágenes, que es el máximo"
+
+[style.error.account_images]
+hash = "sha1-367db1c7fdec69f57659069e2a5eefd3063acf0b"
+other = "el estilo de su cuenta ya guarda {{.Limit}} imágenes, que es el máximo"
 
 [style.error.files_again]
 hash = "sha1-23a1b8f87afee961bb2dc4da2e3b4c0786fb52de"

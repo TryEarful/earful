@@ -30,6 +30,7 @@ type Querier interface {
 	CountSurveyImages(ctx context.Context, surveyID uuid.UUID) (int64, error)
 	// How many of the given pictures a survey stores.
 	CountSurveyImagesOf(ctx context.Context, arg CountSurveyImagesOfParams) (int64, error)
+	CountWorkspaceImages(ctx context.Context, workspaceID uuid.UUID) (int64, error)
 	CreateAnswer(ctx context.Context, arg CreateAnswerParams) error
 	CreateBetaCode(ctx context.Context, arg CreateBetaCodeParams) (uuid.UUID, error)
 	// The copy sent when an account closes. Its expiry is set now, from the
@@ -73,6 +74,8 @@ type Querier interface {
 	CreateUserWithPassword(ctx context.Context, arg CreateUserWithPasswordParams) (User, error)
 	CreateVersion(ctx context.Context, arg CreateVersionParams) (SurveyVersion, error)
 	CreateWorkspace(ctx context.Context, name string) (Workspace, error)
+	// The same upload twice is one row.
+	CreateWorkspaceImage(ctx context.Context, arg CreateWorkspaceImageParams) error
 	CreateWorkspaceMember(ctx context.Context, arg CreateWorkspaceMemberParams) error
 	DeleteExportJob(ctx context.Context, id uuid.UUID) error
 	DeleteSessionByTokenHash(ctx context.Context, tokenHash []byte) error
@@ -83,10 +86,18 @@ type Querier interface {
 	// pictures in keep). It makes room when a survey is at its limit of
 	// stored pictures.
 	DeleteUnusedSurveyImages(ctx context.Context, arg DeleteUnusedSurveyImagesParams) (int64, error)
+	// Removes the account's pictures that its style does not show and that
+	// the style being saved does not bring (the pictures in keep). It makes
+	// room when an account is at its limit of stored pictures. A survey that
+	// showed one has its own copy (migration 00027).
+	DeleteUnusedWorkspaceImages(ctx context.Context, arg DeleteUnusedWorkspaceImagesParams) (int64, error)
 	// Identities are minted in Go when a question first appears in a draft and
 	// only reach the database at publish. ON CONFLICT keeps republishing an
 	// unchanged question idempotent.
 	EnsureQuestionIdentity(ctx context.Context, arg EnsureQuestionIdentityParams) error
+	// Makes the row a workspace's style is saved into, so that two saves can
+	// hold the same row and take turns.
+	EnsureWorkspaceStyle(ctx context.Context, arg EnsureWorkspaceStyleParams) error
 	FailExportJob(ctx context.Context, arg FailExportJobParams) error
 	FinishExportJob(ctx context.Context, arg FinishExportJobParams) error
 	// Validate-and-lock an unused invite code BEFORE any account work, so a
@@ -131,6 +142,13 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetVersion(ctx context.Context, arg GetVersionParams) (SurveyVersion, error)
 	GetWorkspaceForUser(ctx context.Context, userID uuid.UUID) (Workspace, error)
+	// An account's picture, for its creator's own pages.
+	GetWorkspaceImage(ctx context.Context, arg GetWorkspaceImageParams) (GetWorkspaceImageRow, error)
+	// The account's style and its pictures (ADR-0023, migration 00027).
+	//
+	// As with a survey's pictures, a style refers to a picture by the hash
+	// of its bytes, in hex, wherever in the style it sits.
+	GetWorkspaceStyle(ctx context.Context, workspaceID uuid.UUID) (GetWorkspaceStyleRow, error)
 	GlobalCostOnDay(ctx context.Context, day time.Time) (float64, error)
 	// M4-T3/T4: participants, invites, suppressions.
 	// ON CONFLICT keeps re-imports and duplicate rows in one paste idempotent
@@ -197,6 +215,8 @@ type Querier interface {
 	ListSuspendedWorkspaces(ctx context.Context) ([]ListSuspendedWorkspacesRow, error)
 	ListVersionLanguages(ctx context.Context, versionID uuid.UUID) ([]string, error)
 	ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error)
+	// The pictures the account's style shows, for the workspace export.
+	ListWorkspaceStyleImages(ctx context.Context, workspaceID uuid.UUID) ([]ListWorkspaceStyleImagesRow, error)
 	// Holds a survey while its pictures and its draft change together, or
 	// while it is published: two saves of one survey's style, or a save and a
 	// publish, take turns, and the purge leaves a survey held this way alone.
@@ -204,6 +224,10 @@ type Querier interface {
 	// to the survey row, and checking that reference takes a lock that
 	// FOR UPDATE would make wait. Respondents are never held up by a save.
 	LockSurveyForStyle(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
+	// Holds the account's style while its pictures and its style change
+	// together. NO KEY UPDATE, as a survey is held, so nothing that only
+	// refers to the workspace waits on it.
+	LockWorkspaceStyle(ctx context.Context, workspaceID uuid.UUID) (uuid.UUID, error)
 	// By address across all surveys: a hard bounce means the mailbox is gone,
 	// not that one survey's invite failed.
 	MarkParticipantEmailBounced(ctx context.Context, arg MarkParticipantEmailBouncedParams) error
@@ -242,6 +266,9 @@ type Querier interface {
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	SetUserSuperAdmin(ctx context.Context, arg SetUserSuperAdminParams) (uuid.UUID, error)
 	SetWorkspaceAITier(ctx context.Context, arg SetWorkspaceAITierParams) (int64, error)
+	// Reads the account's style while publishing a survey that follows it,
+	// so that it does not change between being read and being frozen.
+	ShareWorkspaceStyle(ctx context.Context, workspaceID uuid.UUID) (ShareWorkspaceStyleRow, error)
 	// M8-T1: a creator can remove a response; support can restore it until
 	// the purge job hard-deletes it 30 days later.
 	SoftDeleteResponse(ctx context.Context, arg SoftDeleteResponseParams) (int64, error)
@@ -262,8 +289,11 @@ type Querier interface {
 	// (ADR-0003 trigger), but the query shape means no caller can even try.
 	UpdateSurveySettings(ctx context.Context, arg UpdateSurveySettingsParams) error
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
+	UpdateWorkspaceStyle(ctx context.Context, arg UpdateWorkspaceStyleParams) error
+	UpdateWorkspaceStyleLocalizations(ctx context.Context, arg UpdateWorkspaceStyleLocalizationsParams) error
 	UpsertAnswerTranslation(ctx context.Context, arg UpsertAnswerTranslationParams) error
 	WorkspaceAITier(ctx context.Context, id uuid.UUID) (string, error)
+	WorkspaceImageExists(ctx context.Context, arg WorkspaceImageExistsParams) (bool, error)
 	// Tells a workspace that is not there from one already in the state a
 	// suspension or a lift asked for, after an update that changed no row.
 	WorkspaceLive(ctx context.Context, id uuid.UUID) (bool, error)

@@ -97,6 +97,8 @@ func limitError(kind domain.LimitKind) (uitext.ID, bool) {
 		return "style.error.thanks_alt_long", true
 	case domain.LimitStyleImages:
 		return "style.error.images", true
+	case domain.LimitAccountStyleImages:
+		return "style.error.account_images", true
 	}
 	return "", false
 }

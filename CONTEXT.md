@@ -74,6 +74,10 @@ Where a survey stands: Draft (never published), Open (published and accepting re
 The published Survey a Workspace holds from the moment it is created, written from one definition. An ordinary Survey in every other respect: its owner's to reword, close or delete, and its Responses arrive in that Workspace alone.
 _Avoid_: welcome survey, sample, demo, template
 
+**Account Style**:
+A Workspace's own style: the theme, header, footer and thanks picture its Surveys follow, part by part, until a Survey makes a part its own. Reaches a Survey's Respondents only when that Survey is published, since each Survey Version keeps the style it was published with.
+_Avoid_: brand, default style, template, workspace theme
+
 **Localization**:
 The set of creator-reviewed, AI-drafted translations of a version's questions. Frozen into the Survey Version at publish — immutable like the rest of the version.
 _Avoid_: translation (reserved for answer translation)

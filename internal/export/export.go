@@ -25,7 +25,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 7
+const FormatVersion = 8
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {
@@ -39,6 +39,28 @@ type Workspace struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
+	// Style is the account's style (ADR-0023), which the workspace's
+	// surveys follow until they make a part their own, in the same shape
+	// as a version's; its pictures are under images/ with the versions'.
+	// StyleLocalizations are its words in each language they have been
+	// translated into. Both are absent where the account has no style.
+	// Format version 8.
+	Style              *Style                `json:"style,omitempty"`
+	StyleLocalizations map[string]StyleWords `json:"style_localizations,omitempty"`
+}
+
+// StyleWords are the words of a style in one language: the tagline, the
+// logo's alternative text, the footer's text, each link's label by its
+// position, and the alternative text of the thanks page's own picture.
+// Reviewed says whether the creator has read the translation.
+type StyleWords struct {
+	Tagline     string   `json:"tagline,omitempty"`
+	LogoAlt     string   `json:"logo_alt,omitempty"`
+	HeaderLinks []string `json:"header_links,omitempty"`
+	FooterText  string   `json:"footer_text,omitempty"`
+	FooterLinks []string `json:"footer_links,omitempty"`
+	ThanksAlt   string   `json:"thanks_alt,omitempty"`
+	Reviewed    bool     `json:"reviewed"`
 }
 
 type Survey struct {

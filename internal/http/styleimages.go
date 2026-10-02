@@ -174,17 +174,22 @@ func (s *server) setReadDeadline(w http.ResponseWriter, at time.Time) {
 }
 
 // styleBusy says a Style form was not saved because others are being,
-// with a way back to the Style tab to save it again.
+// with a way back to the form it came from, a survey's Style tab or the
+// account's style, to save it again.
 func (s *server) styleBusy(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Retry-After", "10")
 	title, body := say(r, "style.busy.title"), say(r, "style.busy.body")
-	id, err := uuid.Parse(r.PathValue("surveyID"))
-	if err != nil {
+	back := ""
+	if id, err := uuid.Parse(r.PathValue("surveyID")); err == nil {
+		back = "/surveys/" + id.String() + "/style"
+	} else if r.URL.Path == "/account/style" {
+		back = "/account/style"
+	}
+	if back == "" {
 		render(w, r, http.StatusServiceUnavailable, templates.ErrorPage(title, body))
 		return
 	}
-	render(w, r, http.StatusServiceUnavailable, templates.ErrorPageBack(
-		title, body, "/surveys/"+id.String()+"/style", say(r, "style.busy.back")))
+	render(w, r, http.StatusServiceUnavailable, templates.ErrorPageBack(title, body, back, say(r, "style.busy.back")))
 }
 
 // uploadTooLarge is a picture over its slot's byte limit, with the limit

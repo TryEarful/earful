@@ -196,6 +196,28 @@ test("gallery", async ({ browser }) => {
   // The account page ends with the delete form and its copy checkbox.
   await page.goto("/account");
   await capture(page, "account", "en");
+  // The account's style (ADR-0023): with nothing set, refused over a link
+  // with no address, and saved with every part.
+  await page.goto("/account/style");
+  await capture(page, "account-style", "en");
+  await fillStyle(page, { name: "Corner Workshop", links: [["Our classes", ""]] });
+  await page.getByRole("button", { name: "Save account style" }).click();
+  await expect(page.locator(".js-style-field-error")).toBeVisible();
+  await capture(page, "account-style-error", "en");
+  await page.goto("/account/style");
+  await page.locator(".js-theme-choice").getByRole("radio", { name: /Ocean/ }).check();
+  await fillStyle(page, {
+    name: "Corner Workshop",
+    tagline: "Evening classes in wood, clay and print.",
+    links: [["Our classes", "https://example.com/classes"]],
+    footer: "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
+    footerLinks: [["Privacy notice", "https://example.com/privacy"]],
+  });
+  await setStylePictures(page, { banner: "banner.jpg", logo: "logo-square.png" });
+  await page.locator(".js-style-thanks-panel").getByRole("radio", { name: "Confetti" }).check();
+  await page.getByRole("button", { name: "Save account style" }).click();
+  await expect(page.getByText("Account style saved")).toBeVisible();
+  await capture(page, "account-style-saved", "en");
   await page.goto("/help");
   await capture(page, "help-signed-in", "en");
 
@@ -868,6 +890,8 @@ test("gallery", async ({ browser }) => {
   await capture(es, "style-images", "es");
   await es.goto("/account");
   await capture(es, "account", "es");
+  await es.goto("/account/style");
+  await capture(es, "account-style-saved", "es");
 
   // The AI tier control, a super admin's page. Only the CLI grants super
   // admin, so the creator is granted it inside the compose stack's app

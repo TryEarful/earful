@@ -117,6 +117,9 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 	// The pictures are written as each survey's are read, and the
 	// archive stops as soon as it passes the limit.
 	zipped := export.NewWriter(s.exportMaxBytes)
+	if err := s.exportAccountStyle(ctx, workspaceID, &archive.Workspace, zipped); err != nil {
+		return nil, err
+	}
 
 	for _, survey := range surveys {
 		exported := export.Survey{
@@ -355,6 +358,43 @@ func viewExportJob(l uitext.Localizer, job store.ExportJob, now time.Time) templ
 		view.DownloadPath = "/exports/" + job.ID.String()
 	}
 	return view
+}
+
+// exportAccountStyle puts the account's style (ADR-0023) in the archive:
+// the style on the workspace, its words in each language, and the
+// pictures it shows under images/, where the versions' are. A picture
+// a version shows as well is one file.
+func (s *server) exportAccountStyle(ctx context.Context, workspaceID uuid.UUID, workspace *export.Workspace, zipped *export.Writer) error {
+	style, err := s.surveys.WorkspaceStyle(ctx, workspaceID)
+	if err != nil {
+		return err
+	}
+	if style.Style.IsZero() {
+		return nil
+	}
+	pictures, err := s.surveys.WorkspaceStyleImages(ctx, workspaceID)
+	if err != nil {
+		return err
+	}
+	types := map[string]string{}
+	for _, picture := range pictures {
+		types[picture.SHA256] = picture.ContentType
+		if err := zipped.Image(export.ImagePath(picture.SHA256, styleimage.Ext(picture.ContentType)), picture.Bytes); err != nil {
+			return err
+		}
+	}
+	workspace.Style = exportStyle(style.Style, types)
+	for lang, words := range style.Localizations {
+		if workspace.StyleLocalizations == nil {
+			workspace.StyleLocalizations = map[string]export.StyleWords{}
+		}
+		workspace.StyleLocalizations[lang] = export.StyleWords{
+			Tagline: words.Tagline, LogoAlt: words.LogoAlt, HeaderLinks: words.HeaderLinks,
+			FooterText: words.FooterText, FooterLinks: words.FooterLinks, ThanksAlt: words.ThanksAlt,
+			Reviewed: words.Reviewed,
+		}
+	}
+	return nil
 }
 
 // exportStyle is a version's style as the archive carries it: the theme,

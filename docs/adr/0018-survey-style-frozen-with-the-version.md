@@ -275,8 +275,8 @@ takedown an operator should reach for first.
 
 **No switch for an operator.** The style needs no service and no
 configuration, and its storage is bounded, so an instance has nothing to
-turn off. An instance wide or workspace wide default style is a
-different need and belongs with Survey Defaults (ADR-0019).
+turn off. A workspace wide style, which a survey follows until it makes
+a part its own, is the account's style (ADR-0023).
 
 **The dashboard is unchanged.** A survey's card keeps the stripe hashed
 from its ID. A theme is shared by many surveys and would not tell them
@@ -342,9 +342,10 @@ apart.
   route is needed. Every page view carries the whole image and it cannot
   be cached.
 - **Images owned by the workspace.** Reuse across surveys without a
-  copy. Purge then needs a reference count across surveys and drafts,
-  and a workspace's own style belongs with Survey Defaults (ADR-0019),
-  which can copy a style into a survey when one is made.
+  copy. Purge then needs a reference count across surveys and drafts.
+  A version still only refers to its survey's pictures: the account's
+  style (ADR-0023) keeps its pictures on the workspace and copies one
+  into a survey before a version shows it.
 - **Checking logos or links automatically** against known marks or a
   reputation service. Heavy, wrong often enough to need a person anyway,
   and a request to a third party about a creator's content. A report

@@ -252,9 +252,29 @@ type Workspace struct {
 	SuspendedBy uuid.NullUUID `json:"suspended_by"`
 }
 
+type WorkspaceImage struct {
+	ID          uuid.UUID `json:"id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	Sha256      []byte    `json:"sha256"`
+	ContentType string    `json:"content_type"`
+	Width       int32     `json:"width"`
+	Height      int32     `json:"height"`
+	SizeBytes   int32     `json:"size_bytes"`
+	Bytes       []byte    `json:"bytes"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
 type WorkspaceMember struct {
 	WorkspaceID uuid.UUID `json:"workspace_id"`
 	UserID      uuid.UUID `json:"user_id"`
 	Role        string    `json:"role"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+type WorkspaceStyle struct {
+	WorkspaceID   uuid.UUID     `json:"workspace_id"`
+	Style         []byte        `json:"style"`
+	Localizations []byte        `json:"localizations"`
+	UpdatedBy     uuid.NullUUID `json:"updated_by"`
+	UpdatedAt     time.Time     `json:"updated_at"`
 }

@@ -794,3 +794,147 @@ func TestPurge_ASuspensionIsNotADeletion(t *testing.T) {
 		}
 	}
 }
+
+// accountLogo saves the account's style with a logo of one shade and
+// returns the logo's address.
+func accountLogo(t *testing.T, app *apptest.App, pool *pgxpool.Pool, creator *http.Client, addr string, shade uint8) string {
+	t.Helper()
+	img := image.NewGray(image.Rect(0, 0, 24, 24))
+	for i := range img.Pix {
+		img.Pix[i] = shade
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	resp := app.PostMultipart(t, creator, "/account/style",
+		url.Values{"theme": {"ocean"}, "logo_alt": {"A logo"}},
+		apptest.Upload{Field: "logo", Name: "logo.png", Data: buf.Bytes()})
+	page := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("saving the account's logo: status %d\n%s", resp.StatusCode, page)
+	}
+	var sha string
+	if err := pool.QueryRow(context.Background(), `
+SELECT w.style->'header'->'logo'->>'sha256' FROM workspace_styles w
+JOIN workspace_members m ON m.workspace_id = w.workspace_id
+JOIN users u ON u.id = m.user_id
+WHERE u.email = $1`, addr).Scan(&sha); err != nil {
+		t.Fatalf("read the account's logo: %v", err)
+	}
+	return sha
+}
+
+// TestPurge_AccountStyleGoesWithItsWorkspace: a closed account's style
+// and its pictures are erased with the workspace, once its window has
+// passed, and not before.
+func TestPurge_AccountStyleGoesWithItsWorkspace(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	addr := apptest.UniqueEmail("purge-account-style")
+	creator := app.Login(t, addr)
+	sha := accountLogo(t, app, pool, creator, addr, 60)
+	var workspace string
+	if err := pool.QueryRow(context.Background(), `
+SELECT m.workspace_id::text FROM workspace_members m JOIN users u ON u.id = m.user_id WHERE u.email = $1`, addr).Scan(&workspace); err != nil {
+		t.Fatal(err)
+	}
+	// The test database outlives a run, so the same shade may be stored
+	// for another workspace: the count is this workspace's.
+	pictures := `SELECT count(*) FROM workspace_images WHERE workspace_id = '` + workspace + `' AND encode(sha256, 'hex') = $1`
+	app.PostForm(t, creator, "/account/delete", nil).Body.Close()
+
+	app.Clock.Advance(purge.SoftDeleteWindow - time.Hour)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge inside the window: %v", err)
+	}
+	if countRows(t, pool, pictures, sha) == 0 {
+		t.Fatal("a closed account's picture was erased inside its window")
+	}
+
+	app.Clock.Advance(2 * time.Hour)
+	report, err := purge.Run(context.Background(), pool, app.Clock.Now(), false)
+	if err != nil {
+		t.Fatalf("purge after the window: %v", err)
+	}
+	if n := countRows(t, pool, pictures, sha); n != 0 {
+		t.Errorf("%d of the account's pictures outlived its workspace", n)
+	}
+	if n := countRows(t, pool, `SELECT count(*) FROM workspace_styles WHERE workspace_id = $1`, workspace); n != 0 {
+		t.Error("the account's style outlived its workspace")
+	}
+	if report.Counts["workspace_styles_of_deleted_workspaces"] == 0 {
+		t.Errorf("the report counts no account style erased: %v", report.Counts)
+	}
+}
+
+// TestPurge_RemovesAccountPicturesItsStyleNoLongerShows: an account's
+// picture its style no longer shows is removed once it is a week old;
+// the one it shows stays; and an account whose style is being saved is
+// left for the next run. A dry run removes nothing.
+func TestPurge_RemovesAccountPicturesItsStyleNoLongerShows(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	addr := apptest.UniqueEmail("purge-account-unused")
+	creator := app.Login(t, addr)
+	replaced := accountLogo(t, app, pool, creator, addr, 40)
+	shown := accountLogo(t, app, pool, creator, addr, 80)
+
+	var workspace string
+	if err := pool.QueryRow(context.Background(), `
+SELECT m.workspace_id::text FROM workspace_members m JOIN users u ON u.id = m.user_id WHERE u.email = $1`, addr).Scan(&workspace); err != nil {
+		t.Fatal(err)
+	}
+	// The test database outlives a run, so the same shade may be stored
+	// for another workspace: the count is this workspace's.
+	has := func(sha string) bool {
+		return countRows(t, pool,
+			`SELECT count(*) FROM workspace_images WHERE workspace_id = $1 AND encode(sha256, 'hex') = $2`, workspace, sha) == 1
+	}
+	app.Clock.Advance(purge.UnusedImageWindow - time.Hour)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge before the week is out: %v", err)
+	}
+	if !has(replaced) {
+		t.Fatal("a replaced account picture was removed before it was a week old")
+	}
+	app.Clock.Advance(2 * time.Hour)
+
+	report, err := purge.Run(context.Background(), pool, app.Clock.Now(), true)
+	if err != nil {
+		t.Fatalf("dry run: %v", err)
+	}
+	if !has(replaced) || report.Counts["unused_workspace_images"] == 0 {
+		t.Fatalf("a dry run changed something or counted nothing: %v", report.Counts)
+	}
+
+	ctx := context.Background()
+	saving, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := saving.Exec(ctx,
+		`SELECT workspace_id FROM workspace_styles WHERE workspace_id = $1 FOR NO KEY UPDATE`, workspace); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge while the account is held: %v", err)
+	}
+	if !has(replaced) {
+		t.Error("the purge removed a picture of an account whose style is being saved")
+	}
+	if err := saving.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+	if has(replaced) {
+		t.Error("an account picture its style no longer shows outlived its week")
+	}
+	if !has(shown) {
+		t.Error("the purge removed the picture the account's style shows")
+	}
+}

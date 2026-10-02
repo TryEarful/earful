@@ -195,15 +195,13 @@ workspace is a 404; the Starter Survey can be copied.
 
 Gallery: `survey-copy` (the form, prefilled).
 
-### SD-5 Style defaults (L)
+### SD-5 Style defaults (replaced)
 
-ADR-0018 is accepted: a survey's style is a theme, a header and footer
-in its creator's words, a logo, a banner and a thanks picture, frozen
-with each version. A workspace's default style is kept beside these
-defaults, exported in the same object and purged in the same step, and
-copied into a new survey's draft, pictures included, since a picture
-belongs to its survey. No typeface is added by this plan. This slice is
-written against the style as built.
+A workspace's style is no longer a default copied into a new draft.
+ADR-0023 makes it the account's style, which every survey follows part
+by part until it makes a part its own, and which reaches a survey's
+respondents when that survey is published. That decision and its build
+replace this slice. No typeface is added by this plan.
 
 ## Open questions for the owner
 

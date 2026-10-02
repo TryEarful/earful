@@ -32,6 +32,15 @@ type StyleForm struct {
 	// FilesLost says a file came with a save that was refused. A page
 	// cannot put a file back in its field, so it says to choose it again.
 	FilesLost bool
+	// Account says the form sets the account's style, which every survey
+	// follows, rather than one survey's: a few hints say so.
+	Account bool
+}
+
+// AccountStyleData is the account's style page (ADR-0023).
+type AccountStyleData struct {
+	StyleForm
+	Notice string
 }
 
 // errorTarget is the id of the field the refused save's problem is in,
@@ -147,6 +156,34 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 	}
 }
 
+// AccountStyle is where a creator sets the account's style: the theme,
+// header, footer and thanks picture every survey follows until it makes
+// a part its own (ADR-0023). It is the Style tab's form with one filled
+// button. A survey takes a change when it is next published, since a
+// published version keeps the look it was published with (ADR-0018).
+templ AccountStyle(email string, workspaceName string, csrf string, data AccountStyleData) {
+	@Layout(t(ctx, "account.style.title")) {
+		@AuthedHeader(email, csrf)
+		<main>
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }>
+				<a href="/account">{ t(ctx, "account.heading") }</a> /
+				{ t(ctx, "account.style.crumb") }
+			</nav>
+			<h1>{ t(ctx, "account.style.heading") }</h1>
+			<p class="muted">{ t(ctx, "account.style.intro") }</p>
+			@styleFormSummary(data.StyleForm)
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			<form method="post" enctype="multipart/form-data" action="/account/style" class="js-style-form js-account-style-form">
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				@styleFormSections(data.StyleForm)
+				<button type="submit">{ t(ctx, "account.style.save.label") }</button>
+			</form>
+		</main>
+	}
+}
+
 // styleFormSummary is the head of a style form after a refused save: the
 // problem, linked to the field it is in, and a word about files that
 // have to be chosen again.
@@ -202,7 +239,11 @@ templ styleThemeSection(form StyleForm) {
 templ styleHeaderSection(form StyleForm) {
 	<section class="card js-panel js-style-header-panel" aria-labelledby="style-header-heading">
 		<h2 id="style-header-heading">{ t(ctx, "style.header.heading") }</h2>
+		if form.Account {
+		<p class="muted">{ t(ctx, "account.style.header_hint") }</p>
+	} else {
 		<p class="muted">{ t(ctx, "style.header.hint") }</p>
+	}
 		@styleImageField(form, styleImageFieldData{
 			Field:   "banner",
 			Part:    domain.StyleBanner,

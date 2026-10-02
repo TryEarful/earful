@@ -103,6 +103,12 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/account/delete", s.accountDelete)
 	post("/account/email", s.accountEmail)
 	post("/account/workspace", s.accountWorkspace)
+	// The account's style (ADR-0023), which every survey follows until it
+	// makes a part its own. Its form is a Style tab's, pictures and all,
+	// and its pictures are served to its creator alone.
+	get("/account/style", s.accountStylePage)
+	styleUpload("/account/style", s.accountStyleSave)
+	get("/account/style-image/{sha256}", s.accountStyleImage)
 	// Workspace export (M7-T3): the "leave anytime" promise. The download
 	// needs a session in the owning workspace, so the link is not a
 	// bearer capability — and it expires anyway.

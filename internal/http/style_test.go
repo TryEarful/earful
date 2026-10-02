@@ -303,8 +303,8 @@ func TestStyle_Exported(t *testing.T) {
 	if err := json.Unmarshal(document, &archive); err != nil {
 		t.Fatalf("workspace.json: %v", err)
 	}
-	if archive.FormatVersion != 7 {
-		t.Errorf("format_version = %d, want 7, the version that added style", archive.FormatVersion)
+	if archive.FormatVersion < 7 {
+		t.Errorf("format_version = %d, want 7 or later, 7 being the version that added style", archive.FormatVersion)
 	}
 	// Read again without the types, to see the keys as an importer does.
 	var loose struct {

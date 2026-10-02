@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 7.**
+**Format version 8.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -15,7 +15,8 @@ workspace.json                   everything, in one document
 surveys/<slug>-<id8>.csv         one CSV per survey (the same file the
                                  survey's own Download CSV produces)
 images/<sha256>.png or .jpg      the logos, banners and thanks page
-                                 pictures surveys showed, where any did
+                                 pictures surveys showed, and the
+                                 account style's, where any did
 README.txt                       what a person needs to know
 ```
 
@@ -26,9 +27,17 @@ spreadsheets and contain nothing the JSON doesn't.
 
 ```jsonc
 {
-  "format_version": 7,
+  "format_version": 8,
   "exported_at": "2026-07-25T14:03:11Z",
-  "workspace": { "id": "uuid", "name": "sam's workspace" },
+  "workspace": {
+    "id": "uuid",
+    "name": "sam's workspace",
+    "style": { "theme": "ocean" },       // the account's style, in the shape of
+                                         // a version's; omitted where it has none
+    "style_localizations": {             // its words by language, where translated
+      "es": { "tagline": "…", "header_links": ["…"], "reviewed": true }
+    }
+  },
   "surveys": [
     {
       "id": "uuid",
@@ -272,6 +281,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 8 | `style` and `style_localizations` on the workspace: the account's style (ADR-0023), which the workspace's surveys follow until they make a part their own, in the same shape as a version's `style`, and its words in each language with whether they were reviewed. Its pictures are under `images/` with the versions'. Everything in version 7 is unchanged. |
 | 7 | `style` on a version: the theme its pages were drawn in, the header and footer that stood above and below the survey, the header's `banner` and `logo`, and the thanks page's picture, whose files are under `images/`. Everything in version 6 is unchanged. |
 | 6 | `allow_other` on a question, and the `other` answer field beside the `__other__` choice. Everything in version 5 is unchanged. |
 | 5 | `thanks` on a version: the creator's own thank you message and link, as that version was published with them. Everything in version 4 is unchanged. |

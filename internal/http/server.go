@@ -285,14 +285,17 @@ func limitBody(next http.Handler) http.Handler {
 
 // bodyLimit is the cap for one request. It runs before routing, so the
 // upload routes are matched by hand: POST /surveys (a survey from a
-// description), POST /surveys/{id}/generate (the editor's panel) and
-// POST /surveys/{id}/style (a style's pictures).
+// description), POST /surveys/{id}/generate (the editor's panel), and
+// POST /surveys/{id}/style and POST /account/style (a style's pictures).
 func bodyLimit(r *http.Request) int64 {
 	if r.Method != http.MethodPost {
 		return maxRequestBytes
 	}
-	if r.URL.Path == "/surveys" {
+	switch r.URL.Path {
+	case "/surveys":
 		return maxUploadRequestBytes
+	case "/account/style":
+		return maxStyleRequestBytes
 	}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
 	if len(parts) == 3 && parts[0] == "surveys" && parts[1] != "" {

@@ -333,3 +333,33 @@ func TestStylePicturesAreImmutableWhileShown(t *testing.T) {
 		t.Errorf("the shown picture is no longer served: %v", err)
 	}
 }
+
+// TestAccountStylePicturesAreImmutable: an account's picture (ADR-0023)
+// is never rewritten, since its bytes are what its address promises. It
+// may be deleted: no version refers to it, a survey that showed it holds
+// its own copy.
+func TestAccountStylePicturesAreImmutable(t *testing.T) {
+	t.Parallel()
+	s, pool, workspaceID, userID := newStore(t)
+	ctx := context.Background()
+
+	logo := store.NewImage{SHA256: strings.Repeat("7", 64), ContentType: "image/png", Width: 4, Height: 4, Bytes: []byte{7}}
+	style := domain.Style{Header: domain.StyleHeader{
+		Logo:    domain.StyleImage{SHA256: logo.SHA256, Width: 4, Height: 4},
+		LogoAlt: "A logo",
+	}}
+	if err := s.SaveWorkspaceStyle(ctx, workspaceID, userID, style, []store.NewImage{logo}, time.Now()); err != nil {
+		t.Fatalf("save account style: %v", err)
+	}
+	t.Run("a picture cannot be rewritten", func(t *testing.T) {
+		_, err := pool.Exec(ctx, `UPDATE workspace_images SET bytes = '\x00' WHERE workspace_id = $1`, workspaceID)
+		assertImmutable(t, err)
+	})
+	if img, err := s.WorkspaceImage(ctx, workspaceID, logo.SHA256); err != nil || len(img.Bytes) != 1 || img.Bytes[0] != 7 {
+		t.Errorf("the account's picture changed or went: %v", err)
+	}
+	got, err := s.WorkspaceStyle(ctx, workspaceID)
+	if err != nil || !got.Style.Equal(style) {
+		t.Errorf("the account's style read back as %+v (%v)", got.Style, err)
+	}
+}
