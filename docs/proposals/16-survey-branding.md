@@ -1,223 +1,307 @@
-# Proposal: a survey's own look (issue #16)
+# Build plan: a survey's own style (issue #16)
 
-Design: [ADR-0018](../adr/0018-survey-branding-frozen-with-the-version.md).
-Status: proposed, awaiting the owner's answers to the questions at the end.
+Design: [ADR-0018](../adr/0018-survey-style-frozen-with-the-version.md),
+accepted. The questions this plan once ended with are answered there.
 
-A creator gives a survey one colour from the Voice palette and an image
-at its start, its end, or both. The look is chosen in the draft, seen in
-the preview, and frozen into the version at publish. Each slice below
-ships on its own, leaves every existing page and test as it was, and is
-reviewed with `make gallery` against the style guide before it is
-committed (CONTRIBUTING.md, "Building a page").
+A creator gives a survey one of four themes, a header (a banner, a logo,
+a name, a tagline and links), a footer (text and links) and a picture
+for the thanks page. The style is set on the survey's Style tab, seen in
+the preview, and frozen into the version at publish.
 
-Migration numbers are the next free ones at the time of writing and move
-up if another change lands first.
+Each step below ships on its own, leaves every existing page and test
+passing, and is reviewed with `make gallery` against the style guide
+before it is committed (CONTRIBUTING.md, "Building a page"). Steps 1 to
+5 each add their user stories to `SPEC.md` with the tests that cover
+them. Nothing is tagged for production until step 5 is in: a logo is
+what makes a survey that imitates somebody convincing, and the report
+link and the runbook procedure have to be there before one can reach a
+respondent.
 
-## Slice 1: the colour (size M)
+Migration numbers are the next free ones at the time each step is built.
 
-**Goal.** A creator picks one of the ten Voice colours on the editor,
-sees it in the preview, publishes, and respondents see it.
+## Step 0: theme becomes display mode (size S)
+
+**Goal.** "Theme" is free to mean the creator's choice. No behaviour
+changes.
+
+- `web/templates`: `data-theme` on `<html>` becomes `data-mode`;
+  `theme(ctx)`, `themeSwitcher()` and `themeColor()` become `mode`,
+  `modeSwitcher` and `modeColor`; the `js-theme-color` hook becomes
+  `js-mode-color`.
+- `web/static/css/app.css`: the `[data-theme]` selectors and the
+  comments that call dark a theme. `web/static/js/theme.js` becomes
+  `mode.js`.
+- `internal/http`: the handler, its route and the cookie. The cookie is
+  written as `mode`; a `theme` cookie is still read, so a saved choice
+  is kept. The trust page lists the cookie under its new name.
+- `docs/style-guide.md` and the wording in `web/text`: "display mode"
+  wherever light and dark are meant.
+
+**Tests.** The existing switcher tests, renamed, plus one: a request
+carrying only the old `theme` cookie is drawn in that mode. `make check`
+and `make e2e-smoke` pass with no other change.
+
+## Step 1: themes (size M)
+
+**Goal.** A creator opens the Style tab, picks Slate, Ocean or Forest,
+sees it in the preview, publishes, and respondents see it in their own
+display mode.
 
 **Style guide first.**
 
-- `docs/style-guide.md` gains "A survey's colour": the band at the head
-  of a respondent's page, the selected choice and the progress use the
-  survey's colour; it never carries text, never replaces the filled
-  button, links, focus or Signal.
-- Ten `--brand-fill-N` tokens and ten `--brand-on-N` tokens, set in
-  `:root` and reassigned in the dark block, each measured and added to
-  the contrast table. Voice 7 and 8 are deepened for the light card,
-  Voice 1 is lifted for the dark card, to 3:1 or better; `--brand-on-N`
-  is Ink or white, whichever holds 3:1 on its fill.
-- `web/static/css/app.css`: `.brand-1` to `.brand-10` set `--brand` and
-  `--brand-on` from those tokens, once, outside the theme blocks, so a
-  forced theme (issue #15) needs nothing more. `.respond` rules that
-  draw the band, `.option input:checked` and the progress read `--brand`
-  and fall back to `--accent` when no class is set.
+- `docs/style-guide.md` gains "Themes": what a theme reassigns (the
+  grounds, text, links, focus and ring, the accent, the filled button,
+  the borders), what it may not (Signal, the status colours and their
+  tints, type, space, shape), and the contrast table for every pair in
+  all eight combinations of theme and display mode.
+- `web/static/css/app.css`: `.theme-slate`, `.theme-ocean` and
+  `.theme-forest` reassign the semantic tokens, each with a light block
+  and a dark one written the way the dark mode is today (under the media
+  query and under `data-mode="dark"`). No component rule changes.
+- A contrast test (`web/static/static_test.go`, beside the test that
+  compares the two dark blocks) reads the tokens, works out the ratio of
+  every listed pair in every combination, and fails below the pair's
+  threshold: 4.5:1 for text, 3:1 for the focus ring, borders that carry
+  meaning and the status colours' marks. The table in the style guide is
+  written from the same numbers.
 
 **Draft and version.**
 
-- `internal/domain/survey.go`: `Draft` gains `Brand *Brand`
-  (`json:"brand,omitempty"`) with `Voice int` (0 means the colour
-  worked out from the ID). Validation refuses anything outside 0 to 10.
-  A draft whose brand differs from the latest version's is a changed
-  draft, so the editor offers Publish.
-- Migration `NNNNN_version_brands.sql`: `version_brands(version_id uuid
-  PRIMARY KEY REFERENCES survey_versions, voice smallint CHECK (voice
-  BETWEEN 1 AND 10))`, with the `reject_mutation_of_published` trigger
-  for UPDATE and DELETE. A version with no row has no chosen look.
-- `db/queries/surveys.sql`: `CreateVersionBrand`, `GetVersionBrand`;
-  `ListSurveysForWorkspace` returns the draft's chosen colour.
-- `internal/store/surveys.go` `Publish` writes the row in the publish
-  transaction when the draft has a brand.
+- `internal/domain`: `Draft` gains `Style Style`
+  (`json:"style,omitzero"`) with `Theme string` (empty means Earful).
+  Validation refuses a theme that is not one of the four. A draft whose
+  style differs from the latest version's is a changed draft, so the
+  editor offers Publish.
+- Migration: `survey_versions` gains `style jsonb`, NULL meaning no
+  style. The trigger already on the table guards it. Down fails while
+  any version carries a style (ADR-0001), as the thank you migration
+  does.
+- `db/queries/surveys.sql` and `internal/store`: publish writes the
+  column in the publish transaction; the queries that load a version for
+  a respondent return it.
 
 **Pages.**
 
-- `web/templates/surveys.templ`: a "Look" card on the editor with ten
-  radio swatches and "Worked out for you", a plain form posting to
-  `POST /surveys/{id}/brand` (`internal/http/surveys.go`), saved through
-  `SaveDraft` like any draft change, so it appends a Draft Revision.
-- `web/templates/respond.templ`: `RespondLayout` takes the brand and
-  puts `brand-N` on `<body>`; `RespondData` carries it from the served
-  version, the preview from the draft. `RespondThanks` takes the brand of
-  the version the response was pinned to.
-- `web/templates/views.go`: `SurveyView` gains `ChosenVoice`;
-  `VoiceIndex` returns it when set; `CardVoices` moves only colours that
-  were worked out.
-- Wording in `web/text/active.en.toml` and `active.es.toml`: the card's
-  heading, its one line of help, "Worked out for you", the name of each
-  colour as the swatch's label, and the notice after saving.
+- `web/templates`: a Style tab in `surveyTabs`, at
+  `GET /surveys/{id}/style`, with one form posting to
+  `POST /surveys/{id}/style` and one filled button. The theme section is
+  four radio cards, each a small sample drawn in that theme's tokens.
+  A link to the preview sits at the head of the page.
+- `RespondLayout` takes the style and puts `theme-N` on `<body>`.
+  `RespondData` carries it from the served version, the preview from
+  the draft, `RespondThanks` from the version the response was pinned
+  to. The already answered page and the page of a closed survey that has
+  a version take it from the latest version.
+- A theme sheet at a development only route: every themed component on
+  one page (text, muted text, links, the filled and outlined buttons,
+  fields, chosen and unchosen options, progress, an error, a notice, the
+  focus ring, the record button idle and recording, both footers).
+- Wording in `web/text/active.en.toml` and `active.es.toml`: the tab,
+  the section heading, each theme's name and one line about it, the
+  notice after saving.
 
-**Export and purge.**
-
-- `internal/export/export.go`: `FormatVersion = 3`; each version gains
-  `"brand": {"voice": 3}`, omitted when none. `docs/export-format.md`
-  documents it and adds a row to its Changes table.
-- `internal/purge/purge.go`: delete `version_brands` for doomed surveys
-  before `survey_versions`.
+**Export and purge.** `internal/export`: the next format version; each
+version gains `"style": {"theme": "ocean"}`, omitted when none.
+`docs/export-format.md` documents it and adds a row to its Changes
+table. Purge needs nothing: the column goes with its row.
 
 **Tests at the edge** (docs/testing.md).
 
-- `internal/http/brand_test.go`: choosing a colour shows it in the
-  preview and not on `/s/{id}`; after publishing, `/s/{id}` carries it
-  and the thanks page does too; a response pinned to version 1 thanks
-  in version 1's colour after version 2 changes it; a colour of 11 or a
-  word is refused with a message and the draft is unchanged; a survey
-  from another workspace cannot be branded.
-- The dashboard card shows a chosen colour, and two neighbours that chose
-  the same colour both keep it.
-- `internal/purge/purge_test.go`: `version_brands` joins the list of
-  tables a purged survey leaves empty.
-- `internal/http/export_workspace_test.go`: the new format version, the brand
-  round trips, a version without one has no `brand` key.
-- The existing first party test and the ADR-0001 trigger tests stand.
-- `e2e/tests/smoke.spec.ts`: a branded respondent page is axe clean in
-  both themes.
+- Choosing a theme shows it in the preview and not on `/s/{id}`; after
+  publishing, `/s/{id}` carries it and so do the thanks, already
+  answered and closed pages; a response pinned to version 1 is thanked
+  in version 1's theme after version 2 changes it; an unknown theme is
+  refused with a message and the draft is unchanged; a survey in another
+  workspace cannot be styled.
+- The immutability test: `style` on a published version cannot be
+  updated.
+- The export carries the new format version, the style round trips, and
+  a version without one has no `style` key.
+- The contrast test above. The existing first party test stands.
+- `e2e/tests/smoke.spec.ts`: a respondent's page in each theme is axe
+  clean in both display modes.
 
-**Gallery** (`e2e/gallery/gallery.spec.ts`): the editor's Look card with
-nothing chosen and with a colour chosen; a respondent's page and thanks
-page in Voice 7 (the lightest) and Voice 1 (the darkest in the dark
-theme); the dashboard with a chosen colour.
+**Gallery.** The theme sheet in all four themes, both display modes,
+390px and 1280px, in English. The questions page in all four themes,
+both modes, both widths, both languages. The paged question, thanks,
+already answered and closed pages in Earful and one other theme. The
+Style tab, as saved and with an error.
 
-## Slice 2: an image at the start (size L)
+**Review.** Reviewer agents take the style guide's checklist and, for
+themed pages, four more criteria: Signal is the only coral and stands
+out, the focus ring is visible on every surface, a status colour still
+reads as status, and the filled button is the page's one main action.
 
-**Goal.** A creator uploads an image that respondents see above the
-survey's title.
+## Step 2: header and footer text (size M)
+
+**Goal.** A creator adds a name, a tagline, links and a footer text, and
+translates them.
+
+- `internal/domain`: `Style` gains `Header{Name, Tagline, Links}` and
+  `Footer{Text, Links}`; a link is a label and an address, built and
+  checked by the rules `NewThankYou` applies to its link (an absolute
+  `http` or `https` address, a label required). Caps: name 80
+  characters, tagline and footer text 280, label 60, three links each.
+  `Localization` gains the tagline, the footer text and the link labels;
+  the name and the addresses are shared. The frozen `style` column holds
+  the reviewed translations, as `thanks_localizations` does.
+- The Style tab gains the Header and Footer sections; the translation
+  pages gain the new fields, and drafting a translation with AI covers
+  them as it covers the thank you message.
+- `respond.templ`: a `styleHeader` above the `<h1>` (name, tagline,
+  links), full on the questions page and on the first page of a paged
+  survey, compact (name only) on later pages and on the thanks, already
+  answered and closed pages. A `styleFooter` above Earful's footer.
+  Links carry `target="_blank"` and `rel="noopener noreferrer"`.
+  Earful's footer reads "Powered by Earful".
+
+**Tests at the edge.** Each field shows in the preview, then on every
+respondent page after publish; a `javascript:` address, a link with no
+label, a fourth link and an overlong field are each refused with a
+message; a Spanish respondent reads the Spanish tagline and labels, and
+the source text where none was written; markup typed into a field is
+shown as text; the heading order of the page holds with and without a
+header.
+
+**Gallery.** The questions page with the longest name, tagline and three
+long links at 390px and 1280px, in both languages; with a name only;
+the compact header on a paged question and on the thanks page; the Style
+tab with every field filled and with each error.
+
+## Step 3: the logo and the banner (size L)
+
+**Goal.** A creator uploads a logo and a banner; the survey has one
+mark.
 
 **Storage.**
 
-- Migration `NNNNN_survey_images.sql`: `survey_images(id uuid PRIMARY
-  KEY, survey_id uuid NOT NULL REFERENCES surveys, sha256 bytea NOT
-  NULL, content_type text NOT NULL CHECK (content_type IN ('image/png',
-  'image/jpeg')), width int, height int, size_bytes int NOT NULL CHECK
-  (size_bytes <= 1048576), bytes bytea NOT NULL, created_at timestamptz,
-  UNIQUE (survey_id, sha256))`. `version_brands` gains `start_image_id`
-  referencing it and `start_alt text`.
-- A new package `internal/brandimage` (domain logic, no HTTP): read the
-  config with `image.DecodeConfig`, refuse over 2000 pixels a side or an
-  unknown type, decode, encode again (PNG stays PNG, JPEG at quality 85),
-  refuse if the result is over 1 MB. Only the standard library.
-- `internal/store`: `SaveSurveyImage` refuses an eleventh image for a
-  survey; `GetPublishedImage(sha)` returns an image only if a published
-  version of a survey that is not deleted refers to it;
-  `GetDraftImage(workspace, survey, sha)` for the preview.
+- Migration: `survey_images(id uuid PRIMARY KEY, survey_id uuid NOT NULL
+  REFERENCES surveys, sha256 bytea NOT NULL, content_type text NOT NULL
+  CHECK (content_type IN ('image/png', 'image/jpeg')), width int NOT
+  NULL, height int NOT NULL, size_bytes int NOT NULL, bytes bytea NOT
+  NULL, created_at timestamptz NOT NULL, UNIQUE (survey_id, sha256))`.
+- A new package `internal/styleimage` (domain logic, no HTTP): identify
+  the file by its content, refuse anything but PNG, JPEG and WebP, read
+  the dimensions with `image.DecodeConfig` and refuse a pixel count that
+  would not fit in memory, decode, scale down to the slot's size with
+  `golang.org/x/image/draw`, and encode again. A banner is stored as a
+  JPEG at most 1600 pixels wide; a logo as a PNG (or a JPEG if it came
+  as one) at most 512 pixels a side. It is written so that pictures in
+  questions (ADR-0021) can share it.
+- `internal/store`: saving refuses an eleventh image for a survey;
+  `GetPublishedImage(sha)` returns an image only if a published version
+  of a survey that is not deleted refers to it;
+  `GetDraftImage(workspace, survey, sha)` serves the preview.
 
-**Routes** (`internal/http/routes.go`).
+**Routes.** The Style form becomes multipart, with the CSRF field first.
+The upload caps are 2 MB for the banner and 1 MB for the logo, read with
+a limit and refused with a message beyond it. `GET /style-image/{sha256}`
+is public; `GET /surveys/{id}/style-image/{sha256}` serves the draft's
+images in the creator's session. Both send the exact content type and
+`Cache-Control: public, max-age=31536000, immutable` (the creator's
+route `private`), in place of the `no-store` from `SecurityHeaders`.
+Neither writes a counter.
 
-- `post("/surveys/{surveyID}/brand/image")`: multipart upload with the
-  CSRF field first in the form; the existing 4 MB body cap stands and the
-  handler reads at most 1 MB of the file. The draft records the image's
-  hash and its alternative text, which is required.
-- `post("/surveys/{surveyID}/brand/image/remove")`.
-- `GET /brand/{sha256}`, public, and `get("/surveys/{surveyID}/brand/{sha256}")`
-  for the preview. Both set the exact content type, `nosniff` (already
-  set), and `Cache-Control: public, max-age=31536000, immutable` (the
-  creator route `private`), replacing the `no-store` from
-  `SecurityHeaders`. Neither writes a counter.
+**Pages.** The Header section gains two file fields, each with the
+current image, a "Remove this image" checkbox, and for the logo its
+alternative text, which is required and part of a Localization. Under
+the logo field: "Only use a logo you have the right to use". The
+respondent's header draws the banner at three to one with
+`object-fit: cover` and empty alternative text, and the logo on a plate
+overlapping its lower edge, both with `width` and `height` so the page
+does not jump. The compact header and the creator's footer show the logo
+small. Earful's footer leaves out the owl when the style has a logo.
 
-**Pages.** The Look card gains a file field, the current image with its
-alternative text, and Remove. `Respond` draws the image on a light plate
-above the `<h1>` with `width` and `height` attributes so the page does
-not jump. `RespondUnavailable` shows it too when the survey has a
-version, so a closed survey is recognisable.
-
-**Export and purge.** The archive gains `images/<sha256>.<ext>`, once per
-image however many versions use it; a version's `brand` gains
-`"start_image": {"file": "images/….png", "alt": "…"}`. Images count to
-the 64 MB cap. Purge removes `survey_images` with the survey, after
-`version_brands`, and removes an image no version and not the current
-draft refers to once it is seven days old.
+**Export and purge.** The archive gains `images/<sha256>.<ext>`, once
+per image however many versions use it; a version's `style` names the
+file and its alternative text. Images count toward the archive's cap.
+Purge removes `survey_images` with the survey, and removes an image no
+version and not the current draft refers to once it is seven days old.
 
 **Tests at the edge.**
 
-- Upload a PNG from `testdata/`, preview shows it, `/s/{id}` does not
-  until publish, then does; the served bytes decode and carry no EXIF
-  from a JPEG fixture that has a GPS tag; an SVG, a GIF, a 3000 pixel
-  image, a 2 MB file and a file named `.png` holding text are each
-  refused with a message; an upload without alternative text is refused.
-- `GET /brand/{sha}` is 404 for a hash only a draft refers to, for a
-  deleted survey's image, and for another workspace's draft image via
-  the creator route.
-- Opening the image does not change the survey's opened count
-  (`/surveys/{id}/stats`).
-- The respondent page's external origin test passes with an image.
-- Purge and export as in slice 1, plus the orphan rule with the fake
-  clock.
+- Upload a PNG from `testdata/`: the preview shows it, `/s/{id}` does
+  not until publish, then does. The served bytes of a JPEG fixture with
+  a GPS tag decode and carry no EXIF. A 4000 pixel photograph is
+  accepted and served at 1600 pixels wide. A WebP is accepted and served
+  as PNG or JPEG. An SVG, a GIF, a file over its cap, and a file named
+  `.png` that holds text are each refused with a message. A logo without
+  alternative text is refused.
+- `GET /style-image/{sha}` is 404 for a hash only a draft refers to, for
+  a deleted survey's image, and, on the creator's route, for another
+  workspace's draft image.
+- Fetching an image does not change the survey's opened count.
+- A survey with a logo has no owl in its footer and keeps "Powered by
+  Earful"; one without a logo keeps the owl.
+- The respondent page's external origin test passes with images. Purge
+  and export as above, the orphan rule with the fake clock.
 
-**Gallery.** The Look card with an image; a respondent's page with a
-wide logo and with a tall one, at 390px and 1280px, in both themes; a
-closed survey's page with its image.
+**Gallery.** The questions page with banner and logo in all four themes,
+both display modes, both widths; with a logo and no banner, a banner and
+no logo; a wide logo and a tall one; a dark logo in the dark display
+mode, to show the plate; the compact header with a logo; the Style tab
+with both images.
 
-## Slice 3: an image at the end (size S)
+## Step 4: the thanks picture (size M)
 
-**Goal.** The thanks page shows the creator's end image in place of the
-happy owl.
+**Goal.** A creator chooses what the thanks page shows: the owl, one of
+three illustrations, their own image, or nothing.
 
-`version_brands` gains `end_image_id` and `end_alt` (migration
-`00020`). The Look card gains a second file field. `RespondThanks`
-draws the image where the owl was; with no end image the owl stays.
-The preview's submitted page shows it too. The style guide's owl table
-says the thanks page shows the owl unless the survey has an end image.
-Tests: the thanks page after publish shows the end image and no owl; a
-survey with only a start image keeps the owl. Gallery: the thanks page
-with and without an end image, both themes.
+- `Style` gains `Thanks{Picture, ImageSHA, Alt}`, where the picture is
+  `owl` (the default), `check`, `envelope`, `confetti`, `image` or
+  `none`. An uploaded picture uses step 3's pipeline with its own slot:
+  1 MB, at most 800 pixels a side, alternative text required and
+  localized.
+- `web/templates/brand.templ`: the three illustrations, inline SVG
+  filled through classes from the theme's tokens, as the owl is. The
+  style guide lists them, with where each may appear (the thanks page
+  only).
+- The Style tab gains the Thanks picture section: six radios with a
+  small drawing of each, and a file field. The editor's thank you panel
+  gains one line pointing to it.
+- `RespondThanks` and the preview's submitted page draw the choice where
+  the owl was; an uploaded picture sits on a plate.
 
-## Not in these slices
+**Tests at the edge.** Each choice shows on the thanks page after
+publish and in the preview before; `image` with no upload is refused; a
+response pinned to an earlier version is thanked with that version's
+picture; `none` leaves the heading and the message.
 
-- Any colour by hex value, which ADR-0018 leaves for later.
-- A workspace brand that new surveys start from: issue #19 (creator
-  preferences), which would copy a colour and images into a new draft and
-  needs no change to how a survey is rendered.
-- Hiding the footer, Earful's name or the owl from a respondent's page.
+**Gallery.** The thanks page with each of the six choices, in one theme,
+both display modes; the three illustrations on the theme sheet, so they
+are seen in every theme.
+
+## Step 5: safeguards and terms (size S)
+
+**Goal.** A respondent can report a survey, and support knows what to do
+with the report.
+
+- Earful's footer on respondent pages gains "Report this survey": a
+  `mailto:` to the instance's `CONTACT_EMAIL`, with the survey's address
+  in the subject. Not shown on an instance without one.
+- A test that the disclosure naming the workspace is on the questions
+  page of a styled survey, above the questions, in Earful's words.
+- `docs/runbook.md` gains "A survey impersonates someone": checking the
+  complaint, closing the survey, suspending the workspace, answering the
+  reporter.
+- `web/pages/terms.en.md` and `terms.es.md`: the terms, including that a
+  creator may only use names and marks they are entitled to. They stay
+  marked as a draft until the instance's operator has read them.
+
+**Tests at the edge.** The report link is on the questions, thanks and
+closed pages when a contact address is set, carries the survey's
+address, and is absent without one.
+
+**Gallery.** A respondent's footer with and without the report link.
+
+## Not in these steps
+
+- A colour chosen by hex value, and themes beyond the four.
+- A workspace's own default style that new surveys start from: Survey
+  Defaults (issue #19), which would copy a style into a new draft and
+  needs no change to how a survey is drawn.
+- Hiding "Powered by Earful", Help or the privacy page from a
+  respondent's page.
 - Fonts chosen by the creator.
-
-## Open questions for the owner
-
-1. **Palette or free colour.** Is a choice of the ten Voice colours
-   enough for the creators asking, or is a brand hex value the point? If
-   it is, a second ADR covers a per survey stylesheet and adjusted
-   colours, and slice 1 still ships first.
-2. **One colour or two.** The issue says "colours". One accent is
-   proposed; a second (for the band, say) doubles the measured pairs.
-3. **Versioned look.** Changing only the logo makes a new version, which
-   shows in the version list and the Audit Log. Is that acceptable, or
-   should the look be a live setting like the title, at the cost of the
-   preview and of knowing what a respondent saw?
-4. **Where the colour goes.** Band, selected choice and progress are
-   proposed. Should it also colour the submit button, which today is the
-   page's one Ink filled button on every survey?
-5. **Dark theme logos.** A light plate behind every image is proposed.
-   Should a creator be able to upload a second image for dark?
-6. **Limits.** 1 MB, 2000 pixels a side, ten stored images per survey,
-   PNG and JPEG only. WebP needs a module outside the standard library;
-   is it worth one?
-7. **Alternative text in other languages.** It is in one language, as
-   the title is (ADR-0015 notes the same of the title). Should it be part
-   of a Localization?
-8. **The thanks page.** Should the end image replace the owl, or sit
-   beside it? Should a closed survey's page show the start image?
-9. **Impersonation.** Does the runbook's support process cover a survey
-   using someone else's logo, and do the terms need a line before this
-   ships?
-10. **Self hosted defaults.** Should an operator be able to switch
-    branding off for their instance?
+- A live preview of the banner's crop before saving.
+- A switch that turns the style off for an instance.
