@@ -513,6 +513,99 @@ than an unerased one.
 users + the supervisory authority within 72h of awareness; document the
 timeline in an incident note in the repo.
 
+## A survey impersonates someone
+
+A survey can carry a name, a logo, a banner and links its creator chose
+(ADR-0018), so it can be dressed as an organisation it does not come
+from. Nothing in the application checks who owns a logo: the check is a
+person reading a report, and this is how it is handled. The same steps
+serve for a survey that asks for passwords, card details or anything
+else the terms forbid.
+
+**How a report arrives.** Every respondent page has a report link in
+its footer, which writes to the instance's contact address
+(`CONTACT_EMAIL`) with the survey's address filled in. An instance with
+no contact address shows no link, and reports then arrive however its
+operator can be reached. A report may also come from the organisation
+being imitated.
+
+**Aim to look the same day.** A survey that deceives is collecting
+answers, typed and spoken, for as long as it is open.
+
+1. **Find the survey.** Its address is `/s/<survey-id>`. Open it as a
+   respondent would; do not submit an answer.
+2. **Compare what it claims with who is asking.** The header's name,
+   logo and links are the creator's. The disclosure above the questions
+   is written by the application and names the workspace that controls
+   the answers; a creator cannot remove or reword it. A page whose
+   header names one organisation while its disclosure names an
+   unrelated workspace, or whose links go to a domain that only
+   resembles the organisation's, is the pattern. To see who is behind
+   the workspace:
+
+   ```sql
+   SELECT s.title, s.created_at, w.name AS workspace, u.email
+   FROM surveys s
+   JOIN workspaces w ON w.id = s.workspace_id
+   JOIN users u ON u.id = s.created_by
+   WHERE s.id = '<survey-id>';
+   ```
+
+   An account whose address is at the organisation's own domain is
+   usually the organisation, or someone working for it: ask before
+   acting.
+3. **Decide.** Three outcomes cover most reports:
+   - *Not impersonation* (an agency running a survey for a client, a
+     member surveying their own club). Nothing to do but answer the
+     reporter.
+   - *Careless* (a logo used without asking, with no attempt to
+     deceive). Write to the creator, name the term they agreed to, and
+     give them a short time to remove it.
+   - *Deliberate, or harmful whatever the intent.* Take it down first,
+     then write to the creator.
+4. **Take the survey down.** There is no operator page for this; it is
+   one statement against the database, reached as in the restore
+   section (the auth proxy against the live instance, then `psql`):
+
+   ```sql
+   UPDATE surveys SET deleted_at = now()
+   WHERE id = '<survey-id>' AND deleted_at IS NULL;
+   ```
+
+   The survey's page is a 404 from that moment, for respondents and for
+   its creator, and its images stop being served with it. Setting
+   `closed_at` instead is not enough: the creator can reopen a closed
+   survey from the editor, and a closed survey's page still shows its
+   header.
+5. **Mind the 30 days.** A soft-deleted survey is erased by the
+   retention purge 30 days later, answers included. That is the right
+   end for a survey that deceived people. If the takedown turns out to
+   be mistaken, undo it before then:
+
+   ```sql
+   UPDATE surveys SET deleted_at = NULL WHERE id = '<survey-id>';
+   ```
+
+6. **A workspace that does it again.** The application has no way to
+   suspend a workspace or an account: nothing stops the same person
+   making another survey. Until it has one, take down each survey as it
+   is reported, lower the workspace's AI tier at `/admin/ai-tiers`, and
+   on an instance that requires invite codes, issue that person no
+   more. Do not soft-delete
+   the workspace or the account by hand to stand in for a suspension:
+   the purge would then erase everything they hold, and the erasure
+   path is for requests from the person themselves.
+7. **Answer the reporter.** Say what was found and what was done, and
+   nothing about the creator beyond that. If answers were collected
+   under a false name, tell the organisation that was imitated: the
+   people who answered believed they were writing to it, and it is
+   better placed to warn them than the instance is. Anonymous responses
+   name nobody, so there is nobody the operator can write to directly.
+8. **Record it** in your own incident log, outside the repository: the
+   survey, the report, the decision and when each was made. If personal
+   data was obtained by deception, the 72-hour breach duty above may
+   apply to the creator as controller; note that it was considered.
+
 ## Retention purge (M8-T2)
 
 `earful purge` hard-deletes what has been soft-deleted for 30 days,
