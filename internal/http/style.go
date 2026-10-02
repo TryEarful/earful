@@ -34,9 +34,9 @@ func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed
 		return
 	}
 	data := templates.StyleData{
-		Survey: viewSurvey(text(r), survey, s.clock.Now()),
-		Style:  draft.Style,
-		Notice: notice,
+		Survey:    viewSurvey(text(r), survey, s.clock.Now()),
+		StyleForm: templates.StyleForm{Style: draft.Style},
+		Notice:    notice,
 	}
 	status := http.StatusOK
 	if problem != nil {

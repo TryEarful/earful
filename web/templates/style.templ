@@ -11,8 +11,16 @@ import (
 // StyleData is the Style tab of one survey (ADR-0018).
 type StyleData struct {
 	Survey SurveyView
-	// Style is the draft's style, or what the creator typed when a save
-	// was refused, so that nothing is typed twice.
+	StyleForm
+	Notice string
+}
+
+// StyleForm is the form that sets a style: a survey's on its Style tab,
+// or an account's on the account's (ADR-0023). Both draw the same
+// sections from it.
+type StyleForm struct {
+	// Style is the style the form edits, or what the creator typed when a
+	// save was refused, so that nothing is typed twice.
 	Style domain.Style
 	// Error is the problem with a refused save, worded with where it is,
 	// for the head of the form. ErrorPart and ErrorLink say which field
@@ -21,7 +29,6 @@ type StyleData struct {
 	ErrorPart  domain.StylePart
 	ErrorLink  int
 	FieldError string
-	Notice     string
 	// FilesLost says a file came with a save that was refused. A page
 	// cannot put a file back in its field, so it says to choose it again.
 	FilesLost bool
@@ -30,7 +37,7 @@ type StyleData struct {
 // errorTarget is the id of the field the refused save's problem is in,
 // for the summary at the head of the form to link to: the field may be a
 // screen or more below it. It is empty where the problem has no field.
-func (d StyleData) errorTarget() string {
+func (d StyleForm) errorTarget() string {
 	if d.FieldError == "" {
 		return ""
 	}
@@ -52,7 +59,7 @@ func (d StyleData) errorTarget() string {
 }
 
 // problemIn reports whether the refused save's problem is in part.
-func (d StyleData) problemIn(part domain.StylePart) bool {
+func (d StyleForm) problemIn(part domain.StylePart) bool {
 	return d.FieldError != "" && d.ErrorPart == part
 }
 
@@ -127,186 +134,217 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 			</div>
 			@surveyTabs(data.Survey, "style")
 			<p class="muted">{ t(ctx, "style.intro") }</p>
-			if data.Error != "" {
-				<p class="notice error-text" role="alert">
-					if data.errorTarget() != "" {
-						<a class="js-style-error-link" href={ templ.SafeURL("#" + data.errorTarget()) }>{ data.Error }</a>
-					} else {
-						{ data.Error }
-					}
-					if data.FilesLost {
-						<br/>
-						{ t(ctx, "style.error.files_again") }
-					}
-				</p>
-			}
+			@styleFormSummary(data.StyleForm)
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
 			<form method="post" enctype="multipart/form-data" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/style") } class="js-style-form">
 				<input type="hidden" name="_csrf" value={ csrf }/>
-				<section class="card js-panel" aria-labelledby="style-theme-heading">
-					<h2 id="style-theme-heading">{ t(ctx, "style.theme.heading") }</h2>
-					<p class="muted" id="style-theme-hint">{ t(ctx, "style.theme.hint") }</p>
-					<div class="theme-choices" role="radiogroup" aria-labelledby="style-theme-heading" aria-describedby="style-theme-hint">
-						for _, theme := range domain.Themes() {
-							<label class="choice theme-choice js-theme-choice">
-								<input type="radio" name="theme" value={ theme } checked?={ theme == data.Style.ThemeName() } autocomplete="off"/>
-								<span>
-									<strong>{ t(ctx, themeName(theme)) }</strong>
-									<small>{ t(ctx, themeHint(theme)) }</small>
-								</span>
-								@themeSample(theme)
-							</label>
-						}
-					</div>
-				</section>
-				<section class="card js-panel js-style-header-panel" aria-labelledby="style-header-heading">
-					<h2 id="style-header-heading">{ t(ctx, "style.header.heading") }</h2>
-					<p class="muted">{ t(ctx, "style.header.hint") }</p>
-					@styleImageField(data, styleImageFieldData{
-						Field:   "banner",
-						Part:    domain.StyleBanner,
-						Hint:    t(ctx, "style.header.banner_hint", uitext.Args{"Size": styleimage.Banner.MaxUpload >> 20}),
-						Current: data.Style.Header.Banner,
-					})
-					@styleImageField(data, styleImageFieldData{
-						Field:   "logo",
-						Part:    domain.StyleLogo,
-						Hint:    t(ctx, "style.header.logo_hint", uitext.Args{"Size": styleimage.Logo.MaxUpload >> 20}),
-						Current: data.Style.Header.Logo,
-						Plate:   true,
-					})
-					<label class="field">
-						<span>
-							@thtml(ctx, "style.header.logo_alt_html")
-						</span>
-						<input
-							type="text"
-							name="logo_alt"
-							class="js-style-logo-alt"
-							value={ data.Style.Header.LogoAlt }
-							maxlength="120"
-							autocomplete="off"
-							data-1p-ignore
-							data-lpignore="true"
-							data-bwignore
-							if data.problemIn(domain.StyleLogoAlt) {
-								id="style-invalid"
-								aria-invalid="true"
-								aria-describedby="style-error-field"
-							}
-						/>
-					</label>
-					if data.problemIn(domain.StyleLogoAlt) {
-						@styleFieldError(data)
-					}
-					<label class="field">
-						<span>
-							@thtml(ctx, "style.header.name_html")
-						</span>
-						<input
-							type="text"
-							name="header_name"
-							value={ data.Style.Header.Name }
-							maxlength="80"
-							autocomplete="off"
-							data-1p-ignore
-							data-lpignore="true"
-							data-bwignore
-							if data.problemIn(domain.StyleHeaderName) {
-								id="style-invalid"
-								aria-invalid="true"
-								aria-describedby="style-error-field"
-							}
-						/>
-					</label>
-					if data.problemIn(domain.StyleHeaderName) {
-						@styleFieldError(data)
-					}
-					<label class="field">
-						<span>
-							@thtml(ctx, "style.header.tagline_html")
-						</span>
-						<textarea
-							name="header_tagline"
-							rows="3"
-							maxlength="280"
-							autocomplete="off"
-							data-1p-ignore
-							data-lpignore="true"
-							data-bwignore
-							if data.problemIn(domain.StyleHeaderText) {
-								id="style-invalid"
-								aria-invalid="true"
-								aria-describedby="style-error-field"
-							}
-						>{ data.Style.Header.Tagline }</textarea>
-					</label>
-					if data.problemIn(domain.StyleHeaderText) {
-						@styleFieldError(data)
-					}
-					@styleLinkFields(data, "header", domain.StyleHeaderLinks, data.Style.Header.Links)
-				</section>
-				<section class="card js-panel js-style-footer-panel" aria-labelledby="style-footer-heading">
-					<h2 id="style-footer-heading">{ t(ctx, "style.footer.heading") }</h2>
-					<p class="muted">{ t(ctx, "style.footer.hint") }</p>
-					<label class="field">
-						<span>
-							@thtml(ctx, "style.footer.text_html")
-						</span>
-						<textarea
-							name="footer_text"
-							rows="3"
-							maxlength="280"
-							autocomplete="off"
-							data-1p-ignore
-							data-lpignore="true"
-							data-bwignore
-							if data.problemIn(domain.StyleFooterText) {
-								id="style-invalid"
-								aria-invalid="true"
-								aria-describedby="style-error-field"
-							}
-						>{ data.Style.Footer.Text }</textarea>
-					</label>
-					if data.problemIn(domain.StyleFooterText) {
-						@styleFieldError(data)
-					}
-					@styleLinkFields(data, "footer", domain.StyleFooterLinks, data.Style.Footer.Links)
-				</section>
-				@styleThanksPanel(data)
+				@styleFormSections(data.StyleForm)
 				<button type="submit">{ t(ctx, "style.save.label") }</button>
 			</form>
 		</main>
 	}
 }
 
+// styleFormSummary is the head of a style form after a refused save: the
+// problem, linked to the field it is in, and a word about files that
+// have to be chosen again.
+templ styleFormSummary(form StyleForm) {
+	if form.Error != "" {
+		<p class="notice error-text" role="alert">
+			if form.errorTarget() != "" {
+				<a class="js-style-error-link" href={ templ.SafeURL("#" + form.errorTarget()) }>{ form.Error }</a>
+			} else {
+				{ form.Error }
+			}
+			if form.FilesLost {
+				<br/>
+				{ t(ctx, "style.error.files_again") }
+			}
+		</p>
+	}
+}
+
+// styleFormSections are every section of a style form, in the order a
+// respondent's page has them: the theme, the header, the footer and the
+// thanks page's picture.
+templ styleFormSections(form StyleForm) {
+	@styleThemeSection(form)
+	@styleHeaderSection(form)
+	@styleFooterSection(form)
+	@styleThanksPanel(form)
+}
+
+// styleThemeSection is where the theme is chosen: each one a choice,
+// with a small page drawn in it.
+templ styleThemeSection(form StyleForm) {
+	<section class="card js-panel" aria-labelledby="style-theme-heading">
+		<h2 id="style-theme-heading">{ t(ctx, "style.theme.heading") }</h2>
+		<p class="muted" id="style-theme-hint">{ t(ctx, "style.theme.hint") }</p>
+		<div class="theme-choices" role="radiogroup" aria-labelledby="style-theme-heading" aria-describedby="style-theme-hint">
+			for _, theme := range domain.Themes() {
+				<label class="choice theme-choice js-theme-choice">
+					<input type="radio" name="theme" value={ theme } checked?={ theme == form.Style.ThemeName() } autocomplete="off"/>
+					<span>
+						<strong>{ t(ctx, themeName(theme)) }</strong>
+						<small>{ t(ctx, themeHint(theme)) }</small>
+					</span>
+					@themeSample(theme)
+				</label>
+			}
+		</div>
+	</section>
+}
+
+// styleHeaderSection is the header: the banner and the logo, the logo's
+// alternative text, the name, the tagline and the links.
+templ styleHeaderSection(form StyleForm) {
+	<section class="card js-panel js-style-header-panel" aria-labelledby="style-header-heading">
+		<h2 id="style-header-heading">{ t(ctx, "style.header.heading") }</h2>
+		<p class="muted">{ t(ctx, "style.header.hint") }</p>
+		@styleImageField(form, styleImageFieldData{
+			Field:   "banner",
+			Part:    domain.StyleBanner,
+			Hint:    t(ctx, "style.header.banner_hint", uitext.Args{"Size": styleimage.Banner.MaxUpload >> 20}),
+			Current: form.Style.Header.Banner,
+		})
+		@styleImageField(form, styleImageFieldData{
+			Field:   "logo",
+			Part:    domain.StyleLogo,
+			Hint:    t(ctx, "style.header.logo_hint", uitext.Args{"Size": styleimage.Logo.MaxUpload >> 20}),
+			Current: form.Style.Header.Logo,
+			Plate:   true,
+		})
+		<label class="field">
+			<span>
+				@thtml(ctx, "style.header.logo_alt_html")
+			</span>
+			<input
+				type="text"
+				name="logo_alt"
+				class="js-style-logo-alt"
+				value={ form.Style.Header.LogoAlt }
+				maxlength="120"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				if form.problemIn(domain.StyleLogoAlt) {
+					id="style-invalid"
+					aria-invalid="true"
+					aria-describedby="style-error-field"
+				}
+			/>
+		</label>
+		if form.problemIn(domain.StyleLogoAlt) {
+			@styleFieldError(form)
+		}
+		<label class="field">
+			<span>
+				@thtml(ctx, "style.header.name_html")
+			</span>
+			<input
+				type="text"
+				name="header_name"
+				value={ form.Style.Header.Name }
+				maxlength="80"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				if form.problemIn(domain.StyleHeaderName) {
+					id="style-invalid"
+					aria-invalid="true"
+					aria-describedby="style-error-field"
+				}
+			/>
+		</label>
+		if form.problemIn(domain.StyleHeaderName) {
+			@styleFieldError(form)
+		}
+		<label class="field">
+			<span>
+				@thtml(ctx, "style.header.tagline_html")
+			</span>
+			<textarea
+				name="header_tagline"
+				rows="3"
+				maxlength="280"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				if form.problemIn(domain.StyleHeaderText) {
+					id="style-invalid"
+					aria-invalid="true"
+					aria-describedby="style-error-field"
+				}
+			>{ form.Style.Header.Tagline }</textarea>
+		</label>
+		if form.problemIn(domain.StyleHeaderText) {
+			@styleFieldError(form)
+		}
+		@styleLinkFields(form, "header", domain.StyleHeaderLinks, form.Style.Header.Links)
+	</section>
+}
+
+// styleFooterSection is the creator's footer: its text and its links.
+templ styleFooterSection(form StyleForm) {
+	<section class="card js-panel js-style-footer-panel" aria-labelledby="style-footer-heading">
+		<h2 id="style-footer-heading">{ t(ctx, "style.footer.heading") }</h2>
+		<p class="muted">{ t(ctx, "style.footer.hint") }</p>
+		<label class="field">
+			<span>
+				@thtml(ctx, "style.footer.text_html")
+			</span>
+			<textarea
+				name="footer_text"
+				rows="3"
+				maxlength="280"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				if form.problemIn(domain.StyleFooterText) {
+					id="style-invalid"
+					aria-invalid="true"
+					aria-describedby="style-error-field"
+				}
+			>{ form.Style.Footer.Text }</textarea>
+		</label>
+		if form.problemIn(domain.StyleFooterText) {
+			@styleFieldError(form)
+		}
+		@styleLinkFields(form, "footer", domain.StyleFooterLinks, form.Style.Footer.Links)
+	</section>
+}
+
 // styleThanksPanel is where the thanks page's picture is chosen: the
 // owl, one of the three drawings, the creator's own picture or none,
 // each a choice with the picture drawn small. The file field under the
 // choices is for "your own picture"; choosing a file there picks it.
-templ styleThanksPanel(data StyleData) {
+templ styleThanksPanel(form StyleForm) {
 	<section class="card js-panel js-style-thanks-panel" aria-labelledby="style-thanks-heading">
 		<h2 id="style-thanks-heading">{ t(ctx, "style.thanks.heading") }</h2>
 		<p class="muted" id="style-thanks-hint">{ t(ctx, "style.thanks.hint") }</p>
-		if data.problemIn(domain.StyleThanksPicture) {
-			@styleFieldError(data)
+		if form.problemIn(domain.StyleThanksPicture) {
+			@styleFieldError(form)
 		}
 		<div class="thanks-choices" role="radiogroup" aria-labelledby="style-thanks-heading" aria-describedby="style-thanks-hint">
 			for _, picture := range domain.ThanksPictures() {
 				<label class="choice thanks-choice js-thanks-choice">
-					<input type="radio" name="thanks_picture" value={ picture } checked?={ picture == data.Style.Thanks.PictureName() } autocomplete="off"/>
+					<input type="radio" name="thanks_picture" value={ picture } checked?={ picture == form.Style.Thanks.PictureName() } autocomplete="off"/>
 					<span><strong>{ t(ctx, thanksPictureName(picture)) }</strong></span>
-					@thanksChoicePreview(picture, data.Style)
+					@thanksChoicePreview(picture, form.Style)
 				</label>
 			}
 		</div>
-		@styleImageField(data, styleImageFieldData{
+		@styleImageField(form, styleImageFieldData{
 			Field:   "thanks_image",
 			Part:    domain.StyleThanksImage,
 			Hint:    t(ctx, "style.thanks.image_hint", uitext.Args{"Size": styleimage.Thanks.MaxUpload >> 20}),
-			Current: data.Style.Thanks.Image,
+			Current: form.Style.Thanks.Image,
 			Plate:   true,
 		})
 		<label class="field">
@@ -317,21 +355,21 @@ templ styleThanksPanel(data StyleData) {
 				type="text"
 				name="thanks_alt"
 				class="js-style-thanks-alt"
-				value={ data.Style.Thanks.Alt }
+				value={ form.Style.Thanks.Alt }
 				maxlength="120"
 				autocomplete="off"
 				data-1p-ignore
 				data-lpignore="true"
 				data-bwignore
-				if data.problemIn(domain.StyleThanksAlt) {
+				if form.problemIn(domain.StyleThanksAlt) {
 					id="style-invalid"
 					aria-invalid="true"
 					aria-describedby="style-error-field"
 				}
 			/>
 		</label>
-		if data.problemIn(domain.StyleThanksAlt) {
-			@styleFieldError(data)
+		if form.problemIn(domain.StyleThanksAlt) {
+			@styleFieldError(form)
 		}
 	</section>
 }
@@ -339,8 +377,8 @@ templ styleThanksPanel(data StyleData) {
 // styleFieldError words the refused save's problem beside the field it
 // is in. The summary at the head of the form is the alert; this is what
 // the field is described by.
-templ styleFieldError(data StyleData) {
-	<p class="error-text js-style-field-error" id="style-error-field">{ data.FieldError }</p>
+templ styleFieldError(form StyleForm) {
+	<p class="error-text js-style-field-error" id="style-error-field">{ form.FieldError }</p>
 }
 
 // styleImageField is a file field for one of the style's pictures, with
@@ -349,7 +387,7 @@ templ styleFieldError(data StyleData) {
 // empty one says nothing about what is stored. The current picture is
 // shown from the creator's own address, and has no alternative text
 // here: the field's label says which picture it is.
-templ styleImageField(data StyleData, field styleImageFieldData) {
+templ styleImageField(form StyleForm, field styleImageFieldData) {
 	<div class={ "field", "style-image-field", field.hook() }>
 		<label for={ field.id() }>
 			<span>
@@ -361,14 +399,14 @@ templ styleImageField(data StyleData, field styleImageFieldData) {
 			id={ field.id() }
 			name={ field.Field }
 			accept={ styleImageAccept }
-			if data.problemIn(field.Part) {
+			if form.problemIn(field.Part) {
 				aria-invalid="true"
 			}
-			aria-describedby={ field.describedBy(data.problemIn(field.Part)) }
+			aria-describedby={ field.describedBy(form.problemIn(field.Part)) }
 		/>
 		<small id={ field.hintID() }>{ field.Hint }</small>
-		if data.problemIn(field.Part) {
-			@styleFieldError(data)
+		if form.problemIn(field.Part) {
+			@styleFieldError(form)
 		}
 		if !field.Current.IsZero() {
 			<div class="style-image-current">
@@ -395,12 +433,12 @@ templ styleImageField(data StyleData, field styleImageFieldData) {
 // and an address for each, every row optional. A row left empty is
 // dropped when the form is saved. Each field is named by its row, since
 // three fields called "Label" tell a screen reader nothing apart.
-templ styleLinkFields(data StyleData, where string, part domain.StylePart, links []domain.StyleLink) {
+templ styleLinkFields(form StyleForm, where string, part domain.StylePart, links []domain.StyleLink) {
 	<fieldset class="field style-links-fields">
 		<legend>{ t(ctx, "style.links.legend") }</legend>
 		<p class="muted">{ t(ctx, "style.links.hint") }</p>
-		if data.problemIn(part) && data.ErrorLink == 0 {
-			@styleFieldError(data)
+		if form.problemIn(part) && form.ErrorLink == 0 {
+			@styleFieldError(form)
 		}
 		for i, link := range styleLinkRows(links) {
 			<div class="field-row">
@@ -415,7 +453,7 @@ templ styleLinkFields(data StyleData, where string, part domain.StylePart, links
 						data-1p-ignore
 						data-lpignore="true"
 						data-bwignore
-						if data.problemIn(part) && data.ErrorLink == i+1 {
+						if form.problemIn(part) && form.ErrorLink == i+1 {
 							id="style-invalid"
 							aria-invalid="true"
 							aria-describedby="style-error-field"
@@ -434,15 +472,15 @@ templ styleLinkFields(data StyleData, where string, part domain.StylePart, links
 						data-1p-ignore
 						data-lpignore="true"
 						data-bwignore
-						if data.problemIn(part) && data.ErrorLink == i+1 {
+						if form.problemIn(part) && form.ErrorLink == i+1 {
 							aria-invalid="true"
 							aria-describedby="style-error-field"
 						}
 					/>
 				</label>
 			</div>
-			if data.problemIn(part) && data.ErrorLink == i+1 {
-				@styleFieldError(data)
+			if form.problemIn(part) && form.ErrorLink == i+1 {
+				@styleFieldError(form)
 			}
 		}
 	</fieldset>

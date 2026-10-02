@@ -99,7 +99,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 		pending = append(pending, thanksToTranslate(draft)...)
 	}
 	if draft.StylePending(lang) {
-		pending = append(pending, styleToTranslate(draft)...)
+		pending = append(pending, styleToTranslate(draft.Style.Words())...)
 	}
 	if len(pending) == 0 {
 		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": languageName(text(r), lang)}))
@@ -112,7 +112,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	}
 
 	translated, chars, err := s.translateQuestions(r, info.WorkspaceID, pending, lang)
-	s.recordTranslationUsage(r, info.WorkspaceID, survey.ID, chars)
+	s.recordTranslationUsage(r, info.WorkspaceID, &survey.ID, chars)
 	if err != nil && len(translated) == 0 {
 		s.logger.Error("localization drafting failed", "error", err)
 		s.renderLocalizations(w, r, aiRefusalMessage(text(r), err), "")
@@ -121,7 +121,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 
 	var thanksMessage, thanksLabel string
 	draftedThanks := false
-	styleWords, draftedStyle := draftedStyleWords(draft, translated)
+	styleWords, draftedStyle := draftedStyleWords(draft.Style.Words(), translated)
 	for identity, text := range translated {
 		if strings.HasPrefix(identity, styleKeyPrefix) {
 			continue
@@ -195,10 +195,9 @@ const (
 	styleThanksAltKey  = styleKeyPrefix + "thanks_alt"
 )
 
-// styleToTranslate is the style's wording, shaped as the questions
-// translateQuestions takes.
-func styleToTranslate(draft domain.Draft) []domain.Question {
-	words := draft.Style.Words()
+// styleToTranslate is a style's wording, shaped as the questions
+// translateQuestions takes. The words are a survey's or an account's.
+func styleToTranslate(words domain.StyleWords) []domain.Question {
 	var out []domain.Question
 	add := func(key, text string) {
 		if text != "" {
@@ -218,10 +217,9 @@ func styleToTranslate(draft domain.Draft) []domain.Question {
 	return out
 }
 
-// draftedStyleWords gathers the style's words out of a batch of drafted
-// translations, and reports whether the batch held any.
-func draftedStyleWords(draft domain.Draft, translated map[string]string) (domain.StyleWords, bool) {
-	source := draft.Style.Words()
+// draftedStyleWords gathers a style's words out of a batch of drafted
+// translations of source, and reports whether the batch held any.
+func draftedStyleWords(source domain.StyleWords, translated map[string]string) (domain.StyleWords, bool) {
 	words := domain.StyleWords{
 		Tagline:     translated[styleTaglineKey],
 		LogoAlt:     translated[styleLogoAltKey],
@@ -356,9 +354,11 @@ func blankWords(words domain.StyleWords) bool {
 	return true
 }
 
-func (s *server) recordTranslationUsage(r *http.Request, workspaceID, surveyID uuid.UUID, chars int) {
-	id := surveyID
-	if err := s.aiMeter.Record(r.Context(), workspaceID, &id, string(ai.OpTranslate), chars); err != nil {
+// recordTranslationUsage counts a translation against the workspace,
+// and against the survey it was for; an account's style is translated
+// for no survey, so surveyID may be nil.
+func (s *server) recordTranslationUsage(r *http.Request, workspaceID uuid.UUID, surveyID *uuid.UUID, chars int) {
+	if err := s.aiMeter.Record(r.Context(), workspaceID, surveyID, string(ai.OpTranslate), chars); err != nil {
 		s.logger.Error("recording translation usage failed", "error", err)
 	}
 }
@@ -694,7 +694,7 @@ func (s *server) answersTranslate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	translated, chars, err := s.translateAnswers(r, info.WorkspaceID, survey.ID, results, existing, lang)
-	s.recordTranslationUsage(r, info.WorkspaceID, survey.ID, chars)
+	s.recordTranslationUsage(r, info.WorkspaceID, &survey.ID, chars)
 	if err != nil && translated == 0 {
 		s.renderResults(w, r, survey, results, aiRefusalMessage(text(r), err))
 		return

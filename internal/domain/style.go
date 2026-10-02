@@ -394,19 +394,71 @@ func (s Style) IsZero() bool {
 	return s.Theme == "" && s.Header.IsZero() && s.Footer.IsZero() && s.Thanks.IsZero()
 }
 
-// Equal reports whether two styles would draw the same pages.
+// Equal reports whether two styles would draw the same pages, part by
+// part.
 func (s Style) Equal(other Style) bool {
-	return s.Theme == other.Theme &&
-		s.Header.Name == other.Header.Name &&
-		s.Header.Tagline == other.Header.Tagline &&
-		slices.Equal(s.Header.Links, other.Header.Links) &&
-		s.Header.Banner == other.Header.Banner &&
-		s.Header.Logo == other.Header.Logo &&
-		s.Header.LogoAlt == other.Header.LogoAlt &&
-		s.Footer.Text == other.Footer.Text &&
-		slices.Equal(s.Footer.Links, other.Footer.Links) &&
-		s.Thanks == other.Thanks
+	return SameTheme(s.Theme, other.Theme) &&
+		s.Header.Equal(other.Header) &&
+		s.Footer.Equal(other.Footer) &&
+		s.Thanks.Equal(other.Thanks)
 }
+
+// SameTheme reports whether two theme names draw the same theme: Earful's
+// is stored as the empty string and may arrive by its name.
+func SameTheme(a, b string) bool {
+	if a == ThemeEarful {
+		a = ""
+	}
+	if b == ThemeEarful {
+		b = ""
+	}
+	return a == b
+}
+
+// Equal reports whether two headers draw the same head of a page. The
+// logo's alternative text counts only where there is a logo: text left
+// in the field after the logo was removed is shown to nobody.
+func (h StyleHeader) Equal(other StyleHeader) bool {
+	return h.Name == other.Name &&
+		h.Tagline == other.Tagline &&
+		slices.Equal(h.Links, other.Links) &&
+		h.Banner == other.Banner &&
+		h.Logo == other.Logo &&
+		h.logoAlt() == other.logoAlt()
+}
+
+func (h StyleHeader) logoAlt() string {
+	if h.Logo.IsZero() {
+		return ""
+	}
+	return h.LogoAlt
+}
+
+// Equal reports whether two footers say the same.
+func (f StyleFooter) Equal(other StyleFooter) bool {
+	return f.Text == other.Text && slices.Equal(f.Links, other.Links)
+}
+
+// Equal reports whether two thanks pages show the same picture, once a
+// picture the choice would not show is set aside.
+func (t StyleThanks) Equal(other StyleThanks) bool { return t.settled() == other.settled() }
+
+// StyleParts names parts of a style: the theme, the header, the footer
+// and the thanks page's picture. It says which parts a set of words
+// belongs to, and which parts of a survey's style are its own rather
+// than its account's (ADR-0023).
+type StyleParts struct {
+	Theme  bool `json:"theme,omitempty"`
+	Header bool `json:"header,omitempty"`
+	Footer bool `json:"footer,omitempty"`
+	Thanks bool `json:"thanks,omitempty"`
+}
+
+// AllStyleParts is every part of a style.
+var AllStyleParts = StyleParts{Theme: true, Header: true, Footer: true, Thanks: true}
+
+// IsZero reports whether no part is named.
+func (p StyleParts) IsZero() bool { return p == StyleParts{} }
 
 // ThemeName is the theme the survey is drawn in, by name: the stored
 // one, or the default where none was chosen.
@@ -568,12 +620,7 @@ func (s Style) thanksAlt() string {
 
 // logoAlt is the alternative text of the logo the style has. Text left
 // in the field after the logo was removed is nobody's to translate.
-func (s Style) logoAlt() string {
-	if s.Header.Logo.IsZero() {
-		return ""
-	}
-	return s.Header.LogoAlt
-}
+func (s Style) logoAlt() string { return s.Header.logoAlt() }
 
 func linkLabels(links []StyleLink) []string {
 	if len(links) == 0 {
@@ -598,6 +645,38 @@ func (w StyleWords) Equal(other StyleWords) bool {
 		w.ThanksAlt == other.ThanksAlt &&
 		slices.Equal(w.HeaderLinks, other.HeaderLinks) &&
 		slices.Equal(w.FooterLinks, other.FooterLinks)
+}
+
+// Only returns the words that belong to the given parts: the header's
+// are the tagline, the logo's alternative text and its links' labels,
+// the footer's its text and its links' labels, the thanks page's the
+// alternative text of its picture. A theme has no words.
+func (w StyleWords) Only(p StyleParts) StyleWords {
+	var out StyleWords
+	if p.Header {
+		out.Tagline, out.LogoAlt, out.HeaderLinks = w.Tagline, w.LogoAlt, slices.Clone(w.HeaderLinks)
+	}
+	if p.Footer {
+		out.FooterText, out.FooterLinks = w.FooterText, slices.Clone(w.FooterLinks)
+	}
+	if p.Thanks {
+		out.ThanksAlt = w.ThanksAlt
+	}
+	return out
+}
+
+// With returns w with the words of the given parts taken from other.
+func (w StyleWords) With(other StyleWords, p StyleParts) StyleWords {
+	if p.Header {
+		w.Tagline, w.LogoAlt, w.HeaderLinks = other.Tagline, other.LogoAlt, slices.Clone(other.HeaderLinks)
+	}
+	if p.Footer {
+		w.FooterText, w.FooterLinks = other.FooterText, slices.Clone(other.FooterLinks)
+	}
+	if p.Thanks {
+		w.ThanksAlt = other.ThanksAlt
+	}
+	return w
 }
 
 // covers reports whether w has a word for every word of source.
@@ -704,7 +783,20 @@ func (d *Draft) SetStyleTranslation(lang string, words StyleWords, reviewed bool
 	if !ok {
 		return ErrUnknownLanguage
 	}
-	source := d.Style.Words()
+	t, err := newLocalizedStyle(d.Style.Words(), words, reviewed)
+	if err != nil {
+		return err
+	}
+	localization.Style = &t
+	d.Localizations[lang] = localization
+	return nil
+}
+
+// newLocalizedStyle records words translated from source: trimmed, with
+// one label for each of the source's links, and with a part the source
+// does not have dropped, so a translation never shows more than the
+// original. Words past a limit are refused.
+func newLocalizedStyle(source, words StyleWords, reviewed bool) (LocalizedStyle, error) {
 	t := LocalizedStyle{
 		StyleWords: StyleWords{
 			Tagline:     normalizeMessage(words.Tagline),
@@ -730,25 +822,23 @@ func (d *Draft) SetStyleTranslation(lang string, words StyleWords, reviewed bool
 		t.ThanksAlt = ""
 	}
 	if len([]rune(t.LogoAlt)) > maxStyleLogoAltLen {
-		return StyleError{Part: StyleLogoAlt, Err: LimitError{Kind: LimitStyleLogoAlt, Limit: maxStyleLogoAltLen}}
+		return t, StyleError{Part: StyleLogoAlt, Err: LimitError{Kind: LimitStyleLogoAlt, Limit: maxStyleLogoAltLen}}
 	}
 	if len([]rune(t.ThanksAlt)) > maxStyleThanksAltLen {
-		return StyleError{Part: StyleThanksAlt, Err: LimitError{Kind: LimitStyleThanksAlt, Limit: maxStyleThanksAltLen}}
+		return t, StyleError{Part: StyleThanksAlt, Err: LimitError{Kind: LimitStyleThanksAlt, Limit: maxStyleThanksAltLen}}
 	}
 	if len([]rune(t.Tagline)) > maxStyleTaglineLen {
-		return StyleError{Part: StyleHeaderText, Err: LimitError{Kind: LimitStyleTagline, Limit: maxStyleTaglineLen}}
+		return t, StyleError{Part: StyleHeaderText, Err: LimitError{Kind: LimitStyleTagline, Limit: maxStyleTaglineLen}}
 	}
 	if len([]rune(t.FooterText)) > maxStyleFooterLen {
-		return StyleError{Part: StyleFooterText, Err: LimitError{Kind: LimitStyleFooter, Limit: maxStyleFooterLen}}
+		return t, StyleError{Part: StyleFooterText, Err: LimitError{Kind: LimitStyleFooter, Limit: maxStyleFooterLen}}
 	}
 	for _, label := range append(slices.Clone(t.HeaderLinks), t.FooterLinks...) {
 		if len([]rune(label)) > maxThanksLabelLen {
-			return LimitError{Kind: LimitThanksLabel, Limit: maxThanksLabelLen}
+			return t, LimitError{Kind: LimitThanksLabel, Limit: maxThanksLabelLen}
 		}
 	}
-	localization.Style = &t
-	d.Localizations[lang] = localization
-	return nil
+	return t, nil
 }
 
 // fitLabels trims the labels and makes them as many as the source's

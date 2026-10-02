@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -119,5 +120,63 @@ func TestStyleThanks(t *testing.T) {
 	}
 	if d.Style.Equal(own) {
 		t.Errorf("two thanks pictures compare equal")
+	}
+}
+
+func TestStylePartsCompareWhatAPageShows(t *testing.T) {
+	logo := StyleImage{SHA256: strings.Repeat("a", 64), Width: 10, Height: 10}
+	link := StyleLink{Label: "Contact", URL: "https://example.com"}
+
+	if !SameTheme("", ThemeEarful) || SameTheme(ThemeOcean, "") {
+		t.Error(`Earful's theme by name and as "" should be one theme, and only that one`)
+	}
+	// Alternative text left behind by a removed logo is shown to nobody.
+	if !(StyleHeader{Name: "A", LogoAlt: "old"}).Equal(StyleHeader{Name: "A"}) {
+		t.Error("a logo's text without a logo should not tell headers apart")
+	}
+	if (StyleHeader{Logo: logo, LogoAlt: "Ours"}).Equal(StyleHeader{Logo: logo, LogoAlt: "Theirs"}) {
+		t.Error("two logos with different text are different headers")
+	}
+	if !(StyleHeader{Links: nil}).Equal(StyleHeader{Links: []StyleLink{}}) {
+		t.Error("no links and an empty list of links are the same header")
+	}
+	if (StyleFooter{Links: []StyleLink{link}}).Equal(StyleFooter{}) {
+		t.Error("a footer with a link differs from one without")
+	}
+	// A picture the choice would not show is not part of what the page shows.
+	if !(StyleThanks{Picture: ThanksCheck, Image: logo, Alt: "x"}).Equal(StyleThanks{Picture: ThanksCheck}) {
+		t.Error("a leftover picture should not tell two thanks pages apart")
+	}
+	if !(Style{Theme: ThemeEarful}).Equal(Style{}) {
+		t.Error("a style naming Earful's theme should equal the default")
+	}
+}
+
+func TestStyleWordsByPart(t *testing.T) {
+	words := StyleWords{
+		Tagline: "t", LogoAlt: "l", HeaderLinks: []string{"h"},
+		FooterText: "f", FooterLinks: []string{"g"}, ThanksAlt: "a",
+	}
+	header := words.Only(StyleParts{Header: true})
+	if !header.Equal(StyleWords{Tagline: "t", LogoAlt: "l", HeaderLinks: []string{"h"}}) {
+		t.Errorf("the header's words are %+v", header)
+	}
+	if got := words.Only(StyleParts{Theme: true}); !got.IsZero() {
+		t.Errorf("a theme has no words, got %+v", got)
+	}
+	if got := words.Only(AllStyleParts); !got.Equal(words) {
+		t.Errorf("every part's words should be all the words, got %+v", got)
+	}
+
+	other := StyleWords{Tagline: "T", FooterText: "F", FooterLinks: []string{"G"}, ThanksAlt: "A"}
+	mixed := words.With(other, StyleParts{Footer: true})
+	want := StyleWords{Tagline: "t", LogoAlt: "l", HeaderLinks: []string{"h"}, FooterText: "F", FooterLinks: []string{"G"}, ThanksAlt: "a"}
+	if !mixed.Equal(want) {
+		t.Errorf("taking the footer's words gave %+v", mixed)
+	}
+	// The labels are copied, not shared.
+	mixed.FooterLinks[0] = "changed"
+	if other.FooterLinks[0] != "G" {
+		t.Error("With should not share the labels it took")
 	}
 }
