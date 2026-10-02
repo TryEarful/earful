@@ -81,14 +81,15 @@ func TestDocuments_CanBeTakenAwayAsMarkdown(t *testing.T) {
 }
 
 // TestDocuments_ADraftIsServedOnlyInDevelopment: a document still being
-// written has an address where its writer works and nowhere else. Terms
-// that say "not written yet" are not terms anyone should be shown.
+// written has an address where its writer works and nowhere else. A
+// notice that says "not written yet" is not one anyone should be shown,
+// and terms nobody has reviewed are not terms anyone has agreed to.
 func TestDocuments_ADraftIsServedOnlyInDevelopment(t *testing.T) {
 	t.Parallel()
 	anyone := &http.Client{}
 
 	writing := apptest.New(t, apptest.Options{})
-	if page := mustGet(t, anyone, writing.Server.URL+"/terms"); !bodyContains(page, "has not been written yet") {
+	if page := mustGet(t, anyone, writing.Server.URL+"/privacy"); !bodyContains(page, "has not been written yet") {
 		t.Errorf("a draft is not served to its writer:\n%s", page)
 	}
 
