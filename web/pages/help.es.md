@@ -2,7 +2,7 @@
 title: Ayuda
 short_title: Ayuda
 sections: cards
-hash: sha256-3312e4d97afd2c431c05932bff82cde7319b7e629980447ca59e8ff872b863b8
+hash: sha256-8a71a0dbe5432e458731d91cb42d5fc301827bd84246cd2b82de6b1f9f1a33d2
 last_update: 2026-10-02
 source_hash: sha256-3cbc6a3730411521fb954c067a1099e255c75169fad9fc242f03d804a0c92fb9
 ---
@@ -14,11 +14,11 @@ Respuestas breves a lo que más se pregunta. **¿Va a responder una encuesta?** 
 1. En el panel, elija **Nueva encuesta**.
 2. Póngale un título y elija quién puede responder. Una **encuesta anónima** está abierta a cualquiera que tenga el enlace y no guarda nada que identifique a quien responde. Una **encuesta por invitación** solo la responden las personas que usted invita por correo, cada una con su propio enlace. Esta decisión es permanente.
 3. Añada las preguntas una a una, o describa lo que quiere saber y elija **Redactar preguntas** para que la IA le proponga algunas. Son preguntas normales: puede editarlas, reordenarlas o eliminarlas.
-4. Elija **Vista previa de quien responde** para responder la encuesta tal como la verán los demás. Nada de lo que escriba ahí se guarda.
+4. Elija **Vista previa** para responder la encuesta tal como la verán los demás. Nada de lo que escriba ahí se guarda.
 
 ## Darle su propio aspecto
 
-En la pestaña **Estilo** de la encuesta, elija un tema para las páginas en las que se responde: Earful, Pizarra, Océano o Bosque, que cada persona lee en claro u oscuro según lo que prefiera. Añada un encabezado con el nombre de su organización, una línea sobre ella y hasta tres enlaces, con una imagen ancha en lo alto y su logotipo. Añada un pie con su propio texto y enlaces, y elija la imagen de la página de agradecimiento. Quienes responden ven el estilo cuando usted publica; hasta entonces, la **Vista previa de quien responde** lo muestra. Use solo un logotipo que tenga derecho a usar.
+En la pestaña **Estilo** de la encuesta, elija un tema para las páginas en las que se responde: Earful, Pizarra, Océano o Bosque. Cada persona lo ve en modo claro u oscuro, según prefiera. Añada un encabezado con el nombre de su organización, una línea sobre ella y hasta tres enlaces, con una imagen ancha en lo alto y su logotipo. Añada un pie con su propio texto y enlaces, y elija la imagen de la página de agradecimiento. Quienes responden ven el estilo cuando usted publica; hasta entonces, la **Vista previa** lo muestra. Use solo un logotipo que tenga derecho a usar.
 
 ## Publicar y compartir
 

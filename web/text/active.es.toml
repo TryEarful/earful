@@ -3338,7 +3338,7 @@ other = "Estilo"
 
 [style.intro]
 hash = "sha1-ccaa99da9efb722f23da69dba6b6e34887699555"
-other = "El aspecto de la encuesta para quienes la responden. Los cambios se publican con la próxima versión."
+other = "Cómo ven la encuesta quienes la responden. Los cambios se aplican con la próxima versión que publique."
 
 [style.theme.heading]
 hash = "sha1-a797e30923ac1be590300ce6b08e63b4e6dc6688"
@@ -3346,7 +3346,7 @@ other = "Tema"
 
 [style.theme.hint]
 hash = "sha1-51cc203dffbafd784b6f745ed49e103aa6a381c1"
-other = "Los colores de la página, de su botón y de sus enlaces. Cada persona la sigue leyendo en claro u oscuro, según lo que use."
+other = "Los colores de la página, de su botón y de sus enlaces. Cada persona la sigue viendo en modo claro u oscuro, según el que use."
 
 [style.theme.earful.name]
 hash = "sha1-77150a298b41152867949b23c5441f7b8b3da27c"
@@ -3354,7 +3354,7 @@ other = "Earful"
 
 [style.theme.earful.hint]
 hash = "sha1-3622d235ba3b504525ea1280980a9daf12517956"
-other = "El aspecto cálido de Earful, con enlaces verde azulado."
+other = "El aspecto cálido de Earful, con enlaces en verde azulado."
 
 [style.theme.slate.name]
 hash = "sha1-26d7b218c9b5641b37dfddc13b955184f3ce868f"
@@ -3394,7 +3394,7 @@ other = "Su estilo no se ha guardado"
 
 [style.busy.body]
 hash = "sha1-a004a47c1ee3c771fd6e80beade43a8cbb91ad79"
-other = "Ahora mismo se están guardando varios estilos. Vuelva atrás y guarde el suyo de nuevo dentro de un momento y vuelva a elegir sus imágenes."
+other = "Ahora mismo se están guardando varios estilos. Regrese a la página anterior, elija otra vez sus imágenes y guarde de nuevo dentro de un momento."
 
 [style.busy.back]
 hash = "sha1-b7a010410fcfc722d78c45247c092d25a0f8b8b0"
@@ -3410,11 +3410,11 @@ other = "Encabezado"
 
 [style.header.hint]
 hash = "sha1-352d6c9ac6cdc3e88f0d51a4792a7d8571c2f500"
-other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Déjelo todo vacío para no mostrar ninguno. Sus textos se traducen en la pestaña Idiomas."
+other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Déjelo todo vacío si no quiere encabezado. Sus textos se traducen en la pestaña Idiomas."
 
 [style.header.name_html]
 hash = "sha1-fbba7896d8d915160e276ac96374c9a3626265f3"
-other = 'Nombre <small class="muted">(opcional, como su organización)</small>'
+other = 'Nombre <small class="muted">(opcional, por ejemplo el de su organización)</small>'
 
 [style.header.tagline_html]
 hash = "sha1-f6cb0b75cb28980c512ef1f8d9cbd431d22c9f30"
@@ -3426,7 +3426,7 @@ other = "Pie de página"
 
 [style.footer.hint]
 hash = "sha1-af70299db893ac87046e7013886a41283983fe7b"
-other = "Se muestra debajo de la encuesta. Sirve para una razón social, una dirección postal o un aviso de privacidad."
+other = "Se muestra debajo de la encuesta. Sirve para indicar una razón social, una dirección postal o un aviso de privacidad."
 
 [style.footer.text_html]
 hash = "sha1-303bcdddfa4824221929c16fcee03d849f069ba1"
@@ -3614,11 +3614,11 @@ other = "Sin imagen"
 
 [style.thanks.image_html]
 hash = "sha1-325a9a3cc7da6767658e0520275874abe56d3fd6"
-other = 'Imagen para subir <small class="muted">(para usar su propia imagen)</small>'
+other = 'Archivo de imagen <small class="muted">(si usa su propia imagen)</small>'
 
 [style.thanks.image_hint]
 hash = "sha1-0e23da971ce95aab7ed481521cca417bcd8bbbc0"
-other = "Al elegir un archivo, este pasa a ser la imagen de la página, entera y sobre un fondo blanco. Si guarda con otra opción elegida, su imagen se quita. PNG, JPEG o WebP, hasta {{.Size}} MB."
+other = "Al elegir un archivo, pasa a ser la imagen de la página y se muestra entera sobre un fondo blanco. Si guarda con otra opción elegida, se quita. PNG, JPEG o WebP, hasta {{.Size}} MB."
 
 [style.thanks.alt_html]
 hash = "sha1-974239748b29221892cb41c39b0256f5d9155558"
@@ -3650,7 +3650,7 @@ other = "Descripción de la imagen: {{.Problem}}"
 
 [editor.thanks.picture]
 hash = "sha1-d571557d78ec593920c888e4976bfee378697ba9"
-other = "La imagen sobre el mensaje se elige con el estilo de la encuesta."
+other = "La imagen que aparece encima del mensaje se elige en el estilo de la encuesta."
 
 [editor.thanks.picture_link]
 hash = "sha1-e08e0fbcd6c6920f6b67a0aa32caa1b5a261ecc6"
@@ -3686,7 +3686,7 @@ other = "Aviso sobre una encuesta"
 
 [respond.report.body]
 hash = "sha1-e181ecbf4190354968ac2d1ad4158d8412968b80"
-other = "Encuesta: {{.Address}}\n\nQué tiene de malo:\n"
+other = "Encuesta: {{.Address}}\n\nQué problema tiene:\n"
 
 [admin.suspensions.title]
 hash = "sha1-a63f1c18f3bd76baf39813f61af96f3f6c512ba5"
