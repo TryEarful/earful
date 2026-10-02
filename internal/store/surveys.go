@@ -243,6 +243,8 @@ type Version struct {
 	PublishedBy string
 	// Thanks is the thank you page this version was published with.
 	Thanks domain.ThankYou
+	// Style is the style this version was published with.
+	Style domain.Style
 }
 
 // Revision is one saved draft state as the audit log lists it.
@@ -311,6 +313,12 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 	if err != nil {
 		return db.SurveyVersion{}, err
 	}
+	// So does the style: the look of the page is part of what a
+	// respondent was shown (ADR-0018).
+	style, err := styleColumn(draft)
+	if err != nil {
+		return db.SurveyVersion{}, err
+	}
 	version, err := qtx.CreateVersion(ctx, db.CreateVersionParams{
 		SurveyID:            surveyID,
 		Number:              int32(next),
@@ -320,6 +328,7 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 		ThanksLinkLabel:     thanksLabel,
 		ThanksLinkUrl:       thanksURL,
 		ThanksLocalizations: thanksLocalized,
+		Style:               style,
 	})
 	if err != nil {
 		return db.SurveyVersion{}, fmt.Errorf("store: create version: %w", err)
@@ -392,8 +401,8 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 
 // HasUnpublishedChanges reports whether publishing the given draft would
 // make a new version: always before the first publish, and afterwards
-// only when its questions or its thank you page differ from the live
-// version's. It is the comparison Publish refuses by, so the editor
+// only when its questions, its thank you page or its style differ from
+// the live version's. It is the comparison Publish refuses by, so the editor
 // offers the button only where pressing it would do something.
 func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID, draft domain.Draft) (bool, error) {
 	latest, err := s.q.GetLatestVersion(ctx, surveyID)
@@ -414,7 +423,28 @@ func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID,
 	if err != nil {
 		return false, err
 	}
-	return thanks != draft.Thanks, nil
+	if thanks != draft.Thanks {
+		return true, nil
+	}
+	style, err := styleFromColumn(latest.Style)
+	if err != nil {
+		return false, err
+	}
+	return !style.Equal(draft.Style), nil
+}
+
+// LatestStyle is the style of the most recent published version: what a
+// page about the survey as a whole is drawn in, such as the page that
+// says it is closed. A survey never published has none.
+func (s *Surveys) LatestStyle(ctx context.Context, surveyID uuid.UUID) (domain.Style, error) {
+	latest, err := s.q.GetLatestVersion(ctx, surveyID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Style{}, nil
+	}
+	if err != nil {
+		return domain.Style{}, fmt.Errorf("store: get latest version: %w", err)
+	}
+	return styleFromColumn(latest.Style)
 }
 
 // LatestQuestions returns the questions of the most recent published
@@ -482,6 +512,9 @@ func (s *Surveys) Versions(ctx context.Context, surveyID uuid.UUID) ([]Version, 
 			}}
 		if r.PublishedByEmail != nil {
 			v.PublishedBy = *r.PublishedByEmail
+		}
+		if v.Style, err = styleFromColumn(r.Style); err != nil {
+			return nil, err
 		}
 		out = append(out, v)
 	}

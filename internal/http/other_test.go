@@ -338,8 +338,8 @@ func TestWorkspaceExport_CarriesOther(t *testing.T) {
 	if err := json.Unmarshal(openArchive(t, raw)["workspace.json"], &archive); err != nil {
 		t.Fatal(err)
 	}
-	if archive.FormatVersion != 6 {
-		t.Errorf("format_version = %d, want 6", archive.FormatVersion)
+	if archive.FormatVersion < 6 {
+		t.Errorf("format_version = %d, want 6 or later", archive.FormatVersion)
 	}
 	for _, survey := range archive.Surveys {
 		if survey.ID != id {

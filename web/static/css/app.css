@@ -215,6 +215,205 @@
   }
 }
 
+/* --- themes ------------------------------------------------------------ */
+
+/* A survey's creator can have its pages drawn in a theme (ADR-0018).
+   A theme is this list of tokens and nothing else: the grounds, the
+   text, links and focus, the accent, the filled button, the borders and
+   the tint behind a notice. No component rule knows a theme exists.
+   Signal, the status colours and their tints, type, space and shape are
+   the same in every theme, and no theme has a colour near Signal, so
+   coral still means only that a microphone is open.
+
+   Earful's own look is the default and has no class. The class goes on
+   <html> for a respondent's page, and on any element to draw what is
+   inside it in the theme, which is how the Style tab shows a sample of
+   each.
+
+   Each theme has a light block and a dark one, and the dark one is
+   written twice for the reason dark mode is above; the same test fails
+   the build if the two differ, if a theme sets a token the list above
+   does not have, or if any pair in docs/style-guide.md falls below its
+   ratio in any theme and display mode. */
+
+/* Slate is neutral: cool greys with a charcoal button, so a survey's
+   own colours, where it has any, are the only colour on the page. */
+.theme-slate {
+  --bg: #f1f3f5;
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
+  --text: #14181d;
+  --muted: #48525e;
+  --link: #2f4d6e;
+  --focus: #2f4d6e;
+  --accent: #2f4d6e;
+  --accent-contrast: #ffffff;
+  --border: rgb(20 24 29 / 10%);
+  --border-strong: rgb(20 24 29 / 22%);
+  --button: #262c33;
+  --button-text: #f5f6f8;
+  --ring: rgb(20 24 29 / 55%);
+  --tint-info: #edf1f5;
+}
+
+:root[data-mode="dark"].theme-slate,
+:root[data-mode="dark"] .theme-slate {
+  --bg: #121416;
+  --surface: #1d2024;
+  --surface-2: #17191c;
+  --text: #f1f3f5;
+  --muted: #c0c6cd;
+  --link: #a3bedb;
+  --focus: #a3bedb;
+  --accent: #a3bedb;
+  --accent-contrast: #121416;
+  --border: rgb(241 243 245 / 12%);
+  --border-strong: rgb(241 243 245 / 28%);
+  --button: #f1f3f5;
+  --button-text: #14181d;
+  --ring: rgb(241 243 245 / 60%);
+  --tint-info: rgb(92 127 166 / 24%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]).theme-slate,
+  :root:not([data-mode="light"]) .theme-slate {
+    --bg: #121416;
+    --surface: #1d2024;
+    --surface-2: #17191c;
+    --text: #f1f3f5;
+    --muted: #c0c6cd;
+    --link: #a3bedb;
+    --focus: #a3bedb;
+    --accent: #a3bedb;
+    --accent-contrast: #121416;
+    --border: rgb(241 243 245 / 12%);
+    --border-strong: rgb(241 243 245 / 28%);
+    --button: #f1f3f5;
+    --button-text: #14181d;
+    --ring: rgb(241 243 245 / 60%);
+    --tint-info: rgb(92 127 166 / 24%);
+  }
+}
+
+/* Ocean is blue: a pale blue page, and a blue button and links. */
+.theme-ocean {
+  --bg: #eef4fb;
+  --surface: #ffffff;
+  --surface-2: #f5f9fd;
+  --text: #0f1b2d;
+  --muted: #3c4c63;
+  --link: #1b55ae;
+  --focus: #1b55ae;
+  --accent: #1b55ae;
+  --accent-contrast: #ffffff;
+  --border: rgb(15 27 45 / 10%);
+  --border-strong: rgb(15 27 45 / 22%);
+  --button: #1a4c9c;
+  --button-text: #ffffff;
+  --ring: rgb(15 27 45 / 55%);
+  --tint-info: #e7f0fc;
+}
+
+:root[data-mode="dark"].theme-ocean,
+:root[data-mode="dark"] .theme-ocean {
+  --bg: #0b1626;
+  --surface: #14243a;
+  --surface-2: #0f1d30;
+  --text: #eef4fb;
+  --muted: #b9c6d8;
+  --link: #8dbaf6;
+  --focus: #8dbaf6;
+  --accent: #8dbaf6;
+  --accent-contrast: #0b1626;
+  --border: rgb(238 244 251 / 12%);
+  --border-strong: rgb(238 244 251 / 28%);
+  --button: #a6c8f8;
+  --button-text: #0b1626;
+  --ring: rgb(238 244 251 / 60%);
+  --tint-info: rgb(47 111 208 / 26%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]).theme-ocean,
+  :root:not([data-mode="light"]) .theme-ocean {
+    --bg: #0b1626;
+    --surface: #14243a;
+    --surface-2: #0f1d30;
+    --text: #eef4fb;
+    --muted: #b9c6d8;
+    --link: #8dbaf6;
+    --focus: #8dbaf6;
+    --accent: #8dbaf6;
+    --accent-contrast: #0b1626;
+    --border: rgb(238 244 251 / 12%);
+    --border-strong: rgb(238 244 251 / 28%);
+    --button: #a6c8f8;
+    --button-text: #0b1626;
+    --ring: rgb(238 244 251 / 60%);
+    --tint-info: rgb(47 111 208 / 26%);
+  }
+}
+
+/* Forest is green: a pale green page, and a green button and links. */
+.theme-forest {
+  --bg: #eff5ed;
+  --surface: #ffffff;
+  --surface-2: #f6faf5;
+  --text: #13201a;
+  --muted: #3f4f46;
+  --link: #22613a;
+  --focus: #22613a;
+  --accent: #22613a;
+  --accent-contrast: #ffffff;
+  --border: rgb(19 32 26 / 10%);
+  --border-strong: rgb(19 32 26 / 22%);
+  --button: #1f5a35;
+  --button-text: #ffffff;
+  --ring: rgb(19 32 26 / 55%);
+  --tint-info: #e8f3ea;
+}
+
+:root[data-mode="dark"].theme-forest,
+:root[data-mode="dark"] .theme-forest {
+  --bg: #0d1711;
+  --surface: #16251c;
+  --surface-2: #111e16;
+  --text: #eef5ee;
+  --muted: #bccabf;
+  --link: #86d1a1;
+  --focus: #86d1a1;
+  --accent: #86d1a1;
+  --accent-contrast: #0d1711;
+  --border: rgb(238 245 238 / 12%);
+  --border-strong: rgb(238 245 238 / 28%);
+  --button: #a3dcb6;
+  --button-text: #0d1711;
+  --ring: rgb(238 245 238 / 60%);
+  --tint-info: rgb(46 138 85 / 26%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]).theme-forest,
+  :root:not([data-mode="light"]) .theme-forest {
+    --bg: #0d1711;
+    --surface: #16251c;
+    --surface-2: #111e16;
+    --text: #eef5ee;
+    --muted: #bccabf;
+    --link: #86d1a1;
+    --focus: #86d1a1;
+    --accent: #86d1a1;
+    --accent-contrast: #0d1711;
+    --border: rgb(238 245 238 / 12%);
+    --border-strong: rgb(238 245 238 / 28%);
+    --button: #a3dcb6;
+    --button-text: #0d1711;
+    --ring: rgb(238 245 238 / 60%);
+    --tint-info: rgb(46 138 85 / 26%);
+  }
+}
+
 /* [hidden] must outrank every author rule below it, or setting .hidden
    from JavaScript has no visible effect.
 
@@ -1864,11 +2063,13 @@ button:disabled,
   }
 }
 
+/* Ink in both display modes: the ground is Signal's soft tint, which is
+   light in both, so the page's own text colour would vanish on it in
+   dark mode. */
 .voice[data-state="recording"] .voice-status {
   border-left-color: var(--signal);
   background: var(--signal-soft);
   color: var(--ink);
-  color: inherit;
 }
 
 .voice[data-state="transcribing"] .voice-status {
@@ -3546,4 +3747,89 @@ main.standalone .facts dd {
 .respond-meter::-moz-progress-bar {
   background: var(--accent);
   border-radius: 2px;
+}
+
+/* --- the Style tab ------------------------------------------------------ */
+
+/* The themes a creator chooses between: a choice for each, with a small
+   sample of the theme under its name. Two to a row where there is room. */
+.theme-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.theme-choice {
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.theme-choice > span:not(.theme-sample) {
+  flex: 1 1 0;
+}
+
+/* A small page in a theme's own tokens. The theme's class is on this
+   element, so every colour here is the theme's, in the display mode the
+   page around it is in. It is a picture: nothing in it is a control. */
+.theme-sample {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  display: block;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-s);
+  background: var(--bg);
+}
+
+.theme-sample-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.theme-sample-text,
+.theme-sample-muted,
+.theme-sample-link {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.theme-sample-text {
+  width: 70%;
+  background: var(--text);
+}
+
+.theme-sample-muted {
+  width: 50%;
+  background: var(--muted);
+}
+
+.theme-sample-link {
+  width: 30%;
+  background: var(--link);
+}
+
+.theme-sample-button {
+  display: block;
+  align-self: flex-end;
+  width: 4rem;
+  height: 1.25rem;
+  margin-top: var(--space-1);
+  border-radius: var(--radius-round);
+  background: var(--button);
+}
+
+/* The theme sheet draws a few controls with their focus ring showing,
+   since a picture cannot hold the keyboard's focus. The ring is the one
+   every control takes. */
+.focus-shown,
+.respond-nav button.focus-shown {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }

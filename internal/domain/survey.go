@@ -21,6 +21,10 @@ type Draft struct {
 	// Thanks is the creator's own thank you page, frozen into the
 	// published version with the questions. Empty means the default.
 	Thanks ThankYou `json:"thanks,omitzero"`
+	// Style is how the survey looks to the people answering it, frozen
+	// into the published version with the questions (ADR-0018). Empty
+	// means Earful's own look.
+	Style Style `json:"style,omitzero"`
 }
 
 // maxQuestionsPerSurvey bounds a single survey. A survey this long is a
@@ -146,7 +150,10 @@ func (d Draft) ValidateForPublish() error {
 			return QuestionError{Position: i + 1, Err: err}
 		}
 	}
-	return d.Thanks.Validate()
+	if err := d.Thanks.Validate(); err != nil {
+		return err
+	}
+	return d.Style.Validate()
 }
 
 // Status is the Survey Status a creator sees (SPEC.md story 14). It is

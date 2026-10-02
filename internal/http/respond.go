@@ -83,6 +83,7 @@ func (s *server) renderRespondPage(
 		FormToken:       s.formTokens.Issue(survey.ID.String()),
 		Nonce:           auth.NewToken(),
 		AlreadyAnswered: s.hasAnsweredCookie(r, survey.ID),
+		Style:           version.Style,
 	}
 	if len(pc) > 0 && pc[0] != nil {
 		data.ParticipantToken = pc[0].token
@@ -207,7 +208,7 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 			s.logAbuse(r, "bad_challenge")
 			render(w, r, http.StatusForbidden, templates.RespondUnavailable(survey.Title,
 				say(r, "respond.refused.check.title"),
-				say(r, "respond.refused.check.body")))
+				say(r, "respond.refused.check.body"), version.Style))
 			return
 		}
 		if !s.limitChallenged.Allow(limiterKey) {
@@ -215,11 +216,11 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 			// abuse_log row per rejected request would let a flood amplify
 			// into unbounded DB writes — exactly what the limiter exists to
 			// stop.
-			s.respondRateLimited(w, r, survey)
+			s.respondRateLimited(w, r, survey, version.Style)
 			return
 		}
 	} else if !s.limitUnchallenged.Allow(limiterKey) {
-		s.respondRateLimited(w, r, survey)
+		s.respondRateLimited(w, r, survey, version.Style)
 		return
 	}
 
@@ -252,7 +253,8 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 //
 // shown is the version as the respondent saw it, so the creator's thank
 // you message is the one that version was published with, in the
-// language it was read in.
+// language it was read in, and the page is drawn in that version's style
+// whatever has been published since.
 func thanksFor(survey store.PublicSurvey, shown store.ServedVersion, answers []templates.AnsweredQuestion) templates.ThanksData {
 	return templates.ThanksData{
 		Title:     survey.Title,
@@ -260,6 +262,7 @@ func thanksFor(survey store.PublicSurvey, shown store.ServedVersion, answers []t
 		Lang:      shown.Lang,
 		Answers:   answers,
 		Thanks:    shown.Thanks,
+		Style:     shown.Style,
 	}
 }
 
@@ -327,10 +330,10 @@ func (s *server) respondChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *server) respondRateLimited(w http.ResponseWriter, r *http.Request, survey store.PublicSurvey) {
+func (s *server) respondRateLimited(w http.ResponseWriter, r *http.Request, survey store.PublicSurvey, style domain.Style) {
 	render(w, r, http.StatusTooManyRequests, templates.RespondUnavailable(survey.Title,
 		say(r, "respond.refused.limited.title"),
-		say(r, "respond.refused.limited.body")))
+		say(r, "respond.refused.limited.body"), style))
 }
 
 // setAnsweredCookie marks this browser as having answered, so a revisit
@@ -395,6 +398,9 @@ func (s *server) previewPage(w http.ResponseWriter, r *http.Request) {
 		PreviewAll:        all,
 		PreviewLayoutLink: other,
 		CSRF:              info.CSRFToken,
+		// The draft's style, so a creator sees a theme before any
+		// respondent does.
+		Style: draft.Style,
 	}))
 }
 
@@ -429,7 +435,7 @@ func (s *server) previewSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	answers := answerSummary(r, draft.Questions, parseSubmission(r, draft.Questions))
-	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title, answers))
+	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title, answers, draft.Style))
 }
 
 // loadPublicSurvey resolves a share link to a survey and the version to
@@ -483,7 +489,7 @@ func (s *server) respondUnavailable(w http.ResponseWriter, r *http.Request, surv
 		render(w, r, http.StatusGone, templates.RespondUnavailable(
 			survey.Title,
 			say(r, "respond.refused.closed.title"),
-			say(r, "respond.refused.closed.body")))
+			say(r, "respond.refused.closed.body"), s.latestStyle(r, survey.ID)))
 	default:
 		// Never published: from outside, indistinguishable from a link
 		// that was never valid.
@@ -497,14 +503,29 @@ func (s *server) respondInviteOnly(w http.ResponseWriter, r *http.Request, surve
 	render(w, r, http.StatusForbidden, templates.RespondUnavailable(
 		survey.Title,
 		say(r, "respond.refused.invited.title"),
-		say(r, "respond.refused.invited.body")))
+		say(r, "respond.refused.invited.body"), s.latestStyle(r, survey.ID)))
+}
+
+// latestStyle is the style of the survey's latest version, for a page
+// that is about the survey and serves no version of it: closed, already
+// answered, by invitation only. A closed survey still looks like itself
+// to somebody following an old link. A failure to read it is logged and
+// the page is drawn in the default style, since the page matters more
+// than its colours.
+func (s *server) latestStyle(r *http.Request, surveyID uuid.UUID) domain.Style {
+	style, err := s.surveys.LatestStyle(r.Context(), surveyID)
+	if err != nil {
+		s.logger.Error("reading the survey's style failed", "error", err)
+		return domain.Style{}
+	}
+	return style
 }
 
 func (s *server) respondNotFound(w http.ResponseWriter, r *http.Request) {
 	render(w, r, http.StatusNotFound, templates.RespondUnavailable(
 		"",
 		say(r, "respond.refused.missing.title"),
-		say(r, "respond.refused.missing.body")))
+		say(r, "respond.refused.missing.body"), domain.Style{}))
 }
 
 // parseSubmission reads answers out of the form in the shape each

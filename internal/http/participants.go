@@ -169,7 +169,7 @@ func (s *server) participantRespondSubmit(w http.ResponseWriter, r *http.Request
 	_, err = s.surveys.SubmitAnswers(r.Context(), survey.ID, version, &participant.ID,
 		submission.Answers, durationFrom(r, s.clock.Now()), s.clock.Now())
 	if errors.Is(err, store.ErrAlreadySubmitted) {
-		render(w, r, http.StatusOK, templates.RespondAlreadySubmitted(survey.Title))
+		render(w, r, http.StatusOK, templates.RespondAlreadySubmitted(survey.Title, s.latestStyle(r, survey.ID)))
 		return
 	}
 	if err != nil {
@@ -201,10 +201,12 @@ func (s *server) loadParticipantSurvey(w http.ResponseWriter, r *http.Request) (
 	if participant.SubmittedAt != nil {
 		survey, err := s.surveys.PublicSurvey(r.Context(), participant.SurveyID)
 		title := ""
+		var style domain.Style
 		if err == nil {
 			title = survey.Title
+			style = s.latestStyle(r, survey.ID)
 		}
-		render(w, r, http.StatusOK, templates.RespondAlreadySubmitted(title))
+		render(w, r, http.StatusOK, templates.RespondAlreadySubmitted(title, style))
 		return fail()
 	}
 

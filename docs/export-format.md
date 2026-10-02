@@ -24,7 +24,7 @@ spreadsheets and contain nothing the JSON doesn't.
 
 ```jsonc
 {
-  "format_version": 6,
+  "format_version": 7,
   "exported_at": "2026-07-25T14:03:11Z",
   "workspace": { "id": "uuid", "name": "sam's workspace" },
   "surveys": [
@@ -58,6 +58,9 @@ spreadsheets and contain nothing the JSON doesn't.
             "message": "Thank you. See you soon.",
             "link_label": "Book a table",  // link_label and link_url come
             "link_url": "https://example.com/book"  // together, or not at all
+          },
+          "style": {                       // omitted when the look was Earful's own
+            "theme": "ocean"               // slate | ocean | forest
           }
         }
       ],
@@ -119,6 +122,16 @@ version, in the creator's wording. It belongs to the version, like its
 questions: a later version may change it, and a response was thanked
 with the one its own version carries. A version without it showed the
 default text. The message is plain text; line breaks are the writer's.
+
+### Style
+
+`style` is how the version's pages looked to the people answering it
+(ADR-0018). It belongs to the version, like its questions and its thank
+you page: a later version may change it, and a respondent saw the one
+their own version carries. `theme` names the theme the pages were drawn
+in: `slate`, `ocean` or `forest`. A version without `style` had Earful's
+own look. An importer that does not know a theme should fall back to
+that look rather than refuse the version.
 
 ### Answer values
 
@@ -203,6 +216,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
+| 7 | `style` on a version: the theme its pages were drawn in. Everything in version 6 is unchanged. |
 | 6 | `allow_other` on a question, and the `other` answer field beside the `__other__` choice. Everything in version 5 is unchanged. |
 | 5 | `thanks` on a version: the creator's own thank you message and link, as that version was published with them. Everything in version 4 is unchanged. |
 | 4 | The `number` question type: its answers use the existing `number` field and its limits the existing `scale_min` and `scale_max`. Everything in version 3 is unchanged. |

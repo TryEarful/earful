@@ -63,7 +63,8 @@ the ground of a chip. Status colours are never a chart series.
 
 ### Semantic tokens
 
-Components use only these, and dark mode reassigns only these:
+Components use only these, and dark mode and the themes reassign only
+these:
 `--bg`, `--surface`, `--surface-2`, `--text`, `--muted`, `--link`,
 `--focus`, `--accent`, `--accent-contrast`, `--border`, `--border-strong`,
 `--danger`, `--button`, `--button-text`, `--ring`, the `--tint-*` tokens
@@ -91,23 +92,97 @@ the `theme-color` tags follow a chosen mode too, and the owl, coloured
 by the `--owl-*` tokens, follows with them. The favicon is a file in
 fixed colours and does not.
 
+### Themes
+
+A survey's creator can have its pages drawn in a theme (ADR-0018):
+Earful, which is everything above and the default, or Slate, Ocean or
+Forest. A theme is for a respondent's pages only. The creator's own
+pages, Help and the documents are always Earful.
+
+| Theme | Light | Dark | Button and links |
+|---|---|---|---|
+| Earful | Paper page, white card | Ink page | Ink button, teal links |
+| Slate | Cool grey page, white card | Neutral near black | Charcoal button, grey blue links |
+| Ocean | Pale blue page, white card | Deep navy | Blue button and links |
+| Forest | Pale green page, white card | Deep green black | Green button and links |
+
+Slate is the neutral one: it has no colour of its own, so whatever a
+survey brings is the only colour on the page.
+
+A theme is a list of tokens and nothing else. It sets `--bg`,
+`--surface`, `--surface-2`, `--text`, `--muted`, `--link`, `--focus`,
+`--accent`, `--accent-contrast`, `--border`, `--border-strong`,
+`--button`, `--button-text`, `--ring` and `--tint-info`, in a light
+block and a dark one, and no component rule knows a theme exists. A
+respondent's display mode chooses between the two blocks, as it does for
+Earful: a theme never decides light or dark for the reader.
+
+A theme may not set anything else:
+
+- **Signal stays Signal.** Coral means a microphone is open in every
+  theme, and no theme has a colour near it.
+- **Status stays status.** `--good`, `--warning`, `--danger` and their
+  tints are the same in every theme, so an error looks like an error on
+  every survey. This is why a theme's grounds are tints close to white
+  and close to black and never a saturated colour: the status colours
+  have to read on them.
+- **Type, space, shape and motion** are the same in every theme.
+
+The class is `theme-slate`, `theme-ocean` or `theme-forest` on `<html>`,
+written by the server from the style the survey's version was published
+with; Earful has no class. The same class on any element draws what is
+inside it in the theme, which is how the Style tab shows a sample of
+each. A new theme is added here first, with its row in the table below.
+
 ### Contrast
 
-Measured, WCAG 2.1. The axe scan in the e2e suite and in the gallery
-checks every page in both modes, and the gallery also pictures a few
-pages with a mode chosen against the system's, dark on a light system
-and light on a dark one.
+Measured, WCAG 2.1, for every theme in both display modes. The table is
+written from the stylesheet by `web/static/contrast_test.go`, which
+fails the build when a pair falls below its ratio: 4.5:1 for text, 3:1
+for a mark that carries meaning. Signal on the light page is below 3:1
+in Earful, where the record button's shape and its label carry the
+meaning with it; no theme may be below Earful there. After changing a
+token, rewrite the table with
+`go test ./web/static -run Contrast -update-contrast`.
 
-| Pair | Light | Dark |
-|---|---|---|
-| Text on page | 15.99 | 15.99 |
-| Text on card | 17.84 | 13.86 |
-| Muted on page | 8.13 | 10.70 |
-| Link on page | 7.12 | 9.59 |
-| Good on its tint | 5.58 | 6.23 |
-| Danger on its tint | 5.22 | 5.15 |
-| Ink on Signal | 5.54 | 5.54 |
-| Chart 1 on card (graphics, 3:1) | 5.38 | 5.54 |
+The axe scan in the e2e suite and in the gallery checks every page in
+both modes, and the gallery also pictures a few pages with a mode chosen
+against the system's, dark on a light system and light on a dark one.
+
+<!-- contrast table: written by web/static/contrast_test.go -->
+| Pair | Earful light | Earful dark | Slate light | Slate dark | Ocean light | Ocean dark | Forest light | Forest dark |
+|---|---|---|---|---|---|---|---|---|
+| Text on page | 15.99 | 15.99 | 16.02 | 16.60 | 15.61 | 16.39 | 15.17 | 16.49 |
+| Text on card | 17.84 | 13.86 | 17.82 | 14.70 | 17.28 | 14.12 | 16.81 | 14.39 |
+| Text on a field's ground | 16.83 | 14.89 | 16.77 | 15.83 | 16.34 | 15.31 | 15.94 | 15.50 |
+| Muted on page | 8.13 | 10.70 | 7.14 | 10.73 | 7.88 | 10.49 | 7.84 | 10.75 |
+| Muted on card | 9.08 | 9.27 | 7.94 | 9.50 | 8.73 | 9.03 | 8.68 | 9.38 |
+| Muted on a field's ground | 8.56 | 9.96 | 7.47 | 10.23 | 8.25 | 9.79 | 8.23 | 10.10 |
+| Link on page | 7.12 | 9.59 | 7.84 | 9.62 | 6.41 | 9.06 | 6.68 | 10.15 |
+| Link on card | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.81 | 7.40 | 8.85 |
+| Link on a field's ground | 7.50 | 8.93 | 8.21 | 9.18 | 6.71 | 8.47 | 7.01 | 9.54 |
+| Text on a notice, on page | 16.15 | 12.29 | 15.70 | 12.44 | 15.04 | 12.39 | 14.76 | 12.10 |
+| Text on a chosen option | 15.99 | 12.01 | 15.96 | 12.81 | 15.54 | 12.31 | 15.13 | 12.44 |
+| Filled button's text on it | 15.99 | 15.99 | 13.03 | 16.02 | 8.21 | 10.58 | 8.16 | 11.74 |
+| Text on the accent | 7.95 | 9.59 | 8.72 | 9.62 | 7.10 | 9.06 | 7.40 | 10.15 |
+| Text on a delete button | 6.32 | 7.47 | 6.32 | 7.73 | 6.32 | 7.60 | 6.32 | 7.66 |
+| Danger on page | 5.67 | 7.47 | 5.68 | 7.73 | 5.71 | 7.60 | 5.71 | 7.66 |
+| Danger on card | 6.32 | 6.47 | 6.32 | 6.84 | 6.32 | 6.54 | 6.32 | 6.68 |
+| Good on its tint, on card | 5.58 | 6.26 | 5.58 | 6.59 | 5.58 | 6.33 | 5.58 | 6.40 |
+| Danger on its tint, on card | 5.22 | 5.18 | 5.22 | 5.34 | 5.22 | 5.28 | 5.22 | 5.33 |
+| Warning on its tint, on card | 4.82 | 6.12 | 4.82 | 6.34 | 4.82 | 6.25 | 4.82 | 6.24 |
+| Ink on Signal | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 |
+| Ink on Signal's soft tint | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 |
+| Focus ring on page (3:1) | 7.12 | 9.59 | 7.84 | 9.62 | 6.41 | 9.06 | 6.68 | 10.15 |
+| Focus ring on card (3:1) | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.81 | 7.40 | 8.85 |
+| Accent on card (3:1) | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.81 | 7.40 | 8.85 |
+| Filled button on page (3:1) | 15.99 | 15.99 | 12.67 | 16.60 | 7.42 | 10.58 | 7.37 | 11.74 |
+| Signal on card (3:1) | 3.22 | 4.80 | 3.22 | 5.07 | 3.22 | 4.85 | 3.22 | 4.95 |
+| Signal on page | 2.89 | 5.54 | 2.90 | 5.73 | 2.91 | 5.63 | 2.91 | 5.68 |
+<!-- end of the contrast table -->
+
+Chart 1 on the card holds 5.38 in light mode and 5.54 in dark. Charts
+are on the creator's pages, which have no theme.
 
 ## Type
 
@@ -163,6 +238,9 @@ times use tabular figures.
 | `.empty-state` | The owl, a line and what to do |
 | `.site-header`, `.site-footer`, `.respond-footer` | The chrome |
 | `.switchers`, `.switcher` | The footer's quiet choices: the language and the display mode |
+| `.theme-choices`, `.theme-choice` | The themes offered on the Style tab: a `.choice` for each, with its sample |
+| `.theme-sample` | A small page in a theme's own tokens: its ground, a card, a line of text, a link and its filled button, which is not a control |
+| `.focus-shown` | The focus ring, drawn on the theme sheet's samples where a picture cannot hold the keyboard's focus. Nowhere else |
 
 Every link and control is at least 44px tall. Focus is a 3px teal ring,
 two pixels out.
@@ -232,6 +310,14 @@ so that it is pictured too. Each criterion passes or fails, with a reason.
    control is at least 44px tall.
 8. **Accessible in both display modes.** Dark mode is as finished as
    light, axe reports nothing, and focus is visible.
+
+A respondent's page is also reviewed in each theme, against four more:
+
+9. **Signal alone is coral,** and it stands out from the theme's grounds.
+10. **Focus shows** on the page, on a card and on a field.
+11. **Status reads as status:** an error is red and a notice is not.
+12. **The filled button is the main action,** and nothing else on the
+    page looks like one.
 
 A page is done when it passes every criterion in two reviews in a row,
 the second made after the fixes from the first.

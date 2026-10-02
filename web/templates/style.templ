@@ -1,0 +1,255 @@
+package templates
+
+import (
+	"strconv"
+
+	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/internal/uitext"
+)
+
+// StyleData is the Style tab of one survey (ADR-0018).
+type StyleData struct {
+	Survey SurveyView
+	// Theme is the theme the draft is in, by name; the default where
+	// none was chosen.
+	Theme  string
+	Error  string
+	Notice string
+}
+
+// themeName is the message that names a theme.
+func themeName(theme string) uitext.ID {
+	switch theme {
+	case domain.ThemeSlate:
+		return "style.theme.slate.name"
+	case domain.ThemeOcean:
+		return "style.theme.ocean.name"
+	case domain.ThemeForest:
+		return "style.theme.forest.name"
+	}
+	return "style.theme.earful.name"
+}
+
+// themeHint is the message that says, in a line, what a theme is like.
+func themeHint(theme string) uitext.ID {
+	switch theme {
+	case domain.ThemeSlate:
+		return "style.theme.slate.hint"
+	case domain.ThemeOcean:
+		return "style.theme.ocean.hint"
+	case domain.ThemeForest:
+		return "style.theme.forest.hint"
+	}
+	return "style.theme.earful.hint"
+}
+
+// SurveyStyle is where a creator sets how a survey looks to the people
+// answering it. It is one form with one filled button: everything on it
+// is saved to the draft together, like any other draft change, and
+// reaches respondents with the next version published. The preview shows
+// it before then.
+templ SurveyStyle(email string, workspaceName string, csrf string, data StyleData) {
+	@Layout(t(ctx, "style.title", uitext.Args{"Survey": data.Survey.Title})) {
+		@AuthedHeader(email, csrf)
+		<main>
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }>
+				<a href="/surveys">{ t(ctx, "breadcrumb.surveys") }</a> /
+				<a href={ templ.SafeURL("/surveys/" + data.Survey.ID) }>{ data.Survey.Title }</a> /
+				{ t(ctx, "style.heading") }
+			</nav>
+			<div class="title-row">
+				<h1>{ t(ctx, "style.heading") }</h1>
+				<a class="button secondary js-style-preview" href={ templ.SafeURL("/surveys/" + data.Survey.ID + "/preview") }>{ t(ctx, "editor.preview.label") }</a>
+			</div>
+			@surveyTabs(data.Survey, "style")
+			<p class="muted">{ t(ctx, "style.intro") }</p>
+			if data.Error != "" {
+				<p class="notice error-text" role="alert">{ data.Error }</p>
+			}
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/style") } class="js-style-form">
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				<section class="card js-panel" aria-labelledby="style-theme-heading">
+					<h2 id="style-theme-heading">{ t(ctx, "style.theme.heading") }</h2>
+					<p class="muted" id="style-theme-hint">{ t(ctx, "style.theme.hint") }</p>
+					<div class="theme-choices" role="radiogroup" aria-labelledby="style-theme-heading" aria-describedby="style-theme-hint">
+						for _, theme := range domain.Themes() {
+							<label class="choice theme-choice js-theme-choice">
+								<input type="radio" name="theme" value={ theme } checked?={ theme == data.Theme } autocomplete="off"/>
+								<span>
+									<strong>{ t(ctx, themeName(theme)) }</strong>
+									<small>{ t(ctx, themeHint(theme)) }</small>
+								</span>
+								@themeSample(theme)
+							</label>
+						}
+					</div>
+				</section>
+				<button type="submit">{ t(ctx, "style.save.label") }</button>
+			</form>
+		</main>
+	}
+}
+
+// themeSample is a small page in a theme's own tokens: its ground, a
+// card on it, lines where text, muted text and a link would be, and the
+// shape of its filled button. It is a picture, hidden from a screen
+// reader, which is told the theme by its name and its line beside it.
+// It is drawn in the display mode the creator is reading in, since the
+// theme class sets both.
+templ themeSample(theme string) {
+	<span class={ "theme-sample", themeClass(domain.Style{Theme: theme}) } aria-hidden="true">
+		<span class="theme-sample-card">
+			<span class="theme-sample-text"></span>
+			<span class="theme-sample-muted"></span>
+			<span class="theme-sample-link"></span>
+			<span class="theme-sample-button"></span>
+		</span>
+	</span>
+}
+
+// ThemeSheetData is the theme sheet: Respond holds sample questions with
+// sample answers and one error, Answers a submission read back, Thanks a
+// creator's message and link, and Focus the words of the controls drawn
+// with their focus ring showing. The sample wording is the handler's,
+// as a survey's is its creator's.
+type ThemeSheetData struct {
+	Respond RespondData
+	Answers []AnsweredQuestion
+	Thanks  domain.ThankYou
+	Focus   ThemeSheetFocus
+}
+
+// ThemeSheetFocus words the controls the sheet draws as if focused.
+type ThemeSheetFocus struct {
+	Question string
+	Field    string
+	Option   string
+}
+
+// ThemeSheet puts every component a respondent's page can show on one
+// page, in one theme, so that the theme can be looked at, and scanned,
+// as a whole (docs/style-guide.md, "Themes"). It is served in
+// development only. The questions are drawn by the respondent's own
+// templates, and what a script would build on a live page, the progress
+// and the dictation card, is written here with the classes the script
+// gives it, since no script runs a microphone on a sheet.
+templ ThemeSheet(data ThemeSheetData) {
+	@RespondLayout(data.Respond.Title, "", data.Respond.Style) {
+		<main>
+			<nav class="tabs" aria-label={ t(ctx, "style.theme.heading") }>
+				for _, theme := range domain.Themes() {
+					<a
+						href={ templ.SafeURL("/dev/theme-sheet?theme=" + theme) }
+						if theme == data.Respond.Style.ThemeName() {
+							aria-current="page"
+						}
+					>{ t(ctx, themeName(theme)) }</a>
+				}
+			</nav>
+			<h1>{ data.Respond.Title }</h1>
+			@respondentDisclosure(data.Respond)
+			<p class="notice">{ t(ctx, "respond.before.note") }</p>
+			<div class="error-summary" role="alert" tabindex="-1" id="error-summary">
+				<h2>{ tn(ctx, "respond.errors.heading", len(data.Respond.ErrorList)) }</h2>
+				<ul>
+					for _, e := range data.Respond.ErrorList {
+						<li><a href={ templ.SafeURL("#q-" + e.IdentityID) }>{ t(ctx, "respond.errors.item", uitext.Args{"Position": e.Position, "Problem": e.Message}) }</a></li>
+					}
+				</ul>
+			</div>
+			<p class="respond-progress">{ t(ctx, "respond.question.position", uitext.Args{"Current": 2, "Total": len(data.Respond.Questions)}) }</p>
+			<progress class="respond-meter" max={ strconv.Itoa(len(data.Respond.Questions)) } value="2" aria-hidden="true"></progress>
+			<form class="respond-form" method="get" action="/dev/theme-sheet" novalidate>
+				<input type="hidden" name="theme" value={ data.Respond.Style.ThemeName() }/>
+				<ol class="respond-questions">
+					for i, q := range data.Respond.Questions {
+						@respondQuestion(q, i, len(data.Respond.Questions), data.Respond)
+					}
+				</ol>
+				@themeSheetVoice("idle")
+				@themeSheetVoice("recording")
+				<ol class="respond-questions">
+					<li class="respond-question">
+						<fieldset>
+							<legend><span class="q-text" id="sheet-focus-legend">{ data.Focus.Question }</span></legend>
+							<input type="text" class="focus-shown" value={ data.Focus.Field } aria-labelledby="sheet-focus-legend" autocomplete="off"/>
+							<div class="options">
+								<label class="option focus-shown">
+									<input type="radio" name="sheet_focus" value="1" autocomplete="off"/>
+									<span>{ data.Focus.Option }</span>
+								</label>
+							</div>
+						</fieldset>
+					</li>
+				</ol>
+				<div class="respond-nav">
+					<button type="button" class="secondary focus-shown">{ t(ctx, "js.respond.back") }</button>
+					<button type="submit" class="respond-submit focus-shown">
+						<span class="button-label">{ t(ctx, "respond.submit.label") }</span>
+					</button>
+				</div>
+			</form>
+			<div class="standalone">
+				@owl(OwlHappy, 96)
+				@thanksMessage(data.Thanks)
+				<p><a class="button secondary" href={ templ.URL(data.Thanks.LinkURL) } rel="noopener noreferrer">{ data.Thanks.LinkLabel }</a></p>
+				<p class="muted">{ t(ctx, "respond.thanks.anonymous") }</p>
+				@answerSummary(data.Answers)
+			</div>
+		</main>
+	}
+}
+
+// themeSheetVoice is the dictation card as voice.js builds it, waiting
+// and with the microphone open, where Signal is the colour of the
+// button, the status and the field the words land in.
+templ themeSheetVoice(state string) {
+	<textarea
+		rows="2"
+		aria-label={ t(ctx, "js.voice.title") }
+		autocomplete="off"
+		if state == "recording" {
+			class="is-live"
+			placeholder={ t(ctx, "js.voice.recording") }
+		}
+	></textarea>
+	<div class="voice" data-state={ state } role="group" aria-label={ t(ctx, "js.voice.title") }>
+		<div class="voice-head">
+			<span class="voice-mark">
+				@owl(OwlListening, 22)
+				<span class="voice-title">{ t(ctx, "js.voice.title") }</span>
+			</span>
+			<button type="button" class="voice-toggle">{ t(ctx, "js.voice.hide") }</button>
+		</div>
+		<div class="voice-body">
+			<div class="voice-status">
+				<span class="voice-status-text">
+					if state == "recording" {
+						{ t(ctx, "js.voice.recording") }
+					} else {
+						{ t(ctx, "js.voice.hint.longer") }
+					}
+				</span>
+			</div>
+			<div class="voice-actions">
+				<button type="button" class={ "voice-button", "secondary", templ.KV("is-recording", state == "recording") }>
+					<svg class="voice-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+						<path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"></path>
+						<path d="M6 11a6 6 0 0 0 12 0"></path>
+						<path d="M12 17v4"></path>
+						<path d="M9 21h6"></path>
+					</svg>
+					if state == "recording" {
+						{ t(ctx, "js.voice.stop") }
+					} else {
+						{ t(ctx, "js.voice.dictate") }
+					}
+				</button>
+				<button type="button" class="voice-reset secondary">{ t(ctx, "js.voice.reset") }</button>
+			</div>
+		</div>
+	</div>
+}

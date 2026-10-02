@@ -24,7 +24,7 @@ import (
 
 // FormatVersion is the contract. Bump it when the shape changes in a way
 // an importer would notice, and say what changed in docs/export-format.md.
-const FormatVersion = 6
+const FormatVersion = 7
 
 // Archive is the whole export, as it appears in workspace.json.
 type Archive struct {
@@ -83,6 +83,15 @@ type Version struct {
 	// published with it, absent where the default was shown. Format
 	// version 4.
 	Thanks *Thanks `json:"thanks,omitempty"`
+	// Style is how this version's pages looked to the people answering
+	// it, absent where it had Earful's own look. Format version 7.
+	Style *Style `json:"style,omitempty"`
+}
+
+// Style is a version's style (ADR-0018). Theme names the theme its
+// pages were drawn in.
+type Style struct {
+	Theme string `json:"theme,omitempty"`
 }
 
 // Thanks is what a respondent read after sending their answers, in the

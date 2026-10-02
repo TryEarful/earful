@@ -71,6 +71,9 @@ type RespondData struct {
 	// CSRF is the creator's session token, set on a preview only: the
 	// preview posts to a signed in route, which refuses a form without it.
 	CSRF string
+	// Style is how the page is drawn: the style the served version was
+	// published with, or the draft's on a preview (ADR-0018).
+	Style domain.Style
 }
 
 // VoiceEnabled reports whether this page offers spoken answers.
@@ -82,10 +85,18 @@ func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Previe
 // only what a respondent may need before answering: help, what
 // happens to their answers, and the display mode to read them in. `noindex`
 // keeps surveys out of search results and LLM scrapes (M4-T5).
-templ RespondLayout(title string, lang string) {
+//
+// style is the survey's own (ADR-0018): its theme is a class on <html>,
+// beside the display mode, so the stylesheet draws the whole page, the
+// ground behind it included, in the theme's tokens. A page that is not
+// about one survey passes the zero value and is drawn as Earful.
+templ RespondLayout(title string, lang string, style domain.Style) {
 	<!DOCTYPE html>
 	<html
 		lang={ htmlLang(ctx, lang) }
+		if themeClass(style) != "" {
+			class={ themeClass(style) }
+		}
 		if mode(ctx) != "" {
 			data-mode={ mode(ctx) }
 		}
@@ -95,7 +106,7 @@ templ RespondLayout(title string, lang string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<meta name="robots" content="noindex, nofollow, noarchive"/>
 			<title>{ title }</title>
-			@headAssets()
+			@headAssets(style.ThemeName())
 		</head>
 		<body class="respond">
 			{ children... }
@@ -164,7 +175,7 @@ func voiceLang(lang string) string {
 }
 
 templ Respond(data RespondData) {
-	@RespondLayout(data.Title, data.Lang) {
+	@RespondLayout(data.Title, data.Lang, data.Style) {
 		<main>
 			if data.Preview {
 				<div class="preview-banner" role="status">
@@ -382,8 +393,9 @@ templ respondentDisclosure(data RespondData) {
 }
 
 // RespondAlreadySubmitted is the one-per-participant page (M4-T3).
-templ RespondAlreadySubmitted(title string) {
-	@RespondLayout(t(ctx, "respond.already.title"), "") {
+// style is the style of the survey's latest version.
+templ RespondAlreadySubmitted(title string, style domain.Style) {
+	@RespondLayout(t(ctx, "respond.already.title"), "", style) {
 		<main>
 			<h1>{ t(ctx, "respond.already.heading") }</h1>
 			if title != "" {
@@ -699,6 +711,9 @@ type ThanksData struct {
 	// respondent answered was published with. When its message is empty
 	// the default text is shown.
 	Thanks domain.ThankYou
+	// Style is the style of the version the respondent answered, so the
+	// page that thanks them looks like the one they answered on.
+	Style domain.Style
 }
 
 // AnsweredQuestion is one line of a submission read back to the person
@@ -711,7 +726,7 @@ type AnsweredQuestion struct {
 
 // RespondThanks closes the loop for the respondent.
 templ RespondThanks(data ThanksData) {
-	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": data.Title}), data.Lang) {
+	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": data.Title}), data.Lang, data.Style) {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
@@ -769,9 +784,10 @@ templ answerSummary(answers []AnsweredQuestion) {
 
 // RespondPreviewSubmitted is what a creator sees if they submit the
 // preview form. Nothing is written; the page says so plainly, and reads
-// back what was entered the way a respondent would see it.
-templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQuestion) {
-	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "") {
+// back what was entered the way a respondent would see it, in the
+// draft's style.
+templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQuestion, style domain.Style) {
+	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "", style) {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.preview.submitted.heading") }</h1>
@@ -783,9 +799,12 @@ templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQ
 }
 
 // RespondUnavailable covers every reason a survey cannot be answered
-// right now, in the respondent's language rather than ours.
-templ RespondUnavailable(title string, heading string, message string) {
-	@RespondLayout(heading, "") {
+// right now, in the respondent's language rather than ours. style is the
+// survey's where the page is about a survey that has been published, and
+// the zero value where it is not: a link that leads nowhere has no
+// survey to look like.
+templ RespondUnavailable(title string, heading string, message string, style domain.Style) {
+	@RespondLayout(heading, "", style) {
 		<main class="standalone">
 			@owl(OwlSurprised, 96)
 			<h1>{ heading }</h1>

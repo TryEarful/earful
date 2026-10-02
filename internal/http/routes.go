@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 
+	"github.com/TryEarful/earful/internal/config"
 	"github.com/TryEarful/earful/web/static"
 )
 
@@ -27,6 +28,12 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// public, and served by the instance that actually holds the data
 	// they describe.
 	s.registerDocuments(mux)
+	// The theme sheet: every component of a respondent's page in one
+	// theme, for whoever is changing the stylesheet (docs/style-guide.md).
+	// Development only; anywhere else the address does not exist.
+	if s.cfg.Env == config.EnvDevelopment {
+		mux.HandleFunc("GET /dev/theme-sheet", s.themeSheet)
+	}
 
 	// Respondent path (M4). No session, no workspace: the share link is
 	// the credential.
@@ -130,6 +137,10 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/surveys/{surveyID}/preview", s.previewSubmit)
 	post("/surveys/{surveyID}/settings", s.surveySettings)
 	post("/surveys/{surveyID}/thanks", s.surveyThanks)
+	// The Style tab (ADR-0018): how the survey looks to the people
+	// answering it. Saved to the draft, frozen at publish.
+	get("/surveys/{surveyID}/style", s.surveyStylePage)
+	post("/surveys/{surveyID}/style", s.surveyStyleSave)
 	post("/surveys/{surveyID}/publish", s.surveyPublish)
 	post("/surveys/{surveyID}/close", s.surveyClose)
 	post("/surveys/{surveyID}/reopen", s.surveyReopen)

@@ -620,8 +620,8 @@ templ SurveyAudit(email string, workspaceName string, csrf string, data SurveyAu
 }
 
 // surveyTabs are the views of one survey: its questions, its results,
-// its stats and its languages. Results and stats exist once it is
-// published.
+// its stats, its languages and its style. Results and stats exist once
+// it is published.
 templ surveyTabs(survey SurveyView, current string) {
 	<nav class="tabs" aria-label={ t(ctx, "tabs.aria") }>
 		<a href={ templ.SafeURL("/surveys/" + survey.ID) } if current == "questions" {
@@ -638,5 +638,8 @@ templ surveyTabs(survey SurveyView, current string) {
 		<a href={ templ.SafeURL("/surveys/" + survey.ID + "/localizations") } if current == "languages" {
 	aria-current="page"
 }>{ t(ctx, "tabs.languages") }</a>
+		<a href={ templ.SafeURL("/surveys/" + survey.ID + "/style") } if current == "style" {
+	aria-current="page"
+}>{ t(ctx, "tabs.style") }</a>
 	</nav>
 }

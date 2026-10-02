@@ -14,7 +14,7 @@ templ Layout(title string) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title }</title>
-			@headAssets()
+			@headAssets("")
 		</head>
 		<body>
 			{ children... }
@@ -78,13 +78,15 @@ templ modeSwitcher() {
 // The browser's own chrome takes the ground of the display mode the page is
 // drawn in: the system's, or the one the reader chose over it. Each tag
 // carries both grounds for mode.js, which repaints it on a new choice.
-templ headAssets() {
+// theme is the theme of a respondent's page, whose grounds are its own,
+// and empty everywhere else.
+templ headAssets(theme string) {
 	<link rel="preload" href={ static.AssetURL("fonts/manrope-latin.woff2") } as="font" type="font/woff2" crossorigin/>
 	<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
 	<link rel="icon" type="image/svg+xml" href={ static.AssetURL("img/favicon.svg") }/>
 	<link rel="apple-touch-icon" href={ static.AssetURL("img/apple-touch-icon.png") }/>
-	<meta name="theme-color" class="js-mode-color" data-scheme="light" data-light={ lightGround } data-dark={ darkGround } content={ modeColor(ctx, "light") } media="(prefers-color-scheme: light)"/>
-	<meta name="theme-color" class="js-mode-color" data-scheme="dark" data-light={ lightGround } data-dark={ darkGround } content={ modeColor(ctx, "dark") } media="(prefers-color-scheme: dark)"/>
+	<meta name="theme-color" class="js-mode-color" data-scheme="light" data-light={ groundOf(theme).light } data-dark={ groundOf(theme).dark } content={ modeColor(ctx, "light", theme) } media="(prefers-color-scheme: light)"/>
+	<meta name="theme-color" class="js-mode-color" data-scheme="dark" data-light={ groundOf(theme).light } data-dark={ groundOf(theme).dark } content={ modeColor(ctx, "dark", theme) } media="(prefers-color-scheme: dark)"/>
 }
 
 // footerLinks are the pages anyone may need from anywhere: help, and

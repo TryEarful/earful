@@ -7,6 +7,7 @@ import (
 
 	"github.com/a-h/templ"
 
+	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/uitext"
 )
 
@@ -80,25 +81,56 @@ func mode(ctx context.Context) string {
 	return m
 }
 
-// The ground of the page in each display mode, for the browser's own
-// chrome.
-// They repeat --paper and --ink in web/static/css/app.css.
-const (
-	lightGround = "#F7F2E8"
-	darkGround  = "#101823"
-)
+// ground is the colour of the page in each display mode, for the
+// browser's own chrome.
+type ground struct{ light, dark string }
+
+// themeGrounds repeats --bg from web/static/css/app.css for every theme,
+// in both display modes; a test fails the build if the two disagree.
+// The default theme's are --paper and --ink.
+var themeGrounds = map[string]ground{
+	domain.ThemeEarful: {light: "#F7F2E8", dark: "#101823"},
+	domain.ThemeSlate:  {light: "#F1F3F5", dark: "#121416"},
+	domain.ThemeOcean:  {light: "#EEF4FB", dark: "#0B1626"},
+	domain.ThemeForest: {light: "#EFF5ED", dark: "#0D1711"},
+}
+
+// groundOf is the ground of a theme, or of the default where the theme
+// is not one the stylesheet has.
+func groundOf(theme string) ground {
+	if g, ok := themeGrounds[theme]; ok {
+		return g
+	}
+	return themeGrounds[domain.ThemeEarful]
+}
 
 // modeColor is the colour the browser's chrome takes where the system
-// asks for scheme: the ground of that scheme, or of the display mode the
-// reader chose over it.
-func modeColor(ctx context.Context, scheme string) string {
+// asks for scheme: the theme's ground in that scheme, or in the display
+// mode the reader chose over it.
+func modeColor(ctx context.Context, scheme string, theme string) string {
 	if m := mode(ctx); m != "" {
 		scheme = m
 	}
 	if scheme == "dark" {
-		return darkGround
+		return groundOf(theme).dark
 	}
-	return lightGround
+	return groundOf(theme).light
+}
+
+// themeClass is the class that draws a page in a survey's theme. The
+// default theme has none: it is what the stylesheet draws without one.
+// The name is one of the stylesheet's own, never the stored value
+// written through, so nothing a draft holds can put a class on a page.
+func themeClass(style domain.Style) string {
+	switch style.Theme {
+	case domain.ThemeSlate:
+		return "theme-slate"
+	case domain.ThemeOcean:
+		return "theme-ocean"
+	case domain.ThemeForest:
+		return "theme-forest"
+	}
+	return ""
 }
 
 // languages are the languages the page can be read in.

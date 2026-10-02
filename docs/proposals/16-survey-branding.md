@@ -51,14 +51,15 @@ display mode.
 
 - `docs/style-guide.md` gains "Themes": what a theme reassigns (the
   grounds, text, links, focus and ring, the accent, the filled button,
-  the borders), what it may not (Signal, the status colours and their
-  tints, type, space, shape), and the contrast table for every pair in
-  all eight combinations of theme and display mode.
+  the borders, the ground of a notice), what it may not (Signal, the
+  status colours and their tints, type, space, shape), and the contrast
+  table for every pair in all eight combinations of theme and display
+  mode.
 - `web/static/css/app.css`: `.theme-slate`, `.theme-ocean` and
   `.theme-forest` reassign the semantic tokens, each with a light block
   and a dark one written the way the dark mode is today (under the media
   query and under `data-mode="dark"`). No component rule changes.
-- A contrast test (`web/static/static_test.go`, beside the test that
+- A contrast test (`web/static/contrast_test.go`, beside the test that
   compares the two dark blocks) reads the tokens, works out the ratio of
   every listed pair in every combination, and fails below the pair's
   threshold: 4.5:1 for text, 3:1 for the focus ring, borders that carry
@@ -87,7 +88,7 @@ display mode.
   `POST /surveys/{id}/style` and one filled button. The theme section is
   four radio cards, each a small sample drawn in that theme's tokens.
   A link to the preview sits at the head of the page.
-- `RespondLayout` takes the style and puts `theme-N` on `<body>`.
+- `RespondLayout` takes the style and puts the theme's class on `<html>`.
   `RespondData` carries it from the served version, the preview from
   the draft, `RespondThanks` from the version the response was pinned
   to. The already answered page and the page of a closed survey that has

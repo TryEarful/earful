@@ -3281,3 +3281,73 @@ other = "Nombre guardado."
 [account.workspace.invalid]
 hash = "sha1-ee1ee5e5dae671e47a81773f9e3a6dc27c78a63f"
 other = "Dé al espacio de trabajo un nombre de hasta {{.Max}} caracteres."
+
+# ── El estilo de una encuesta ───────────────────────────────────────────
+
+[tabs.style]
+hash = "sha1-99a0efc6cfd85d8ff2732a6718140f822cb90472"
+other = "Estilo"
+
+[style.title]
+hash = "sha1-871b81c692fe43fe7457a9919f72e395fe290851"
+other = "Estilo · {{.Survey}} · Earful"
+
+[style.heading]
+hash = "sha1-99a0efc6cfd85d8ff2732a6718140f822cb90472"
+other = "Estilo"
+
+[style.intro]
+hash = "sha1-ccaa99da9efb722f23da69dba6b6e34887699555"
+other = "El aspecto de la encuesta para quienes la responden. Los cambios se publican con la próxima versión."
+
+[style.theme.heading]
+hash = "sha1-a797e30923ac1be590300ce6b08e63b4e6dc6688"
+other = "Tema"
+
+[style.theme.hint]
+hash = "sha1-51cc203dffbafd784b6f745ed49e103aa6a381c1"
+other = "Los colores de la página, de su botón y de sus enlaces. Cada persona la sigue leyendo en claro u oscuro, según lo que use."
+
+[style.theme.earful.name]
+hash = "sha1-77150a298b41152867949b23c5441f7b8b3da27c"
+other = "Earful"
+
+[style.theme.earful.hint]
+hash = "sha1-bd295c00bffe26b8dde8ebefe62436fe10609902"
+other = "Papel cálido y verde azulado. El aspecto habitual."
+
+[style.theme.slate.name]
+hash = "sha1-26d7b218c9b5641b37dfddc13b955184f3ce868f"
+other = "Pizarra"
+
+[style.theme.slate.hint]
+hash = "sha1-0b4fe78d3327d4cd027ae8dfecb7bb5caa9c4571"
+other = "Grises neutros, con un botón gris oscuro."
+
+[style.theme.ocean.name]
+hash = "sha1-76022a00a16b0482beec04274945ed192a931410"
+other = "Océano"
+
+[style.theme.ocean.hint]
+hash = "sha1-04144342d33861cfb8b793192c5e6b0b083fe3b3"
+other = "Azul pálido, con el botón y los enlaces en azul."
+
+[style.theme.forest.name]
+hash = "sha1-f41c4e4dab0b44d75dad0c04a0156d326c95b774"
+other = "Bosque"
+
+[style.theme.forest.hint]
+hash = "sha1-9606253634fcb53329011d871d88d32916cdcb48"
+other = "Verde pálido, con el botón y los enlaces en verde."
+
+[style.save.label]
+hash = "sha1-04008a37530bd00a74e7746d9710cbd0eb0332f2"
+other = "Guardar estilo"
+
+[style.notice.saved]
+hash = "sha1-99b065faaf8062e2f2a2a41eb6866dbd43dafa2a"
+other = "Estilo guardado. Las personas encuestadas lo verán cuando publique."
+
+[style.error.theme]
+hash = "sha1-de81d05c196f5111d5b0964889471d1f34a2af2c"
+other = "elija uno de los temas ofrecidos"

@@ -212,6 +212,7 @@ type SurveyVersion struct {
 	ThanksLinkLabel     *string       `json:"thanks_link_label"`
 	ThanksLinkUrl       *string       `json:"thanks_link_url"`
 	ThanksLocalizations []byte        `json:"thanks_localizations"`
+	Style               []byte        `json:"style"`
 }
 
 type User struct {

@@ -335,6 +335,7 @@ stale = "The thank you page changed after this was translated. Read it again."
 
 [tabs]
 languages = "Languages"
+style = "Style"
 questions = "Questions"
 aria = "Survey views"
 answers = "Results"
@@ -639,6 +640,43 @@ link_url_html = 'Link address <small class="muted">(starts with https://)</small
 
 [editor.thanks.save]
 label = "Save thank you page"
+
+
+# ── A survey's style ───────────────────────────────────────────────────
+
+[style]
+title = "Style · {{.Survey}} · Earful"
+heading = "Style"
+intro = "How the survey looks to the people answering it. Changes go live with the next version you publish."
+
+[style.theme]
+heading = "Theme"
+hint = "The colours of the page, its button and its links. Each person still reads it in light or dark, whichever they use."
+
+[style.theme.earful]
+name = "Earful"
+hint = "Warm paper and teal. The usual look."
+
+[style.theme.slate]
+name = "Slate"
+hint = "Neutral greys, with a charcoal button."
+
+[style.theme.ocean]
+name = "Ocean"
+hint = "Pale blue, with a blue button and links."
+
+[style.theme.forest]
+name = "Forest"
+hint = "Pale green, with a green button and links."
+
+[style.save]
+label = "Save style"
+
+[style.notice]
+saved = "Style saved. Respondents see it once you publish."
+
+[style.error]
+theme = "choose one of the themes offered"
 
 [editor.settings.delete]
 label = "Delete survey"

@@ -145,6 +145,9 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 					LinkURL:   version.Thanks.LinkURL,
 				}
 			}
+			if !version.Style.IsZero() {
+				exportedVersion.Style = &export.Style{Theme: version.Style.Theme}
+			}
 			for i, question := range questions {
 				min, max := question.Scale()
 				exportedQuestion := export.Question{

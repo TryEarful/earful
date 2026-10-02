@@ -94,7 +94,7 @@ async function visitor(browser: Browser, lang: string) {
   return { context, page: await context.newPage() };
 }
 
-test.setTimeout(15 * 60_000);
+test.setTimeout(30 * 60_000);
 
 test("gallery", async ({ browser }) => {
   // Pages anyone can reach, in both languages.
@@ -227,6 +227,9 @@ test("gallery", async ({ browser }) => {
     await expect(respondent.locator("h1")).toBeVisible({ timeout: submitTimeout });
     await expect(respondent.locator(".js-answer-summary")).toBeVisible();
     await capture(respondent, "respond-thanks-with-answers", lang);
+    // The same browser comes back: the page says it has answered before.
+    await respondent.goto(share);
+    await capture(respondent, "respond-again", lang);
     await context.close();
   }
 
@@ -423,6 +426,127 @@ test("gallery", async ({ browser }) => {
   await expect(page.locator(".js-thanks-translation")).toBeVisible();
   await capture(page, "languages-thanks", "en");
 
+  // A survey's style (ADR-0018). The Style tab as it starts, with a theme
+  // it refused and with one saved; then the survey's pages in each theme,
+  // in both languages. The questions page is pictured in every theme; the
+  // pages after it in Forest, beside Earful's above.
+  const styledShare = await createPublishedSurvey(page, "Spring open day");
+  const styledEditor = "/surveys/" + styledShare.split("/").pop();
+  await page.goto(styledEditor + "/style");
+  await capture(page, "style", "en");
+  // A theme the server does not know, as a tampered form would send it.
+  await page.locator(".js-style-form input[name=theme]").first().evaluate((radio: HTMLInputElement) => {
+    radio.value = "midnight";
+    radio.checked = true;
+  });
+  await page.getByRole("button", { name: "Save style" }).click();
+  await expect(page.getByText("Choose one of the themes offered")).toBeVisible();
+  await capture(page, "style-error", "en");
+  let styledVersion = 1;
+  for (const [theme, name] of [["slate", "Slate"], ["ocean", "Ocean"], ["forest", "Forest"]]) {
+    await page.goto(styledEditor + "/style");
+    await page.locator(".js-style-form").getByRole("radio", { name: new RegExp(name) }).check();
+    await page.getByRole("button", { name: "Save style" }).click();
+    await expect(page.getByText("Style saved")).toBeVisible();
+    if (theme === "ocean") await capture(page, "style-saved", "en");
+    await page.goto(styledEditor);
+    styledVersion++;
+    await page.getByRole("button", { name: `Publish version ${styledVersion}` }).click();
+    await expect(page.getByText(`Published version ${styledVersion}`)).toBeVisible();
+    for (const lang of ["en", "es"]) {
+      const { context, page: respondent } = await visitor(browser, lang);
+      await respondent.goto(styledShare);
+      await capture(respondent, `respond-first-${theme}`, lang);
+      if (theme === "forest") {
+        await captureForced(respondent, "respond-first-forest", lang);
+        await respondent.locator("textarea").fill("Shorter sessions and more time to try things ourselves.");
+        await respondent.getByRole("button", { name: lang === "es" ? "Siguiente" : "Next" }).click();
+        await respondent.getByLabel(/Monthly/).check();
+        await capture(respondent, "respond-last-forest", lang);
+        await minFillWait(respondent);
+        await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+        await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });
+        await capture(respondent, "respond-thanks-forest", lang);
+        await respondent.goto(styledShare);
+        await capture(respondent, "respond-again-forest", lang);
+      }
+      await context.close();
+    }
+  }
+  // Closed, a survey still looks like itself: Forest here, and Earful on
+  // the survey that asked for a date.
+  for (const [name, closing, closedShare] of [
+    ["respond-closed-forest", styledEditor, styledShare],
+    ["respond-closed", dateEditor, dateShare],
+  ]) {
+    await page.goto(closing);
+    await page.getByRole("button", { name: "Close survey" }).click();
+    for (const lang of ["en", "es"]) {
+      const { context, page: respondent } = await visitor(browser, lang);
+      await respondent.goto(closedShare);
+      await capture(respondent, name, lang);
+      await context.close();
+    }
+  }
+
+  // An invitation already answered, in Earful and then in Forest: the
+  // page takes the style of the survey's latest version.
+  if (!process.env.E2E_BASE_URL) {
+    await page.goto("/surveys/new");
+    await page.getByLabel("Title").fill("Team retrospective");
+    await page.locator('input[name="anonymity"][value="invited"]').check();
+    await page.getByRole("button", { name: "Create survey" }).click();
+    const addInvited = page.locator('form[action$="/questions"]');
+    await addInvited.locator('select[name="type"]').selectOption("short_text");
+    await addInvited.locator('input[name="text"]').fill("What went well?");
+    await addInvited.getByRole("button", { name: "Add question" }).click();
+    await page.getByRole("button", { name: "Publish version 1" }).click();
+    await expect(page.getByText("Published version 1")).toBeVisible();
+    const invitedEditor = new URL(page.url()).pathname.replace(/\/publish$/, "");
+    for (const name of ["respond-already", "respond-already-forest"]) {
+      if (name === "respond-already-forest") {
+        await page.goto(invitedEditor + "/style");
+        await page.locator(".js-style-form").getByRole("radio", { name: /Forest/ }).check();
+        await page.getByRole("button", { name: "Save style" }).click();
+        await page.goto(invitedEditor);
+        await page.getByRole("button", { name: "Publish version 2" }).click();
+        await expect(page.getByText("Published version 2")).toBeVisible();
+      }
+      const invitee = uniqueEmail("invitee");
+      await page.goto(invitedEditor);
+      await page.locator('textarea[name="emails"]').fill(invitee);
+      await page.getByRole("button", { name: "Add participants" }).click();
+      await page.getByRole("button", { name: "Send 1 invite" }).click();
+      const invite = await latestLinkTo(invitee, /https?:\/\/[^\s]+\/p\/[\w-]+/);
+      for (const reader of ["en", "es"]) {
+        const { context, page: respondent } = await visitor(browser, reader);
+        await respondent.goto(invite);
+        if (reader === "en") {
+          await respondent.getByLabel("What went well?").fill("We shipped on time.");
+          await minFillWait(respondent);
+          await respondent.getByRole("button", { name: "Submit answers" }).click();
+          await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });
+          await respondent.goto(invite);
+        }
+        await capture(respondent, name, reader);
+        await context.close();
+      }
+    }
+  }
+
+  // The theme sheet: every component of a respondent's page in each
+  // theme, which is where a theme's colours are all seen and scanned
+  // together. It is served in development only, so there is none to
+  // picture against another base URL.
+  if (!process.env.E2E_BASE_URL) {
+    for (const theme of ["earful", "slate", "ocean", "forest"]) {
+      await page.goto("/dev/theme-sheet?theme=" + theme);
+      await capture(page, `theme-sheet-${theme}`, "en");
+    }
+    await page.goto("/dev/theme-sheet?theme=ocean");
+    await captureForced(page, "theme-sheet-ocean", "en");
+  }
+
   // The creator in Spanish.
   const { context: spanish, page: es } = await visitor(browser, "es");
   await spanish.addCookies(await creatorContext.cookies());
@@ -447,6 +571,8 @@ test("gallery", async ({ browser }) => {
   await capture(es, "results", "es");
   await es.goto(editor + "/stats");
   await capture(es, "stats", "es");
+  await es.goto(styledEditor + "/style");
+  await capture(es, "style", "es");
   await es.goto("/account");
   await capture(es, "account", "es");
 

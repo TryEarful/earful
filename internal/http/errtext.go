@@ -47,6 +47,7 @@ var plainErrors = []struct {
 	{domain.ErrThanksLinkURL, "thanks.error.address"},
 	{domain.ErrThanksLinkLabel, "thanks.error.label"},
 	{domain.ErrThanksLinkAddress, "thanks.error.missing"},
+	{domain.ErrUnknownTheme, "style.error.theme"},
 }
 
 // limitError is the message for an error that carries a limit, by what

@@ -37,12 +37,14 @@ M0 → M2 → M3 → M4 → M6-T1/T2 → M1 + M9 (cloud) → M12 → M5 → M6-T
 | Issue #3 — AI quota per account | [x] done | 1/1 · post-MVP; migration 00018 |
 | Issue #20 — AI-assisted creation | [x] done | 1/1 · post-MVP |
 | Issue #9 — A thank you page of the creator's own | [x] done | 1/1 · post-MVP; migration 00022 |
+| Issue #16 — A survey's style | [~] in progress | 2/6 · post-MVP (ADR-0018); migration 00024; not tagged until S5 is in |
 | Interface text | [x] done | 6/6 · post-MVP, added 2026-09-29 (ADR-0014); English and Spanish |
 | Starter Survey | [x] done | 4/4 · post-MVP, added 2026-09-29 (ADR-0015); English and Spanish |
 | Visual identity | [x] done | 7/7 · post-MVP, added 2026-09-30 (ADR-0016); stories 87 and 88 |
 
 ### Status log
 
+- 2026-10-02 — **A survey can be drawn in a theme (story 101, ADR-0018).** A Style tab on each survey offers Earful's own look, Slate, Ocean and Forest. A theme reassigns the semantic tokens and nothing else, in a light block and a dark one, so no component rule changed; Signal and the status colours are the same in every theme. The choice is the draft's, shows in the preview, and is frozen into `survey_versions.style` at publish (migration 00024), so every page a respondent can land on is drawn in the theme of the version it is about. Light and dark became the "display mode" first, leaving "theme" for this. A test works out the contrast of every pair in all eight combinations and writes the style guide's table; a development only theme sheet shows every component in one theme for the gallery and its axe scan. Export format version 7. The header, footer, images and thanks picture of ADR-0018 are still to build.
 - 2026-09-30 — **Earful has a look of its own (stories 87 and 88, ADR-0016).** The stylesheet is rebuilt on the brand's tokens: a Paper ground, Ink type and buttons, white cards, Deep Teal links, ten Voice colours for surveys and charts, and Signal coral only where a microphone is open, with a dark mode derived from the same tokens and measured for contrast. The mark is a round owl drawn inline in four moods, which is also the favicon. Signed in pages share a header with Help; every page has a footer with Help and the privacy page, including a respondent's. Visible wording has no dashes, which tests enforce in both languages. Scripts and tests now find elements by `js-` classes, so the look can change without touching behaviour. `make gallery` pictures every page, and five reviewers went through them in rounds until nothing was left to change; the rounds found two defects beyond looks, a publish that left the browser on a POST address and a change of address form that magic link accounts could never complete, and both are fixed. Manrope is served from `web/static/fonts`. Three decisions followed the review: the trust page states the hosted service's backup policy only where it applies, respondents see a progress bar, and a creator can name their workspace, which is who respondents read as running the survey (story 89).
 - 2026-09-29 — **A workspace is created holding a published survey (story 86, ADR-0015).** The Starter Survey asks five questions about Earful, the first of which can be spoken, and is written in the transaction that creates the workspace, by both paths that create one. It is English with a Spanish Localization for everyone, and its wording is in `web/text` under `starter`. From then on it is its owner's survey: rewording it publishes version 2 once the Spanish has been read again, and deleting it leaves the empty dashboard. `surveys.origin` (migration 00017) tells it from a survey somebody made, and an index allows a workspace one live one. Writing it found that the purge had no step for `question_localizations`, `answer_translations` or `insight_runs`, all added after it: the first deleted survey to have any of them would have failed the whole run thirty days later, and every erasure request for such a creator. Each is now deleted before what it refers to, and a test reads the schema for the tables under a survey and the purge for a DELETE from each. Released as v0.4.0 on 2026-09-30 through the full tag path, together with everything since v0.3.2: the keyboard and button work, the interface in Spanish (ADR-0014), the documents, and the purge fix. The first tag failed its staging smoke on one accessibility finding, a scrolling table that could not take focus, which the CI run had reported the same minute; the tag was moved to the fix and the second run promoted. Earful's own workspace, made before this, is given its Starter Survey by `earful starter-survey add`.
 - 2026-09-29 — **Dictation listens for the language of the questions, not of the buttons.** The change of a few hours earlier had it follow the interface, on the reasoning that a respondent reading Spanish buttons speaks Spanish. A respondent answers in the language they are asked in, and the buttons are chosen by their browser. Where a survey language was chosen, that is what is listened for. Where the survey is read as written, the language is not known, since nothing records what language a creator wrote in, and the transcriber is told none and works it out; a wrong guess would not fail, it would write down something else. On-device recognition cannot work a language out, so those takes go to the server (docs/voice-support.md). Recording a survey's source language would let the device path back in; it needs a column and a setting, and was left for when it is wanted.
@@ -375,6 +377,22 @@ Post-MVP, from the GitHub issue "AI-assisted creation": create a survey from a p
 
 - [x] **S1 Thank you message and link.** Goal: a "Thank you page" section in the editor saves a message, a link label and a link address to the draft; publishing freezes them into the version (migration 00022: `survey_versions.thanks_message`, `thanks_link_label`, `thanks_link_url`, `thanks_localizations`); the thanks page shows them in place of the default body, on the honeypot and double-submit paths too, never with answers. AC: an empty message keeps today's text exactly; the address must be absolute http or https with a host and no credentials; the message is escaped with line breaks kept; the link has rel="noopener noreferrer"; editing the draft leaves the live page alone until publish, and a change to the thank you page alone can be published; the message and label are translated and reviewed with the questions; the workspace export carries `versions[].thanks` (format version 5). Deps: M3-T3, M11-T1, issue #7
 
+### Issue #16 — A survey's style
+
+Post-MVP. A creator gives a survey a theme, a header, a footer and a
+picture for the thanks page; the style is the draft's and is frozen with
+the version (story 101, ADR-0018). The steps and what each one tests are
+in [docs/proposals/16-survey-branding.md](docs/proposals/16-survey-branding.md).
+Nothing is tagged for production until S5 is in.
+
+- [x] **S0 Theme becomes display mode.** Goal: light and dark are the display mode in the code, the wording and the guide (`data-mode`, the `mode` cookie, `POST /mode`), so "theme" can mean the creator's choice. AC: no behaviour changes; a choice kept under the earlier cookie name is still drawn.
+- [x] **S1 Themes.** Goal: a Style tab with four themes; `Draft.Style` frozen into `survey_versions.style` (migration 00024); `theme-slate`, `theme-ocean` and `theme-forest` reassign the semantic tokens in both display modes; every respondent page of a published survey, and the preview, is drawn in the theme. AC: the theme is not on `/s/{id}` until published; a response is thanked in its own version's theme; an unknown theme is refused and the draft unchanged; another workspace's survey cannot be styled; every listed pair holds its contrast in every theme and mode; export format version 7. Deps: S0
+  _Note: a theme also sets `--tint-info`, the ground of a notice, which in Earful is a tint of the accent and would otherwise stay teal on a blue or green page. The three status tints are untouched. The theme sheet is at `/dev/theme-sheet` in development only._
+- [ ] **S2 Header and footer text.** Deps: S1
+- [ ] **S3 The logo and the banner.** Deps: S2
+- [ ] **S4 The thanks picture.** Deps: S3
+- [ ] **S5 Safeguards and terms.** Deps: S1
+
 ### Starter Survey (added 2026-09-29)
 
 Post-MVP. A workspace is created holding one published survey, which
@@ -436,7 +454,7 @@ surveys(id, workspace_id, title, is_anonymous bool IMMUTABLE, close_at nullable,
         origin 'creator'|'starter' /*never updated; one live starter per workspace*/)
 survey_drafts(id, survey_id uniq, structure jsonb, updated_by, updated_at)
 draft_revisions(id, draft_id, structure jsonb, saved_by, saved_at)  -- append-only
-survey_versions(id, survey_id, number, published_by, published_at)  -- immutable
+survey_versions(id, survey_id, number, published_by, published_at, thanks_*, style jsonb)  -- immutable
 questions(id, version_id, question_identity_id, type, text, options jsonb,
           required bool, position)                                   -- immutable
 question_identities(id, survey_id, created_at)

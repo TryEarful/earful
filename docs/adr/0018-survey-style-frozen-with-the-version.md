@@ -72,18 +72,21 @@ a reader's saved choice survives the rename.
 
 **Four themes, designed by Earful.** Earful is the default and is the
 page as it was. Slate is neutral and sits beside any logo; Ocean is
-blue; Forest is green. A theme is a `theme-N` class on the respondent
-page's `<body>` that reassigns the semantic tokens: the page and card
-grounds, text and muted text, links, focus and its ring, the accent, the
-filled button and the borders. Each theme has a light and a dark
+blue; Forest is green. A theme is a class on the respondent page's
+`<html>` (`theme-slate`, `theme-ocean`, `theme-forest`), beside the
+display mode, so that the ground behind the page is the theme's too. It
+reassigns the semantic tokens: the page and card grounds, text and muted
+text, links, focus and its ring, the accent, the filled button, the
+borders, and the ground of a notice, which is a tint of the accent and
+follows it. Each theme has a light and a dark
 variant, and the respondent's display mode chooses between them: a
 creator's choice never overrides it. Surfaces are tinted, never
 saturated. Every pair is measured in all eight combinations and listed
 in the style guide, and a test fails the build when a pair falls below
 its threshold. More themes can be added the same way.
 
-**What a theme may not change.** Signal and the status colours with
-their tints are the same on every theme, and are measured again on each
+**What a theme may not change.** Signal and the status colours (good,
+warning, danger) with their tints are the same on every theme, and are measured again on each
 theme's surfaces. No theme uses a hue near Signal, so the record button
 is the only coral on any page. The typeface, spacing, radii and shadows
 are not part of a theme.
