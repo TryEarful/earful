@@ -362,3 +362,49 @@ func guidePath(t *testing.T) string {
 		dir = parent
 	}
 }
+
+// A respondent's page is the only page drawn in a theme, and Forest's
+// own green is the hue of --good, so a success or a warning there could
+// not be told from the theme (docs/style-guide.md, "Themes"). The rules
+// that use those colours are found in the stylesheet, and none of their
+// classes may appear in the respondent's templates.
+func TestAThemedPageUsesNoGoodOrWarningColour(t *testing.T) {
+	css, err := os.ReadFile(filepath.Join("css", "app.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule := regexp.MustCompile(`(?s)\n([^\n{}@/][^{}]*?)\s*\{([^{}]*)\}`)
+	uses := regexp.MustCompile(`var\(--(good|warning|tint-good|tint-warning)\)`)
+	class := regexp.MustCompile(`\.([a-z][a-z0-9-]*)`)
+	classes := map[string]bool{}
+	for _, m := range rule.FindAllSubmatch(css, -1) {
+		if !uses.Match(m[2]) {
+			continue
+		}
+		found := class.FindAllSubmatch(m[1], -1)
+		if len(found) == 0 {
+			t.Errorf("the rule %q uses a good or warning colour with no class to keep off a themed page", strings.TrimSpace(string(m[1])))
+		}
+		for _, c := range found {
+			classes[string(c[1])] = true
+		}
+	}
+	if len(classes) == 0 {
+		t.Fatal("found no rule using a good or warning colour; the test no longer reads the stylesheet as it is written")
+	}
+	templates, err := filepath.Glob(filepath.Join("..", "templates", "respond*.templ"))
+	if err != nil || len(templates) == 0 {
+		t.Fatalf("no respondent templates found: %v", err)
+	}
+	for _, path := range templates {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for name := range classes {
+			if regexp.MustCompile(`[^a-z0-9-]` + regexp.QuoteMeta(name) + `[^a-z0-9-]`).Match(raw) {
+				t.Errorf("%s uses .%s, which is drawn in a good or warning colour; a themed page has neither", filepath.Base(path), name)
+			}
+		}
+	}
+}

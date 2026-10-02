@@ -10,11 +10,30 @@ import (
 // StyleData is the Style tab of one survey (ADR-0018).
 type StyleData struct {
 	Survey SurveyView
-	// Theme is the theme the draft is in, by name; the default where
-	// none was chosen.
-	Theme  string
-	Error  string
-	Notice string
+	// Style is the draft's style, or what the creator typed when a save
+	// was refused, so that nothing is typed twice.
+	Style domain.Style
+	// Error is the problem with a refused save, worded with where it is,
+	// for the head of the form. ErrorPart and ErrorLink say which field
+	// it belongs to, and FieldError words it for beside that field.
+	Error      string
+	ErrorPart  domain.StylePart
+	ErrorLink  int
+	FieldError string
+	Notice     string
+}
+
+// problemIn reports whether the refused save's problem is in part.
+func (d StyleData) problemIn(part domain.StylePart) bool {
+	return d.FieldError != "" && d.ErrorPart == part
+}
+
+// styleLinkRows is a header's or a footer's links as the form's rows:
+// every row the form offers, the saved links first.
+func styleLinkRows(links []domain.StyleLink) []domain.StyleLink {
+	rows := make([]domain.StyleLink, domain.MaxStyleLinks)
+	copy(rows, links)
+	return rows
 }
 
 // themeName is the message that names a theme.
@@ -77,7 +96,7 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 					<div class="theme-choices" role="radiogroup" aria-labelledby="style-theme-heading" aria-describedby="style-theme-hint">
 						for _, theme := range domain.Themes() {
 							<label class="choice theme-choice js-theme-choice">
-								<input type="radio" name="theme" value={ theme } checked?={ theme == data.Theme } autocomplete="off"/>
+								<input type="radio" name="theme" value={ theme } checked?={ theme == data.Style.ThemeName() } autocomplete="off"/>
 								<span>
 									<strong>{ t(ctx, themeName(theme)) }</strong>
 									<small>{ t(ctx, themeHint(theme)) }</small>
@@ -87,10 +106,147 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 						}
 					</div>
 				</section>
+				<section class="card js-panel js-style-header-panel" aria-labelledby="style-header-heading">
+					<h2 id="style-header-heading">{ t(ctx, "style.header.heading") }</h2>
+					<p class="muted">{ t(ctx, "style.header.hint") }</p>
+					<label class="field">
+						<span>
+							@thtml(ctx, "style.header.name_html")
+						</span>
+						<input
+							type="text"
+							name="header_name"
+							value={ data.Style.Header.Name }
+							maxlength="80"
+							autocomplete="off"
+							data-1p-ignore
+							data-lpignore="true"
+							data-bwignore
+							if data.problemIn(domain.StyleHeaderName) {
+								aria-invalid="true"
+								aria-describedby="style-error-field"
+							}
+						/>
+					</label>
+					if data.problemIn(domain.StyleHeaderName) {
+						@styleFieldError(data)
+					}
+					<label class="field">
+						<span>
+							@thtml(ctx, "style.header.tagline_html")
+						</span>
+						<textarea
+							name="header_tagline"
+							rows="3"
+							maxlength="280"
+							autocomplete="off"
+							data-1p-ignore
+							data-lpignore="true"
+							data-bwignore
+							if data.problemIn(domain.StyleHeaderText) {
+								aria-invalid="true"
+								aria-describedby="style-error-field"
+							}
+						>{ data.Style.Header.Tagline }</textarea>
+					</label>
+					if data.problemIn(domain.StyleHeaderText) {
+						@styleFieldError(data)
+					}
+					@styleLinkFields(data, "header", domain.StyleHeaderLinks, data.Style.Header.Links)
+				</section>
+				<section class="card js-panel js-style-footer-panel" aria-labelledby="style-footer-heading">
+					<h2 id="style-footer-heading">{ t(ctx, "style.footer.heading") }</h2>
+					<p class="muted">{ t(ctx, "style.footer.hint") }</p>
+					<label class="field">
+						<span>
+							@thtml(ctx, "style.footer.text_html")
+						</span>
+						<textarea
+							name="footer_text"
+							rows="3"
+							maxlength="280"
+							autocomplete="off"
+							data-1p-ignore
+							data-lpignore="true"
+							data-bwignore
+							if data.problemIn(domain.StyleFooterText) {
+								aria-invalid="true"
+								aria-describedby="style-error-field"
+							}
+						>{ data.Style.Footer.Text }</textarea>
+					</label>
+					if data.problemIn(domain.StyleFooterText) {
+						@styleFieldError(data)
+					}
+					@styleLinkFields(data, "footer", domain.StyleFooterLinks, data.Style.Footer.Links)
+				</section>
 				<button type="submit">{ t(ctx, "style.save.label") }</button>
 			</form>
 		</main>
 	}
+}
+
+// styleFieldError words the refused save's problem beside the field it
+// is in. The summary at the head of the form is the alert; this is what
+// the field is described by.
+templ styleFieldError(data StyleData) {
+	<p class="error-text js-style-field-error" id="style-error-field">{ data.FieldError }</p>
+}
+
+// styleLinkFields are the rows of links of a header or a footer: a label
+// and an address for each, every row optional. A row left empty is
+// dropped when the form is saved. Each field is named by its row, since
+// three fields called "Label" tell a screen reader nothing apart.
+templ styleLinkFields(data StyleData, where string, part domain.StylePart, links []domain.StyleLink) {
+	<fieldset class="field style-links-fields">
+		<legend>{ t(ctx, "style.links.legend") }</legend>
+		<p class="muted">{ t(ctx, "style.links.hint") }</p>
+		if data.problemIn(part) && data.ErrorLink == 0 {
+			@styleFieldError(data)
+		}
+		for i, link := range styleLinkRows(links) {
+			<div class="field-row">
+				<label class="field">
+					<span>{ t(ctx, "style.links.label", uitext.Args{"Position": i + 1}) }</span>
+					<input
+						type="text"
+						name={ where + "_link_label" }
+						value={ link.Label }
+						maxlength="60"
+						autocomplete="off"
+						data-1p-ignore
+						data-lpignore="true"
+						data-bwignore
+						if data.problemIn(part) && data.ErrorLink == i+1 {
+							aria-invalid="true"
+							aria-describedby="style-error-field"
+						}
+					/>
+				</label>
+				<label class="field">
+					<span>{ t(ctx, "style.links.address", uitext.Args{"Position": i + 1}) }</span>
+					<input
+						type="url"
+						name={ where + "_link_url" }
+						value={ link.URL }
+						maxlength="2000"
+						inputmode="url"
+						autocomplete="off"
+						data-1p-ignore
+						data-lpignore="true"
+						data-bwignore
+						if data.problemIn(part) && data.ErrorLink == i+1 {
+							aria-invalid="true"
+							aria-describedby="style-error-field"
+						}
+					/>
+				</label>
+			</div>
+			if data.problemIn(part) && data.ErrorLink == i+1 {
+				@styleFieldError(data)
+			}
+		}
+	</fieldset>
 }
 
 // themeSample is a small page in a theme's own tokens: its ground, a
@@ -137,7 +293,7 @@ type ThemeSheetFocus struct {
 // and the dictation card, is written here with the classes the script
 // gives it, since no script runs a microphone on a sheet.
 templ ThemeSheet(data ThemeSheetData) {
-	@RespondLayout(data.Respond.Title, "", data.Respond.Style) {
+	@RespondLayout(data.Respond.Title, "", data.Respond.Style, HeaderFull) {
 		<main>
 			<nav class="tabs" aria-label={ t(ctx, "style.theme.heading") }>
 				for _, theme := range domain.Themes() {
@@ -168,14 +324,25 @@ templ ThemeSheet(data ThemeSheetData) {
 					for i, q := range data.Respond.Questions {
 						@respondQuestion(q, i, len(data.Respond.Questions), data.Respond)
 					}
-				</ol>
-				@themeSheetVoice("idle")
-				@themeSheetVoice("recording")
-				<ol class="respond-questions">
+					<li class="respond-question">
+						<fieldset>
+							@themeSheetVoice("idle")
+						</fieldset>
+					</li>
+					<li class="respond-question">
+						<fieldset>
+							@themeSheetVoice("recording")
+						</fieldset>
+					</li>
 					<li class="respond-question">
 						<fieldset>
 							<legend><span class="q-text" id="sheet-focus-legend">{ data.Focus.Question }</span></legend>
 							<input type="text" class="focus-shown" value={ data.Focus.Field } aria-labelledby="sheet-focus-legend" autocomplete="off"/>
+						</fieldset>
+					</li>
+					<li class="respond-question">
+						<fieldset>
+							<legend><span class="q-text">{ data.Focus.Question }</span></legend>
 							<div class="options">
 								<label class="option focus-shown">
 									<input type="radio" name="sheet_focus" value="1" autocomplete="off"/>

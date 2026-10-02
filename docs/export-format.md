@@ -1,6 +1,6 @@
 # Workspace export format
 
-**Format version 6.**
+**Format version 7.**
 
 Treat this document as the stable description of the format, not as
 notes that drift. A workspace export is what makes "you can leave" true
@@ -60,7 +60,20 @@ spreadsheets and contain nothing the JSON doesn't.
             "link_url": "https://example.com/book"  // together, or not at all
           },
           "style": {                       // omitted when the look was Earful's own
-            "theme": "ocean"               // slate | ocean | forest
+            "theme": "ocean",              // slate | ocean | forest; omitted for Earful's
+            "header": {                    // omitted when there was none
+              "name": "Corner Workshop",
+              "tagline": "Evening classes in wood, clay and print.",
+              "links": [                   // a label and an address, together
+                {"label": "Our classes", "url": "https://example.com/classes"}
+              ]
+            },
+            "footer": {                    // omitted when there was none
+              "text": "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
+              "links": [
+                {"label": "Privacy notice", "url": "https://example.com/privacy"}
+              ]
+            }
           }
         }
       ],
@@ -129,9 +142,19 @@ default text. The message is plain text; line breaks are the writer's.
 (ADR-0018). It belongs to the version, like its questions and its thank
 you page: a later version may change it, and a respondent saw the one
 their own version carries. `theme` names the theme the pages were drawn
-in: `slate`, `ocean` or `forest`. A version without `style` had Earful's
-own look. An importer that does not know a theme should fall back to
-that look rather than refuse the version.
+in: `slate`, `ocean` or `forest`, and is absent for Earful's own. A
+version without `style` had Earful's own look and no header or footer.
+An importer that does not know a theme should fall back to that look
+rather than refuse the version.
+
+`header` is what stood above the survey: the `name` of whoever it was
+from, a `tagline`, and up to three `links`. `footer` is what stood below
+it, above Earful's own footer: a `text` and up to three `links`. Every
+part is plain text in the creator's wording, absent when it was not
+set; line breaks in `tagline` and `text` are the writer's. A link is
+always a `label` and an absolute `http` or `https` `url`. Translations
+of these words, like those of the questions and the thank you page, are
+not part of the archive.
 
 ### Answer values
 
@@ -216,7 +239,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
-| 7 | `style` on a version: the theme its pages were drawn in. Everything in version 6 is unchanged. |
+| 7 | `style` on a version: the theme its pages were drawn in, and the header and footer that stood above and below the survey. Everything in version 6 is unchanged. |
 | 6 | `allow_other` on a question, and the `other` answer field beside the `__other__` choice. Everything in version 5 is unchanged. |
 | 5 | `thanks` on a version: the creator's own thank you message and link, as that version was published with them. Everything in version 4 is unchanged. |
 | 4 | The `number` question type: its answers use the existing `number` field and its limits the existing `scale_min` and `scale_max`. Everything in version 3 is unchanged. |

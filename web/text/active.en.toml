@@ -330,6 +330,14 @@ message = "Message in {{.Language}}"
 link_label = "Link label in {{.Language}}"
 stale = "The thank you page changed after this was translated. Read it again."
 
+[languages.style]
+heading = "Header and footer"
+tagline = "Tagline in {{.Language}}"
+footer_text = "Footer text in {{.Language}}"
+header_link = "Header link {{.Position}} in {{.Language}}"
+footer_link = "Footer link {{.Position}} in {{.Language}}"
+stale = "The header or footer changed after this was translated. Read it again."
+
 
 # ── The two views of a survey's answers ─────────────────────────────────
 
@@ -655,19 +663,19 @@ hint = "The colours of the page, its button and its links. Each person still rea
 
 [style.theme.earful]
 name = "Earful"
-hint = "Warm paper and teal. The usual look."
+hint = "Earful's own warm look, with teal links."
 
 [style.theme.slate]
 name = "Slate"
-hint = "Neutral greys, with a charcoal button."
+hint = "Neutral greys, with no colour of its own."
 
 [style.theme.ocean]
 name = "Ocean"
-hint = "Pale blue, with a blue button and links."
+hint = "A blue page, with a blue button and links."
 
 [style.theme.forest]
 name = "Forest"
-hint = "Pale green, with a green button and links."
+hint = "A green page, with a green button and links."
 
 [style.save]
 label = "Save style"
@@ -675,8 +683,39 @@ label = "Save style"
 [style.notice]
 saved = "Style saved. Respondents see it once you publish."
 
+[style.header]
+heading = "Header"
+hint = "Shown above the survey, so people know who is asking. Leave it all empty for no header."
+name_html = 'Name <small class="muted">(optional, like your organisation)</small>'
+tagline_html = 'Tagline <small class="muted">(optional, a line or two)</small>'
+
+[style.footer]
+heading = "Footer"
+hint = "Shown below the survey. Good for a legal name, an address or a privacy notice."
+text_html = 'Text <small class="muted">(optional)</small>'
+
+[style.links]
+legend = "Links"
+hint = "Up to three. Each needs a label and an address that starts with https://. They open in a new tab."
+label = "Label {{.Position}}"
+address = "Address {{.Position}}"
+
 [style.error]
 theme = "choose one of the themes offered"
+name_long = "keep the name under {{.Limit}} characters"
+tagline_long = "keep the tagline under {{.Limit}} characters"
+footer_long = "keep the footer text under {{.Limit}} characters"
+links = "add at most {{.Limit}} links"
+
+[style.error.place]
+# Where on the Style tab a problem is, around the problem itself.
+name = "Name: {{.Problem}}"
+tagline = "Tagline: {{.Problem}}"
+header_link = "Header link {{.Position}}: {{.Problem}}"
+header_links = "Header links: {{.Problem}}"
+footer_text = "Footer text: {{.Problem}}"
+footer_link = "Footer link {{.Position}}: {{.Problem}}"
+footer_links = "Footer links: {{.Problem}}"
 
 [editor.settings.delete]
 label = "Delete survey"
@@ -1615,6 +1654,15 @@ anonymous = "This survey was anonymous. Nothing you sent identifies you."
 [respond.summary]
 heading = "Your answers"
 skipped = "No answer"
+
+[respond.footer]
+powered = "Powered by Earful"
+# Under a page of Earful's own, such as Help, the footer names it and no more.
+name = "Earful"
+
+[respond.link]
+# Read by a screen reader after the label of a link in a survey's header or footer.
+new_tab = "(opens in a new tab)"
 
 
 # ── Scripts: the keys they name ────────────────────────────────────────

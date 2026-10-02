@@ -484,6 +484,30 @@ other = "Texto del enlace en {{.Language}}"
 hash = "sha1-99e920f883bab7d8740adb6becd65665537a6ff5"
 other = "La página de agradecimiento cambió después de traducirse. Léala de nuevo."
 
+[languages.style.heading]
+hash = "sha1-8ee35be5145de5de85b1275cfb1c5d5877bb0bc7"
+other = "Encabezado y pie de página"
+
+[languages.style.tagline]
+hash = "sha1-6fd1f605ac55ad5c0247e380ba7a3928d6a6128c"
+other = "Lema en {{.Language}}"
+
+[languages.style.footer_text]
+hash = "sha1-8ac84595ec7e7065eaff9c4c60ecebbaed1f0ac5"
+other = "Texto del pie en {{.Language}}"
+
+[languages.style.header_link]
+hash = "sha1-fb4f465b4d29baec6b34788cadbbed3667609851"
+other = "Enlace {{.Position}} del encabezado en {{.Language}}"
+
+[languages.style.footer_link]
+hash = "sha1-231c8b215ff732c42ad86d8e1699ffc1eabf8bea"
+other = "Enlace {{.Position}} del pie en {{.Language}}"
+
+[languages.style.stale]
+hash = "sha1-d3a2213ba74f7ccebb2228640be023ccf111fbed"
+other = "El encabezado o el pie cambiaron después de traducirse. Léalos de nuevo."
+
 
 # ── Las dos vistas de las respuestas de una encuesta ────────────────────
 
@@ -2903,6 +2927,18 @@ other = "Sus respuestas"
 hash = "sha1-a9c16dd084ce3781568419133b0fa0c0f57aa727"
 other = "Sin respuesta"
 
+[respond.footer.powered]
+hash = "sha1-0a413c5e9b404391624b12504392b09a906b3a1e"
+other = "Hecho con Earful"
+
+[respond.footer.name]
+hash = "sha1-77150a298b41152867949b23c5441f7b8b3da27c"
+other = "Earful"
+
+[respond.link.new_tab]
+hash = "sha1-bf5b990386c7fde2c87ca07ec55f4e535b200d17"
+other = "(se abre en una pestaña nueva)"
+
 
 # ── Scripts: las teclas que nombran ────────────────────────────────────
 
@@ -3313,32 +3349,32 @@ hash = "sha1-77150a298b41152867949b23c5441f7b8b3da27c"
 other = "Earful"
 
 [style.theme.earful.hint]
-hash = "sha1-bd295c00bffe26b8dde8ebefe62436fe10609902"
-other = "Papel cálido y verde azulado. El aspecto habitual."
+hash = "sha1-3622d235ba3b504525ea1280980a9daf12517956"
+other = "El aspecto cálido de Earful, con enlaces verde azulado."
 
 [style.theme.slate.name]
 hash = "sha1-26d7b218c9b5641b37dfddc13b955184f3ce868f"
 other = "Pizarra"
 
 [style.theme.slate.hint]
-hash = "sha1-0b4fe78d3327d4cd027ae8dfecb7bb5caa9c4571"
-other = "Grises neutros, con un botón gris oscuro."
+hash = "sha1-5700581e349c092833ef6b71b46689216e209514"
+other = "Grises neutros, sin color propio."
 
 [style.theme.ocean.name]
 hash = "sha1-76022a00a16b0482beec04274945ed192a931410"
 other = "Océano"
 
 [style.theme.ocean.hint]
-hash = "sha1-04144342d33861cfb8b793192c5e6b0b083fe3b3"
-other = "Azul pálido, con el botón y los enlaces en azul."
+hash = "sha1-fb1fa4a93afb39b71e6e6fae36b10dc45a1a7d2c"
+other = "Una página azul, con el botón y los enlaces en azul."
 
 [style.theme.forest.name]
 hash = "sha1-f41c4e4dab0b44d75dad0c04a0156d326c95b774"
 other = "Bosque"
 
 [style.theme.forest.hint]
-hash = "sha1-9606253634fcb53329011d871d88d32916cdcb48"
-other = "Verde pálido, con el botón y los enlaces en verde."
+hash = "sha1-6687707fc8ff4bc541ff7c255af460ebd5ba5451"
+other = "Una página verde, con el botón y los enlaces en verde."
 
 [style.save.label]
 hash = "sha1-04008a37530bd00a74e7746d9710cbd0eb0332f2"
@@ -3351,3 +3387,91 @@ other = "Estilo guardado. Las personas encuestadas lo verán cuando publique."
 [style.error.theme]
 hash = "sha1-de81d05c196f5111d5b0964889471d1f34a2af2c"
 other = "elija uno de los temas ofrecidos"
+
+[style.header.heading]
+hash = "sha1-31341c6f0c7af677ffb8fadcb92038e8ac2b6193"
+other = "Encabezado"
+
+[style.header.hint]
+hash = "sha1-51922d340fe3ee9419f0bb001bb711e56e1f2a6c"
+other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Déjelo todo vacío para no mostrar ninguno."
+
+[style.header.name_html]
+hash = "sha1-fbba7896d8d915160e276ac96374c9a3626265f3"
+other = 'Nombre <small class="muted">(opcional, como su organización)</small>'
+
+[style.header.tagline_html]
+hash = "sha1-f6cb0b75cb28980c512ef1f8d9cbd431d22c9f30"
+other = 'Lema <small class="muted">(opcional, una o dos líneas)</small>'
+
+[style.footer.heading]
+hash = "sha1-26c01e70a337f208f56dae1c3bc18f60c4bff453"
+other = "Pie de página"
+
+[style.footer.hint]
+hash = "sha1-8e4c7cc039a10f2c762ca5902a7809f6eff962d2"
+other = "Se muestra debajo de la encuesta. Sirve para una razón social, una dirección o un aviso de privacidad."
+
+[style.footer.text_html]
+hash = "sha1-303bcdddfa4824221929c16fcee03d849f069ba1"
+other = 'Texto <small class="muted">(opcional)</small>'
+
+[style.links.legend]
+hash = "sha1-014bcd654c60d5250fad2123b073b9c0ac3340f6"
+other = "Enlaces"
+
+[style.links.hint]
+hash = "sha1-e7a0af9fab099c80f87b4cd1433b4dd9276846e3"
+other = "Hasta tres. Cada uno necesita un texto y una dirección que empiece por https://. Se abren en una pestaña nueva."
+
+[style.links.label]
+hash = "sha1-628f2bd96b4e8f61fd46cac33262e414028fe126"
+other = "Texto {{.Position}}"
+
+[style.links.address]
+hash = "sha1-a48380ea6a095a6941479169b9a905ddb5c833a9"
+other = "Dirección {{.Position}}"
+
+[style.error.name_long]
+hash = "sha1-88326673cc18f4e266e63bc905f3e05840f0eff7"
+other = "que el nombre no pase de {{.Limit}} caracteres"
+
+[style.error.tagline_long]
+hash = "sha1-98f18fa89b8d066661b8bfcbb73eb95ac12c0a6c"
+other = "que el lema no pase de {{.Limit}} caracteres"
+
+[style.error.footer_long]
+hash = "sha1-93773362f1f25d425618e2b6241b3f287c3dbf95"
+other = "que el texto del pie no pase de {{.Limit}} caracteres"
+
+[style.error.links]
+hash = "sha1-bbf81d7a837266771033b0c19768b31240d4d059"
+other = "añada como máximo {{.Limit}} enlaces"
+
+[style.error.place.name]
+hash = "sha1-adf3ee80fb497363963c750a97d8989bcf9516cb"
+other = "Nombre: {{.Problem}}"
+
+[style.error.place.tagline]
+hash = "sha1-82bc55f0b14de7422d41d0217939d67ff5ccc374"
+other = "Lema: {{.Problem}}"
+
+[style.error.place.header_link]
+hash = "sha1-cf6d9f4a182d7eb079e7fe0e422997e924797907"
+other = "Enlace {{.Position}} del encabezado: {{.Problem}}"
+
+[style.error.place.header_links]
+hash = "sha1-e078e33b71b49892fba4da38a5519e9bfb7b289e"
+other = "Enlaces del encabezado: {{.Problem}}"
+
+[style.error.place.footer_text]
+hash = "sha1-648b83ec846955601f7d7328c5dbfe74504d5967"
+other = "Texto del pie: {{.Problem}}"
+
+[style.error.place.footer_link]
+hash = "sha1-c1cf2dab10ff7a67894d5337623cc95c723624f8"
+other = "Enlace {{.Position}} del pie: {{.Problem}}"
+
+[style.error.place.footer_links]
+hash = "sha1-97b7ce86cf4fccf8acf725b7eac17b60f8ba63f7"
+other = "Enlaces del pie: {{.Problem}}"

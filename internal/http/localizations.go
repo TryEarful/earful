@@ -3,6 +3,8 @@ package http
 import (
 	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -96,6 +98,9 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	if draft.ThanksPending(lang) {
 		pending = append(pending, thanksToTranslate(draft)...)
 	}
+	if draft.StylePending(lang) {
+		pending = append(pending, styleToTranslate(draft)...)
+	}
 	if len(pending) == 0 {
 		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": languageName(text(r), lang)}))
 		return
@@ -116,7 +121,11 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 
 	var thanksMessage, thanksLabel string
 	draftedThanks := false
+	styleWords, draftedStyle := draftedStyleWords(draft, translated)
 	for identity, text := range translated {
+		if strings.HasPrefix(identity, styleKeyPrefix) {
+			continue
+		}
 		switch identity {
 		case thanksMessageKey:
 			thanksMessage, draftedThanks = text, true
@@ -136,6 +145,11 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 	if draftedThanks {
 		if err := draft.SetThanksTranslation(lang, thanksMessage, thanksLabel, false); err != nil {
 			s.logger.Error("storing a drafted thank you page failed", "error", err)
+		}
+	}
+	if draftedStyle {
+		if err := draft.SetStyleTranslation(lang, styleWords, false); err != nil {
+			s.logger.Error("storing a drafted style failed", "error", err)
 		}
 	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
@@ -165,6 +179,62 @@ func thanksToTranslate(draft domain.Draft) []domain.Question {
 		out = append(out, domain.Question{IdentityID: thanksLabelKey, Text: draft.Thanks.LinkLabel})
 	}
 	return out
+}
+
+// The words of the style (ADR-0018) are drafted alongside too, each
+// under a key that says which word it is: the tagline, the footer's
+// text, or a link's label by its position.
+const (
+	styleKeyPrefix     = "style:"
+	styleTaglineKey    = styleKeyPrefix + "tagline"
+	styleFooterTextKey = styleKeyPrefix + "footer_text"
+	styleHeaderLinkKey = styleKeyPrefix + "header_link:"
+	styleFooterLinkKey = styleKeyPrefix + "footer_link:"
+)
+
+// styleToTranslate is the style's wording, shaped as the questions
+// translateQuestions takes.
+func styleToTranslate(draft domain.Draft) []domain.Question {
+	words := draft.Style.Words()
+	var out []domain.Question
+	add := func(key, text string) {
+		if text != "" {
+			out = append(out, domain.Question{IdentityID: key, Text: text})
+		}
+	}
+	add(styleTaglineKey, words.Tagline)
+	for i, label := range words.HeaderLinks {
+		add(styleHeaderLinkKey+strconv.Itoa(i), label)
+	}
+	add(styleFooterTextKey, words.FooterText)
+	for i, label := range words.FooterLinks {
+		add(styleFooterLinkKey+strconv.Itoa(i), label)
+	}
+	return out
+}
+
+// draftedStyleWords gathers the style's words out of a batch of drafted
+// translations, and reports whether the batch held any.
+func draftedStyleWords(draft domain.Draft, translated map[string]string) (domain.StyleWords, bool) {
+	source := draft.Style.Words()
+	words := domain.StyleWords{
+		Tagline:     translated[styleTaglineKey],
+		FooterText:  translated[styleFooterTextKey],
+		HeaderLinks: make([]string, len(source.HeaderLinks)),
+		FooterLinks: make([]string, len(source.FooterLinks)),
+	}
+	for i := range words.HeaderLinks {
+		words.HeaderLinks[i] = translated[styleHeaderLinkKey+strconv.Itoa(i)]
+	}
+	for i := range words.FooterLinks {
+		words.FooterLinks[i] = translated[styleFooterLinkKey+strconv.Itoa(i)]
+	}
+	for key := range translated {
+		if strings.HasPrefix(key, styleKeyPrefix) {
+			return words, true
+		}
+	}
+	return domain.StyleWords{}, false
 }
 
 // translateQuestions runs one model call per question, re-checking the
@@ -239,6 +309,21 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 			saved++
 		}
 	}
+	if draft.HasStyleToTranslate() {
+		words := domain.StyleWords{
+			Tagline:     r.PostFormValue("style_tagline"),
+			FooterText:  r.PostFormValue("style_footer_text"),
+			HeaderLinks: r.PostForm["style_header_link"],
+			FooterLinks: r.PostForm["style_footer_link"],
+		}
+		if !blankWords(words) {
+			if err := draft.SetStyleTranslation(lang, words, true); err != nil {
+				s.renderLocalizations(w, r, sayErrorAlone(r, err), "")
+				return
+			}
+			saved++
+		}
+	}
 	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
 		s.internalError(w, r, "save draft", err)
 		return
@@ -249,6 +334,17 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 		notice += " " + sayN(r, "languages.notice.remaining", remaining)
 	}
 	s.renderLocalizations(w, r, "", notice)
+}
+
+// blankWords reports whether a form carried no translation of the
+// style's words at all, which leaves whatever was there as it was.
+func blankWords(words domain.StyleWords) bool {
+	for _, word := range slices.Concat([]string{words.Tagline, words.FooterText}, words.HeaderLinks, words.FooterLinks) {
+		if strings.TrimSpace(word) != "" {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *server) recordTranslationUsage(r *http.Request, workspaceID, surveyID uuid.UUID, chars int) {
@@ -276,6 +372,7 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 		localization := draft.Localizations[lang]
 		pending := draft.Pending(lang)
 		thanksPending := draft.ThanksPending(lang)
+		stylePending := draft.StylePending(lang)
 		view := templates.LanguageView{
 			Code:         lang,
 			Name:         languageName(l, lang),
@@ -283,7 +380,7 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 			Total:        len(draft.Questions),
 			Reviewed:     len(draft.Questions) - len(pending),
 			PendingCount: len(pending),
-			Ready:        len(pending) == 0 && !thanksPending && len(draft.Questions) > 0,
+			Ready:        len(pending) == 0 && !thanksPending && !stylePending && len(draft.Questions) > 0,
 		}
 		if thanksPending {
 			view.PendingCount++
@@ -305,6 +402,24 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 				thanks.Message, thanks.LinkLabel = translated.Message, translated.LinkLabel
 			}
 			view.Thanks = &thanks
+		}
+		if draft.HasStyleToTranslate() {
+			// So are the words of the style.
+			view.Total++
+			if stylePending {
+				view.PendingCount++
+			} else {
+				view.Reviewed++
+			}
+			style := templates.LocalizedStyleView{
+				Source:   draft.Style.Words(),
+				Reviewed: !stylePending,
+				Stale:    draft.StyleStale(lang),
+			}
+			if translated := localization.Style; translated != nil {
+				style.Words = translated.StyleWords
+			}
+			view.Style = &style
 		}
 		for _, question := range draft.Questions {
 			translated := localization.Questions[question.IdentityID]
@@ -366,6 +481,10 @@ func (s *server) applyLanguage(r *http.Request, version *store.ServedVersion) {
 	// written, as it does its questions when a language is missing.
 	if thanks, ok := version.LocalizedThanks[chosen]; ok {
 		version.Thanks = thanks
+	}
+	// The same goes for the words of its style.
+	if style, ok := version.LocalizedStyle[chosen]; ok {
+		version.Style = style
 	}
 }
 

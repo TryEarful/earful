@@ -128,9 +128,13 @@ a plate, or no picture.
 
 **Text is translated as the thank you message is.** The tagline, the
 footer text, the link labels and the alternative text of the logo and of
-an uploaded thanks picture are part of a Localization, and fall back to
-the source language where a translation is missing. The name and the
-link addresses are shared by every language.
+an uploaded thanks picture are part of a Localization. They are drafted
+and reviewed with the questions, and a survey that carries a language
+is not published until they have been read in it, since an unreviewed
+translation must not go out in a creator's name. The reviewed words are
+frozen inside the version's `style`, under `localizations`. A respondent
+reading a language the version has no translation into reads them as
+written. The name and the link addresses are shared by every language.
 
 **The style is part of the version.** The draft's JSON gains a `style`
 object beside `thanks`. Publishing copies it into a `style` jsonb column

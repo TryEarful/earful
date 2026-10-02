@@ -6,10 +6,12 @@ import * as path from "node:path";
 import {
   aiTimeout,
   createPublishedSurvey,
+  fakeMicrophone,
   latestLinkTo,
   minFillWait,
   offersAIDrafting,
   offersSurveyFromDescription,
+  offersVoice,
   signIn,
   submitTimeout,
   uniqueEmail,
@@ -92,6 +94,24 @@ async function captureForced(page: Page, name: string, lang: string) {
 async function visitor(browser: Browser, lang: string) {
   const context = await browser.newContext({ locale: lang === "es" ? "es-ES" : "en-US" });
   return { context, page: await context.newPage() };
+}
+
+// The header and footer of a survey's style, typed into the Style tab.
+// A link is a label and an address; rows left out are emptied.
+type StyleWords = { name?: string; tagline?: string; links?: string[][]; footer?: string; footerLinks?: string[][] };
+
+async function fillStyle(page: Page, words: StyleWords) {
+  const header = page.locator(".js-style-header-panel");
+  const footer = page.locator(".js-style-footer-panel");
+  await header.getByLabel(/^Name/).fill(words.name ?? "");
+  await header.getByLabel(/^Tagline/).fill(words.tagline ?? "");
+  await footer.getByLabel(/^Text/).fill(words.footer ?? "");
+  for (const [panel, links] of [[header, words.links ?? []], [footer, words.footerLinks ?? []]] as const) {
+    for (let row = 0; row < 3; row++) {
+      await panel.getByLabel(`Label ${row + 1}`, { exact: true }).fill(links[row]?.[0] ?? "");
+      await panel.getByLabel(`Address ${row + 1}`, { exact: true }).fill(links[row]?.[1] ?? "");
+    }
+  }
 }
 
 test.setTimeout(30 * 60_000);
@@ -446,6 +466,17 @@ test("gallery", async ({ browser }) => {
   for (const [theme, name] of [["slate", "Slate"], ["ocean", "Ocean"], ["forest", "Forest"]]) {
     await page.goto(styledEditor + "/style");
     await page.locator(".js-style-form").getByRole("radio", { name: new RegExp(name) }).check();
+    // The survey's own header and footer go in with the first theme and
+    // stay, so every themed page below is pictured with them.
+    if (theme === "slate") {
+      await fillStyle(page, {
+        name: "Corner Workshop",
+        tagline: "Evening classes in wood, clay and print.\nTell us how the open day went.",
+        links: [["Our classes", "https://example.com/classes"], ["Contact", "https://example.com/contact"]],
+        footer: "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
+        footerLinks: [["Privacy notice", "https://example.com/privacy"]],
+      });
+    }
     await page.getByRole("button", { name: "Save style" }).click();
     await expect(page.getByText("Style saved")).toBeVisible();
     if (theme === "ocean") await capture(page, "style-saved", "en");
@@ -472,7 +503,94 @@ test("gallery", async ({ browser }) => {
       }
       await context.close();
     }
+    // A themed page with the microphone open, where Signal has to stand
+    // apart from the theme's own colours. The microphone is the suite's
+    // fake one, playing the recording in testdata.
+    if (theme === "ocean") {
+      const context = await browser.newContext({ locale: "en-US", permissions: ["microphone"] });
+      await fakeMicrophone(context);
+      const respondent = await context.newPage();
+      await respondent.goto(styledShare);
+      if (await offersVoice(respondent)) {
+        await respondent.getByRole("button", { name: "Dictate" }).first().click();
+        await respondent.getByRole("button", { name: "Use the microphone" }).click();
+        await expect(respondent.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
+        await capture(respondent, "respond-recording-ocean", "en");
+      }
+      await context.close();
+    }
   }
+  // A header and a footer in Earful's own look, and where they are
+  // hardest to set: the longest name, tagline and links the Style tab
+  // takes, and then a name with nothing else. Before those, the tab with
+  // a link it refused, the problem beside its field.
+  const headedShare = await createPublishedSurvey(page, "Autumn fair feedback");
+  const headedEditor = "/surveys/" + headedShare.split("/").pop();
+  let headedVersion = 1;
+  const headed: [string, StyleWords][] = [
+    ["respond-header", {
+      name: "Riverton Autumn Fair",
+      tagline: "Three days of stalls, music and food by the river.",
+      links: [["Programme", "https://example.com/programme"], ["Getting here", "https://example.com/travel"]],
+      footer: "Riverton Fair Association",
+      footerLinks: [["Privacy notice", "https://example.com/privacy"], ["Contact us", "https://example.com/contact"]],
+    }],
+    ["respond-header-long", {
+      name: "The Riverton and District Association for Markets, Fairs and Open Air Events",
+      tagline:
+        "Every autumn we fill the meadow by the river with stalls, music, food and workshops for three days.\n" +
+        "We ask everyone who came what to keep, what to change and what to drop, and we read every answer before planning the next one.",
+      links: [
+        ["The full programme for all three days", "https://example.com/programme/autumn/full"],
+        ["How to get here by train, bus or bicycle", "https://example.com/travel"],
+        ["Become a stallholder or a volunteer", "https://example.com/join"],
+      ],
+      footer:
+        "The Riverton and District Association for Markets, Fairs and Open Air Events\n" +
+        "Registered charity. The Old Mill, 12 Mill Lane, Riverton\n" +
+        "Answers are read by the organising committee and kept for one year.",
+      footerLinks: [
+        ["How we look after your answers", "https://example.com/privacy"],
+        ["Write to the committee", "https://example.com/contact"],
+        ["Accessibility at the fair", "https://example.com/access"],
+      ],
+    }],
+    ["respond-header-name", { name: "Riverton Autumn Fair" }],
+  ];
+  await page.goto(headedEditor + "/style");
+  await fillStyle(page, { ...headed[0][1], links: [["Programme", ""]] });
+  await page.getByRole("button", { name: "Save style" }).click();
+  await expect(page.locator(".js-style-field-error")).toBeVisible();
+  await capture(page, "style-field-error", "en");
+  for (const [name, words] of headed) {
+    await page.goto(headedEditor + "/style");
+    await fillStyle(page, words);
+    if (name === "respond-header-long") await capture(page, "style-filled", "en");
+    await page.getByRole("button", { name: "Save style" }).click();
+    await expect(page.getByText("Style saved")).toBeVisible();
+    await page.goto(headedEditor);
+    headedVersion++;
+    await page.getByRole("button", { name: `Publish version ${headedVersion}` }).click();
+    await expect(page.getByText(`Published version ${headedVersion}`)).toBeVisible();
+    for (const lang of ["en", "es"]) {
+      const { context, page: respondent } = await visitor(browser, lang);
+      await respondent.goto(headedShare);
+      await capture(respondent, name, lang);
+      if (name === "respond-header-long") {
+        // Past the first question the header is the name alone.
+        await respondent.locator("textarea").fill("More places to sit down.");
+        await respondent.getByRole("button", { name: lang === "es" ? "Siguiente" : "Next" }).click();
+        await capture(respondent, "respond-header-long-later", lang);
+        await minFillWait(respondent);
+        await respondent.getByLabel(/Monthly/).check();
+        await respondent.getByRole("button", { name: lang === "es" ? "Enviar respuestas" : "Submit answers" }).click();
+        await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });
+        await capture(respondent, "respond-header-long-thanks", lang);
+      }
+      await context.close();
+    }
+  }
+
   // Closed, a survey still looks like itself: Forest here, and Earful on
   // the survey that asked for a date.
   for (const [name, closing, closedShare] of [

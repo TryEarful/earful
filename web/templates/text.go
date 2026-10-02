@@ -91,7 +91,7 @@ type ground struct{ light, dark string }
 var themeGrounds = map[string]ground{
 	domain.ThemeEarful: {light: "#F7F2E8", dark: "#101823"},
 	domain.ThemeSlate:  {light: "#F1F3F5", dark: "#121416"},
-	domain.ThemeOcean:  {light: "#EEF4FB", dark: "#0B1626"},
+	domain.ThemeOcean:  {light: "#EEF4FB", dark: "#081A36"},
 	domain.ThemeForest: {light: "#EFF5ED", dark: "#0D1711"},
 }
 

@@ -79,6 +79,21 @@ type RespondData struct {
 // VoiceEnabled reports whether this page offers spoken answers.
 func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Preview }
 
+// HeaderKind is how much of a survey's own header a respondent's page
+// shows (ADR-0018).
+type HeaderKind int
+
+const (
+	// HeaderNone is for a page that is not about one survey.
+	HeaderNone HeaderKind = iota
+	// HeaderFull is the whole header: the name, the tagline and the
+	// links. It heads the page the questions are on.
+	HeaderFull
+	// HeaderCompact is the name alone, on every other page of the
+	// survey, where the page's own message is what the reader came for.
+	HeaderCompact
+)
+
 // RespondLayout is a self-contained page shell for respondent pages. It
 // deliberately does not reuse the creator chrome: a respondent has no
 // account, no navigation, and nothing to sign out of. Its footer holds
@@ -88,9 +103,26 @@ func (d RespondData) VoiceEnabled() bool { return d.VoicePath != "" && !d.Previe
 //
 // style is the survey's own (ADR-0018): its theme is a class on <html>,
 // beside the display mode, so the stylesheet draws the whole page, the
-// ground behind it included, in the theme's tokens. A page that is not
-// about one survey passes the zero value and is drawn as Earful.
-templ RespondLayout(title string, lang string, style domain.Style) {
+// ground behind it included, in the theme's tokens; its header stands
+// above the page, as much of it as header asks for, and its footer above
+// Earful's. A page about no survey passes the zero value and is drawn
+// as Earful.
+templ RespondLayout(title string, lang string, style domain.Style, header HeaderKind) {
+	@respondShell(title, lang, style, header, true) {
+		{ children... }
+	}
+}
+
+// DocumentLayout is the same shell for a page of Earful's own, such as
+// Help: no survey's style, and a footer that names Earful and does not
+// say a survey is powered by it.
+templ DocumentLayout(title string, lang string) {
+	@respondShell(title, lang, domain.Style{}, HeaderNone, false) {
+		{ children... }
+	}
+}
+
+templ respondShell(title string, lang string, style domain.Style, header HeaderKind, survey bool) {
 	<!DOCTYPE html>
 	<html
 		lang={ htmlLang(ctx, lang) }
@@ -109,11 +141,17 @@ templ RespondLayout(title string, lang string, style domain.Style) {
 			@headAssets(style.ThemeName())
 		</head>
 		<body class="respond">
+			@styleHeader(style.Header, header)
 			{ children... }
 			<footer class="site-footer respond-footer">
-				<span class="made-with">
+				@styleFooter(style.Footer)
+				<span class="made-with js-made-with">
 					@owl(OwlNeutral, 20)
-					Earful
+					if survey {
+						{ t(ctx, "respond.footer.powered") }
+					} else {
+						{ t(ctx, "respond.footer.name") }
+					}
 				</span>
 				@footerLinks(linkLang(ctx, lang))
 				<div class="switchers">
@@ -122,6 +160,84 @@ templ RespondLayout(title string, lang string, style domain.Style) {
 			</footer>
 		</body>
 	</html>
+}
+
+// styleHeader is the survey's own header: whose survey this is, above
+// everything else on the page. The name is a paragraph and not a
+// heading, so the page's one <h1> stays the survey's title and the
+// heading order holds with a header and without one. Everything in it
+// is the creator's plain text; nothing they wrote is read as markup.
+//
+// The compact kind is the name alone. On the questions page the script
+// that shows one question at a time sets is-compact past the first
+// question, which draws the full header the same way.
+templ styleHeader(header domain.StyleHeader, kind HeaderKind) {
+	if kind == HeaderFull && !header.IsZero() {
+		<header class="style-header js-style-header">
+			<div class="style-header-body">
+				if header.Name != "" {
+					<p class="style-name js-style-name">{ header.Name }</p>
+				}
+				if header.Tagline != "" {
+					<p class="style-tagline js-style-tagline">
+						for i, line := range header.TaglineLines() {
+							if i > 0 {
+								<br/>
+							}
+							{ line }
+						}
+					</p>
+				}
+				@styleLinks(header.Links)
+			</div>
+		</header>
+	} else if kind == HeaderCompact && header.Name != "" {
+		<header class="style-header style-header-compact js-style-header">
+			<div class="style-header-body">
+				<p class="style-name js-style-name">{ header.Name }</p>
+			</div>
+		</header>
+	}
+}
+
+// styleFooter is the creator's own footer, at the head of the page's
+// footer and above Earful's line. It is inside the one <footer>, so the
+// page has one footer landmark.
+templ styleFooter(footer domain.StyleFooter) {
+	if !footer.IsZero() {
+		<div class="style-footer js-style-footer">
+			if footer.Text != "" {
+				<p class="style-footer-text">
+					for i, line := range footer.TextLines() {
+						if i > 0 {
+							<br/>
+						}
+						{ line }
+					}
+				</p>
+			}
+			@styleLinks(footer.Links)
+		</div>
+	}
+}
+
+// styleLinks are a header's or a footer's links. Each opens in a new
+// tab, so that following one in the middle of a survey does not lose
+// the answers given so far, and says so to a screen reader; the page it
+// opens is told nothing about where the reader came from.
+templ styleLinks(links []domain.StyleLink) {
+	if len(links) > 0 {
+		<ul class="style-links">
+			for _, link := range links {
+				<li>
+					<a class="js-style-link" href={ templ.URL(link.URL) } target="_blank" rel="noopener noreferrer">
+						{ link.Label }
+						<span class="visually-hidden">{ t(ctx, "respond.link.new_tab") }</span>
+					</a>
+				</li>
+			}
+		</ul>
+	}
 }
 
 // htmlLang is what the page declares itself to be, which screen readers
@@ -175,7 +291,7 @@ func voiceLang(lang string) string {
 }
 
 templ Respond(data RespondData) {
-	@RespondLayout(data.Title, data.Lang, data.Style) {
+	@RespondLayout(data.Title, data.Lang, data.Style, HeaderFull) {
 		<main>
 			if data.Preview {
 				<div class="preview-banner" role="status">
@@ -395,7 +511,7 @@ templ respondentDisclosure(data RespondData) {
 // RespondAlreadySubmitted is the one-per-participant page (M4-T3).
 // style is the style of the survey's latest version.
 templ RespondAlreadySubmitted(title string, style domain.Style) {
-	@RespondLayout(t(ctx, "respond.already.title"), "", style) {
+	@RespondLayout(t(ctx, "respond.already.title"), "", style, HeaderCompact) {
 		<main>
 			<h1>{ t(ctx, "respond.already.heading") }</h1>
 			if title != "" {
@@ -726,7 +842,7 @@ type AnsweredQuestion struct {
 
 // RespondThanks closes the loop for the respondent.
 templ RespondThanks(data ThanksData) {
-	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": data.Title}), data.Lang, data.Style) {
+	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": data.Title}), data.Lang, data.Style, HeaderCompact) {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
@@ -787,7 +903,7 @@ templ answerSummary(answers []AnsweredQuestion) {
 // back what was entered the way a respondent would see it, in the
 // draft's style.
 templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQuestion, style domain.Style) {
-	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "", style) {
+	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "", style, HeaderCompact) {
 		<main class="standalone">
 			@owl(OwlHappy, 96)
 			<h1>{ t(ctx, "respond.preview.submitted.heading") }</h1>
@@ -804,7 +920,7 @@ templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQ
 // the zero value where it is not: a link that leads nowhere has no
 // survey to look like.
 templ RespondUnavailable(title string, heading string, message string, style domain.Style) {
-	@RespondLayout(heading, "", style) {
+	@RespondLayout(heading, "", style, HeaderCompact) {
 		<main class="standalone">
 			@owl(OwlSurprised, 96)
 			<h1>{ heading }</h1>

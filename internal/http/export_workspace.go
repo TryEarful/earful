@@ -146,7 +146,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 				}
 			}
 			if !version.Style.IsZero() {
-				exportedVersion.Style = &export.Style{Theme: version.Style.Theme}
+				exportedVersion.Style = exportStyle(version.Style)
 			}
 			for i, question := range questions {
 				min, max := question.Scale()
@@ -344,4 +344,26 @@ func viewExportJob(l uitext.Localizer, job store.ExportJob, now time.Time) templ
 		view.DownloadPath = "/exports/" + job.ID.String()
 	}
 	return view
+}
+
+// exportStyle is a version's style as the archive carries it: the theme,
+// the header and the footer, each left out where the version had none.
+func exportStyle(style domain.Style) *export.Style {
+	links := func(links []domain.StyleLink) []export.StyleLink {
+		out := make([]export.StyleLink, 0, len(links))
+		for _, link := range links {
+			out = append(out, export.StyleLink{Label: link.Label, URL: link.URL})
+		}
+		return out
+	}
+	exported := &export.Style{Theme: style.Theme}
+	if !style.Header.IsZero() {
+		exported.Header = &export.StyleHeader{
+			Name: style.Header.Name, Tagline: style.Header.Tagline, Links: links(style.Header.Links),
+		}
+	}
+	if !style.Footer.IsZero() {
+		exported.Footer = &export.StyleFooter{Text: style.Footer.Text, Links: links(style.Footer.Links)}
+	}
+	return exported
 }

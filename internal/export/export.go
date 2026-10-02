@@ -89,9 +89,33 @@ type Version struct {
 }
 
 // Style is a version's style (ADR-0018). Theme names the theme its
-// pages were drawn in.
+// pages were drawn in; Header and Footer are what stood above and below
+// the survey, in the creator's wording. Each part is absent when it was
+// not set.
 type Style struct {
-	Theme string `json:"theme,omitempty"`
+	Theme  string       `json:"theme,omitempty"`
+	Header *StyleHeader `json:"header,omitempty"`
+	Footer *StyleFooter `json:"footer,omitempty"`
+}
+
+// StyleHeader is the head of a respondent's page: whose survey it was.
+type StyleHeader struct {
+	Name    string      `json:"name,omitempty"`
+	Tagline string      `json:"tagline,omitempty"`
+	Links   []StyleLink `json:"links,omitempty"`
+}
+
+// StyleFooter is the creator's own footer.
+type StyleFooter struct {
+	Text  string      `json:"text,omitempty"`
+	Links []StyleLink `json:"links,omitempty"`
+}
+
+// StyleLink is a link in a header or a footer: always a label and an
+// address together.
+type StyleLink struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
 }
 
 // Thanks is what a respondent read after sending their answers, in the

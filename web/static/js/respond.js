@@ -297,6 +297,7 @@
   }
 
   var disclosure = document.querySelector(".js-disclosure");
+  var styleHeader = document.querySelector(".js-style-header");
 
   function show(index, arriving) {
     if (index < 0 || index > questions.length - 1) return;
@@ -319,6 +320,9 @@
     // What the survey is and what happens to the answers is read once;
     // past the first question only the link to the details stays.
     if (disclosure) disclosure.classList.toggle("is-collapsed", index > 0);
+    // The survey's own header is read once too: past the first question
+    // it is the name alone, so the question stays in view on a phone.
+    if (styleHeader) styleHeader.classList.toggle("is-compact", index > 0);
     if (draft) draft.rememberPosition(index);
     // On a touch screen, focusing a field opens the keyboard over the
     // page before the respondent has read it; there the first tap is

@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/static"
 )
@@ -35,7 +34,7 @@ type DocumentData struct {
 // script; the button is drawn hidden and shown by the script that makes
 // it work.
 templ Document(data DocumentData) {
-	@RespondLayout(t(ctx, "page.title", uitext.Args{"Title": data.ShortTitle}), data.Lang, domain.Style{}) {
+	@DocumentLayout(t(ctx, "page.title", uitext.Args{"Title": data.ShortTitle}), data.Lang) {
 		<main class="document">
 			if data.Back != "" {
 				<p class="document-back"><a href={ templ.SafeURL(data.Back) }>{ t(ctx, "document.back") }</a></p>

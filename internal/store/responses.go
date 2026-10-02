@@ -56,8 +56,11 @@ type ServedVersion struct {
 	Thanks          domain.ThankYou
 	LocalizedThanks map[string]domain.ThankYou
 	// Style is the style this version was published with: what every
-	// page a respondent to this version sees is drawn in.
-	Style domain.Style
+	// page a respondent to this version sees is drawn in, in Lang once a
+	// language is applied. LocalizedStyle holds it in each language the
+	// version carries a translation of its words for.
+	Style          domain.Style
+	LocalizedStyle map[string]domain.Style
 }
 
 // PublicSurvey resolves a share link. The link itself is the credential,
@@ -116,13 +119,14 @@ func (s *Surveys) servedVersion(ctx context.Context, row db.SurveyVersion) (Serv
 	if err != nil {
 		return ServedVersion{}, err
 	}
-	style, err := styleFromColumn(row.Style)
+	style, localizedStyle, err := styleFromColumn(row.Style)
 	if err != nil {
 		return ServedVersion{}, err
 	}
 	return ServedVersion{
 		ID: row.ID, Number: int(row.Number), Questions: questions,
-		Thanks: thanks, LocalizedThanks: localized, Style: style,
+		Thanks: thanks, LocalizedThanks: localized,
+		Style: style, LocalizedStyle: localizedStyle,
 	}, nil
 }
 

@@ -247,6 +247,22 @@ type Version struct {
 	Style domain.Style
 }
 
+// LatestStyle is the style of a survey's latest version, and the same
+// style worded in each language that version was published with.
+type LatestStyle struct {
+	Style     domain.Style
+	Localized map[string]domain.Style
+}
+
+// In returns the style as somebody reading lang sees it: translated
+// where the version carries a translation, as written where it does not.
+func (l LatestStyle) In(lang string) domain.Style {
+	if style, ok := l.Localized[lang]; ok {
+		return style
+	}
+	return l.Style
+}
+
 // Revision is one saved draft state as the audit log lists it.
 type Revision struct {
 	ID            uuid.UUID
@@ -426,7 +442,7 @@ func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID,
 	if thanks != draft.Thanks {
 		return true, nil
 	}
-	style, err := styleFromColumn(latest.Style)
+	style, _, err := styleFromColumn(latest.Style)
 	if err != nil {
 		return false, err
 	}
@@ -436,15 +452,19 @@ func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID,
 // LatestStyle is the style of the most recent published version: what a
 // page about the survey as a whole is drawn in, such as the page that
 // says it is closed. A survey never published has none.
-func (s *Surveys) LatestStyle(ctx context.Context, surveyID uuid.UUID) (domain.Style, error) {
+func (s *Surveys) LatestStyle(ctx context.Context, surveyID uuid.UUID) (LatestStyle, error) {
 	latest, err := s.q.GetLatestVersion(ctx, surveyID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.Style{}, nil
+		return LatestStyle{}, nil
 	}
 	if err != nil {
-		return domain.Style{}, fmt.Errorf("store: get latest version: %w", err)
+		return LatestStyle{}, fmt.Errorf("store: get latest version: %w", err)
 	}
-	return styleFromColumn(latest.Style)
+	style, localized, err := styleFromColumn(latest.Style)
+	if err != nil {
+		return LatestStyle{}, err
+	}
+	return LatestStyle{Style: style, Localized: localized}, nil
 }
 
 // LatestQuestions returns the questions of the most recent published
@@ -513,7 +533,7 @@ func (s *Surveys) Versions(ctx context.Context, surveyID uuid.UUID) ([]Version, 
 		if r.PublishedByEmail != nil {
 			v.PublishedBy = *r.PublishedByEmail
 		}
-		if v.Style, err = styleFromColumn(r.Style); err != nil {
+		if v.Style, _, err = styleFromColumn(r.Style); err != nil {
 			return nil, err
 		}
 		out = append(out, v)

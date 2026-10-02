@@ -98,7 +98,7 @@ func TestStyle_ThemeIsPreviewedThenPublished(t *testing.T) {
 	}
 	// The browser's own chrome takes the theme's ground, not Earful's.
 	if !strings.Contains(live, `content="#EEF4FB" media="(prefers-color-scheme: light)"`) ||
-		!strings.Contains(live, `content="#0B1626" media="(prefers-color-scheme: dark)"`) {
+		!strings.Contains(live, `content="#081A36" media="(prefers-color-scheme: dark)"`) {
 		t.Errorf("the theme-color tags do not carry the theme's grounds:\n%s", live)
 	}
 	if got := themeOf(t, answerOnce(t, app, "/s/"+id, "hello")); got != "ocean" {

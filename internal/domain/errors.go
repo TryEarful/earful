@@ -31,6 +31,11 @@ const (
 	// The thank you page's message and link label.
 	LimitThanksMessage LimitKind = "thanks_message"
 	LimitThanksLabel   LimitKind = "thanks_label"
+	// A style's header and footer (ADR-0018).
+	LimitStyleName    LimitKind = "style_name"
+	LimitStyleTagline LimitKind = "style_tagline"
+	LimitStyleFooter  LimitKind = "style_footer"
+	LimitStyleLinks   LimitKind = "style_links"
 )
 
 // LimitError reports something longer, higher or more numerous than it
@@ -62,6 +67,14 @@ func (e LimitError) Error() string {
 		return fmt.Sprintf("keep the thank you message under %d characters", e.Limit)
 	case LimitThanksLabel:
 		return fmt.Sprintf("keep the link label under %d characters", e.Limit)
+	case LimitStyleName:
+		return fmt.Sprintf("keep the name under %d characters", e.Limit)
+	case LimitStyleTagline:
+		return fmt.Sprintf("keep the tagline under %d characters", e.Limit)
+	case LimitStyleFooter:
+		return fmt.Sprintf("keep the footer text under %d characters", e.Limit)
+	case LimitStyleLinks:
+		return fmt.Sprintf("add at most %d links", e.Limit)
 	}
 	return fmt.Sprintf("over the limit of %d", e.Limit)
 }

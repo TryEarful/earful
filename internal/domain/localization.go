@@ -28,6 +28,10 @@ type Localization struct {
 	// reviewed like a question, and a language with a message to
 	// translate is not complete until it has been.
 	Thanks *LocalizedThanks `json:"thanks,omitempty"`
+	// Style translates the words of the survey's style: the tagline, the
+	// footer's text and the links' labels (ADR-0018). It is reviewed like
+	// the thank you page, and gates publishing the same way.
+	Style *LocalizedStyle `json:"style,omitempty"`
 }
 
 // LocalizedThanks is the thank you page in one language. The link's
@@ -158,7 +162,7 @@ func (d Draft) Pending(lang string) []Question {
 // unreviewed machine translation is ever published.
 func (d Draft) ReadyToPublish() error {
 	for _, lang := range d.Languages() {
-		if len(d.Pending(lang)) > 0 || d.ThanksPending(lang) {
+		if len(d.Pending(lang)) > 0 || d.ThanksPending(lang) || d.StylePending(lang) {
 			return ErrUnreviewedTrans
 		}
 	}

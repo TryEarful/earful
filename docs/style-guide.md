@@ -125,7 +125,11 @@ A theme may not set anything else:
   tints are the same in every theme, so an error looks like an error on
   every survey. This is why a theme's grounds are tints close to white
   and close to black and never a saturated colour: the status colours
-  have to read on them.
+  have to read on them. A themed page shows an error and a notice and
+  no other status: `--good`, `--warning` and their tints are not used
+  on a respondent's page, the only page drawn in a theme, because a
+  green theme's own colour is the hue of `--good`. A test fails the
+  build if a respondent's template uses a class drawn in either.
 - **Type, space, shape and motion** are the same in every theme.
 
 The class is `theme-slate`, `theme-ocean` or `theme-forest` on `<html>`,
@@ -152,33 +156,33 @@ against the system's, dark on a light system and light on a dark one.
 <!-- contrast table: written by web/static/contrast_test.go -->
 | Pair | Earful light | Earful dark | Slate light | Slate dark | Ocean light | Ocean dark | Forest light | Forest dark |
 |---|---|---|---|---|---|---|---|---|
-| Text on page | 15.99 | 15.99 | 16.02 | 16.60 | 15.61 | 16.39 | 15.17 | 16.49 |
-| Text on card | 17.84 | 13.86 | 17.82 | 14.70 | 17.28 | 14.12 | 16.81 | 14.39 |
-| Text on a field's ground | 16.83 | 14.89 | 16.77 | 15.83 | 16.34 | 15.31 | 15.94 | 15.50 |
-| Muted on page | 8.13 | 10.70 | 7.14 | 10.73 | 7.88 | 10.49 | 7.84 | 10.75 |
-| Muted on card | 9.08 | 9.27 | 7.94 | 9.50 | 8.73 | 9.03 | 8.68 | 9.38 |
-| Muted on a field's ground | 8.56 | 9.96 | 7.47 | 10.23 | 8.25 | 9.79 | 8.23 | 10.10 |
-| Link on page | 7.12 | 9.59 | 7.84 | 9.62 | 6.41 | 9.06 | 6.68 | 10.15 |
-| Link on card | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.81 | 7.40 | 8.85 |
-| Link on a field's ground | 7.50 | 8.93 | 8.21 | 9.18 | 6.71 | 8.47 | 7.01 | 9.54 |
-| Text on a notice, on page | 16.15 | 12.29 | 15.70 | 12.44 | 15.04 | 12.39 | 14.76 | 12.10 |
-| Text on a chosen option | 15.99 | 12.01 | 15.96 | 12.81 | 15.54 | 12.31 | 15.13 | 12.44 |
-| Filled button's text on it | 15.99 | 15.99 | 13.03 | 16.02 | 8.21 | 10.58 | 8.16 | 11.74 |
-| Text on the accent | 7.95 | 9.59 | 8.72 | 9.62 | 7.10 | 9.06 | 7.40 | 10.15 |
-| Text on a delete button | 6.32 | 7.47 | 6.32 | 7.73 | 6.32 | 7.60 | 6.32 | 7.66 |
-| Danger on page | 5.67 | 7.47 | 5.68 | 7.73 | 5.71 | 7.60 | 5.71 | 7.66 |
-| Danger on card | 6.32 | 6.47 | 6.32 | 6.84 | 6.32 | 6.54 | 6.32 | 6.68 |
-| Good on its tint, on card | 5.58 | 6.26 | 5.58 | 6.59 | 5.58 | 6.33 | 5.58 | 6.40 |
-| Danger on its tint, on card | 5.22 | 5.18 | 5.22 | 5.34 | 5.22 | 5.28 | 5.22 | 5.33 |
-| Warning on its tint, on card | 4.82 | 6.12 | 4.82 | 6.34 | 4.82 | 6.25 | 4.82 | 6.24 |
+| Text on page | 15.99 | 15.99 | 16.02 | 16.60 | 15.61 | 15.66 | 15.17 | 16.49 |
+| Text on card | 17.84 | 13.86 | 17.82 | 14.70 | 17.28 | 13.24 | 16.81 | 14.39 |
+| Text on a field's ground | 16.83 | 14.89 | 16.77 | 15.83 | 16.34 | 14.65 | 15.94 | 15.50 |
+| Muted on page | 8.13 | 10.70 | 7.14 | 10.73 | 7.88 | 10.02 | 7.84 | 10.75 |
+| Muted on card | 9.08 | 9.27 | 7.94 | 9.50 | 8.73 | 8.47 | 8.68 | 9.38 |
+| Muted on a field's ground | 8.56 | 9.96 | 7.47 | 10.23 | 8.25 | 9.37 | 8.23 | 10.10 |
+| Link on page | 7.12 | 9.59 | 7.84 | 9.62 | 6.41 | 8.66 | 6.68 | 10.15 |
+| Link on card | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.32 | 7.40 | 8.85 |
+| Link on a field's ground | 7.50 | 8.93 | 8.21 | 9.18 | 6.71 | 8.10 | 7.01 | 9.54 |
+| Text on a notice, on page | 16.15 | 12.29 | 14.58 | 12.44 | 14.07 | 11.77 | 13.69 | 12.10 |
+| Text on a chosen option | 15.99 | 12.01 | 15.96 | 12.81 | 15.54 | 11.54 | 15.13 | 12.44 |
+| Filled button's text on it | 15.99 | 15.99 | 13.03 | 16.02 | 8.21 | 10.10 | 8.16 | 11.74 |
+| Text on the accent | 7.95 | 9.59 | 8.72 | 9.62 | 7.10 | 8.66 | 7.40 | 10.15 |
+| Text on a delete button | 6.32 | 7.47 | 6.32 | 7.73 | 6.32 | 7.26 | 6.32 | 7.66 |
+| Danger on page | 5.67 | 7.47 | 5.68 | 7.73 | 5.71 | 7.26 | 5.71 | 7.66 |
+| Danger on card | 6.32 | 6.47 | 6.32 | 6.84 | 6.32 | 6.14 | 6.32 | 6.68 |
+| Good on its tint, on card | 5.58 | 6.26 | 5.58 | 6.59 | 5.58 | 6.03 | 5.58 | 6.40 |
+| Danger on its tint, on card | 5.22 | 5.18 | 5.22 | 5.34 | 5.22 | 5.12 | 5.22 | 5.33 |
+| Warning on its tint, on card | 4.82 | 6.12 | 4.82 | 6.34 | 4.82 | 6.04 | 4.82 | 6.24 |
 | Ink on Signal | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 | 5.54 |
 | Ink on Signal's soft tint | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 | 14.69 |
-| Focus ring on page (3:1) | 7.12 | 9.59 | 7.84 | 9.62 | 6.41 | 9.06 | 6.68 | 10.15 |
-| Focus ring on card (3:1) | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.81 | 7.40 | 8.85 |
-| Accent on card (3:1) | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.81 | 7.40 | 8.85 |
-| Filled button on page (3:1) | 15.99 | 15.99 | 12.67 | 16.60 | 7.42 | 10.58 | 7.37 | 11.74 |
-| Signal on card (3:1) | 3.22 | 4.80 | 3.22 | 5.07 | 3.22 | 4.85 | 3.22 | 4.95 |
-| Signal on page | 2.89 | 5.54 | 2.90 | 5.73 | 2.91 | 5.63 | 2.91 | 5.68 |
+| Focus ring on page (3:1) | 7.12 | 9.59 | 7.84 | 9.62 | 6.41 | 8.66 | 6.68 | 10.15 |
+| Focus ring on card (3:1) | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.32 | 7.40 | 8.85 |
+| Accent on card (3:1) | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.32 | 7.40 | 8.85 |
+| Filled button on page (3:1) | 15.99 | 15.99 | 12.67 | 16.60 | 7.42 | 10.10 | 7.37 | 11.74 |
+| Signal on card (3:1) | 3.22 | 4.80 | 3.22 | 5.07 | 3.22 | 4.55 | 3.22 | 4.95 |
+| Signal on page | 2.89 | 5.54 | 2.90 | 5.73 | 2.91 | 5.38 | 2.91 | 5.68 |
 <!-- end of the contrast table -->
 
 Chart 1 on the card holds 5.38 in light mode and 5.54 in dark. Charts
@@ -240,10 +244,33 @@ times use tabular figures.
 | `.switchers`, `.switcher` | The footer's quiet choices: the language and the display mode |
 | `.theme-choices`, `.theme-choice` | The themes offered on the Style tab: a `.choice` for each, with its sample |
 | `.theme-sample` | A small page in a theme's own tokens: its ground, a card, a line of text, a link and its filled button, which is not a control |
+| `.style-header`, `.style-header-compact` | A survey's own header, above everything on a respondent's page: `.style-name`, `.style-tagline` and `.style-links`. Compact is the name alone |
+| `.style-footer` | The creator's footer, at the head of the respondent's footer and above Earful's line: `.style-footer-text` and `.style-links` |
+| `.style-links` | The links of a header or a footer, each with an arrow that says it opens in a new tab |
 | `.focus-shown` | The focus ring, drawn on the theme sheet's samples where a picture cannot hold the keyboard's focus. Nowhere else |
 
 Every link and control is at least 44px tall. Focus is a 3px teal ring,
 two pixels out.
+
+### A survey's header and footer
+
+A survey can say whose it is (ADR-0018). The header stands above the
+page, as wide as the column under it: a name at the section heading's
+size, a tagline in muted text and up to three links, on the theme's
+ground with a hairline below. The name is a paragraph and never a
+heading: the page's `<h1>` is the survey's title. On the questions page
+the header is whole. On every other page of the survey, and past the
+first question where questions are shown one at a time, it is the name
+alone, at body size, so the page's own message stays in view.
+
+The creator's footer is a text and up to three links inside the page's
+one `<footer>`, above a hairline and Earful's own line, which reads
+"Powered by Earful" on a survey and "Earful" under Help and the
+documents. Everything a creator writes is plain text in the theme's
+text, muted and link colours, so each pair is one the contrast table
+already measures. A header or a footer adds no button: the page keeps
+its one filled button. Links open in a new tab, say so to a screen
+reader, and are 44px tall like every other.
 
 ### Hooks are not styles
 

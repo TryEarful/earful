@@ -253,7 +253,7 @@
   --button: #262c33;
   --button-text: #f5f6f8;
   --ring: rgb(20 24 29 / 55%);
-  --tint-info: #edf1f5;
+  --tint-info: #e3e9f0;
 }
 
 :root[data-mode="dark"].theme-slate,
@@ -312,24 +312,24 @@
   --button: #1a4c9c;
   --button-text: #ffffff;
   --ring: rgb(15 27 45 / 55%);
-  --tint-info: #e7f0fc;
+  --tint-info: #dce9fb;
 }
 
 :root[data-mode="dark"].theme-ocean,
 :root[data-mode="dark"] .theme-ocean {
-  --bg: #0b1626;
-  --surface: #14243a;
-  --surface-2: #0f1d30;
+  --bg: #081a36;
+  --surface: #10284d;
+  --surface-2: #0b2040;
   --text: #eef4fb;
   --muted: #b9c6d8;
   --link: #8dbaf6;
   --focus: #8dbaf6;
   --accent: #8dbaf6;
-  --accent-contrast: #0b1626;
+  --accent-contrast: #081a36;
   --border: rgb(238 244 251 / 12%);
   --border-strong: rgb(238 244 251 / 28%);
   --button: #a6c8f8;
-  --button-text: #0b1626;
+  --button-text: #081a36;
   --ring: rgb(238 244 251 / 60%);
   --tint-info: rgb(47 111 208 / 26%);
 }
@@ -337,19 +337,19 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-mode="light"]).theme-ocean,
   :root:not([data-mode="light"]) .theme-ocean {
-    --bg: #0b1626;
-    --surface: #14243a;
-    --surface-2: #0f1d30;
+    --bg: #081a36;
+    --surface: #10284d;
+    --surface-2: #0b2040;
     --text: #eef4fb;
     --muted: #b9c6d8;
     --link: #8dbaf6;
     --focus: #8dbaf6;
     --accent: #8dbaf6;
-    --accent-contrast: #0b1626;
+    --accent-contrast: #081a36;
     --border: rgb(238 244 251 / 12%);
     --border-strong: rgb(238 244 251 / 28%);
     --button: #a6c8f8;
-    --button-text: #0b1626;
+    --button-text: #081a36;
     --ring: rgb(238 244 251 / 60%);
     --tint-info: rgb(47 111 208 / 26%);
   }
@@ -371,7 +371,7 @@
   --button: #1f5a35;
   --button-text: #ffffff;
   --ring: rgb(19 32 26 / 55%);
-  --tint-info: #e8f3ea;
+  --tint-info: #dcecdf;
 }
 
 :root[data-mode="dark"].theme-forest,
@@ -535,7 +535,7 @@ hr {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--teal) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .muted {
@@ -1160,6 +1160,7 @@ button:disabled,
 /* A page that stands alone: a short message centred under the owl. */
 .standalone {
   max-width: 30rem;
+  margin-inline: auto;
   text-align: center;
 }
 
@@ -2942,7 +2943,7 @@ main.standalone .button-row {
   justify-content: center;
 }
 
-main.standalone > .owl {
+.standalone > .owl {
   margin: 0 auto var(--space-5);
 }
 
@@ -3048,6 +3049,115 @@ main.home h1 {
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--muted);
+}
+
+/* --- a survey's own header and footer (ADR-0018) --------------------------
+
+   The header says whose survey this is, above everything else on the
+   page: a name, a line or two, and links, on the theme's ground and in
+   its text colours, so every pair is one the contrast table measures.
+   It is as wide as the column below it. */
+
+.style-header {
+  width: 100%;
+  max-width: 36rem;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: var(--space-6) 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.style-header + main {
+  padding-top: var(--space-5);
+}
+
+.style-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.style-tagline {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.style-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.style-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.75rem;
+  overflow-wrap: anywhere;
+}
+
+/* Each link opens in a new tab, and the arrow says so to the eye; the
+   words beside it say so to a screen reader. */
+.style-links a::after {
+  content: "\2197";
+  content: "\2197" / "";
+  font-weight: 500;
+}
+
+.style-header .style-links {
+  margin-bottom: calc(-1 * var(--space-2));
+}
+
+/* The compact header is the name alone: on a page that is not the
+   questions, and past the first question where one is shown at a time. */
+.style-header-compact,
+.style-header.is-compact {
+  padding-bottom: var(--space-3);
+}
+
+.style-header-compact .style-name,
+.style-header.is-compact .style-name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.style-header.is-compact .style-tagline,
+.style-header.is-compact .style-links {
+  display: none;
+}
+
+/* Above a page that stands alone the header is centred with it. */
+body:has(> main.standalone) .style-header {
+  max-width: 28rem;
+  text-align: center;
+}
+
+/* The creator's footer heads the page's footer, above Earful's line. */
+.style-footer {
+  flex: 0 0 100%;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.style-footer-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.style-footer .style-links {
+  margin-top: var(--space-1);
 }
 
 /* The owl beside the dictation card's title hears only while the
@@ -3685,17 +3795,17 @@ main.standalone h1 {
    narrow to set a question beside its answer, so its facts read one
    under the other. A written answer keeps the line breaks it was typed
    with. */
-main.standalone .facts {
+.standalone .facts {
   grid-template-columns: minmax(0, 1fr);
   row-gap: 0;
   margin-bottom: 0;
 }
 
-main.standalone .facts dd + dt {
+.standalone .facts dd + dt {
   margin-top: var(--space-3);
 }
 
-main.standalone .facts dd {
+.standalone .facts dd {
   white-space: pre-line;
 }
 
@@ -3706,11 +3816,12 @@ main.standalone .facts dd {
   font-variant-numeric: tabular-nums;
 }
 
-/* Four tabs fit a phone's width in every language the interface speaks;
-   a longer translation still scrolls sideways rather than widen the page. */
+/* On a phone the tabs wrap to a second row where a language needs it,
+   rather than leave the tab the reader is on outside the row. */
 @media (max-width: 30rem) {
   .tabs {
-    gap: var(--space-4);
+    flex-wrap: wrap;
+    gap: 0 var(--space-4);
   }
 
   .tabs a {
@@ -3762,6 +3873,9 @@ main.standalone .facts dd {
 
 .theme-choice {
   flex-wrap: wrap;
+  /* The sample sits at the foot of its choice, so samples in one row
+     line up whatever the length of the words above them. */
+  align-content: space-between;
   margin: 0;
 }
 
@@ -3796,8 +3910,8 @@ main.standalone .facts dd {
 .theme-sample-muted,
 .theme-sample-link {
   display: block;
-  height: 6px;
-  border-radius: 3px;
+  height: var(--space-1);
+  border-radius: var(--radius-round);
 }
 
 .theme-sample-text {

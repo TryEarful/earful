@@ -359,6 +359,27 @@ type LanguageView struct {
 	// Thanks is the thank you page in this language, nil when the
 	// creator has written none to translate.
 	Thanks *LocalizedThanksView
+	// Style is the words of the survey's style in this language, nil
+	// when the style has none to translate.
+	Style *LocalizedStyleView
+}
+
+// LocalizedStyleView is the words of a survey's style in one language,
+// beside the creator's wording: the tagline, the footer's text and each
+// link's label. A part the source does not have is not offered.
+type LocalizedStyleView struct {
+	Source   domain.StyleWords
+	Words    domain.StyleWords
+	Reviewed bool
+	Stale    bool
+}
+
+// label is the translated label of the link at a position, or empty.
+func label(labels []string, i int) string {
+	if i < len(labels) {
+		return labels[i]
+	}
+	return ""
 }
 
 // LocalizedThanksView is the thank you page in one language, beside the

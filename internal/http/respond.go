@@ -208,7 +208,7 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 			s.logAbuse(r, "bad_challenge")
 			render(w, r, http.StatusForbidden, templates.RespondUnavailable(survey.Title,
 				say(r, "respond.refused.check.title"),
-				say(r, "respond.refused.check.body"), version.Style))
+				say(r, "respond.refused.check.body"), shown.Style))
 			return
 		}
 		if !s.limitChallenged.Allow(limiterKey) {
@@ -216,11 +216,11 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 			// abuse_log row per rejected request would let a flood amplify
 			// into unbounded DB writes — exactly what the limiter exists to
 			// stop.
-			s.respondRateLimited(w, r, survey, version.Style)
+			s.respondRateLimited(w, r, survey, shown.Style)
 			return
 		}
 	} else if !s.limitUnchallenged.Allow(limiterKey) {
-		s.respondRateLimited(w, r, survey, version.Style)
+		s.respondRateLimited(w, r, survey, shown.Style)
 		return
 	}
 
@@ -509,16 +509,17 @@ func (s *server) respondInviteOnly(w http.ResponseWriter, r *http.Request, surve
 // latestStyle is the style of the survey's latest version, for a page
 // that is about the survey and serves no version of it: closed, already
 // answered, by invitation only. A closed survey still looks like itself
-// to somebody following an old link. A failure to read it is logged and
-// the page is drawn in the default style, since the page matters more
-// than its colours.
+// to somebody following an old link. Its words are in the language the
+// address names, where that version was published with them in it. A
+// failure to read it is logged and the page is drawn in the default
+// style, since the page matters more than its colours.
 func (s *server) latestStyle(r *http.Request, surveyID uuid.UUID) domain.Style {
-	style, err := s.surveys.LatestStyle(r.Context(), surveyID)
+	latest, err := s.surveys.LatestStyle(r.Context(), surveyID)
 	if err != nil {
 		s.logger.Error("reading the survey's style failed", "error", err)
 		return domain.Style{}
 	}
-	return style
+	return latest.In(addressLanguage(r))
 }
 
 func (s *server) respondNotFound(w http.ResponseWriter, r *http.Request) {

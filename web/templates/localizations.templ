@@ -108,6 +108,9 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 			if lang.Thanks != nil {
 				@thanksTranslation(lang)
 			}
+			if lang.Style != nil {
+				@styleTranslation(lang)
+			}
 			<button type="submit">{ t(ctx, "languages.save.label") }</button>
 		</form>
 	</section>
@@ -135,6 +138,49 @@ templ thanksTranslation(lang LanguageView) {
 			<label class="field">
 				<span>{ t(ctx, "languages.thanks.link_label", uitext.Args{"Language": lang.Name}) }</span>
 				<input type="text" name="thanks_link_label" value={ lang.Thanks.LinkLabel } maxlength="60" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+		}
+	</div>
+}
+
+// styleTranslation is the words of the survey's style in one language
+// (ADR-0018), each beside the creator's wording, reviewed like a
+// question. The name and the links' addresses are the same in every
+// language and are not here.
+templ styleTranslation(lang LanguageView) {
+	<div class="js-style-translation">
+		<h3>{ t(ctx, "languages.style.heading") }</h3>
+		if lang.Style.Stale {
+			<p class="notice">{ t(ctx, "languages.style.stale") }</p>
+		} else if !lang.Style.Reviewed && !lang.Style.Words.IsZero() {
+			<p class="muted">{ t(ctx, "languages.question.unreviewed") }</p>
+		}
+		if lang.Style.Source.Tagline != "" {
+			<p class="source-text">{ lang.Style.Source.Tagline }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.style.tagline", uitext.Args{"Language": lang.Name}) }</span>
+				<textarea name="style_tagline" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3" maxlength="280">{ lang.Style.Words.Tagline }</textarea>
+			</label>
+		}
+		for i, source := range lang.Style.Source.HeaderLinks {
+			<p class="source-text">{ source }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.style.header_link", uitext.Args{"Position": i + 1, "Language": lang.Name}) }</span>
+				<input type="text" name="style_header_link" value={ label(lang.Style.Words.HeaderLinks, i) } maxlength="60" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+		}
+		if lang.Style.Source.FooterText != "" {
+			<p class="source-text">{ lang.Style.Source.FooterText }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.style.footer_text", uitext.Args{"Language": lang.Name}) }</span>
+				<textarea name="style_footer_text" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3" maxlength="280">{ lang.Style.Words.FooterText }</textarea>
+			</label>
+		}
+		for i, source := range lang.Style.Source.FooterLinks {
+			<p class="source-text">{ source }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.style.footer_link", uitext.Args{"Position": i + 1, "Language": lang.Name}) }</span>
+				<input type="text" name="style_footer_link" value={ label(lang.Style.Words.FooterLinks, i) } maxlength="60" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 			</label>
 		}
 	</div>

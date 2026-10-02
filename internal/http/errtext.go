@@ -73,6 +73,14 @@ func limitError(kind domain.LimitKind) (uitext.ID, bool) {
 		return "thanks.error.long", true
 	case domain.LimitThanksLabel:
 		return "thanks.error.label_long", true
+	case domain.LimitStyleName:
+		return "style.error.name_long", true
+	case domain.LimitStyleTagline:
+		return "style.error.tagline_long", true
+	case domain.LimitStyleFooter:
+		return "style.error.footer_long", true
+	case domain.LimitStyleLinks:
+		return "style.error.links", true
 	}
 	return "", false
 }
