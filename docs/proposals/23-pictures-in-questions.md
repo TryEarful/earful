@@ -92,7 +92,7 @@ Infrastructure only; nothing a creator can see yet.
   input with JavaScript off and on, answers the survey, and runs axe.
 - Gallery (`e2e/gallery/gallery.spec.ts`): editor with no picture,
   with a picture, with each upload error; respondent question with a
-  picture; preview; results with a picture; in both themes and both
+  picture; preview; results with a picture; in both modes and both
   languages as the gallery always does.
 
 ## Slice 3 · Pictures on options (L)

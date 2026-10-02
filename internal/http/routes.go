@@ -21,8 +21,8 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /robots.txt", robotsTxt)
 	// The language switcher. Public: the sign-in page has one.
 	mux.HandleFunc("POST /language", s.chooseLanguage)
-	// The theme switcher. Public: it is on every page, a survey's too.
-	mux.HandleFunc("POST /theme", s.chooseTheme)
+	// The display mode switcher. Public: it is on every page, a survey's too.
+	mux.HandleFunc("POST /mode", s.chooseMode)
 	// The documents in web/pages, the trust page (M8-T4) among them:
 	// public, and served by the instance that actually holds the data
 	// they describe.

@@ -1,7 +1,7 @@
-// The theme switcher, applied as it is chosen.
+// The display mode switcher, applied as it is chosen.
 //
 // The page works without this: the form posts the choice, the server
-// remembers it in a cookie and draws the page again in that theme. Here
+// remembers it in a cookie and draws the page again in that mode. Here
 // the choice is drawn at once and posted in the background, so the page
 // is not reloaded and nothing typed into it is lost, which matters on a
 // survey half answered. If the post fails, the form is sent as it would
@@ -9,26 +9,26 @@
 (function () {
   "use strict";
 
-  var form = document.querySelector(".js-theme-switcher");
-  var select = document.querySelector(".js-theme-select");
-  var button = document.querySelector(".js-theme-submit");
+  var form = document.querySelector(".js-mode-switcher");
+  var select = document.querySelector(".js-mode-select");
+  var button = document.querySelector(".js-mode-submit");
   if (!form || !select || !window.fetch || !window.FormData) return;
 
   if (button) button.hidden = true;
 
-  // What the stylesheet and the browser's chrome read: data-theme on
+  // What the stylesheet and the browser's chrome read: data-mode on
   // <html>, absent to follow the system, and the theme-color tags.
-  function draw(theme) {
+  function draw(mode) {
     var root = document.documentElement;
-    if (theme === "light" || theme === "dark") {
-      root.setAttribute("data-theme", theme);
+    if (mode === "light" || mode === "dark") {
+      root.setAttribute("data-mode", mode);
     } else {
-      root.removeAttribute("data-theme");
+      root.removeAttribute("data-mode");
     }
-    var tags = document.querySelectorAll(".js-theme-color");
+    var tags = document.querySelectorAll(".js-mode-color");
     for (var i = 0; i < tags.length; i++) {
       var tag = tags[i];
-      var scheme = theme === "light" || theme === "dark" ? theme : tag.getAttribute("data-scheme");
+      var scheme = mode === "light" || mode === "dark" ? mode : tag.getAttribute("data-scheme");
       tag.setAttribute("content", tag.getAttribute("data-" + scheme));
     }
   }

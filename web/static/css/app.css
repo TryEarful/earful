@@ -78,7 +78,7 @@
   --serious: #ae3333;
   --critical: #8f1d1d;
 
-  /* What components use. The dark theme reassigns only these. */
+  /* What components use. Dark mode reassigns only these. */
   --bg: var(--paper);
   --surface: var(--white);
   --surface-2: #fbf8f2;
@@ -136,21 +136,21 @@
   --gutter: 1.25rem;
 }
 
-/* The dark theme is Ink ground and Paper type, with the same accents
+/* Dark mode is Ink ground and Paper type, with the same accents
    lifted until they read on it. Contrast for every pair is listed in
    docs/style-guide.md.
 
    It is drawn where the system asks for it and the reader has not chosen
    light, and wherever the reader has chosen dark: the server writes the
-   choice as data-theme on <html>. CSS cannot put a media query and a
+   choice as data-mode on <html>. CSS cannot put a media query and a
    selector in one rule, so the dark tokens are written twice, here and
    below, and web/static/static_test.go fails the build if the two
    differ. */
-:root[data-theme="light"] {
+:root[data-mode="light"] {
   color-scheme: light;
 }
 
-:root[data-theme="dark"] {
+:root[data-mode="dark"] {
   color-scheme: dark;
   --bg: #101823;
   --surface: #1a2534;
@@ -183,7 +183,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-mode="light"]) {
     --bg: #101823;
     --surface: #1a2534;
     --surface-2: #151f2c;
@@ -719,7 +719,7 @@ textarea {
 }
 
 /* The browser's own arrow differs on every system; this one is drawn in
-   a grey that reads on either theme. */
+   a grey that reads in either display mode. */
 select {
   appearance: none;
   padding-right: 2.5rem;
@@ -1268,7 +1268,7 @@ button:disabled,
 }
 
 /* Radios and boxes drawn in the page's colours, so they sit in either
-   theme as the rest of the form does. */
+   display mode as the rest of the form does. */
 .option input[type="radio"],
 .option input[type="checkbox"],
 .scale-point input[type="radio"] {
@@ -2692,7 +2692,7 @@ th[aria-sort="descending"] .sort-button::after {
 
 /* --- the switchers ---------------------------------------------------------
 
-   The language and the theme, in the footer. The language is for
+   The language and the display mode, in the footer. The language is for
    somebody who cannot read the page, so it is where a person looks when
    nothing else on the page has helped; both are quiet for everybody
    else. */

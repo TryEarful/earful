@@ -67,32 +67,33 @@ func currentPath(ctx context.Context) string {
 	return path
 }
 
-type themeKey struct{}
+type modeKey struct{}
 
-// WithTheme returns a context that knows the theme the reader chose:
-// "light", "dark", or "" to follow their system.
-func WithTheme(ctx context.Context, theme string) context.Context {
-	return context.WithValue(ctx, themeKey{}, theme)
+// WithMode returns a context that knows the display mode the reader
+// chose: "light", "dark", or "" to follow their system.
+func WithMode(ctx context.Context, mode string) context.Context {
+	return context.WithValue(ctx, modeKey{}, mode)
 }
 
-func theme(ctx context.Context) string {
-	t, _ := ctx.Value(themeKey{}).(string)
-	return t
+func mode(ctx context.Context) string {
+	m, _ := ctx.Value(modeKey{}).(string)
+	return m
 }
 
-// The ground of the page in each theme, for the browser's own chrome.
+// The ground of the page in each display mode, for the browser's own
+// chrome.
 // They repeat --paper and --ink in web/static/css/app.css.
 const (
 	lightGround = "#F7F2E8"
 	darkGround  = "#101823"
 )
 
-// themeColor is the colour the browser's chrome takes where the system
-// asks for scheme: the ground of that scheme, or of the theme the reader
-// chose over it.
-func themeColor(ctx context.Context, scheme string) string {
-	if t := theme(ctx); t != "" {
-		scheme = t
+// modeColor is the colour the browser's chrome takes where the system
+// asks for scheme: the ground of that scheme, or of the display mode the
+// reader chose over it.
+func modeColor(ctx context.Context, scheme string) string {
+	if m := mode(ctx); m != "" {
+		scheme = m
 	}
 	if scheme == "dark" {
 		return darkGround

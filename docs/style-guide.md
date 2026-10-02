@@ -3,7 +3,7 @@
 How Earful looks and how it speaks. The values live in
 `web/static/css/app.css`, at the top, as custom properties; this page
 says what each one is for. `make gallery` shows every page at a phone's
-width and a desktop's, in the light theme and the dark, in English and
+width and a desktop's, in light mode and dark, in English and
 Spanish, and is how a change to any of it is looked at before it is
 committed.
 
@@ -63,13 +63,15 @@ the ground of a chip. Status colours are never a chart series.
 
 ### Semantic tokens
 
-Components use only these, and the dark theme reassigns only these:
+Components use only these, and dark mode reassigns only these:
 `--bg`, `--surface`, `--surface-2`, `--text`, `--muted`, `--link`,
 `--focus`, `--accent`, `--accent-contrast`, `--border`, `--border-strong`,
 `--danger`, `--button`, `--button-text`, `--ring`, the `--tint-*` tokens
 and the `--owl-*` tokens.
 
-### Dark theme
+### Dark mode
+
+Light and dark are the two display modes.
 
 Ink ground, a slightly lighter card, Paper type. The filled button turns
 Paper with Ink type. Links and focus become a lighter teal, the owl's
@@ -77,23 +79,23 @@ body lifts to `#2A3A4C` with a Feather outline so it does not vanish,
 and chart 1 and 3 are lifted until they hold 3:1 on the dark card.
 
 A page follows the reader's system until they choose otherwise with
-the theme switcher in the footer of every page, a survey's included:
-follow system, light or dark. The choice is kept in a `theme` cookie
-and the server writes it as `data-theme` on `<html>`, so the page
-arrives in its theme with no flash and no script. The stylesheet draws
+the display mode switcher in the footer of every page, a survey's
+included: follow system, light or dark. The choice is kept in a `mode`
+cookie and the server writes it as `data-mode` on `<html>`, so the page
+arrives in its mode with no flash and no script. The stylesheet draws
 the dark tokens in two places: under `prefers-color-scheme: dark` where
-`data-theme` is not `light`, and under `data-theme="dark"`. The two
+`data-mode` is not `light`, and under `data-mode="dark"`. The two
 blocks hold the same values, and a test fails the build if they drift
 apart, so a change to a dark token is made in both. `color-scheme` and
-the `theme-color` tags follow a chosen theme too, and the owl, coloured
+the `theme-color` tags follow a chosen mode too, and the owl, coloured
 by the `--owl-*` tokens, follows with them. The favicon is a file in
 fixed colours and does not.
 
 ### Contrast
 
 Measured, WCAG 2.1. The axe scan in the e2e suite and in the gallery
-checks every page in both themes, and the gallery also pictures a few
-pages with a theme chosen against the system's, dark on a light system
+checks every page in both modes, and the gallery also pictures a few
+pages with a mode chosen against the system's, dark on a light system
 and light on a dark one.
 
 | Pair | Light | Dark |
@@ -160,7 +162,7 @@ times use tabular figures.
 | `.responses` inside `.table-scroll` | A table, which scrolls sideways on its own |
 | `.empty-state` | The owl, a line and what to do |
 | `.site-header`, `.site-footer`, `.respond-footer` | The chrome |
-| `.switchers`, `.switcher` | The footer's quiet choices: the language and the theme |
+| `.switchers`, `.switcher` | The footer's quiet choices: the language and the display mode |
 
 Every link and control is at least 44px tall. Focus is a 3px teal ring,
 two pixels out.
@@ -176,7 +178,7 @@ CONTRIBUTING.md.
 
 A round owl with ear tufts, drawn inline by `owl` in
 `web/templates/brand.templ`, so that the stylesheet colours it in either
-theme. It is decoration: whatever stands beside it says what it means.
+display mode. It is decoration: whatever stands beside it says what it means.
 
 | Mood | Where |
 |---|---|
@@ -208,8 +210,8 @@ its left. In prose the name is Earful.
 ## Reviewing a page
 
 Every page a change adds or alters is reviewed against this list, at a
-phone's width (390px) and a desktop's (1280px), in the light theme and
-the dark, in English and Spanish. `make gallery` takes those pictures and
+phone's width (390px) and a desktop's (1280px), in light mode and
+dark, in English and Spanish. `make gallery` takes those pictures and
 an axe report for each; a new page is added to `e2e/gallery/gallery.spec.ts`
 so that it is pictured too. Each criterion passes or fails, with a reason.
 
@@ -228,8 +230,8 @@ so that it is pictured too. Each criterion passes or fails, with a reason.
    template.
 7. **Responsive.** Nothing scrolls sideways at 390px; every link and
    control is at least 44px tall.
-8. **Accessible in both themes.** The dark theme is as finished as the
-   light one, axe reports nothing, and focus is visible.
+8. **Accessible in both display modes.** Dark mode is as finished as
+   light, axe reports nothing, and focus is visible.
 
 A page is done when it passes every criterion in two reviews in a row,
 the second made after the fixes from the first.

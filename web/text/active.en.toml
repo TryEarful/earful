@@ -1706,8 +1706,8 @@ submit = "Change"
 en = "English"
 es = "Español"
 
-[theme]
-label = "Theme"
+[mode]
+label = "Display mode"
 system = "Follow system"
 light = "Light"
 dark = "Dark"

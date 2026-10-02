@@ -53,7 +53,7 @@ No header, route or migration changes.
   - the snippet parses as HTML with exactly one element, an `a`.
 - **Gallery.** `editor-sharing-snippet` (open anonymous survey) and the
   existing invited and closed editor states, at both widths, both
-  themes, both languages.
+  modes, both languages.
 - **Docs.** "Publish and share" in `web/pages/help.en.md` and
   `help.es.md` gains a sentence on the snippet; `SPEC.md` story
   added (see the report).

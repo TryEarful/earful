@@ -177,7 +177,7 @@ path does not honour.
   `web/static/js/flow.js` draws connectors as SVG over that list from
   the JSON block, as `stats.js` draws its chart; no library, no CSP
   change.
-- `docs/style-guide.md`: the connector and the diagram, in both themes,
+- `docs/style-guide.md`: the connector and the diagram, in both modes,
   with reduced motion respected.
 - Tests: the list's text at the edge; a Playwright check that the SVG
   draws one connector per jump. Gallery: the flow of a linear survey and

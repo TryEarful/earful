@@ -3190,23 +3190,23 @@ other = "English"
 hash = "sha1-2001ca082b2d2742765d8ac9182678bfe0374fbf"
 other = "Español"
 
-[theme.label]
-hash = "sha1-a797e30923ac1be590300ce6b08e63b4e6dc6688"
-other = "Tema"
+[mode.label]
+hash = "sha1-627bc304e730667bd2b138b199266be190aed1ad"
+other = "Modo de visualización"
 
-[theme.system]
+[mode.system]
 hash = "sha1-1b16bcb011f75557d46515d83b71647df4454b58"
 other = "Como el sistema"
 
-[theme.light]
+[mode.light]
 hash = "sha1-a36ef8aba22905e2d2efbf1ac1d6230d5761859d"
 other = "Claro"
 
-[theme.dark]
+[mode.dark]
 hash = "sha1-ae1ef01432946b8976b9b58575b3390ab7644db2"
 other = "Oscuro"
 
-[theme.submit]
+[mode.submit]
 hash = "sha1-cfea419c3b4e8b02ee586e70a28bf846e44cdda4"
 other = "Aplicar"
 

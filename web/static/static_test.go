@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-// The dark theme is written twice in css/app.css: once under the
+// Dark mode is written twice in css/app.css: once under the
 // system's dark preference, where the reader has not chosen light, and
 // once for a reader who chose dark. A token changed in one and not the
 // other would draw the two differently, and a pair measured in one
 // would not be the pair shown in the other.
-func TestTheDarkThemeIsTheSameWhicheverWayItIsChosen(t *testing.T) {
+func TestDarkModeIsTheSameWhicheverWayItIsChosen(t *testing.T) {
 	css, err := FS.ReadFile("css/app.css")
 	if err != nil {
 		t.Fatal(err)
@@ -30,10 +30,10 @@ func TestTheDarkThemeIsTheSameWhicheverWayItIsChosen(t *testing.T) {
 		}
 		return tokens
 	}
-	system := block(`(?s)@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme="light"\]\) \{(.*?)\}`)
-	chosen := block(`(?s)\n:root\[data-theme="dark"\] \{(.*?)\}`)
+	system := block(`(?s)@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-mode="light"\]\) \{(.*?)\}`)
+	chosen := block(`(?s)\n:root\[data-mode="dark"\] \{(.*?)\}`)
 	if len(system) == 0 {
-		t.Fatal("the dark theme under the system's preference sets no tokens")
+		t.Fatal("dark mode under the system's preference sets no tokens")
 	}
 	for name, value := range system {
 		if chosen[name] != value {
@@ -46,10 +46,10 @@ func TestTheDarkThemeIsTheSameWhicheverWayItIsChosen(t *testing.T) {
 		}
 	}
 
-	// Form controls and scroll bars follow a chosen theme too.
+	// Form controls and scroll bars follow a chosen display mode too.
 	for _, want := range []string{
-		":root[data-theme=\"light\"] {\n  color-scheme: light;",
-		":root[data-theme=\"dark\"] {\n  color-scheme: dark;",
+		":root[data-mode=\"light\"] {\n  color-scheme: light;",
+		":root[data-mode=\"dark\"] {\n  color-scheme: dark;",
 	} {
 		if !strings.Contains(string(css), want) {
 			t.Errorf("css/app.css lacks %q", want)

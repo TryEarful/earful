@@ -99,7 +99,7 @@ func (s *server) interfaceText(next http.Handler) http.Handler {
 		ctx := uitext.With(r.Context(), s.localizerFor(r))
 		// Where the switcher comes back to.
 		ctx = templates.WithPath(ctx, r.URL.RequestURI())
-		ctx = templates.WithTheme(ctx, themeOf(r))
+		ctx = templates.WithMode(ctx, modeOf(r))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -2,9 +2,9 @@
 title: Cómo trata Earful sus datos
 short_title: Confianza
 sections: cards
-hash: sha256-b3f45b1acfda2df5360b1aac49b27f0af2476d105b2e3476868ae1eac6e445b6
-last_update: 2026-10-01
-source_hash: sha256-c0aa3d92d5889cc515657197c047ccb40be7c9eefc635c87c959c5ca4f204f6d
+hash: sha256-62e53f8289495032f734f3b61ad5d1277739e2992e2ad659a6ecaf8c78a23729
+last_update: 2026-10-02
+source_hash: sha256-df19f1539de51ee81979bbb157fe27f0da8be12d5a23772ed68de1fd58975319
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/trust?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -36,9 +36,9 @@ Responder una encuesta no carga analíticas, ni fuentes, ni gestores de etiqueta
 
 Si elige un idioma para la interfaz, su elección se guarda en una cookie de su navegador, llamada `interface_lang`, durante un año. No se crea ni se lee en la página de una encuesta: allí el idioma se elige en la dirección de la página y no se guarda en ningún lugar.
 
-## El tema
+## El modo de visualización
 
-Si elige un tema claro u oscuro, en cualquier página de este sitio, incluida la de una encuesta, su elección se guarda en una cookie de su navegador, llamada `theme`, durante un año. Contiene la palabra `light` o `dark` y nada más, se crea solo cuando usted elige y se lee solo para dibujar la página. Si elige seguir al sistema, se borra.
+Si elige un modo de visualización claro u oscuro, en cualquier página de este sitio, incluida la de una encuesta, su elección se guarda en una cookie de su navegador, llamada `mode`, durante un año. Contiene la palabra `light` o `dark` y nada más, se crea solo cuando usted elige y se lee solo para dibujar la página. Si elige seguir al sistema, se borra. Su navegador puede conservar la misma elección en una cookie llamada `theme`, el nombre que tenía antes; se lee del mismo modo y se borra la próxima vez que usted elija.
 
 ## Dónde están los datos y quién los toca
 

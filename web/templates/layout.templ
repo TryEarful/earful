@@ -6,8 +6,8 @@ templ Layout(title string) {
 	<!DOCTYPE html>
 	<html
 		lang={ interfaceLang(ctx) }
-		if theme(ctx) != "" {
-			data-theme={ theme(ctx) }
+		if mode(ctx) != "" {
+			data-mode={ mode(ctx) }
 		}
 	>
 		<head>
@@ -22,7 +22,7 @@ templ Layout(title string) {
 				@footerLinks("")
 				<div class="switchers">
 					@languageSwitcher()
-					@themeSwitcher()
+					@modeSwitcher()
 				</div>
 			</footer>
 		</body>
@@ -54,37 +54,37 @@ templ languageSwitcher() {
 	}
 }
 
-// themeSwitcher chooses between the light theme, the dark, and following
-// the system. It is a form with a button and works without a script;
-// theme.js applies a choice as it is made and hides the button. It is on
+// modeSwitcher chooses between the light display mode, the dark, and
+// following the system. It is a form with a button and works without a
+// script; mode.js applies a choice as it is made and hides the button. It is on
 // every page, a respondent's too, and comes back to the page it is on.
-templ themeSwitcher() {
-	<form method="post" action="/theme" class="switcher js-theme-switcher">
+templ modeSwitcher() {
+	<form method="post" action="/mode" class="switcher js-mode-switcher">
 		<input type="hidden" name="next" value={ currentPath(ctx) }/>
 		<label>
-			<span>{ t(ctx, "theme.label") }</span>
-			<select name="theme" class="js-theme-select">
-				<option value="system" selected?={ theme(ctx) == "" }>{ t(ctx, "theme.system") }</option>
-				<option value="light" selected?={ theme(ctx) == "light" }>{ t(ctx, "theme.light") }</option>
-				<option value="dark" selected?={ theme(ctx) == "dark" }>{ t(ctx, "theme.dark") }</option>
+			<span>{ t(ctx, "mode.label") }</span>
+			<select name="mode" class="js-mode-select">
+				<option value="system" selected?={ mode(ctx) == "" }>{ t(ctx, "mode.system") }</option>
+				<option value="light" selected?={ mode(ctx) == "light" }>{ t(ctx, "mode.light") }</option>
+				<option value="dark" selected?={ mode(ctx) == "dark" }>{ t(ctx, "mode.dark") }</option>
 			</select>
 		</label>
-		<button type="submit" class="secondary js-theme-submit">{ t(ctx, "theme.submit") }</button>
+		<button type="submit" class="secondary js-mode-submit">{ t(ctx, "mode.submit") }</button>
 	</form>
-	<script src={ static.AssetURL("js/theme.js") } defer></script>
+	<script src={ static.AssetURL("js/mode.js") } defer></script>
 }
 
 // headAssets are the stylesheet and the icons, the same on every page.
-// The browser's own chrome takes the ground of the theme the page is
+// The browser's own chrome takes the ground of the display mode the page is
 // drawn in: the system's, or the one the reader chose over it. Each tag
-// carries both grounds for theme.js, which repaints it on a new choice.
+// carries both grounds for mode.js, which repaints it on a new choice.
 templ headAssets() {
 	<link rel="preload" href={ static.AssetURL("fonts/manrope-latin.woff2") } as="font" type="font/woff2" crossorigin/>
 	<link rel="stylesheet" href={ static.AssetURL("css/app.css") }/>
 	<link rel="icon" type="image/svg+xml" href={ static.AssetURL("img/favicon.svg") }/>
 	<link rel="apple-touch-icon" href={ static.AssetURL("img/apple-touch-icon.png") }/>
-	<meta name="theme-color" class="js-theme-color" data-scheme="light" data-light={ lightGround } data-dark={ darkGround } content={ themeColor(ctx, "light") } media="(prefers-color-scheme: light)"/>
-	<meta name="theme-color" class="js-theme-color" data-scheme="dark" data-light={ lightGround } data-dark={ darkGround } content={ themeColor(ctx, "dark") } media="(prefers-color-scheme: dark)"/>
+	<meta name="theme-color" class="js-mode-color" data-scheme="light" data-light={ lightGround } data-dark={ darkGround } content={ modeColor(ctx, "light") } media="(prefers-color-scheme: light)"/>
+	<meta name="theme-color" class="js-mode-color" data-scheme="dark" data-light={ lightGround } data-dark={ darkGround } content={ modeColor(ctx, "dark") } media="(prefers-color-scheme: dark)"/>
 }
 
 // footerLinks are the pages anyone may need from anywhere: help, and

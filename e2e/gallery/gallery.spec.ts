@@ -16,8 +16,8 @@ import {
 } from "../tests/helpers";
 
 // The design gallery: every page, at a phone's width and a desktop's, in
-// the light theme and the dark, in English and Spanish, with an axe
-// report beside each picture; a few pages also with a theme chosen
+// light mode and dark, in English and Spanish, with an axe
+// report beside each picture; a few pages also with a display mode chosen
 // against the system's. It asserts nothing about the product; it
 // is how the design is looked at as a whole (docs/style-guide.md). Run it
 // with `make gallery`; the pictures land in GALLERY_DIR.
@@ -27,7 +27,7 @@ const viewports = [
   { name: "phone", width: 390, height: 844 },
   { name: "desktop", width: 1280, height: 900 },
 ];
-const themes = ["light", "dark"] as const;
+const modes = ["light", "dark"] as const;
 
 type Axe = { page: string; lang: string; violations: { id: string; impact: string | null; nodes: number; help: string }[] };
 const axe: Axe[] = [];
@@ -35,17 +35,17 @@ const axe: Axe[] = [];
 async function capture(page: Page, name: string, lang: string) {
   fs.mkdirSync(out, { recursive: true });
   const url = page.url();
-  for (const theme of themes) {
-    await page.emulateMedia({ colorScheme: theme });
+  for (const mode of modes) {
+    await page.emulateMedia({ colorScheme: mode });
     for (const v of viewports) {
       await page.setViewportSize({ width: v.width, height: v.height });
       await page.waitForTimeout(150);
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.${theme}.png`), fullPage: true });
+      await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.${mode}.png`), fullPage: true });
     }
     const result = await new AxeBuilder({ page }).analyze();
     axe.push({
-      page: `${name} (${theme})`,
+      page: `${name} (${mode})`,
       lang,
       violations: result.violations.map((x) => ({ id: x.id, impact: x.impact ?? null, nodes: x.nodes.length, help: x.help })),
     });
@@ -54,10 +54,10 @@ async function capture(page: Page, name: string, lang: string) {
   if (page.url() !== url) await page.goto(url);
 }
 
-// A theme chosen with the switcher is drawn against the system's: dark
-// on a light system and light on a dark one. Every token a theme sets
+// A display mode chosen with the switcher is drawn against the system's: dark
+// on a light system and light on a dark one. Every token a mode sets
 // must then win over the system's, so these pages are pictured and
-// scanned that way too. The pictures are named for the chosen theme.
+// scanned that way too. The pictures are named for the chosen mode.
 const forced = [
   { chosen: "dark", system: "light" },
   { chosen: "light", system: "dark" },
@@ -68,7 +68,7 @@ async function captureForced(page: Page, name: string, lang: string) {
   const context = page.context();
   const url = page.url();
   for (const { chosen, system } of forced) {
-    await context.addCookies([{ name: "theme", value: chosen, url: new URL(url).origin }]);
+    await context.addCookies([{ name: "mode", value: chosen, url: new URL(url).origin }]);
     await page.emulateMedia({ colorScheme: system });
     await page.goto(url);
     for (const v of viewports) {
@@ -84,7 +84,7 @@ async function captureForced(page: Page, name: string, lang: string) {
       violations: result.violations.map((x) => ({ id: x.id, impact: x.impact ?? null, nodes: x.nodes.length, help: x.help })),
     });
   }
-  await context.clearCookies({ name: "theme" });
+  await context.clearCookies({ name: "mode" });
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto(url);
 }
