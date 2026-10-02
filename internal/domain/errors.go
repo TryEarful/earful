@@ -36,6 +36,11 @@ const (
 	LimitStyleTagline LimitKind = "style_tagline"
 	LimitStyleFooter  LimitKind = "style_footer"
 	LimitStyleLinks   LimitKind = "style_links"
+	LimitStyleLogoAlt LimitKind = "style_logo_alt"
+	// The alternative text of a thanks page's own picture.
+	LimitStyleThanksAlt LimitKind = "style_thanks_alt"
+	// The pictures stored for one survey (ADR-0018).
+	LimitStyleImages LimitKind = "style_images"
 )
 
 // LimitError reports something longer, higher or more numerous than it
@@ -75,6 +80,12 @@ func (e LimitError) Error() string {
 		return fmt.Sprintf("keep the footer text under %d characters", e.Limit)
 	case LimitStyleLinks:
 		return fmt.Sprintf("add at most %d links", e.Limit)
+	case LimitStyleLogoAlt:
+		return fmt.Sprintf("keep the logo description under %d characters", e.Limit)
+	case LimitStyleThanksAlt:
+		return fmt.Sprintf("keep the picture description under %d characters", e.Limit)
+	case LimitStyleImages:
+		return fmt.Sprintf("this survey already keeps %d images, which is the most it can", e.Limit)
 	}
 	return fmt.Sprintf("over the limit of %d", e.Limit)
 }

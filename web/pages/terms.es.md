@@ -3,9 +3,9 @@ title: Condiciones de uso
 short_title: Condiciones
 sections: cards
 draft: true
-hash: sha256-33b3787384dfe69728b3a7d5b17f6737b3ad98bd28a7dbb34db2e3e98eb6bb15
+hash: sha256-8cfbd2a660429098018a5d1a0718e6f04ab8457ebc18b4bc962b27bdc4445b54
 last_update: 2026-10-02
-source_hash: sha256-c3f423ef9b387bdd65ad8ca5df1af85cdfbea938d11821d5c25109e34b759d28
+source_hash: sha256-890053bfb46ad88ae360e7bff6595c4a0e82102c1057fa7a7399c424acb1eef0
 ---
 
 Esta página es una traducción. El texto de referencia es la [versión en inglés](/terms?lang=en); si las dos difieren, vale lo que dice aquella.
@@ -72,9 +72,9 @@ Puede exportar en cualquier momento todo lo que contiene su espacio de trabajo, 
 
 ## Avisos, y lo que podemos hacer
 
-Cualquiera puede avisarnos de una encuesta. Cuando una encuesta o una cuenta incumple estas condiciones, o tenemos buenas razones para creerlo, podemos cerrar la encuesta, retirar contenido o suspender el espacio de trabajo. Cuando es posible, se lo decimos antes y le damos la oportunidad de corregirlo. Cuando se está dañando o engañando a personas, actuamos primero y se lo decimos después.
+Cualquiera puede avisarnos de una encuesta, desde el enlace al pie de sus páginas. Cuando una encuesta o una cuenta incumple estas condiciones, o tenemos buenas razones para creerlo, podemos cerrar la encuesta, retirar contenido o suspender el espacio de trabajo. Cuando es posible, se lo decimos antes y le damos la oportunidad de corregirlo. Cuando se está dañando o engañando a personas, actuamos primero y se lo decimos después.
 
-Si suspendemos su espacio de trabajo por error, díganoslo y lo revisaremos. Si se cierra su cuenta, le damos un plazo razonable para exportar sus datos, salvo que lo impidan la ley o la seguridad de otras personas.
+Mientras su espacio de trabajo está suspendido, sus encuestas no reciben respuestas ni muestran su estilo, y usted no puede publicar, reabrir una encuesta, enviar invitaciones ni usar la IA. Sigue pudiendo iniciar sesión, leer sus resultados y exportar sus datos, y la suspensión no elimina nada. Cuando se levanta, todo vuelve a estar como antes. Si suspendemos su espacio de trabajo por error, díganoslo y lo revisaremos. Si se cierra su cuenta, le damos un plazo razonable para exportar sus datos, salvo que lo impidan la ley o la seguridad de otras personas.
 
 ## El servicio
 

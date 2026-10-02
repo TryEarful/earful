@@ -114,6 +114,25 @@ async function fillStyle(page: Page, words: StyleWords) {
   }
 }
 
+// A picture for the Style tab's file fields, from testdata/style.
+const stylePicture = (name: string) => path.join(__dirname, "..", "..", "testdata", "style", name);
+
+// Sets the Style tab's two pictures: a file to upload, "remove" to tick
+// the box that removes the one there, or nothing to leave it. The logo's
+// description goes in whenever a logo does.
+async function setStylePictures(page: Page, pictures: { banner?: string; logo?: string }) {
+  for (const [field, value] of Object.entries(pictures)) {
+    const control = page.locator(`.js-style-image-${field}`);
+    if (value === "remove") {
+      const box = control.getByRole("checkbox");
+      if (await box.count()) await box.check();
+    } else if (value) {
+      await control.locator('input[type="file"]').setInputFiles(stylePicture(value));
+    }
+  }
+  await page.locator(".js-style-logo-alt").fill(pictures.logo && pictures.logo !== "remove" ? "Corner Workshop" : "");
+}
+
 test.setTimeout(30 * 60_000);
 
 test("gallery", async ({ browser }) => {
@@ -465,7 +484,7 @@ test("gallery", async ({ browser }) => {
   let styledVersion = 1;
   for (const [theme, name] of [["slate", "Slate"], ["ocean", "Ocean"], ["forest", "Forest"]]) {
     await page.goto(styledEditor + "/style");
-    await page.locator(".js-style-form").getByRole("radio", { name: new RegExp(name) }).check();
+    await page.locator(".js-theme-choice").getByRole("radio", { name: new RegExp(name) }).check();
     // The survey's own header and footer go in with the first theme and
     // stay, so every themed page below is pictured with them.
     if (theme === "slate") {
@@ -591,11 +610,158 @@ test("gallery", async ({ browser }) => {
     }
   }
 
-  // Closed, a survey still looks like itself: Forest here, and Earful on
-  // the survey that asked for a date.
+  // The pictures of a style: a banner and a logo. The Style tab with a
+  // file it refused and with both pictures saved; the questions page with
+  // both in every theme; then a banner alone, and a logo alone in each
+  // shape a logo comes in, the last of them carried through the pages
+  // after the first, where the header is the logo and the name.
+  const pictureShare = await createPublishedSurvey(page, "Workshop feedback");
+  const pictureEditor = "/surveys/" + pictureShare.split("/").pop();
+  let pictureVersion = 1;
+  const publishPictures = async () => {
+    await page.getByRole("button", { name: "Save style" }).click();
+    await expect(page.getByText("Style saved")).toBeVisible();
+    await page.goto(pictureEditor);
+    pictureVersion++;
+    await page.getByRole("button", { name: `Publish version ${pictureVersion}` }).click();
+    await expect(page.getByText(`Published version ${pictureVersion}`)).toBeVisible();
+  };
+  // The words the header and footer carry under the pictures. They are
+  // typed again for the first save that keeps, since the refused form
+  // below saves nothing.
+  const pictureWords: StyleWords = {
+    name: "Corner Workshop",
+    tagline: "Evening classes in wood, clay and print.\nTell us how the open day went.",
+    links: [["Our classes", "https://example.com/classes"], ["Contact", "https://example.com/contact"]],
+    footer: "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
+    footerLinks: [["Privacy notice", "https://example.com/privacy"]],
+  };
+  await page.goto(pictureEditor + "/style");
+  await fillStyle(page, pictureWords);
+  // A file that is not a picture, under a picture's name.
+  await page.locator('.js-style-image-logo input[type="file"]').setInputFiles({
+    name: "logo.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("this is not a picture"),
+  });
+  await page.locator(".js-style-logo-alt").fill("Corner Workshop");
+  await page.getByRole("button", { name: "Save style" }).click();
+  await expect(page.locator(".js-style-field-error")).toBeVisible();
+  await capture(page, "style-image-error", "en");
+  for (const [theme, name] of [["earful", "Earful"], ["slate", "Slate"], ["ocean", "Ocean"], ["forest", "Forest"]]) {
+    await page.goto(pictureEditor + "/style");
+    await page.locator(".js-theme-choice").getByRole("radio", { name: new RegExp(name) }).check();
+    if (theme === "earful") {
+      await fillStyle(page, pictureWords);
+      await setStylePictures(page, { banner: "banner.jpg", logo: "logo-square.png" });
+    }
+    await page.getByRole("button", { name: "Save style" }).click();
+    await expect(page.getByText("Style saved")).toBeVisible();
+    if (theme === "earful") await capture(page, "style-images", "en");
+    await page.goto(pictureEditor);
+    pictureVersion++;
+    await page.getByRole("button", { name: `Publish version ${pictureVersion}` }).click();
+    await expect(page.getByText(`Published version ${pictureVersion}`)).toBeVisible();
+    for (const lang of theme === "ocean" ? ["en", "es"] : ["en"]) {
+      const { context, page: respondent } = await visitor(browser, lang);
+      await respondent.goto(pictureShare);
+      await capture(respondent, `respond-images-${theme}`, lang);
+      await context.close();
+    }
+  }
+  for (const [name, pictures] of [
+    ["respond-images-banner-only", { banner: "", logo: "remove" }],
+    ["respond-images-logo-wide", { banner: "remove", logo: "logo-wide.png" }],
+    ["respond-images-logo-tall", { logo: "logo-tall.png" }],
+    ["respond-images-logo", { logo: "logo-square.png" }],
+  ] as const) {
+    await page.goto(pictureEditor + "/style");
+    await setStylePictures(page, pictures);
+    await publishPictures();
+    if (name === "respond-images-banner-only" || name === "respond-images-logo") {
+      const { context: spanishReader, page: lector } = await visitor(browser, "es");
+      await lector.goto(pictureShare);
+      await capture(lector, name, "es");
+      await spanishReader.close();
+    }
+    const { context, page: respondent } = await visitor(browser, "en");
+    await respondent.goto(pictureShare);
+    await capture(respondent, name, "en");
+    if (name === "respond-images-logo") {
+      await respondent.locator("textarea").fill("More evenings, please.");
+      await respondent.getByRole("button", { name: "Next" }).click();
+      await capture(respondent, "respond-images-later", "en");
+      await minFillWait(respondent);
+      await respondent.getByLabel(/Monthly/).check();
+      await respondent.getByRole("button", { name: "Submit answers" }).click();
+      await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });
+      await capture(respondent, "respond-images-thanks", "en");
+    }
+    await context.close();
+  }
+
+  // The thanks page's picture, each of the six choices in one theme, on a
+  // survey of its own so its submissions do not run into the limit on
+  // one address. The Style tab is pictured with the creator's own picture
+  // chosen, and with a file it refused.
+  const pictureThanksShare = await createPublishedSurvey(page, "Open day feedback");
+  const pictureThanksEditor = "/surveys/" + pictureThanksShare.split("/").pop();
+  let pictureThanksVersion = 1;
+  await page.goto(pictureThanksEditor + "/style");
+  await page.locator(".js-style-thanks-panel").getByRole("radio", { name: "Your own picture" }).check();
+  await page.locator('.js-style-image-thanks-image input[type="file"]').setInputFiles({
+    name: "team.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("this is not a picture"),
+  });
+  await page.locator(".js-style-thanks-alt").fill("Our team at the open day");
+  await page.getByRole("button", { name: "Save style" }).click();
+  await expect(page.locator(".js-style-field-error")).toBeVisible();
+  await capture(page, "style-thanks-error", "en");
+  // The tick again in Forest, whose green is near the status colour for
+  // "good", to see that the seal does not read as a status badge.
+  for (const [picture, label, theme, name] of [
+    ["owl", "Earful's owl", /Ocean/, "owl"],
+    ["check", "Tick", /Ocean/, "check"],
+    ["envelope", "Envelope", /Ocean/, "envelope"],
+    ["confetti", "Confetti", /Ocean/, "confetti"],
+    ["image", "Your own picture", /Ocean/, "image"],
+    ["none", "No picture", /Ocean/, "none"],
+    ["check", "Tick", /Forest/, "check-forest"],
+  ] as const) {
+    await page.goto(pictureThanksEditor + "/style");
+    await page.locator(".js-theme-choice").getByRole("radio", { name: theme }).check();
+    await page.locator(".js-style-thanks-panel").getByRole("radio", { name: label }).check();
+    if (picture === "image") {
+      await page.locator('.js-style-image-thanks-image input[type="file"]').setInputFiles(stylePicture("banner.jpg"));
+      await page.locator(".js-style-thanks-alt").fill("Our team at the open day");
+    }
+    await page.getByRole("button", { name: "Save style" }).click();
+    await expect(page.getByText("Style saved")).toBeVisible();
+    if (picture === "image") await capture(page, "style-thanks-image", "en");
+    // Each choice is a version; the first is the theme with the owl.
+    await page.goto(pictureThanksEditor);
+    pictureThanksVersion++;
+    await page.getByRole("button", { name: `Publish version ${pictureThanksVersion}` }).click();
+    await expect(page.getByText(`Published version ${pictureThanksVersion}`)).toBeVisible();
+    const { context, page: respondent } = await visitor(browser, "en");
+    await respondent.goto(pictureThanksShare);
+    await respondent.locator("textarea").fill("A longer lunch break.");
+    await respondent.getByRole("button", { name: "Next" }).click();
+    await minFillWait(respondent);
+    await respondent.getByLabel(/Monthly/).check();
+    await respondent.getByRole("button", { name: "Submit answers" }).click();
+    await expect(respondent.locator(".js-answer-summary")).toBeVisible({ timeout: submitTimeout });
+    await capture(respondent, `respond-thanks-picture-${name}`, "en");
+    await context.close();
+  }
+
+  // Closed, a survey still looks like itself: Forest here, Earful on the
+  // survey that asked for a date, and the one with a logo under its logo.
   for (const [name, closing, closedShare] of [
     ["respond-closed-forest", styledEditor, styledShare],
     ["respond-closed", dateEditor, dateShare],
+    ["respond-images-closed", pictureEditor, pictureShare],
   ]) {
     await page.goto(closing);
     await page.getByRole("button", { name: "Close survey" }).click();
@@ -624,7 +790,14 @@ test("gallery", async ({ browser }) => {
     for (const name of ["respond-already", "respond-already-forest"]) {
       if (name === "respond-already-forest") {
         await page.goto(invitedEditor + "/style");
-        await page.locator(".js-style-form").getByRole("radio", { name: /Forest/ }).check();
+        await page.locator(".js-theme-choice").getByRole("radio", { name: /Forest/ }).check();
+        // A name and a footer, so the page is pictured under the compact
+        // header and above the creator's footer.
+        await fillStyle(page, {
+          name: "Corner Workshop",
+          footer: "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
+          footerLinks: [["Privacy notice", "https://example.com/privacy"]],
+        });
         await page.getByRole("button", { name: "Save style" }).click();
         await page.goto(invitedEditor);
         await page.getByRole("button", { name: "Publish version 2" }).click();
@@ -691,6 +864,8 @@ test("gallery", async ({ browser }) => {
   await capture(es, "stats", "es");
   await es.goto(styledEditor + "/style");
   await capture(es, "style", "es");
+  await es.goto(pictureEditor + "/style");
+  await capture(es, "style-images", "es");
   await es.goto("/account");
   await capture(es, "account", "es");
 
@@ -723,6 +898,59 @@ test("gallery", async ({ browser }) => {
     await capture(esAdmin, "admin-ai-tiers-found", "es");
     await esAdmin.goto("/account");
     await capture(esAdmin, "account-admin", "es");
+
+    // Suspension (ADR-0018): the operator's page with nothing suspended,
+    // a suspension refused for want of a reason, and one listed; then
+    // what the suspended workspace's creator and respondents see. It is
+    // lifted at the end, so the compose database is left as it was.
+    const suspect = uniqueEmail("suspended");
+    const { context: suspectContext, page: suspectPage } = await visitor(browser, "en");
+    await signIn(suspectPage, suspect);
+    const suspectShare = await createPublishedSurvey(suspectPage, "Account security check");
+    const suspectEditor = "/surveys/" + suspectShare.split("/").pop();
+    await page.goto("/admin/suspensions");
+    await capture(page, "admin-suspensions", "en");
+    await page.goto("/admin/suspensions?email=" + encodeURIComponent(suspect));
+    // The browser would hold an empty reason back; a form sent without
+    // its own check is refused by the server, and that is the state here.
+    await page.locator(".js-suspend-form textarea").evaluate((field: HTMLTextAreaElement) => field.removeAttribute("required"));
+    await page.locator(".js-suspend").click();
+    await expect(page.locator(".js-suspension-error")).toBeVisible();
+    await capture(page, "admin-suspensions-error", "en");
+    await page.locator(".js-suspend-form textarea").fill("Asks for bank passwords under another company's name.");
+    await page.locator(".js-suspend").click();
+    await expect(page).toHaveURL(/notice=suspended/);
+    await capture(page, "admin-suspensions-listed", "en");
+    await esAdmin.goto("/admin/suspensions");
+    await capture(esAdmin, "admin-suspensions-listed", "es");
+
+    await suspectPage.goto("/dashboard");
+    await capture(suspectPage, "dashboard-suspended", "en");
+    await suspectPage.goto(suspectEditor);
+    await suspectPage.getByRole("button", { name: "Close survey" }).click();
+    await suspectPage.getByRole("button", { name: "Reopen survey" }).click();
+    await expect(suspectPage.getByRole("heading", { name: "This workspace is suspended" })).toBeVisible();
+    await capture(suspectPage, "suspension-held", "en");
+    const { context: spanishSuspect, page: esSuspect } = await visitor(browser, "es");
+    await spanishSuspect.addCookies(await suspectContext.cookies());
+    await esSuspect.goto("/dashboard");
+    await capture(esSuspect, "dashboard-suspended", "es");
+    await esSuspect.goto(suspectEditor);
+    await esSuspect.locator(".js-reopen").click();
+    await expect(esSuspect.locator(".js-suspension-held")).toBeVisible();
+    await capture(esSuspect, "suspension-held", "es");
+    await spanishSuspect.close();
+    for (const lang of ["en", "es"]) {
+      const { context, page: respondent } = await visitor(browser, lang);
+      await respondent.goto(suspectShare);
+      await capture(respondent, "respond-suspended", lang);
+      await context.close();
+    }
+
+    await page.goto("/admin/suspensions");
+    await page.locator(".js-suspended", { hasText: suspect }).locator(".js-lift").click();
+    await expect(page).toHaveURL(/notice=lifted/);
+    await suspectContext.close();
     await spanishAdmin.close();
   }
 

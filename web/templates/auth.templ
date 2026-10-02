@@ -157,6 +157,19 @@ templ ErrorPage(title string, msg string) {
 	}
 }
 
+// ErrorPageBack is ErrorPage with its one way on leading back to where
+// the person was, for a refusal they will want to try again.
+templ ErrorPageBack(title string, msg string, back string, backLabel string) {
+	@Layout(t(ctx, "page.title", uitext.Args{"Title": title})) {
+		@authBrand()
+		<main class="standalone">
+			<h1>{ title }</h1>
+			<p>{ msg }</p>
+			<p class="button-row"><a class="button-link js-error-back" href={ templ.SafeURL(back) }>{ backLabel }</a></p>
+		</main>
+	}
+}
+
 // Goodbye closes an account's last page. copySent is whether a copy of
 // the data was asked for, which the page confirms is on its way.
 templ Goodbye(copySent bool) {

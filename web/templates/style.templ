@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/internal/styleimage"
 	"github.com/TryEarful/earful/internal/uitext"
 )
 
@@ -21,6 +22,33 @@ type StyleData struct {
 	ErrorLink  int
 	FieldError string
 	Notice     string
+	// FilesLost says a file came with a save that was refused. A page
+	// cannot put a file back in its field, so it says to choose it again.
+	FilesLost bool
+}
+
+// errorTarget is the id of the field the refused save's problem is in,
+// for the summary at the head of the form to link to: the field may be a
+// screen or more below it. It is empty where the problem has no field.
+func (d StyleData) errorTarget() string {
+	if d.FieldError == "" {
+		return ""
+	}
+	switch d.ErrorPart {
+	case domain.StyleBanner:
+		return styleImageFieldData{Field: "banner"}.id()
+	case domain.StyleLogo:
+		return styleImageFieldData{Field: "logo"}.id()
+	case domain.StyleThanksImage:
+		return styleImageFieldData{Field: "thanks_image"}.id()
+	case domain.StyleThanksPicture:
+		return "style-error-field"
+	case domain.StyleHeaderLinks, domain.StyleFooterLinks:
+		if d.ErrorLink == 0 {
+			return "style-error-field"
+		}
+	}
+	return "style-invalid"
 }
 
 // problemIn reports whether the refused save's problem is in part.
@@ -47,6 +75,23 @@ func themeName(theme string) uitext.ID {
 		return "style.theme.forest.name"
 	}
 	return "style.theme.earful.name"
+}
+
+// thanksPictureName is the message that names a thanks page's picture.
+func thanksPictureName(picture string) uitext.ID {
+	switch picture {
+	case domain.ThanksCheck:
+		return "style.thanks.check"
+	case domain.ThanksEnvelope:
+		return "style.thanks.envelope"
+	case domain.ThanksConfetti:
+		return "style.thanks.confetti"
+	case domain.ThanksImage:
+		return "style.thanks.image"
+	case domain.ThanksNone:
+		return "style.thanks.none"
+	}
+	return "style.thanks.owl"
 }
 
 // themeHint is the message that says, in a line, what a theme is like.
@@ -83,12 +128,22 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 			@surveyTabs(data.Survey, "style")
 			<p class="muted">{ t(ctx, "style.intro") }</p>
 			if data.Error != "" {
-				<p class="notice error-text" role="alert">{ data.Error }</p>
+				<p class="notice error-text" role="alert">
+					if data.errorTarget() != "" {
+						<a class="js-style-error-link" href={ templ.SafeURL("#" + data.errorTarget()) }>{ data.Error }</a>
+					} else {
+						{ data.Error }
+					}
+					if data.FilesLost {
+						<br/>
+						{ t(ctx, "style.error.files_again") }
+					}
+				</p>
 			}
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
-			<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/style") } class="js-style-form">
+			<form method="post" enctype="multipart/form-data" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/style") } class="js-style-form">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<section class="card js-panel" aria-labelledby="style-theme-heading">
 					<h2 id="style-theme-heading">{ t(ctx, "style.theme.heading") }</h2>
@@ -109,6 +164,43 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 				<section class="card js-panel js-style-header-panel" aria-labelledby="style-header-heading">
 					<h2 id="style-header-heading">{ t(ctx, "style.header.heading") }</h2>
 					<p class="muted">{ t(ctx, "style.header.hint") }</p>
+					@styleImageField(data, styleImageFieldData{
+						Field:   "banner",
+						Part:    domain.StyleBanner,
+						Hint:    t(ctx, "style.header.banner_hint", uitext.Args{"Size": styleimage.Banner.MaxUpload >> 20}),
+						Current: data.Style.Header.Banner,
+					})
+					@styleImageField(data, styleImageFieldData{
+						Field:   "logo",
+						Part:    domain.StyleLogo,
+						Hint:    t(ctx, "style.header.logo_hint", uitext.Args{"Size": styleimage.Logo.MaxUpload >> 20}),
+						Current: data.Style.Header.Logo,
+						Plate:   true,
+					})
+					<label class="field">
+						<span>
+							@thtml(ctx, "style.header.logo_alt_html")
+						</span>
+						<input
+							type="text"
+							name="logo_alt"
+							class="js-style-logo-alt"
+							value={ data.Style.Header.LogoAlt }
+							maxlength="120"
+							autocomplete="off"
+							data-1p-ignore
+							data-lpignore="true"
+							data-bwignore
+							if data.problemIn(domain.StyleLogoAlt) {
+								id="style-invalid"
+								aria-invalid="true"
+								aria-describedby="style-error-field"
+							}
+						/>
+					</label>
+					if data.problemIn(domain.StyleLogoAlt) {
+						@styleFieldError(data)
+					}
 					<label class="field">
 						<span>
 							@thtml(ctx, "style.header.name_html")
@@ -123,6 +215,7 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 							data-lpignore="true"
 							data-bwignore
 							if data.problemIn(domain.StyleHeaderName) {
+								id="style-invalid"
 								aria-invalid="true"
 								aria-describedby="style-error-field"
 							}
@@ -144,6 +237,7 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 							data-lpignore="true"
 							data-bwignore
 							if data.problemIn(domain.StyleHeaderText) {
+								id="style-invalid"
 								aria-invalid="true"
 								aria-describedby="style-error-field"
 							}
@@ -170,6 +264,7 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 							data-lpignore="true"
 							data-bwignore
 							if data.problemIn(domain.StyleFooterText) {
+								id="style-invalid"
 								aria-invalid="true"
 								aria-describedby="style-error-field"
 							}
@@ -180,10 +275,65 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 					}
 					@styleLinkFields(data, "footer", domain.StyleFooterLinks, data.Style.Footer.Links)
 				</section>
+				@styleThanksPanel(data)
 				<button type="submit">{ t(ctx, "style.save.label") }</button>
 			</form>
 		</main>
 	}
+}
+
+// styleThanksPanel is where the thanks page's picture is chosen: the
+// owl, one of the three drawings, the creator's own picture or none,
+// each a choice with the picture drawn small. The file field under the
+// choices is for "your own picture"; choosing a file there picks it.
+templ styleThanksPanel(data StyleData) {
+	<section class="card js-panel js-style-thanks-panel" aria-labelledby="style-thanks-heading">
+		<h2 id="style-thanks-heading">{ t(ctx, "style.thanks.heading") }</h2>
+		<p class="muted" id="style-thanks-hint">{ t(ctx, "style.thanks.hint") }</p>
+		if data.problemIn(domain.StyleThanksPicture) {
+			@styleFieldError(data)
+		}
+		<div class="thanks-choices" role="radiogroup" aria-labelledby="style-thanks-heading" aria-describedby="style-thanks-hint">
+			for _, picture := range domain.ThanksPictures() {
+				<label class="choice thanks-choice js-thanks-choice">
+					<input type="radio" name="thanks_picture" value={ picture } checked?={ picture == data.Style.Thanks.PictureName() } autocomplete="off"/>
+					<span><strong>{ t(ctx, thanksPictureName(picture)) }</strong></span>
+					@thanksChoicePreview(picture, data.Style)
+				</label>
+			}
+		</div>
+		@styleImageField(data, styleImageFieldData{
+			Field:   "thanks_image",
+			Part:    domain.StyleThanksImage,
+			Hint:    t(ctx, "style.thanks.image_hint", uitext.Args{"Size": styleimage.Thanks.MaxUpload >> 20}),
+			Current: data.Style.Thanks.Image,
+			Plate:   true,
+		})
+		<label class="field">
+			<span>
+				@thtml(ctx, "style.thanks.alt_html")
+			</span>
+			<input
+				type="text"
+				name="thanks_alt"
+				class="js-style-thanks-alt"
+				value={ data.Style.Thanks.Alt }
+				maxlength="120"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				if data.problemIn(domain.StyleThanksAlt) {
+					id="style-invalid"
+					aria-invalid="true"
+					aria-describedby="style-error-field"
+				}
+			/>
+		</label>
+		if data.problemIn(domain.StyleThanksAlt) {
+			@styleFieldError(data)
+		}
+	</section>
 }
 
 // styleFieldError words the refused save's problem beside the field it
@@ -191,6 +341,54 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 // the field is described by.
 templ styleFieldError(data StyleData) {
 	<p class="error-text js-style-field-error" id="style-error-field">{ data.FieldError }</p>
+}
+
+// styleImageField is a file field for one of the style's pictures, with
+// the picture the draft has now and a box that removes it. A field left
+// empty keeps the picture: a browser cannot fill a file field in, so an
+// empty one says nothing about what is stored. The current picture is
+// shown from the creator's own address, and has no alternative text
+// here: the field's label says which picture it is.
+templ styleImageField(data StyleData, field styleImageFieldData) {
+	<div class={ "field", "style-image-field", field.hook() }>
+		<label for={ field.id() }>
+			<span>
+				@thtml(ctx, field.labelID())
+			</span>
+		</label>
+		<input
+			type="file"
+			id={ field.id() }
+			name={ field.Field }
+			accept={ styleImageAccept }
+			if data.problemIn(field.Part) {
+				aria-invalid="true"
+			}
+			aria-describedby={ field.describedBy(data.problemIn(field.Part)) }
+		/>
+		<small id={ field.hintID() }>{ field.Hint }</small>
+		if data.problemIn(field.Part) {
+			@styleFieldError(data)
+		}
+		if !field.Current.IsZero() {
+			<div class="style-image-current">
+				<span class={ "style-image-thumb", templ.KV("style-logo", field.Plate) }>
+					<img
+						class="js-style-image-current"
+						src={ styleImageURL(ctx, field.Current) }
+						alt=""
+						width={ strconv.Itoa(field.Current.Width) }
+						height={ strconv.Itoa(field.Current.Height) }
+						decoding="async"
+					/>
+				</span>
+				<label class="checkbox">
+					<input type="checkbox" name={ field.removeName() } value="1" autocomplete="off"/>
+					<span>{ t(ctx, field.removeID()) }</span>
+				</label>
+			</div>
+		}
+	</div>
 }
 
 // styleLinkFields are the rows of links of a header or a footer: a label
@@ -218,6 +416,7 @@ templ styleLinkFields(data StyleData, where string, part domain.StylePart, links
 						data-lpignore="true"
 						data-bwignore
 						if data.problemIn(part) && data.ErrorLink == i+1 {
+							id="style-invalid"
 							aria-invalid="true"
 							aria-describedby="style-error-field"
 						}
@@ -360,7 +559,15 @@ templ ThemeSheet(data ThemeSheetData) {
 				</div>
 			</form>
 			<div class="standalone">
-				@owl(OwlHappy, 96)
+				<div class="thanks-drawings">
+					for _, picture := range domain.ThanksPictures() {
+						if picture == domain.ThanksOwl {
+							@owl(OwlHappy, 96)
+						} else if (domain.StyleThanks{Picture: picture}).Drawing() {
+							@thanksDrawing(picture, 96)
+						}
+					}
+				</div>
 				@thanksMessage(data.Thanks)
 				<p><a class="button secondary" href={ templ.URL(data.Thanks.LinkURL) } rel="noopener noreferrer">{ data.Thanks.LinkLabel }</a></p>
 				<p class="muted">{ t(ctx, "respond.thanks.anonymous") }</p>

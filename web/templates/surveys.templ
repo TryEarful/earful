@@ -36,8 +36,15 @@ func statusClass(s domain.Status) string {
 	}
 }
 
+// StatusChip says a survey's status. An open survey of a suspended
+// workspace takes no answers, so it says it is on hold, in the plain
+// chip, rather than open in the colour of a survey that is.
 templ StatusChip(s domain.Status) {
-	<span class={ statusClass(s) }>{ statusName(ctx, s) }</span>
+	if suspended, _ := suspension(ctx); suspended && s == domain.StatusOpen {
+		<span class="chip">{ t(ctx, "survey.status.held") }</span>
+	} else {
+		<span class={ statusClass(s) }>{ statusName(ctx, s) }</span>
+	}
 }
 
 // Every field an author types into, here and across the editor, carries
@@ -443,6 +450,10 @@ templ thanksPanel(csrf string, surveyID string, thanks ThanksFormView) {
 	<section class="card js-panel js-thanks-panel" id="thanks">
 		<h2>{ t(ctx, "editor.thanks.heading") }</h2>
 		<p class="muted">{ t(ctx, "editor.thanks.intro") }</p>
+		<p class="muted">
+			{ t(ctx, "editor.thanks.picture") }
+			<a class="js-thanks-picture-link" href={ templ.SafeURL("/surveys/" + surveyID + "/style#style-thanks-heading") }>{ t(ctx, "editor.thanks.picture_link") }</a>
+		</p>
 		<form method="post" action={ templ.SafeURL("/surveys/" + surveyID + "/thanks") } class="js-thanks-form">
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<label class="field">
@@ -520,7 +531,7 @@ templ lifecyclePanel(csrf string, survey SurveyView, origin string) {
 					}
 					<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/reopen") }>
 						<input type="hidden" name="_csrf" value={ csrf }/>
-						<button type="submit" class="secondary">{ t(ctx, "editor.sharing.reopen.label") }</button>
+						<button type="submit" class="secondary js-reopen">{ t(ctx, "editor.sharing.reopen.label") }</button>
 					</form>
 					if !survey.ManuallyClosed {
 						<p class="muted">{ t(ctx, "editor.sharing.reopen.hint") }</p>

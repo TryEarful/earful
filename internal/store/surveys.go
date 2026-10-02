@@ -319,6 +319,16 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 // inside the caller's transaction. It checks nothing about the draft:
 // whether it may be published is the caller's to decide before calling.
 func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UUID, draft domain.Draft, now time.Time) (db.SurveyVersion, error) {
+	// The survey is held until the version is in, so that no picture its
+	// style shows is removed in between, and a style that refers to a
+	// picture no longer stored is refused: once published, a version
+	// would show the broken picture for good (ADR-0001, ADR-0018).
+	if _, err := qtx.LockSurveyForStyle(ctx, surveyID); err != nil {
+		return db.SurveyVersion{}, fmt.Errorf("store: hold survey: %w", err)
+	}
+	if err := checkStyleImages(ctx, qtx, surveyID, draft.Style); err != nil {
+		return db.SurveyVersion{}, err
+	}
 	next, err := qtx.NextVersionNumber(ctx, surveyID)
 	if err != nil {
 		return db.SurveyVersion{}, fmt.Errorf("store: next version number: %w", err)

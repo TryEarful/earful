@@ -561,40 +561,30 @@ answers, typed and spoken, for as long as it is open.
    - *Careless* (a logo used without asking, with no attempt to
      deceive). Write to the creator, name the term they agreed to, and
      give them a short time to remove it.
-   - *Deliberate, or harmful whatever the intent.* Take it down first,
-     then write to the creator.
-4. **Take the survey down.** There is no operator page for this; it is
-   one statement against the database, reached as in the restore
-   section (the auth proxy against the live instance, then `psql`):
-
-   ```sql
-   UPDATE surveys SET deleted_at = now()
-   WHERE id = '<survey-id>' AND deleted_at IS NULL;
-   ```
-
-   The survey's page is a 404 from that moment, for respondents and for
-   its creator, and its images stop being served with it. Setting
-   `closed_at` instead is not enough: the creator can reopen a closed
-   survey from the editor, and a closed survey's page still shows its
-   header.
-5. **Mind the 30 days.** A soft-deleted survey is erased by the
-   retention purge 30 days later, answers included. That is the right
-   end for a survey that deceived people. If the takedown turns out to
-   be mistaken, undo it before then:
-
-   ```sql
-   UPDATE surveys SET deleted_at = NULL WHERE id = '<survey-id>';
-   ```
-
-6. **A workspace that does it again.** The application has no way to
-   suspend a workspace or an account: nothing stops the same person
-   making another survey. Until it has one, take down each survey as it
-   is reported, lower the workspace's AI tier at `/admin/ai-tiers`, and
-   on an instance that requires invite codes, issue that person no
-   more. Do not soft-delete
-   the workspace or the account by hand to stand in for a suspension:
-   the purge would then erase everything they hold, and the erasure
-   path is for requests from the person themselves.
+   - *Deliberate, or harmful whatever the intent.* Suspend the
+     workspace first, then write to the creator.
+4. **Suspend the workspace** at `/admin/suspensions`, as in
+   [Suspending a workspace](#suspending-a-workspace) below. From that
+   moment every survey of the workspace shows Earful's plain "isn't
+   available" page with none of its style, its pictures stop being
+   served, and its creator cannot publish, reopen, send invitations or
+   make another survey public. Nothing is erased, so a mistaken
+   suspension is undone by lifting it.
+5. **Decide what happens to the survey.** A suspension holds everything
+   as it is, the answers collected under a false name included. Where
+   those answers should not be kept, ask the creator, as controller, to
+   delete the survey; the retention purge erases it 30 days later. Do
+   not set `deleted_at` by hand on their behalf unless the creator
+   cannot be reached and the survey must go: the purge would then erase
+   it on the same schedule, answers included, and it cannot be brought
+   back after that.
+6. **A workspace that does it again.** Keep it suspended. A suspension
+   covers every survey the workspace has and any it makes. If the same
+   person opens another account, suspend that workspace too, and on an
+   instance that requires invite codes, issue that person no more. Do
+   not soft-delete the workspace or the account by hand to stand in for
+   a suspension: the purge would then erase everything they hold, and
+   the erasure path is for requests from the person themselves.
 7. **Answer the reporter.** Say what was found and what was done, and
    nothing about the creator beyond that. If answers were collected
    under a false name, tell the organisation that was imitated: the
@@ -605,6 +595,33 @@ answers, typed and spoken, for as long as it is open.
    survey, the report, the decision and when each was made. If personal
    data was obtained by deception, the 72-hour breach duty above may
    apply to the creator as controller; note that it was considered.
+
+## Suspending a workspace
+
+A super admin suspends a workspace at `/admin/suspensions` (also linked
+from the account page): find it by a member's address, write the reason
+and press "Suspend workspace". The reason is for whoever reads the page
+next; only operators see it. The application log records who
+suspended it and when, by id, and again when it is lifted.
+
+While a workspace is suspended:
+
+- **Respondents** following any of its links, share or personal, see
+  Earful's own "This survey isn't available" page, with none of the
+  survey's theme, header, logo or footer. Answers are refused, from a
+  page opened before the suspension too, and its pictures are not
+  served.
+- **Its creators** can sign in, read their results, edit drafts and
+  export the workspace. Every page they see says the workspace is
+  suspended and names the instance's contact address. Publishing,
+  reopening and sending invitations are refused, and so is every AI
+  feature.
+- **Nothing is erased.** A suspension is not a deletion, so the
+  retention purge does not start counting.
+
+Lift a suspension from the list on the same page. Everything is back as
+it was at once: the surveys that were open take answers again, with
+their style.
 
 ## Retention purge (M8-T2)
 
@@ -685,7 +702,9 @@ UTC day rolls. This is designed behavior under abuse — the product
 stays up, only AI features pause.
 
 1. Who spent it: `SELECT workspace_id, sum(tokens), sum(est_cost_eur) FROM ai_usage WHERE day = current_date GROUP BY 1 ORDER BY 3 DESC;`
-2. One hot workspace → likely abuse: consider suspending it.
+2. One hot workspace → likely abuse: suspend it at `/admin/suspensions`
+   (see [Suspending a workspace](#suspending-a-workspace)). The AI meter
+   refuses a suspended workspace at once, before the day rolls.
 3. Organic growth → raise `AI_DAILY_BUDGET_EUR` (env var, re-apply) and
    re-check the €100/mo budget math.
 

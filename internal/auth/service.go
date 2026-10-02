@@ -108,6 +108,10 @@ type AuthInfo struct {
 	// IsSuperAdmin gates the /admin surface (M12); granted only via the
 	// earful admin CLI, never through the web.
 	IsSuperAdmin bool
+	// WorkspaceSuspended is true while an operator has suspended the
+	// workspace. Its creators can still sign in, read and export; what
+	// they cannot do is held where it is routed.
+	WorkspaceSuspended bool
 }
 
 // RequestMagicLink validates and rate-limits a login request, stores the
@@ -308,6 +312,8 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (AuthInfo, error
 		WorkspaceName: row.WorkspaceName,
 		CSRFToken:     row.CsrfToken,
 		IsSuperAdmin:  row.IsSuperAdmin,
+
+		WorkspaceSuspended: row.WorkspaceSuspended,
 	}, nil
 }
 

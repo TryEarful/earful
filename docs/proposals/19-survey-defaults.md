@@ -5,8 +5,8 @@ types, style, fonts and brand) and reuses them when a new survey is
 made. [ADR-0019](../adr/0019-survey-defaults-belong-to-the-workspace.md)
 proposes what that becomes: **Survey Defaults**, kept per Workspace, that
 fill in the new survey form and the add question form and never fill in
-a field on the server. Brand, colour and typeface are left to the
-branding decision proposed as ADR-0018.
+a field on the server. A survey's style (its theme, header, footer and
+pictures) is ADR-0018, accepted.
 
 This file is the plan for building it. Each slice ships on its own, in
 order, and leaves `make check` and `make e2e-smoke` green. Tests are at
@@ -195,12 +195,15 @@ workspace is a 404; the Starter Survey can be copied.
 
 Gallery: `survey-copy` (the form, prefilled).
 
-### SD-5 Brand defaults (L, waits on ADR-0018)
+### SD-5 Style defaults (L)
 
-Whatever ADR-0018 decides a brand is, it is a workspace property kept
-beside these defaults, exported in the same object and purged in the
-same step. No typeface is added by this plan. This slice is written once
-ADR-0018 is accepted.
+ADR-0018 is accepted: a survey's style is a theme, a header and footer
+in its creator's words, a logo, a banner and a thanks picture, frozen
+with each version. A workspace's default style is kept beside these
+defaults, exported in the same object and purged in the same step, and
+copied into a new survey's draft, pictures included, since a picture
+belongs to its survey. No typeface is added by this plan. This slice is
+written against the style as built.
 
 ## Open questions for the owner
 
@@ -227,7 +230,7 @@ ADR-0018 is accepted.
    workspace default "surveys are written in" would fix that, and is a
    change to a survey level fact first. In scope here, or its own ADR.
 7. **Typefaces.** Confirm that a custom font is out of scope for this
-   issue and belongs to ADR-0018, and whether ADR-0018 should consider
-   only open licence faces bundled with Earful.
+   issue. ADR-0018 adds none; a later decision could consider only open
+   licence faces bundled with Earful.
 8. **Release grouping.** SD-1 and SD-2 in one release keeps the export at
    one format version with both; shipping them apart means two.

@@ -27,6 +27,9 @@ type Querier interface {
 	CountLiveStarterSurveys(ctx context.Context, workspaceID uuid.UUID) (int64, error)
 	CountRecentMagicLinksForEmail(ctx context.Context, arg CountRecentMagicLinksForEmailParams) (int64, error)
 	CountResponsesForSurvey(ctx context.Context, surveyID uuid.UUID) (int64, error)
+	CountSurveyImages(ctx context.Context, surveyID uuid.UUID) (int64, error)
+	// How many of the given pictures a survey stores.
+	CountSurveyImagesOf(ctx context.Context, arg CountSurveyImagesOfParams) (int64, error)
 	CreateAnswer(ctx context.Context, arg CreateAnswerParams) error
 	CreateBetaCode(ctx context.Context, arg CreateBetaCodeParams) (uuid.UUID, error)
 	// The copy sent when an account closes. Its expiry is set now, from the
@@ -54,6 +57,13 @@ type Querier interface {
 	// authorization boundary (ADR-0002): a handler cannot forget it, because
 	// the query will not compile without it.
 	CreateSurvey(ctx context.Context, arg CreateSurveyParams) (Survey, error)
+	// The pictures of a survey's style (ADR-0018, migration 00025).
+	//
+	// A style refers to a picture by the hash of its bytes, in hex, wherever
+	// in the style it sits: the jsonpath below finds a reference at any
+	// depth, so a further place for a picture needs no new query.
+	// The same upload twice is one row.
+	CreateSurveyImage(ctx context.Context, arg CreateSurveyImageParams) error
 	// M2: users, workspaces, sessions, magic links. Every workspace-scoped
 	// query in later milestones takes an explicit workspace_id parameter;
 	// these auth queries are the only place that resolves "who am I".
@@ -68,6 +78,11 @@ type Querier interface {
 	DeleteSessionByTokenHash(ctx context.Context, tokenHash []byte) error
 	DeleteSessionsForUser(ctx context.Context, userID uuid.UUID) error
 	DeleteSurveyStats(ctx context.Context, surveyID uuid.UUID) error
+	// Removes the pictures of one survey that nothing shows: no published
+	// version, not the current draft, and not the style being saved (the
+	// pictures in keep). It makes room when a survey is at its limit of
+	// stored pictures.
+	DeleteUnusedSurveyImages(ctx context.Context, arg DeleteUnusedSurveyImagesParams) (int64, error)
 	// Identities are minted in Go when a question first appears in a draft and
 	// only reach the database at publish. ON CONFLICT keeps republishing an
 	// unchanged question idempotent.
@@ -98,7 +113,19 @@ type Querier interface {
 	// The respondent-facing lookup: by id alone, with no workspace scoping,
 	// because a share link is the credential. Soft-deleted surveys vanish.
 	GetPublicSurvey(ctx context.Context, id uuid.UUID) (GetPublicSurveyRow, error)
+	// What anybody may fetch: a picture that a published version of a survey
+	// that has not been deleted shows. A picture only a draft refers to is
+	// not public yet, and a deleted survey's is public no longer; nor is
+	// the picture of a survey whose workspace is suspended, while it is.
+	GetPublishedSurveyImage(ctx context.Context, sha256 []byte) (GetPublishedSurveyImageRow, error)
+	// The same as GetPublishedSurveyImage, without the bytes: enough to say
+	// whether anybody may fetch a picture, and how large it is, for a browser
+	// asking whether what it kept is current, or for its headers alone.
+	GetPublishedSurveyImageMeta(ctx context.Context, sha256 []byte) (GetPublishedSurveyImageMetaRow, error)
 	GetSurveyForWorkspace(ctx context.Context, arg GetSurveyForWorkspaceParams) (Survey, error)
+	// The creator's own view of a picture, for the Style tab and the
+	// preview: any picture stored for a survey of their workspace.
+	GetSurveyImageForWorkspace(ctx context.Context, arg GetSurveyImageForWorkspaceParams) (GetSurveyImageForWorkspaceRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByGoogleSub(ctx context.Context, googleSub *string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
@@ -124,6 +151,7 @@ type Querier interface {
 	IncrementSurveyStatDaily(ctx context.Context, arg IncrementSurveyStatDailyParams) error
 	LatestExportJob(ctx context.Context, workspaceID uuid.UUID) (LatestExportJobRow, error)
 	LatestInsightRun(ctx context.Context, surveyID uuid.UUID) (InsightRun, error)
+	LiftWorkspaceSuspension(ctx context.Context, id uuid.UUID) (int64, error)
 	// Every dated row a survey has, for the workspace export.
 	ListAllSurveyStatsDaily(ctx context.Context, surveyID uuid.UUID) ([]ListAllSurveyStatsDailyRow, error)
 	// Every translation for a survey's answers in one language, so the
@@ -138,6 +166,9 @@ type Querier interface {
 	ListDraftRevisions(ctx context.Context, draftID uuid.UUID) ([]ListDraftRevisionsRow, error)
 	ListLocalizationsForVersion(ctx context.Context, versionID uuid.UUID) ([]ListLocalizationsForVersionRow, error)
 	ListParticipants(ctx context.Context, surveyID uuid.UUID) ([]ListParticipantsRow, error)
+	// The pictures a survey's published versions show, for the workspace
+	// export.
+	ListPublishedImagesForSurvey(ctx context.Context, surveyID uuid.UUID) ([]ListPublishedImagesForSurveyRow, error)
 	// M7: reading results.
 	//
 	// Everything here aggregates by question_identity_id, which `answers`
@@ -160,8 +191,19 @@ type Querier interface {
 	// Rows for one survey between two days inclusive.
 	ListSurveyStatsDaily(ctx context.Context, arg ListSurveyStatsDailyParams) ([]ListSurveyStatsDailyRow, error)
 	ListSurveysForWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]ListSurveysForWorkspaceRow, error)
+	// Every suspended workspace, the longest suspended first, with the
+	// address of the member who owns it (MVP is sole membership, ADR-0002)
+	// and of the operator who suspended it.
+	ListSuspendedWorkspaces(ctx context.Context) ([]ListSuspendedWorkspacesRow, error)
 	ListVersionLanguages(ctx context.Context, versionID uuid.UUID) ([]string, error)
 	ListVersions(ctx context.Context, surveyID uuid.UUID) ([]ListVersionsRow, error)
+	// Holds a survey while its pictures and its draft change together, or
+	// while it is published: two saves of one survey's style, or a save and a
+	// publish, take turns, and the purge leaves a survey held this way alone.
+	// NO KEY UPDATE, not UPDATE: a response, and the counts beside it, refer
+	// to the survey row, and checking that reference takes a lock that
+	// FOR UPDATE would make wait. Respondents are never held up by a save.
+	LockSurveyForStyle(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	// By address across all surveys: a hard bounce means the mailbox is gone,
 	// not that one survey's invite failed.
 	MarkParticipantEmailBounced(ctx context.Context, arg MarkParticipantEmailBouncedParams) error
@@ -206,9 +248,15 @@ type Querier interface {
 	SoftDeleteSurvey(ctx context.Context, arg SoftDeleteSurveyParams) error
 	SoftDeleteUser(ctx context.Context, arg SoftDeleteUserParams) error
 	SoftDeleteWorkspacesForUser(ctx context.Context, arg SoftDeleteWorkspacesForUserParams) error
+	SurveyImageExists(ctx context.Context, arg SurveyImageExistsParams) (bool, error)
 	// The per-survey daily voice cap (M5-T4): how many seconds of speech this
 	// survey has had transcribed today, across every respondent.
 	SurveyVoiceSecondsOnDay(ctx context.Context, arg SurveyVoiceSecondsOnDayParams) (int64, error)
+	// Workspace suspension (ADR-0018, its safeguards; migration 00026).
+	// Only a super admin suspends or lifts, from /admin/suspensions.
+	// A live workspace that is not already suspended. Suspending one twice
+	// would overwrite who did it first and why.
+	SuspendWorkspace(ctx context.Context, arg SuspendWorkspaceParams) (int64, error)
 	UpdateDraftStructure(ctx context.Context, arg UpdateDraftStructureParams) (SurveyDraft, error)
 	// Deliberately cannot touch is_anonymous; the database refuses it anyway
 	// (ADR-0003 trigger), but the query shape means no caller can even try.
@@ -216,11 +264,21 @@ type Querier interface {
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
 	UpsertAnswerTranslation(ctx context.Context, arg UpsertAnswerTranslationParams) error
 	WorkspaceAITier(ctx context.Context, id uuid.UUID) (string, error)
+	// Tells a workspace that is not there from one already in the state a
+	// suspension or a lift asked for, after an update that changed no row.
+	WorkspaceLive(ctx context.Context, id uuid.UUID) (bool, error)
+	// Whether a workspace is suspended, for the AI meter, which every AI
+	// feature asks before it spends anything.
+	WorkspaceSuspended(ctx context.Context, id uuid.UUID) (bool, error)
 	WorkspaceTokensOnDay(ctx context.Context, arg WorkspaceTokensOnDayParams) (int64, error)
 	// The super-admin tier control finds workspaces by a member's address,
 	// the same way the other support tools find an account. Addresses are
 	// stored lower case, so the caller lowers the one it is given.
 	WorkspacesForAITier(ctx context.Context, email string) ([]WorkspacesForAITierRow, error)
+	// The suspension control finds workspaces by a member's address, as the
+	// other support tools find an account. Addresses are stored lower case,
+	// so the caller lowers the one it is given.
+	WorkspacesForSuspension(ctx context.Context, email string) ([]WorkspacesForSuspensionRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

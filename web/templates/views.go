@@ -272,6 +272,36 @@ type AITierOption struct {
 	Label string
 }
 
+// SuspensionsData is the operator's suspension page (ADR-0018): the
+// suspended workspaces, and the workspaces of the account searched for.
+type SuspensionsData struct {
+	Suspended []SuspendedWorkspace
+	Email     string
+	Searched  bool
+	Found     []FoundWorkspace
+	Notice    string
+	Error     string
+	// ReasonFor is the workspace whose reason was refused, and Reason
+	// what was written, so the form shows it again.
+	ReasonFor string
+	Reason    string
+}
+
+type SuspendedWorkspace struct {
+	ID     string
+	Name   string
+	Member string
+	Since  string
+	By     string
+	Reason string
+}
+
+type FoundWorkspace struct {
+	ID        string
+	Name      string
+	Suspended bool
+}
+
 // ExportView is the state of the workspace export (M7-T3): building,
 // ready with an expiring link, or failed with a readable reason.
 type ExportView struct {

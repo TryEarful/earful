@@ -278,3 +278,58 @@ func assertImmutable(t *testing.T, err error) {
 		t.Fatalf("expected an immutability error, got: %v", err)
 	}
 }
+
+// TestStylePicturesAreImmutableWhileShown: a picture's address is the
+// hash of its bytes, and a browser is told to keep what it fetched for
+// good, so a row is never rewritten. And the look of the page is part of
+// what a respondent was shown (ADR-0001, ADR-0018): a picture a published
+// version shows cannot be deleted, while one nothing shows can.
+func TestStylePicturesAreImmutableWhileShown(t *testing.T) {
+	t.Parallel()
+	s, pool, workspaceID, userID := newStore(t)
+	ctx := context.Background()
+
+	survey, err := s.Create(ctx, workspaceID, userID, "Pictures", true, nil)
+	if err != nil {
+		t.Fatalf("create survey: %v", err)
+	}
+	picture := func(fill byte) store.NewImage {
+		sha := strings.Repeat(string("0123456789abcdef"[fill%16]), 64)
+		return store.NewImage{SHA256: sha, ContentType: "image/png", Width: 4, Height: 4, Bytes: []byte{fill}}
+	}
+	shown, unused := picture(1), picture(2)
+
+	draft := domain.Draft{Questions: []domain.Question{{
+		IdentityID: uuid.NewString(), Type: domain.LongText, Text: "What happened?",
+	}}}
+	draft.Style.Header.Logo = domain.StyleImage{SHA256: shown.SHA256, Width: 4, Height: 4}
+	draft.Style.Header.LogoAlt = "A logo"
+	if err := s.SaveStyle(ctx, survey.ID, userID, draft, []store.NewImage{shown, unused}, time.Now()); err != nil {
+		t.Fatalf("save style: %v", err)
+	}
+	if _, err := s.Publish(ctx, workspaceID, survey.ID, userID, time.Now()); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	t.Run("a picture cannot be rewritten", func(t *testing.T) {
+		_, err := pool.Exec(ctx, `UPDATE survey_images SET bytes = '\x00' WHERE survey_id = $1`, survey.ID)
+		assertImmutable(t, err)
+	})
+	t.Run("a picture a version shows cannot be deleted", func(t *testing.T) {
+		_, err := pool.Exec(ctx,
+			`DELETE FROM survey_images WHERE survey_id = $1 AND encode(sha256, 'hex') = $2`, survey.ID, shown.SHA256)
+		if err == nil || !strings.Contains(err.Error(), "ADR-0001") {
+			t.Fatalf("expected the delete to be refused, got: %v", err)
+		}
+	})
+	t.Run("a picture nothing shows can be", func(t *testing.T) {
+		tag, err := pool.Exec(ctx,
+			`DELETE FROM survey_images WHERE survey_id = $1 AND encode(sha256, 'hex') = $2`, survey.ID, unused.SHA256)
+		if err != nil || tag.RowsAffected() != 1 {
+			t.Fatalf("deleting an unused picture: %v (%d rows)", err, tag.RowsAffected())
+		}
+	})
+	if img, err := s.PublishedImage(ctx, shown.SHA256); err != nil || len(img.Bytes) != 1 {
+		t.Errorf("the shown picture is no longer served: %v", err)
+	}
+}

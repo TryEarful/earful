@@ -82,6 +82,9 @@
   --bg: var(--paper);
   --surface: var(--white);
   --surface-2: #fbf8f2;
+  /* The plate a survey's own logo stands on. It is light in both display
+     modes and in every theme: a logo is drawn for a light ground. */
+  --plate: var(--white);
   --text: var(--ink);
   --muted: var(--slate);
   --link: var(--deep-teal);
@@ -772,6 +775,29 @@ dd,
   padding: var(--space-3) var(--space-4);
   margin: var(--space-4) 0;
   color: var(--text);
+}
+
+/* Under the header on every page of a workspace an operator has
+   suspended: the column's width, and a warning's ground, since it says
+   what the creator cannot do. */
+.suspension-notice {
+  box-sizing: border-box;
+  max-width: var(--measure);
+  margin: 0 auto var(--space-6);
+  background: var(--tint-warning);
+}
+
+/* One workspace on the operator's suspension page, ruled off from the
+   next. */
+.suspension-row + .suspension-row {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+/* A reason is written in lines, and is read in the same lines. */
+.suspension-row .facts dd {
+  white-space: pre-line;
 }
 
 .error-text {
@@ -2943,8 +2969,111 @@ main.standalone .button-row {
   justify-content: center;
 }
 
-.standalone > .owl {
+.standalone > .owl,
+.standalone > .thanks-drawing,
+.standalone > .thanks-image {
   margin: 0 auto var(--space-5);
+}
+
+/* --- the thanks page's picture (ADR-0018) ------------------------------- */
+
+/* The drawings a thanks page can show in place of the owl. Every colour
+   is the theme's: its accent, a soft mix of it on the card, and the card
+   itself, so a drawing belongs to whichever theme the survey is drawn in
+   and to both display modes. Signal and the status colours are never
+   used: a drawing is not a microphone, and not a verdict. */
+.thanks-drawing {
+  display: block;
+  flex: none;
+}
+
+.drawing-disc {
+  fill: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+.drawing-fill,
+.drawing-piece {
+  fill: var(--accent);
+}
+
+.drawing-piece-soft {
+  fill: color-mix(in srgb, var(--accent) 60%, var(--surface));
+}
+
+/* The star's points are rounded by a line of its own colour, as the
+   owl's shapes are rounded. */
+.drawing-star {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.drawing-paper {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 3.6;
+}
+
+.drawing-stroke,
+.drawing-on-fill,
+.drawing-on-fill-thin,
+.drawing-spark,
+.drawing-line,
+.drawing-curl {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drawing-stroke {
+  stroke: var(--accent);
+  stroke-width: 3.6;
+}
+
+.drawing-on-fill {
+  stroke: var(--accent-contrast);
+  stroke-width: 6;
+}
+
+.drawing-on-fill-thin {
+  stroke: var(--accent-contrast);
+  stroke-width: 2.4;
+}
+
+.drawing-spark,
+.drawing-line {
+  stroke: color-mix(in srgb, var(--accent) 60%, var(--surface));
+  stroke-width: 3.6;
+}
+
+.drawing-curl {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+/* A creator's own picture stands on the same light plate as a logo, for
+   the same reason: a picture drawn for a light ground stays readable in
+   the dark mode. It keeps its shape, inside a box no larger than the
+   page's column allows. */
+.thanks-image {
+  display: block;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(20rem, 100%);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--plate);
+}
+
+.thanks-image img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
 }
 
 main.standalone .card,
@@ -3071,6 +3200,69 @@ main.home h1 {
   padding-top: var(--space-5);
 }
 
+/* The banner is a strip across the head of the column, three wide to
+   one high, with nothing written on it: what a creator uploads is never
+   behind text. The picture is stored at that shape; cover holds the
+   shape for one that is not. */
+.style-header.has-banner {
+  padding-top: var(--space-4);
+}
+
+.style-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+}
+
+/* The logo stands on a plate, which is as high as a line of the header
+   and as wide as the logo needs, from a square up to a long wordmark.
+   The logo is fitted inside it and never cut. */
+.style-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: fit-content;
+  height: 4.5rem;
+  min-width: 4.5rem;
+  max-width: min(14rem, 100%);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--plate);
+}
+
+.style-logo img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.style-header .style-logo {
+  margin-bottom: var(--space-3);
+}
+
+/* Over a banner the plate sits across its lower edge, ringed in the
+   page's ground so that it reads as standing in front. */
+.style-header.has-banner .style-logo {
+  position: relative;
+  margin-top: -2.25rem;
+  margin-left: var(--space-4);
+  box-shadow: 0 0 0 4px var(--bg);
+}
+
+/* Without a logo, the first line under a banner stands as far from it
+   as the name stands from a plate. */
+.style-banner + .style-header-body > :first-child:not(.style-logo) {
+  margin-top: var(--space-3);
+}
+
 .style-name {
   margin: 0;
   font-size: 1.25rem;
@@ -3134,8 +3326,34 @@ main.home h1 {
 }
 
 .style-header.is-compact .style-tagline,
-.style-header.is-compact .style-links {
+.style-header.is-compact .style-links,
+.style-header.is-compact .style-banner {
   display: none;
+}
+
+.style-header.is-compact.has-banner {
+  padding-top: var(--space-6);
+}
+
+/* Compact, the logo is small and beside the name. */
+.style-header-compact .style-header-body,
+.style-header.is-compact .style-header-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.style-header-compact .style-logo,
+.style-header.is-compact .style-logo {
+  flex: none;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 9rem;
+  margin: 0;
+  padding: var(--space-1);
+  border-color: var(--border);
+  border-radius: var(--radius-s);
+  box-shadow: none;
 }
 
 /* Above a page that stands alone the header is centred with it. */
@@ -3144,11 +3362,69 @@ body:has(> main.standalone) .style-header {
   text-align: center;
 }
 
+body:has(> main.standalone) .style-header-body {
+  justify-content: center;
+}
+
 /* The creator's footer heads the page's footer, above Earful's line. */
 .style-footer {
   flex: 0 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-4);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--border);
+}
+
+.style-footer .style-logo {
+  flex: none;
+  height: 3rem;
+  min-width: 3rem;
+  max-width: 9rem;
+  padding: var(--space-1);
+  border-radius: var(--radius-s);
+}
+
+.style-footer-body {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* On the Style tab, a link is a label and an address. Where the two
+   stack, on a phone, each pair keeps together and stands apart from the
+   next, so that an address is read with its own label. */
+.style-links-fields .field-row {
+  gap: 0 var(--space-4);
+  margin: var(--space-4) 0;
+}
+
+.style-links-fields .field-row .field {
+  margin: 0 0 var(--space-3);
+}
+
+/* On the Style tab, the picture a field holds now, beside the box that
+   removes it. */
+.style-image-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.style-image-thumb:not(.style-logo) img {
+  display: block;
+  width: 12rem;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+}
+
+.style-image-current .checkbox {
+  margin: 0;
 }
 
 .style-footer-text {
@@ -3937,6 +4213,74 @@ main.standalone h1 {
   margin-top: var(--space-1);
   border-radius: var(--radius-round);
   background: var(--button);
+}
+
+/* The pictures a thanks page can show, each a choice with the picture
+   drawn small beside its name. Three to a row where there is room. */
+.thanks-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.thanks-choice {
+  align-items: center;
+  margin: 0;
+}
+
+.thanks-choice > span:not(.thanks-choice-preview) {
+  flex: 1 1 0;
+}
+
+.thanks-choice-preview {
+  display: flex;
+  flex: none;
+  order: 3;
+}
+
+/* The creator's own picture, where one is stored, drawn small on its
+   plate as the footer draws a logo. */
+.thanks-choice-image.style-logo {
+  height: 3rem;
+  min-width: 3rem;
+  max-width: 3rem;
+  padding: var(--space-1);
+  border-radius: var(--radius-s);
+}
+
+.thanks-choice-frame .frame-edge {
+  fill: var(--surface-2);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+
+.thanks-choice-frame .frame-empty {
+  fill: none;
+  stroke-dasharray: 4 3;
+}
+
+.thanks-choice-frame .frame-mark {
+  fill: var(--muted);
+}
+
+/* On the theme sheet, every drawing at once, in the sheet's theme. */
+.thanks-drawings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-4);
+  margin: var(--space-7) 0 var(--space-5);
+}
+
+/* On a phone the four pictures stand two by two, so none is left alone
+   on a row. */
+@media (max-width: 30rem) {
+  .thanks-drawings {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+  }
 }
 
 /* The theme sheet draws a few controls with their focus ring showing,

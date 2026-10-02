@@ -27,7 +27,7 @@ import (
 const attachField = "files"
 
 // readUploads parses a multipart body before anything else reads it.
-// The memory allowance is the whole request cap, so the standard
+// The memory allowance is the whole request cap for the route, so the standard
 // library's parser keeps every part in memory: with a smaller one it
 // would write the remainder of a large file to a temporary file, and an
 // upload must never reach the disk. A body over the cap is refused here
@@ -39,12 +39,13 @@ func (s *server) readUploads(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if err := r.ParseMultipartForm(maxUploadRequestBytes); err != nil {
+		limit := bodyLimit(r)
+		if err := r.ParseMultipartForm(limit); err != nil {
 			var tooLarge *http.MaxBytesError
 			if errors.As(err, &tooLarge) {
 				render(w, r, http.StatusRequestEntityTooLarge, templates.ErrorPage(
 					say(r, "error.upload.title"),
-					say(r, "error.upload.body", uitext.Args{"Size": megabytes(maxUploadRequestBytes)})))
+					say(r, "error.upload.body", uitext.Args{"Size": megabytes(limit)})))
 				return
 			}
 			http.Error(w, "bad request", http.StatusBadRequest)

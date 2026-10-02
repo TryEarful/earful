@@ -199,7 +199,11 @@ func (s *server) loadParticipantSurvey(w http.ResponseWriter, r *http.Request) (
 		return fail()
 	}
 	if participant.SubmittedAt != nil {
-		survey, err := s.surveys.PublicSurvey(r.Context(), participant.SurveyID)
+		survey, err := s.publicSurvey(r, participant.SurveyID)
+		if err == nil && survey.WorkspaceSuspended {
+			s.respondSuspended(w, r)
+			return fail()
+		}
 		title := ""
 		var style domain.Style
 		if err == nil {
@@ -210,7 +214,7 @@ func (s *server) loadParticipantSurvey(w http.ResponseWriter, r *http.Request) (
 		return fail()
 	}
 
-	survey, err := s.surveys.PublicSurvey(r.Context(), participant.SurveyID)
+	survey, err := s.publicSurvey(r, participant.SurveyID)
 	if errors.Is(err, store.ErrNotFound) {
 		s.respondNotFound(w, r)
 		return fail()
@@ -219,6 +223,8 @@ func (s *server) loadParticipantSurvey(w http.ResponseWriter, r *http.Request) (
 		s.internalError(w, r, "load survey for participant", err)
 		return fail()
 	}
+	// respondUnavailable draws a suspended workspace's survey as
+	// Earful's plain page, before anything else about it.
 	if !survey.State().AcceptsResponses(s.clock.Now()) {
 		s.respondUnavailable(w, r, survey)
 		return fail()

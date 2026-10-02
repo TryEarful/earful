@@ -70,6 +70,10 @@ these:
 `--danger`, `--button`, `--button-text`, `--ring`, the `--tint-*` tokens
 and the `--owl-*` tokens.
 
+One more is fixed, and no display mode or theme reassigns it: `--plate`,
+white, the ground a survey's own logo stands on (see "A survey's header
+and footer").
+
 ### Dark mode
 
 Light and dark are the two display modes.
@@ -166,6 +170,7 @@ against the system's, dark on a light system and light on a dark one.
 | Link on card | 7.95 | 8.31 | 8.72 | 8.52 | 7.10 | 7.32 | 7.40 | 8.85 |
 | Link on a field's ground | 7.50 | 8.93 | 8.21 | 9.18 | 6.71 | 8.10 | 7.01 | 9.54 |
 | Text on a notice, on page | 16.15 | 12.29 | 14.58 | 12.44 | 14.07 | 11.77 | 13.69 | 12.10 |
+| Text on a warning's ground, on page | 15.99 | 11.61 | 15.98 | 11.96 | 15.49 | 11.68 | 15.07 | 11.93 |
 | Text on a chosen option | 15.99 | 12.01 | 15.96 | 12.81 | 15.54 | 11.54 | 15.13 | 12.44 |
 | Filled button's text on it | 15.99 | 15.99 | 13.03 | 16.02 | 8.21 | 10.10 | 8.16 | 11.74 |
 | Text on the accent | 7.95 | 9.59 | 8.72 | 9.62 | 7.10 | 8.66 | 7.40 | 10.15 |
@@ -228,11 +233,13 @@ times use tabular figures.
 |---|---|
 | `button`, `.button` | The filled pill: the page's one main action |
 | `.secondary` | The outlined pill: every other action |
-| `.secondary.danger` | Deleting something |
+| `.secondary.danger` | Deleting something, or suspending a workspace |
 | `.button-link` | An action set as a link |
 | `.card` | A white panel; a page is a stack of them |
-| `.chip`, `.chip-open`, `.chip-draft`, `.chip-closed` | Status, with a dot that repeats the word |
+| `.chip`, `.chip-open`, `.chip-draft`, `.chip-closed` | Status, with a dot that repeats the word. The plain `.chip`, with no dot, says "On hold" for an open survey of a suspended workspace, which takes no answers |
 | `.notice`, `.error-summary` | A message about what just happened |
+| `.suspension-notice` | The line under the header on every page of a suspended workspace: what is held and whom to ask, on a warning's ground |
+| `.suspension-row` | One workspace on the operator's suspension page, ruled off from the next |
 | `.field`, `.choice`, `.option`, `.scale-point` | Form rows |
 | `.checkbox` | A single tickable row, at least 44px tall |
 | `input[type="file"]` | A file picker inside a `.field`: its button is the outlined pill, with a hint below saying what it takes |
@@ -244,8 +251,15 @@ times use tabular figures.
 | `.switchers`, `.switcher` | The footer's quiet choices: the language and the display mode |
 | `.theme-choices`, `.theme-choice` | The themes offered on the Style tab: a `.choice` for each, with its sample |
 | `.theme-sample` | A small page in a theme's own tokens: its ground, a card, a line of text, a link and its filled button, which is not a control |
-| `.style-header`, `.style-header-compact` | A survey's own header, above everything on a respondent's page: `.style-name`, `.style-tagline` and `.style-links`. Compact is the name alone |
-| `.style-footer` | The creator's footer, at the head of the respondent's footer and above Earful's line: `.style-footer-text` and `.style-links` |
+| `.style-links-fields` | The rows of links on the Style tab: each link's label and address keep together, apart from the next pair |
+| `.style-header`, `.style-header-compact` | A survey's own header, above everything on a respondent's page: `.style-banner`, `.style-logo`, `.style-name`, `.style-tagline` and `.style-links`. Compact is the logo and the name |
+| `.style-banner` | The strip across the head of a header, three wide to one high, with nothing on it |
+| `.style-logo` | The plate a survey's logo stands on: light in both display modes, a square at least, wider for a wordmark |
+| `.style-footer` | The creator's footer, at the head of the respondent's footer and above Earful's line: the logo small, `.style-footer-text` and `.style-links` |
+| `.style-image-field`, `.style-image-current`, `.style-image-thumb` | A picture's field on the Style tab: the file, and under it the picture held now, as a thumbnail, beside the box that removes it |
+| `.thanks-choices`, `.thanks-choice`, `.thanks-choice-preview`, `.thanks-choice-image` | The pictures a thanks page can show, offered on the Style tab: a `.choice` for each, with the picture drawn small in the same square as the others; `.thanks-choice-image` is the creator's stored picture on its plate |
+| `.thanks-drawing` | One of the three drawings a thanks page can show in place of the owl, coloured by the theme |
+| `.thanks-image` | A creator's own thanks picture, on the same white plate as a logo |
 | `.style-links` | The links of a header or a footer, each with an arrow that says it opens in a new tab |
 | `.focus-shown` | The focus ring, drawn on the theme sheet's samples where a picture cannot hold the keyboard's focus. Nowhere else |
 
@@ -260,17 +274,77 @@ size, a tagline in muted text and up to three links, on the theme's
 ground with a hairline below. The name is a paragraph and never a
 heading: the page's `<h1>` is the survey's title. On the questions page
 the header is whole. On every other page of the survey, and past the
-first question where questions are shown one at a time, it is the name
-alone, at body size, so the page's own message stays in view.
+first question where questions are shown one at a time, it is the logo
+and the name alone, at body size, so the page's own message stays in
+view.
 
-The creator's footer is a text and up to three links inside the page's
-one `<footer>`, above a hairline and Earful's own line, which reads
+The header is laid out as a profile is. A banner, where the survey has
+one, is a strip across the head of the column, three wide to one high
+with rounded corners. It is decoration: nothing is ever written on it,
+since a picture a creator uploads cannot be measured for contrast, and
+its alternative text is empty. The logo stands on a plate across the
+banner's lower edge, ringed in the page's ground, with the name, the
+tagline and the links under it on the theme's ground. Without a banner
+the plate heads the header; without a logo the banner is a strip and no
+more.
+
+The plate is white (`--plate`) in both display modes and in every
+theme. A logo is drawn for a light ground far more often than for a
+dark one, and a dark logo with a transparent ground would vanish on a
+plate the dark mode coloured. The plate is as high as the header's line
+and as wide as the logo needs, from a square to a long wordmark; the
+logo is fitted inside it and never cut. A logo always has alternative
+text, which is the creator's and is translated with the style's other
+words.
+
+A page has one mark. Where the survey has a logo, the owl leaves
+Earful's line in the footer, which still reads "Powered by Earful" and
+keeps Help, the privacy page and the display mode.
+
+On every page of a survey, Earful's links end with "Report this
+survey", where the instance publishes a contact: an ordinary link, in
+Earful's words, which no style can remove.
+
+The creator's footer is the logo again, small and with no alternative
+text of its own, a text and up to three links inside the page's one
+`<footer>`, above a hairline and Earful's own line, which reads
 "Powered by Earful" on a survey and "Earful" under Help and the
 documents. Everything a creator writes is plain text in the theme's
 text, muted and link colours, so each pair is one the contrast table
 already measures. A header or a footer adds no button: the page keeps
 its one filled button. Links open in a new tab, say so to a screen
 reader, and are 44px tall like every other.
+
+### Thanks page pictures
+
+The page that thanks a respondent has one picture above its heading
+(ADR-0018). It is the happy owl unless the survey's style chooses
+another: one of three drawings, the creator's own picture, or none. With
+none, the heading leads the page and nothing takes the picture's place.
+
+The drawings are a tick in a seal for "received", a sealed envelope with
+the lines of its going for "delivered", and a star with confetti about it
+for "celebrate". None has an owl in it, so a survey that carries its own
+mark can thank in a way that is not Earful's. Each is drawn at the owl's
+size, 96px, on a 96 unit square, with the owl's line weight, on a soft
+disc of the theme's accent. Like the owl each is inline and decoration,
+hidden from a screen reader, since the heading beside it says what
+happened.
+
+A drawing is coloured by the theme alone: its accent, a mix of the
+accent into the card for the soft parts, the card itself for the paper of
+the envelope, and the accent's own contrast colour for a mark drawn on
+the accent. So a drawing belongs to whichever theme the survey is drawn
+in, in both display modes, and its colours are pairs the contrast table
+already measures. Signal is never in a drawing, since a drawing is not a
+microphone, and neither is a status colour, since it is not a verdict. A
+test reads the stylesheet and fails on a drawing's rule that takes any
+other colour.
+
+A creator's own picture stands on the white plate a logo stands on, for
+the same reason, and keeps its shape inside a box no larger than the
+column allows. It has alternative text, which is the creator's and is
+translated with the style's other words.
 
 ### Hooks are not styles
 
@@ -287,8 +361,8 @@ display mode. It is decoration: whatever stands beside it says what it means.
 
 | Mood | Where |
 |---|---|
-| Neutral | The wordmark, the favicon, an empty dashboard |
-| Happy (eyes closed in a smile) | Answers sent; a preview submitted |
+| Neutral | The wordmark, the favicon, an empty dashboard; the footer of a respondent's page, unless the survey has a logo of its own |
+| Happy (eyes closed in a smile) | Answers sent; a preview submitted. On a survey's thanks page, unless its style chooses another picture or none, and as that choice's preview on the Style tab |
 | Surprised (a small "o") | A link that leads nowhere, a sign in link that cannot be used |
 | Listening (sound waves) | The dictation card; the waves show only while recording |
 

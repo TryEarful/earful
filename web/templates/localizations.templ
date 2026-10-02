@@ -162,6 +162,13 @@ templ styleTranslation(lang LanguageView) {
 				<textarea name="style_tagline" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore rows="3" maxlength="280">{ lang.Style.Words.Tagline }</textarea>
 			</label>
 		}
+		if lang.Style.Source.LogoAlt != "" {
+			<p class="source-text">{ lang.Style.Source.LogoAlt }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.style.logo_alt", uitext.Args{"Language": lang.Name}) }</span>
+				<input type="text" name="style_logo_alt" value={ lang.Style.Words.LogoAlt } maxlength="120" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+		}
 		for i, source := range lang.Style.Source.HeaderLinks {
 			<p class="source-text">{ source }</p>
 			<label class="field">
@@ -181,6 +188,13 @@ templ styleTranslation(lang LanguageView) {
 			<label class="field">
 				<span>{ t(ctx, "languages.style.footer_link", uitext.Args{"Position": i + 1, "Language": lang.Name}) }</span>
 				<input type="text" name="style_footer_link" value={ label(lang.Style.Words.FooterLinks, i) } maxlength="60" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
+			</label>
+		}
+		if lang.Style.Source.ThanksAlt != "" {
+			<p class="source-text">{ lang.Style.Source.ThanksAlt }</p>
+			<label class="field">
+				<span>{ t(ctx, "languages.style.thanks_alt", uitext.Args{"Language": lang.Name}) }</span>
+				<input type="text" name="style_thanks_alt" value={ lang.Style.Words.ThanksAlt } maxlength="120" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore/>
 			</label>
 		}
 	</div>

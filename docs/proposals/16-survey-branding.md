@@ -183,25 +183,35 @@ mark.
   NULL, created_at timestamptz NOT NULL, UNIQUE (survey_id, sha256))`.
 - A new package `internal/styleimage` (domain logic, no HTTP): identify
   the file by its content, refuse anything but PNG, JPEG and WebP, read
-  the dimensions with `image.DecodeConfig` and refuse a pixel count that
-  would not fit in memory, decode, scale down to the slot's size with
-  `golang.org/x/image/draw`, and encode again. A banner is stored as a
+  the dimensions with `image.DecodeConfig` and refuse a pixel count, or
+  a decode cost worked out from the header, that would not fit in
+  memory (a JPEG whose segments the decoder would read differently
+  before its frame header is refused, since its cost could not be
+  trusted), decode, scale down to the slot's size by averaging the decoded
+  picture a row at a time, and encode again. A banner is stored as a
   JPEG at most 1600 pixels wide; a logo as a PNG (or a JPEG if it came
   as one) at most 512 pixels a side. It is written so that pictures in
   questions (ADR-0021) can share it.
-- `internal/store`: saving refuses an eleventh image for a survey;
+- `internal/store`: `SaveStyle` stores the pictures and the draft in one
+  transaction with the survey held (`FOR NO KEY UPDATE`, which a
+  response's reference to the survey does not wait for), and refuses an
+  eleventh image for a survey; publishing refuses a style whose picture is not stored;
   `GetPublishedImage(sha)` returns an image only if a published version
   of a survey that is not deleted refers to it;
   `GetDraftImage(workspace, survey, sha)` serves the preview.
 
 **Routes.** The Style form becomes multipart, with the CSRF field first.
 The upload caps are 2 MB for the banner and 1 MB for the logo, read with
-a limit and refused with a message beyond it. `GET /style-image/{sha256}`
+a limit and refused with a message beyond it. At most four Style forms
+are handled at once, and one for each person; another is turned away
+with 503, a Retry-After and a link back to the Style tab before its body
+is read. A form's body must arrive within two minutes. `GET /style-image/{sha256}`
 is public; `GET /surveys/{id}/style-image/{sha256}` serves the draft's
 images in the creator's session. Both send the exact content type and
-`Cache-Control: public, max-age=31536000, immutable` (the creator's
-route `private`), in place of the `no-store` from `SecurityHeaders`.
-Neither writes a counter.
+an ETag, in place of the `no-store` from `SecurityHeaders`: the public
+route `Cache-Control: public, max-age=31536000, immutable`, answering a
+revalidation or a HEAD without loading the bytes, and the creator's
+route `private, no-cache`. Neither writes a counter.
 
 **Pages.** The Header section gains two file fields, each with the
 current image, a "Remove this image" checkbox, and for the logo its
@@ -248,15 +258,17 @@ with both images.
 **Goal.** A creator chooses what the thanks page shows: the owl, one of
 three illustrations, their own image, or nothing.
 
-- `Style` gains `Thanks{Picture, ImageSHA, Alt}`, where the picture is
+- `Style` gains `Thanks{Picture, Image, Alt}`, where the picture is
   `owl` (the default), `check`, `envelope`, `confetti`, `image` or
   `none`. An uploaded picture uses step 3's pipeline with its own slot:
   1 MB, at most 800 pixels a side, alternative text required and
   localized.
-- `web/templates/brand.templ`: the three illustrations, inline SVG
-  filled through classes from the theme's tokens, as the owl is. The
-  style guide lists them, with where each may appear (the thanks page
-  only).
+- `web/templates/respond_thanks_picture.templ`: the three
+  illustrations, inline SVG filled through classes from the theme's
+  tokens, as the owl is. It is a respondent template, so the test that
+  keeps status colours off a themed page reads it, and a second test
+  holds a drawing's rules to the theme's accent and card. The style
+  guide lists them, with where each may appear (the thanks page only).
 - The Style tab gains the Thanks picture section: six radios with a
   small drawing of each, and a file field. The editor's thank you panel
   gains one line pointing to it.
@@ -272,28 +284,53 @@ picture; `none` leaves the heading and the message.
 both display modes; the three illustrations on the theme sheet, so they
 are seen in every theme.
 
-## Step 5: safeguards and terms (size S)
+## Step 5: safeguards and terms (size S, built)
 
-**Goal.** A respondent can report a survey, and support knows what to do
-with the report.
+**Goal.** A respondent can report a survey, support knows what to do
+with the report, and an operator can stop a workspace that misuses the
+service without erasing anything.
 
-- Earful's footer on respondent pages gains "Report this survey": a
-  `mailto:` to the instance's `CONTACT_EMAIL`, with the survey's address
-  in the subject. Not shown on an instance without one.
+- Earful's footer on every page of a survey gains "Report this survey":
+  a `mailto:` to the instance's contact (`CONTACT_EMAIL`), with the
+  survey's share link in the message. Not shown on an instance without
+  one. On a personal invitation it names the share link, never the
+  invitation's address, which is its participant's credential.
 - A test that the disclosure naming the workspace is on the questions
-  page of a styled survey, above the questions, in Earful's words.
-- `docs/runbook.md` gains "A survey impersonates someone": checking the
-  complaint, closing the survey, suspending the workspace, answering the
-  reporter.
+  page of a fully styled survey, above the questions, in Earful's words,
+  under the workspace's real name.
+- Workspace suspension (migration 00026), at `/admin/suspensions`, a
+  super admin's page with a reason required. While suspended: every
+  survey takes no answers and shows Earful's plain page with no style;
+  its pictures are not served; the AI meter refuses it; publishing,
+  reopening and sending invitations are refused; its creators still
+  sign in, read, edit drafts and export, under a notice naming the
+  contact. Lifting puts everything back; the purge does not count it.
+- `docs/runbook.md`: "A survey impersonates someone" suspends rather
+  than deletes, the AI breaker procedure points to suspension, and
+  "Suspending a workspace" says what it does.
 - `web/pages/terms.en.md` and `terms.es.md`: the terms, including that a
-  creator may only use names and marks they are entitled to. They stay
-  marked as a draft until the instance's operator has read them.
+  creator may only use names and marks they are entitled to, the report
+  link and what a suspension means. They stay marked as a draft until
+  the instance's operator has read them.
+- Help describes the Style tab.
 
-**Tests at the edge.** The report link is on the questions, thanks and
-closed pages when a contact address is set, carries the survey's
-address, and is absent without one.
+**Tests at the edge.** The report link carries the survey's share link,
+is encoded for a mail client, is on the thanks page, is absent without a
+contact and on creator pages, and never carries an invitation's token.
+A suspended workspace's survey, and a personal link to one, show the
+plain page; an answer from a page opened before the suspension is
+refused; its logo is a 404; another workspace is untouched; publishing,
+reopening, sending and AI are refused with a message; the export still
+works; lifting puts the style and answering back. Only a super admin
+reaches the page; a reason is required; a workspace is not suspended
+twice. The meter refuses a suspended workspace before anything else. A
+long suspension erases nothing.
 
-**Gallery.** A respondent's footer with and without the report link.
+**Gallery.** Every survey page shows its footer with the report link
+(the gallery's instance publishes a contact). The operator's page with
+nothing suspended, a refused suspension and one listed; the suspended
+creator's dashboard and the page that refuses reopening; a suspended
+survey's page in both languages.
 
 ## Not in these steps
 

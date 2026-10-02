@@ -56,6 +56,15 @@ resource "google_cloud_run_v2_service" "app" {
         mount_path = "/cloudsql"
       }
 
+      # The Go runtime's soft memory limit, under the 512Mi above: as the
+      # heap nears it the collector works harder, rather than the instance
+      # being stopped at the container's limit with every request on it.
+      # The difference is for the runtime's own memory and the stacks.
+      env {
+        name  = "GOMEMLIMIT"
+        value = "400MiB"
+      }
+
       dynamic "env" {
         for_each = var.env
         content {

@@ -123,13 +123,17 @@ func (s *server) respondSubmit(w http.ResponseWriter, r *http.Request) {
 		s.respondNotFound(w, r)
 		return
 	}
-	survey, err := s.surveys.PublicSurvey(r.Context(), surveyID)
+	survey, err := s.publicSurvey(r, surveyID)
 	if errors.Is(err, store.ErrNotFound) {
 		s.respondNotFound(w, r)
 		return
 	}
 	if err != nil {
 		s.internalError(w, r, "load public survey", err)
+		return
+	}
+	if survey.WorkspaceSuspended {
+		s.respondSuspended(w, r)
 		return
 	}
 	if !survey.IsAnonymous {
@@ -384,6 +388,9 @@ func (s *server) previewPage(w http.ResponseWriter, r *http.Request) {
 	}
 	info, _ := authFrom(r.Context())
 	all, other := previewLayout(r)
+	// The draft's pictures, which the public address does not serve
+	// until a version shows them.
+	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
 	render(w, r, http.StatusOK, templates.Respond(templates.RespondData{
 		SurveyID:      survey.ID.String(),
 		Title:         survey.Title,
@@ -435,6 +442,7 @@ func (s *server) previewSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	answers := answerSummary(r, draft.Questions, parseSubmission(r, draft.Questions))
+	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
 	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title, answers, draft.Style))
 }
 
@@ -447,13 +455,17 @@ func (s *server) loadPublicSurvey(w http.ResponseWriter, r *http.Request) (store
 		s.respondNotFound(w, r)
 		return store.PublicSurvey{}, store.ServedVersion{}, false
 	}
-	survey, err := s.surveys.PublicSurvey(r.Context(), surveyID)
+	survey, err := s.publicSurvey(r, surveyID)
 	if errors.Is(err, store.ErrNotFound) {
 		s.respondNotFound(w, r)
 		return store.PublicSurvey{}, store.ServedVersion{}, false
 	}
 	if err != nil {
 		s.internalError(w, r, "load public survey", err)
+		return store.PublicSurvey{}, store.ServedVersion{}, false
+	}
+	if survey.WorkspaceSuspended {
+		s.respondSuspended(w, r)
 		return store.PublicSurvey{}, store.ServedVersion{}, false
 	}
 	if !survey.IsAnonymous {
@@ -483,6 +495,10 @@ func (s *server) renderRespondWithErrors(
 // respondUnavailable explains why a survey cannot be answered — closed,
 // or never published — without leaking anything about the workspace.
 func (s *server) respondUnavailable(w http.ResponseWriter, r *http.Request, survey store.PublicSurvey) {
+	if survey.WorkspaceSuspended {
+		s.respondSuspended(w, r)
+		return
+	}
 	state := survey.State()
 	switch state.StatusAt(s.clock.Now()) {
 	case domain.StatusClosed:

@@ -14,6 +14,8 @@ Produce one from **Account → Export everything**. You get a zip:
 workspace.json                   everything, in one document
 surveys/<slug>-<id8>.csv         one CSV per survey (the same file the
                                  survey's own Download CSV produces)
+images/<sha256>.png or .jpg      the logos, banners and thanks page
+                                 pictures surveys showed, where any did
 README.txt                       what a person needs to know
 ```
 
@@ -66,13 +68,27 @@ spreadsheets and contain nothing the JSON doesn't.
               "tagline": "Evening classes in wood, clay and print.",
               "links": [                   // a label and an address, together
                 {"label": "Our classes", "url": "https://example.com/classes"}
-              ]
+              ],
+              "banner": {                  // omitted when there was none
+                "file": "images/9f2c…e1.jpg", "width": 1600, "height": 533
+              },
+              "logo": {                    // omitted when there was none
+                "file": "images/41ab…7d.png", "width": 400, "height": 400,
+                "alt": "Corner Workshop"   // what a screen reader was given
+              }
             },
             "footer": {                    // omitted when there was none
               "text": "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
               "links": [
                 {"label": "Privacy notice", "url": "https://example.com/privacy"}
               ]
+            },
+            "thanks": {                    // omitted when the thanks page showed the owl
+              "picture": "image",          // check | envelope | confetti | image | none
+              "image": {                   // with "image" only
+                "file": "images/7be0…42.png", "width": 800, "height": 600,
+                "alt": "Our team waving"
+              }
             }
           }
         }
@@ -152,7 +168,24 @@ from, a `tagline`, and up to three `links`. `footer` is what stood below
 it, above Earful's own footer: a `text` and up to three `links`. Every
 part is plain text in the creator's wording, absent when it was not
 set; line breaks in `tagline` and `text` are the writer's. A link is
-always a `label` and an absolute `http` or `https` `url`. Translations
+always a `label` and an absolute `http` or `https` `url`.
+
+`banner` and `logo` are the header's pictures. Each names a `file` in
+the archive, under `images/`, and gives its `width` and `height` in
+pixels; a logo also has the `alt` text a respondent who could not see it
+was given. A file is named by the SHA-256 of its bytes, so a picture
+several versions or surveys showed is in the archive once. The files are
+the pictures as they were served, a PNG or a JPEG, already scaled and
+without metadata; the files a creator uploaded are not kept. Only
+pictures a published version showed are exported: one a draft alone
+holds is not.
+
+`thanks` is the picture the thanks page showed above its heading, absent
+where it showed Earful's owl. `picture` is `check`, `envelope` or
+`confetti` for one of the drawings Earful offers, `none` for no picture,
+or `image` for the creator's own, which `image` then names as a header's
+pictures are named, with its `alt` text. An importer that does not know
+a `picture` should fall back to the owl. Translations
 of these words, like those of the questions and the thank you page, are
 not part of the archive.
 
@@ -239,7 +272,7 @@ see ADR-0010 for why the archive lives in Postgres at all.
 
 | Version | Change |
 |---|---|
-| 7 | `style` on a version: the theme its pages were drawn in, and the header and footer that stood above and below the survey. Everything in version 6 is unchanged. |
+| 7 | `style` on a version: the theme its pages were drawn in, the header and footer that stood above and below the survey, the header's `banner` and `logo`, and the thanks page's picture, whose files are under `images/`. Everything in version 6 is unchanged. |
 | 6 | `allow_other` on a question, and the `other` answer field beside the `__other__` choice. Everything in version 5 is unchanged. |
 | 5 | `thanks` on a version: the creator's own thank you message and link, as that version was published with them. Everything in version 4 is unchanged. |
 | 4 | The `number` question type: its answers use the existing `number` field and its limits the existing `scale_min` and `scale_max`. Everything in version 3 is unchanged. |

@@ -185,6 +185,18 @@ type SurveyDraft struct {
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
+type SurveyImage struct {
+	ID          uuid.UUID `json:"id"`
+	SurveyID    uuid.UUID `json:"survey_id"`
+	Sha256      []byte    `json:"sha256"`
+	ContentType string    `json:"content_type"`
+	Width       int32     `json:"width"`
+	Height      int32     `json:"height"`
+	SizeBytes   int32     `json:"size_bytes"`
+	Bytes       []byte    `json:"bytes"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
 // Unlinked survey-level counters (ADR-0009). No join path to responses exists or may be added.
 type SurveyStat struct {
 	SurveyID uuid.UUID `json:"survey_id"`
@@ -232,6 +244,12 @@ type Workspace struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 	// Which daily AI token cap applies to the workspace: low_normal, normal or high. Set by a super admin.
 	AiTier string `json:"ai_tier"`
+	// When an operator suspended the workspace; NULL while it is not suspended.
+	SuspendedAt *time.Time `json:"suspended_at"`
+	// The operator's reason for the suspension, as they wrote it.
+	SuspendedReason *string `json:"suspended_reason"`
+	// The super admin who suspended the workspace, while their account exists.
+	SuspendedBy uuid.NullUUID `json:"suspended_by"`
 }
 
 type WorkspaceMember struct {

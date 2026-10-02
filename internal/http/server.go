@@ -18,6 +18,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/TryEarful/earful/internal/ai"
 	"github.com/TryEarful/earful/internal/antibot"
@@ -57,6 +58,14 @@ type Deps struct {
 	// Nil means the one configured: VirusTotal when VIRUSTOTAL_API_KEY is
 	// set, none otherwise. Tests inject a stub.
 	AttachScanner attach.Scanner
+	// StyleSaves bounds the Style forms handled at once; nil means one of
+	// styleSavesAtOnce. Tests pass one they have filled, to reach the
+	// refusal without racing real requests.
+	StyleSaves *semaphore.Weighted
+	// StyleBodyTime is how long a Style form's body may take to arrive;
+	// zero means styleBodyTime. Tests shorten it, to reach a body that
+	// never comes without waiting minutes.
+	StyleBodyTime time.Duration
 }
 
 type server struct {
@@ -82,6 +91,13 @@ type server struct {
 	// attachScanner, when set, is asked about every file attached to an
 	// AI prompt before it is read.
 	attachScanner attach.Scanner
+
+	// styleSaves bounds the Style forms handled at once (Deps.StyleSaves),
+	// styleSavers lets each person have one of them, and styleBodyTime is
+	// how long a form's body may take to arrive (Deps.StyleBodyTime).
+	styleSaves    *semaphore.Weighted
+	styleSavers   styleSavers
+	styleBodyTime time.Duration
 
 	// text is the interface's wording, in every language it is served in.
 	text *uitext.Catalog
@@ -138,6 +154,12 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 	if deps.ExportMaxBytes <= 0 {
 		deps.ExportMaxBytes = exportMaxBytes
 	}
+	if deps.StyleSaves == nil {
+		deps.StyleSaves = semaphore.NewWeighted(styleSavesAtOnce)
+	}
+	if deps.StyleBodyTime <= 0 {
+		deps.StyleBodyTime = styleBodyTime
+	}
 	if deps.AttachScanner == nil && cfg.VirusTotalAPIKey != "" {
 		deps.AttachScanner = &attach.VirusTotal{APIKey: cfg.VirusTotalAPIKey}
 	}
@@ -169,6 +191,8 @@ func NewHandler(cfg config.Config, logger *slog.Logger, deps Deps) http.Handler 
 		text:           deps.Text,
 		exportMaxBytes: deps.ExportMaxBytes,
 		attachScanner:  deps.AttachScanner,
+		styleSaves:     deps.StyleSaves,
+		styleBodyTime:  deps.StyleBodyTime,
 		pages:          documents,
 		aiMeter: &ai.Meter{
 			Store: surveys,
@@ -261,20 +285,25 @@ func limitBody(next http.Handler) http.Handler {
 
 // bodyLimit is the cap for one request. It runs before routing, so the
 // upload routes are matched by hand: POST /surveys (a survey from a
-// description) and POST /surveys/{id}/generate (the editor's panel).
+// description), POST /surveys/{id}/generate (the editor's panel) and
+// POST /surveys/{id}/style (a style's pictures).
 func bodyLimit(r *http.Request) int64 {
-	if r.Method == http.MethodPost && isUploadPath(r.URL.Path) {
+	if r.Method != http.MethodPost {
+		return maxRequestBytes
+	}
+	if r.URL.Path == "/surveys" {
 		return maxUploadRequestBytes
 	}
-	return maxRequestBytes
-}
-
-func isUploadPath(p string) bool {
-	if p == "/surveys" {
-		return true
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+	if len(parts) == 3 && parts[0] == "surveys" && parts[1] != "" {
+		switch parts[2] {
+		case "generate":
+			return maxUploadRequestBytes
+		case "style":
+			return maxStyleRequestBytes
+		}
 	}
-	parts := strings.Split(strings.TrimPrefix(p, "/"), "/")
-	return len(parts) == 3 && parts[0] == "surveys" && parts[1] != "" && parts[2] == "generate"
+	return maxRequestBytes
 }
 
 // render writes a templ component with an explicit status code.

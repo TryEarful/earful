@@ -217,6 +217,7 @@ var contrastPairs = []pair{
 	{label: "Link on card", fg: "--link", on: "--surface", threshold: 4.5},
 	{label: "Link on a field's ground", fg: "--link", on: "--surface-2", threshold: 4.5},
 	{label: "Text on a notice, on page", fg: "--text", on: "--tint-info", under: "--bg", threshold: 4.5},
+	{label: "Text on a warning's ground, on page", fg: "--text", on: "--tint-warning", under: "--bg", threshold: 4.5},
 	{label: "Text on a chosen option", textOn: "--text", fg: "--accent", on: "--surface", mix: 0.07, threshold: 4.5},
 	{label: "Filled button's text on it", fg: "--button-text", on: "--button", threshold: 4.5},
 	{label: "Text on the accent", fg: "--accent-contrast", on: "--accent", threshold: 4.5},
@@ -406,5 +407,49 @@ func TestAThemedPageUsesNoGoodOrWarningColour(t *testing.T) {
 				t.Errorf("%s uses .%s, which is drawn in a good or warning colour; a themed page has neither", filepath.Base(path), name)
 			}
 		}
+	}
+}
+
+// TestThanksDrawingsUseTheThemesColours: the drawings a thanks page can
+// show in place of the owl are coloured from the theme's own tokens and
+// nothing else, so each belongs to whichever theme a survey is drawn in,
+// in both display modes. Signal is never one of them, since a drawing is
+// not a microphone, and neither is a status colour, since it is not a
+// verdict (docs/style-guide.md, "Thanks page pictures").
+func TestThanksDrawingsUseTheThemesColours(t *testing.T) {
+	css, err := os.ReadFile(filepath.Join("css", "app.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule := regexp.MustCompile(`(?s)\n([^\n{}@/][^{}]*?)\s*\{([^{}]*)\}`)
+	drawing := regexp.MustCompile(`\.(drawing-[a-z-]+|thanks-drawing)\b`)
+	token := regexp.MustCompile(`var\(--([a-z0-9-]+)\)`)
+	literal := regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(`)
+	colourProperty := regexp.MustCompile(`^(fill|stroke|color|background(-color)?)$`)
+	allowed := map[string]bool{"accent": true, "accent-contrast": true, "surface": true}
+	found := 0
+	for _, m := range rule.FindAllSubmatch(css, -1) {
+		if !drawing.Match(m[1]) {
+			continue
+		}
+		found++
+		selector := strings.TrimSpace(string(m[1]))
+		for _, declaration := range strings.Split(string(m[2]), ";") {
+			property, value, ok := strings.Cut(declaration, ":")
+			if !ok || !colourProperty.MatchString(strings.TrimSpace(property)) {
+				continue
+			}
+			for _, use := range token.FindAllStringSubmatch(value, -1) {
+				if !allowed[use[1]] {
+					t.Errorf("%s uses --%s; a drawing takes only the theme's accent and card", selector, use[1])
+				}
+			}
+			if literal.MatchString(value) {
+				t.Errorf("%s sets a colour of its own, which no theme can change", selector)
+			}
+		}
+	}
+	if found == 0 {
+		t.Fatal("found no rule for the drawings; the test no longer reads the stylesheet as it is written")
 	}
 }

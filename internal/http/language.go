@@ -100,6 +100,8 @@ func (s *server) interfaceText(next http.Handler) http.Handler {
 		// Where the switcher comes back to.
 		ctx = templates.WithPath(ctx, r.URL.RequestURI())
 		ctx = templates.WithMode(ctx, modeOf(r))
+		// Filled in by publicSurvey on a survey's pages; see report.go.
+		ctx = templates.WithReport(ctx)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -1,8 +1,9 @@
 // Package invites sends participant invitations under the per-workspace
 // drip cap (M4-T4). Sending is synchronous and cap-bounded: pressing
 // "Send invites" delivers what this hour's allowance permits and reports
-// what remains, and pressing it again later — or the serve-side drip
-// ticker doing the same on a timer — drains the rest. Deliverability is
+// what remains, and pressing it again later drains the rest. Nothing
+// sends on a timer: every send is a creator's press of the button, which
+// is also where a suspended workspace is refused. Deliverability is
 // why the cap exists: 10,000 invites in one burst from a fresh domain is
 // how sending reputations die (ADR-0005).
 package invites

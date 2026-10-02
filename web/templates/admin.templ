@@ -314,3 +314,126 @@ templ metricRows(points []MetricPoint) {
 		</div>
 	}
 }
+
+// AdminSuspensions suspends a workspace that misuses the service and
+// lifts the suspension (ADR-0018): the suspended workspaces first, then
+// a workspace found through a member's address, as the other support
+// tools find an account. Support only, like everything else under
+// /admin. Suspending is a danger button with a reason beside it; lifting
+// puts everything back, so it is an outlined one.
+templ AdminSuspensions(email string, csrf string, data SuspensionsData) {
+	@Layout(t(ctx, "admin.suspensions.title")) {
+		@AuthedHeader(email, csrf)
+		<main>
+			<h1>{ t(ctx, "admin.suspensions.heading") }</h1>
+			<p class="muted">{ t(ctx, "admin.suspensions.intro") }</p>
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			// A problem with a reason is said at its field; the others, here.
+			if data.Error != "" && data.ReasonFor == "" {
+				<p class="notice error-text js-suspension-error" role="alert">{ data.Error }</p>
+			}
+			// With nothing suspended, the page says so in a line rather
+			// than a card that holds only that line.
+			if len(data.Suspended) == 0 {
+				<p class="js-suspended-list">{ t(ctx, "admin.suspensions.list.empty") }</p>
+			} else {
+				<div class="card js-panel js-suspended-list">
+					<h2>{ t(ctx, "admin.suspensions.list.heading") }</h2>
+					for _, ws := range data.Suspended {
+						<form method="post" action="/admin/suspensions/lift" class="suspension-row js-suspended">
+							<h3>{ ws.Name }</h3>
+							<dl class="facts">
+								if ws.Member != "" {
+									<dt>{ t(ctx, "admin.suspensions.member") }</dt>
+									<dd>{ ws.Member }</dd>
+								}
+								<dt>{ t(ctx, "admin.suspensions.since") }</dt>
+								<dd>
+									if ws.By != "" {
+										{ t(ctx, "admin.suspensions.since_by", uitext.Args{"Day": ws.Since, "By": ws.By}) }
+									} else {
+										{ ws.Since }
+									}
+								</dd>
+								<dt>{ t(ctx, "admin.suspensions.reason_term") }</dt>
+								<dd>{ ws.Reason }</dd>
+							</dl>
+							<input type="hidden" name="_csrf" value={ csrf }/>
+							<input type="hidden" name="email" value={ data.Email }/>
+							<input type="hidden" name="workspace" value={ ws.ID }/>
+							<button type="submit" class="secondary js-lift">{ t(ctx, "admin.suspensions.lift.label") }</button>
+						</form>
+					}
+				</div>
+			}
+			<div class="card js-panel">
+				<h2>{ t(ctx, "admin.suspensions.find.heading") }</h2>
+				<form method="get" action="/admin/suspensions">
+					<label class="field">
+						<span>{ t(ctx, "auth.email.label") }</span>
+						<input type="email" name="email" required autocomplete="off" value={ data.Email }/>
+					</label>
+					// One filled button per page; once workspaces are found,
+					// the page's main action is with them.
+					if data.Searched && len(data.Found) > 0 {
+						<button type="submit" class="secondary">{ t(ctx, "admin.suspensions.find.submit.label") }</button>
+					} else {
+						<button type="submit">{ t(ctx, "admin.suspensions.find.submit.label") }</button>
+					}
+				</form>
+				if data.Searched && len(data.Found) == 0 {
+					<p class="muted" role="status">
+						@thtml(ctx, "admin.suspensions.none_html", uitext.Args{"Email": data.Email})
+					</p>
+				}
+			</div>
+			if len(data.Found) > 0 {
+				<div class="card js-panel">
+					<h2>{ t(ctx, "admin.suspensions.results") }</h2>
+					for _, ws := range data.Found {
+						<div class="suspension-row js-found-workspace">
+							<h3>{ ws.Name }</h3>
+							if ws.Suspended {
+								<p class="muted">{ t(ctx, "admin.suspensions.found.suspended") }</p>
+							} else {
+								<form method="post" action="/admin/suspensions" class="js-suspend-form">
+									<input type="hidden" name="_csrf" value={ csrf }/>
+									<input type="hidden" name="email" value={ data.Email }/>
+									<input type="hidden" name="workspace" value={ ws.ID }/>
+									<label class="field">
+										<span>{ t(ctx, "admin.suspensions.reason.label") }</span>
+										<textarea
+											id={ "reason-" + ws.ID }
+											name="reason"
+											rows="3"
+											maxlength="500"
+											required
+											if data.ReasonFor == ws.ID {
+												aria-invalid="true"
+												aria-describedby={ "reason-error-" + ws.ID + " reason-hint-" + ws.ID }
+												autofocus
+											} else {
+												aria-describedby={ "reason-hint-" + ws.ID }
+											}
+										>
+											if data.ReasonFor == ws.ID {
+												{ data.Reason }
+											}
+										</textarea>
+									</label>
+									if data.ReasonFor == ws.ID {
+										<p class="error-text js-suspension-error" id={ "reason-error-" + ws.ID } role="alert">{ data.Error }</p>
+									}
+									<p class="muted" id={ "reason-hint-" + ws.ID }>{ t(ctx, "admin.suspensions.reason.hint") }</p>
+									<button type="submit" class="secondary danger js-suspend">{ t(ctx, "admin.suspensions.suspend.label") }</button>
+								</form>
+							}
+						</div>
+					}
+				</div>
+			}
+		</main>
+	}
+}

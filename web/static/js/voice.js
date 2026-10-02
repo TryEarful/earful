@@ -1456,7 +1456,6 @@
     canvas.width = Math.max(1, Math.round(canvas.clientWidth * scale));
     canvas.height = Math.max(1, Math.round(canvas.clientHeight * scale));
     var paint = canvas.getContext("2d");
-    var colour = getComputedStyle(canvas).getPropertyValue("--accent").trim() || "#6d4aff";
     var gap = Math.max(1, Math.round(scale));
     var barWidth = (canvas.width - gap * (bars - 1)) / bars;
 
@@ -1481,7 +1480,9 @@
 
       analyser.getByteFrequencyData(bins);
       paint.clearRect(0, 0, canvas.width, canvas.height);
-      paint.fillStyle = colour;
+      // Read at each frame, not once: the accent is the display mode's
+      // and the theme's, and the mode can change while the meter runs.
+      paint.fillStyle = getComputedStyle(canvas).getPropertyValue("--accent").trim() || "#6d4aff";
       for (var b = 0; b < bars; b++) {
         var sum = 0;
         for (var k = 0; k < perBar; k++) sum += bins[b * perBar + k];

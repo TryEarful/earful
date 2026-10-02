@@ -56,7 +56,8 @@ RETURNING *;
 -- name: AuthenticateSession :one
 SELECT s.id AS session_id, s.csrf_token, s.expires_at,
        u.id AS user_id, u.email, u.is_super_admin,
-       w.id AS workspace_id, w.name AS workspace_name
+       w.id AS workspace_id, w.name AS workspace_name,
+       (w.suspended_at IS NOT NULL)::bool AS workspace_suspended
 FROM sessions s
 JOIN users u ON u.id = s.user_id AND u.deleted_at IS NULL
 JOIN workspace_members m ON m.user_id = u.id

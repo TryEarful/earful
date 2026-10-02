@@ -8,6 +8,7 @@ import (
 
 	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/store"
+	"github.com/TryEarful/earful/internal/styleimage"
 	"github.com/TryEarful/earful/internal/uitext"
 )
 
@@ -48,6 +49,15 @@ var plainErrors = []struct {
 	{domain.ErrThanksLinkLabel, "thanks.error.label"},
 	{domain.ErrThanksLinkAddress, "thanks.error.missing"},
 	{domain.ErrUnknownTheme, "style.error.theme"},
+	{domain.ErrStyleLogoAlt, "style.error.logo_alt"},
+	{domain.ErrStyleImage, "style.error.image"},
+	{domain.ErrUnknownThanksPicture, "style.error.thanks_picture"},
+	{domain.ErrThanksImageMissing, "style.error.thanks_image"},
+	{domain.ErrThanksImageAlt, "style.error.thanks_alt"},
+	{store.ErrStyleImageMissing, "style.error.image_missing"},
+	{styleimage.ErrType, "style.error.image_type"},
+	{styleimage.ErrDimensions, "style.error.image_pixels"},
+	{styleimage.ErrUnreadable, "style.error.image_unreadable"},
 }
 
 // limitError is the message for an error that carries a limit, by what
@@ -81,6 +91,12 @@ func limitError(kind domain.LimitKind) (uitext.ID, bool) {
 		return "style.error.footer_long", true
 	case domain.LimitStyleLinks:
 		return "style.error.links", true
+	case domain.LimitStyleLogoAlt:
+		return "style.error.logo_alt_long", true
+	case domain.LimitStyleThanksAlt:
+		return "style.error.thanks_alt_long", true
+	case domain.LimitStyleImages:
+		return "style.error.images", true
 	}
 	return "", false
 }
@@ -117,6 +133,10 @@ func errorText(l uitext.Localizer, err error) (string, bool) {
 			}), true
 		}
 		return "", false
+	}
+	var heavy uploadTooLarge
+	if errors.As(err, &heavy) {
+		return l.T("style.error.image_large", uitext.Args{"Size": heavy.megabytes}), true
 	}
 	if errors.Is(err, store.ErrImportTooLarge) {
 		return l.T("editor.refused.import", uitext.Args{"Limit": store.MaxImportBatch}), true

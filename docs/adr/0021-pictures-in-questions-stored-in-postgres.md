@@ -19,8 +19,7 @@ Content Security Policy as it is (`img-src 'self' data:`), and no new
 processor, bucket or configuration is needed on any instance.
 
 The storage sits behind a small interface in a new package,
-`internal/media`, which ADR-0018 (a workspace's logo) can use as it
-stands: a sanitizing pipeline that turns an upload into a stored
+`internal/media`: a sanitizing pipeline that turns an upload into a stored
 picture, a store that keeps and returns it, and one route that serves
 it. Options stop being bare strings: an option is a label and, when it
 has one, a picture with its alt text.
@@ -73,7 +72,7 @@ has one, a picture with its alt text.
 (`bytea`), its content type, dimensions, byte size, the SHA 256 of the
 stored bytes, the owning `workspace_id`, the `survey_id` it was
 uploaded for (null for a picture that belongs to the Workspace, such as
-a logo), a `purpose` (`question` here; ADR-0018 adds its own), and who
+a logo), a `purpose` (`question` here), and who
 uploaded it and when. Rows are immutable by the same trigger that
 guards published questions: a picture is never edited, only replaced
 by a new row. The purge job is the only deleter.
@@ -274,4 +273,9 @@ which can reuse `internal/media`'s pipeline.
 Amends ADR-0010 (pictures are a second kind of bytes in Postgres, under
 a per Workspace quota that keeps exports under its cap) and extends
 ADR-0001 (a picture shown by a published version is immutable with it).
-Shares `internal/media` with ADR-0018.
+ADR-0018, accepted since this was written, stores a survey's style
+pictures in `survey_images`, owned by the survey and found by the hash
+of their bytes, and re-encodes uploads in `internal/styleimage`. This
+decision is to be reconciled with that one when it is taken up: either
+question pictures reuse `survey_images` and `internal/styleimage`, or
+the two move to one store together.

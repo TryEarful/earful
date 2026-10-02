@@ -18,9 +18,25 @@ import (
 // memoryUsage is an in-memory UsageStore for meter-logic tests; the SQL
 // half is covered by internal/store's own test against real Postgres.
 type memoryUsage struct {
-	mu    sync.Mutex
-	rows  []usageRow
-	tiers map[uuid.UUID]string
+	mu        sync.Mutex
+	rows      []usageRow
+	tiers     map[uuid.UUID]string
+	suspended map[uuid.UUID]bool
+}
+
+func (m *memoryUsage) suspend(workspaceID uuid.UUID) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.suspended == nil {
+		m.suspended = map[uuid.UUID]bool{}
+	}
+	m.suspended[workspaceID] = true
+}
+
+func (m *memoryUsage) WorkspaceSuspended(_ context.Context, workspaceID uuid.UUID) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.suspended[workspaceID], nil
 }
 
 func (m *memoryUsage) setTier(workspaceID uuid.UUID, tier string) {
@@ -131,6 +147,28 @@ func TestMeter_WorkspaceQuotaTrips(t *testing.T) {
 	}
 	if err := meter.Check(ctx, frugal); err != nil {
 		t.Errorf("another workspace was caught in the quota: %v", err)
+	}
+}
+
+// TestMeter_ASuspendedWorkspaceSpendsNothing: a workspace an operator
+// has suspended is refused before anything else is weighed, even with
+// its whole allowance left; another workspace is unaffected (ADR-0018).
+func TestMeter_ASuspendedWorkspaceSpendsNothing(t *testing.T) {
+	t.Parallel()
+	store := &memoryUsage{}
+	meter := newMeter(store, clock.NewFake(time.Now()))
+	ctx := context.Background()
+	suspended, other := uuid.New(), uuid.New()
+	store.suspend(suspended)
+
+	if err := meter.Check(ctx, suspended); !errors.Is(err, ai.ErrWorkspaceSuspended) {
+		t.Errorf("suspended workspace: err = %v, want ErrWorkspaceSuspended", err)
+	}
+	if err := meter.CheckFor(ctx, suspended, 10); !errors.Is(err, ai.ErrWorkspaceSuspended) {
+		t.Errorf("suspended workspace with an estimate: err = %v, want ErrWorkspaceSuspended", err)
+	}
+	if err := meter.Check(ctx, other); err != nil {
+		t.Errorf("another workspace was caught in the suspension: %v", err)
 	}
 }
 

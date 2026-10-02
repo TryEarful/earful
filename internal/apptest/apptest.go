@@ -32,6 +32,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
+	"golang.org/x/sync/semaphore"
 
 	"github.com/TryEarful/earful/internal/ai"
 	"github.com/TryEarful/earful/internal/attach"
@@ -80,6 +81,8 @@ type Options struct {
 	// to omit a claim it cannot make rather than fill one in.
 	HostingRegion string
 	ContactEmail  string
+	// EmailFrom is the address mail is sent from. Empty by default.
+	EmailFrom string
 	// ExportMaxBytes lowers the workspace archive cap, so the path where
 	// an export is too large is reachable with a workspace a test can
 	// afford to build. Zero keeps the real cap.
@@ -90,6 +93,13 @@ type Options struct {
 	// what the trust page says about it.
 	AttachScanner    attach.Scanner
 	VirusTotalAPIKey string
+	// StyleSaves bounds the Style forms handled at once. A test passes one
+	// it has filled to reach the refusal; nil keeps the real bound.
+	StyleSaves *semaphore.Weighted
+	// StyleBodyTime shortens how long a Style form's body may take to
+	// arrive, so a body that never comes is reached quickly; zero keeps
+	// the real time.
+	StyleBodyTime time.Duration
 }
 
 // App is one booted application instance plus the fakes tests observe
@@ -167,6 +177,7 @@ func New(t *testing.T, opts Options) *App {
 		BetaMode:                   opts.BetaMode,
 		HostingRegion:              opts.HostingRegion,
 		ContactEmail:               opts.ContactEmail,
+		EmailFrom:                  opts.EmailFrom,
 		AITierLowNormalDailyTokens: quota,
 		AITierNormalDailyTokens:    quota,
 		AITierHighDailyTokens:      highQuota,
@@ -206,6 +217,8 @@ func New(t *testing.T, opts Options) *App {
 
 		ExportMaxBytes: opts.ExportMaxBytes,
 		AttachScanner:  opts.AttachScanner,
+		StyleSaves:     opts.StyleSaves,
+		StyleBodyTime:  opts.StyleBodyTime,
 	})
 	srv.Start()
 	t.Cleanup(srv.Close)

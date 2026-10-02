@@ -27,10 +27,13 @@ The defaults this records:
 | Scale, lowest and highest point | the add question form | 1 to 5 |
 | Guidance for drafted questions | the system prompt of question drafting | none |
 
-A brand, meaning a colour, a mark or a typeface on a survey's pages, is
-not one of them. It is the subject of the branding decision proposed
-separately as ADR-0018, and when that lands its brand is a property of
-the workspace beside these, under the same rules for export and purge.
+A brand, meaning a theme, a header, a footer or a logo on a survey's
+pages, is not one of them. ADR-0018, accepted, makes it a survey's
+Style, chosen on its Style tab and frozen with each version. A
+workspace's default style, which a new survey would start from, is a
+property of the workspace beside these, under the same rules for
+export and purge; it copies a style into a new draft and needs no
+change to how a survey is drawn.
 
 ## Why the workspace, not the user
 
@@ -110,7 +113,8 @@ it does today (story 23). Nothing about a Localization changes.
   served from Earful's own origin and passes `font-src 'self'`, but a
   font is parsed by the respondent's browser, a webfont licence is the
   uploader's to hold and Earful's to serve, and each upload is bytes
-  kept per workspace. Left to ADR-0018; this decision adds no typeface.
+  kept per workspace. ADR-0018 adds no typeface either, and this
+  decision adds none.
 - **The interface language on the account.** ADR-0014 considered and
   declined it, and nothing here reopens that. The language a creator
   writes surveys in is a different fact, which nothing records today; it
@@ -148,5 +152,5 @@ it does today (story 23). Nothing about a Localization changes.
 - `CONTEXT.md` gains **Survey Defaults**, with "preferences", "profile"
   and "template" to avoid.
 - Amends no ADR. It extends the export contract that ADR-0010 and
-  `docs/export-format.md` define, and leaves brand, colour and typeface
-  to ADR-0018.
+  `docs/export-format.md` define, and leaves a survey's style to
+  ADR-0018.

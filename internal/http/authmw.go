@@ -91,7 +91,7 @@ func (s *server) requireAuth(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(withAuth(r.Context(), info)))
+		next.ServeHTTP(w, s.suspensionNotice(r.WithContext(withAuth(r.Context(), info))))
 	})
 }
 

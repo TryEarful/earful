@@ -18,6 +18,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -90,12 +91,24 @@ type Version struct {
 
 // Style is a version's style (ADR-0018). Theme names the theme its
 // pages were drawn in; Header and Footer are what stood above and below
-// the survey, in the creator's wording. Each part is absent when it was
+// the survey, in the creator's wording; Thanks is the thanks page's
+// picture. Each part is absent when it was
 // not set.
 type Style struct {
 	Theme  string       `json:"theme,omitempty"`
 	Header *StyleHeader `json:"header,omitempty"`
 	Footer *StyleFooter `json:"footer,omitempty"`
+	Thanks *StyleThanks `json:"thanks,omitempty"`
+}
+
+// StyleThanks is the picture the thanks page showed above its heading,
+// absent where it showed Earful's owl. Picture names it: "check",
+// "envelope" or "confetti" for one of the drawings Earful offers, "none"
+// for no picture, or "image" for the creator's own, which Image then
+// names under images/ with its alternative text.
+type StyleThanks struct {
+	Picture string      `json:"picture"`
+	Image   *StyleImage `json:"image,omitempty"`
 }
 
 // StyleHeader is the head of a respondent's page: whose survey it was.
@@ -103,7 +116,26 @@ type StyleHeader struct {
 	Name    string      `json:"name,omitempty"`
 	Tagline string      `json:"tagline,omitempty"`
 	Links   []StyleLink `json:"links,omitempty"`
+	// Banner is the strip across the head of the page, and Logo the
+	// survey's own mark. Each names a file under images/ in the archive.
+	Banner *StyleImage `json:"banner,omitempty"`
+	Logo   *StyleImage `json:"logo,omitempty"`
 }
+
+// StyleImage is a picture of a style: the file in the archive that
+// holds it, its size in pixels, and for a logo the alternative text a
+// respondent who could not see it was given.
+type StyleImage struct {
+	File   string `json:"file"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+	Alt    string `json:"alt,omitempty"`
+}
+
+// ImagePath is where a picture sits in the archive: under images/, named
+// by the hash of its bytes, which is what a style refers to it by. A
+// picture several versions show is one file.
+func ImagePath(sha256, ext string) string { return "images/" + sha256 + ext }
 
 // StyleFooter is the creator's own footer.
 type StyleFooter struct {
@@ -205,35 +237,81 @@ type CSVFile struct {
 	Content []byte
 }
 
-// Build writes the zip: workspace.json, a CSV per survey, and a README
-// that tells a human what they are holding.
-func Build(archive Archive, csvs []CSVFile) ([]byte, error) {
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
+// ErrTooLarge stops an archive that has grown past its limit.
+var ErrTooLarge = errors.New("export: archive exceeds the size limit")
 
+// Writer writes the zip as the workspace is read. The pictures the
+// surveys' styles show go in as each survey's are read, so a workspace's
+// pictures are never all held at once, and the archive stops as soon as
+// it passes its limit rather than once it has all been built.
+type Writer struct {
+	buf    bytes.Buffer
+	zw     *zip.Writer
+	limit  int
+	images map[string]bool
+}
+
+// NewWriter starts an archive of at most limit bytes.
+func NewWriter(limit int) *Writer {
+	w := &Writer{limit: limit, images: map[string]bool{}}
+	w.zw = zip.NewWriter(&w.buf)
+	return w
+}
+
+// Image adds a picture at its ImagePath, once however many versions show
+// it.
+func (w *Writer) Image(path string, content []byte) error {
+	if w.images[path] {
+		return nil
+	}
+	w.images[path] = true
+	// A PNG or a JPEG is compressed already: deflating it again costs the
+	// time and saves next to nothing, so it is stored as it is.
+	return w.write(path, content, zip.Store)
+}
+
+// Finish writes workspace.json, a CSV per survey and a README that tells
+// a human what they are holding, and returns the archive.
+func (w *Writer) Finish(archive Archive, csvs []CSVFile) ([]byte, error) {
 	document, err := json.MarshalIndent(archive, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("export: encode workspace.json: %w", err)
 	}
-	if err := writeFile(zw, "workspace.json", document); err != nil {
+	if err := w.write("workspace.json", document, zip.Deflate); err != nil {
 		return nil, err
 	}
 	for _, csv := range csvs {
-		if err := writeFile(zw, "surveys/"+csv.Name, csv.Content); err != nil {
+		if err := w.write("surveys/"+csv.Name, csv.Content, zip.Deflate); err != nil {
 			return nil, err
 		}
 	}
-	if err := writeFile(zw, "README.txt", []byte(readme(archive))); err != nil {
+	if err := w.write("README.txt", []byte(readme(archive)), zip.Deflate); err != nil {
 		return nil, err
 	}
-	if err := zw.Close(); err != nil {
+	if err := w.zw.Close(); err != nil {
 		return nil, fmt.Errorf("export: close archive: %w", err)
 	}
-	return buf.Bytes(), nil
+	if w.buf.Len() > w.limit {
+		return nil, ErrTooLarge
+	}
+	return w.buf.Bytes(), nil
 }
 
-func writeFile(zw *zip.Writer, name string, content []byte) error {
-	w, err := zw.Create(name)
+func (w *Writer) write(name string, content []byte, method uint16) error {
+	if err := writeFile(w.zw, name, content, method); err != nil {
+		return err
+	}
+	if err := w.zw.Flush(); err != nil {
+		return fmt.Errorf("export: write %s: %w", name, err)
+	}
+	if w.buf.Len() > w.limit {
+		return ErrTooLarge
+	}
+	return nil
+}
+
+func writeFile(zw *zip.Writer, name string, content []byte, method uint16) error {
+	w, err := zw.CreateHeader(&zip.FileHeader{Name: name, Method: method})
 	if err != nil {
 		return fmt.Errorf("export: create %s: %w", name, err)
 	}
@@ -265,6 +343,10 @@ surveys/         One CSV per survey — the same file the survey's own
                  Where a survey has an AI Insight Summary, it sits
                  beside its CSV as a .insight.txt file, labelled with
                  the model that wrote it. It is analysis, not data.
+
+images/          The logos and banners that surveys showed, as they were
+                 served. workspace.json names the file of each beside the
+                 version that showed it. Absent where no survey had one.
 
 What's deliberately absent
 --------------------------

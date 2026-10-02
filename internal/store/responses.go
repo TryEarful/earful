@@ -29,6 +29,10 @@ type PublicSurvey struct {
 	CloseAt       *time.Time
 	ClosedAt      *time.Time
 	LatestVersion int
+	// WorkspaceSuspended is true while an operator has suspended the
+	// workspace that owns the survey: it takes no answers and shows none
+	// of its style until the suspension is lifted.
+	WorkspaceSuspended bool
 }
 
 func (p PublicSurvey) State() domain.SurveyState {
@@ -36,6 +40,7 @@ func (p PublicSurvey) State() domain.SurveyState {
 		HasPublishedVersion: p.LatestVersion > 0,
 		CloseAt:             p.CloseAt,
 		ClosedAt:            p.ClosedAt,
+		Suspended:           p.WorkspaceSuspended,
 	}
 }
 
@@ -78,7 +83,8 @@ func (s *Surveys) PublicSurvey(ctx context.Context, surveyID uuid.UUID) (PublicS
 		ID: row.ID, Title: row.Title,
 		WorkspaceID: row.WorkspaceID, WorkspaceName: row.WorkspaceName,
 		IsAnonymous: row.IsAnonymous, CloseAt: row.CloseAt, ClosedAt: row.ClosedAt,
-		LatestVersion: int(row.LatestVersion),
+		LatestVersion:      int(row.LatestVersion),
+		WorkspaceSuspended: row.WorkspaceSuspended,
 	}, nil
 }
 

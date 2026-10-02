@@ -45,6 +45,12 @@ const (
 	// DraftRevisionWindow: editing history, which is useful for a while
 	// and not forever. The newest revision of every draft is always kept.
 	DraftRevisionWindow = 90 * 24 * time.Hour
+	// UnusedImageWindow: how long a picture of a survey's style is kept
+	// once nothing shows it, neither a published version nor the draft.
+	// Long enough that a creator who replaced a logo by mistake can put
+	// it back by uploading it again and lose nothing, short enough that
+	// replaced uploads do not pile up (ADR-0018).
+	UnusedImageWindow = 7 * 24 * time.Hour
 	// ExpiredTokenGrace: how long a spent or expired sign-in token stays
 	// before it is deleted. Short: it is useless the moment it expires.
 	ExpiredTokenGrace = 24 * time.Hour
@@ -182,6 +188,10 @@ DELETE FROM questions WHERE version_id IN (
 )`},
 		{name: "versions_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM survey_versions WHERE survey_id IN (SELECT id FROM doomed)`},
+		// The pictures of a style go with the survey, after the versions
+		// that showed them.
+		{name: "images_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
+DELETE FROM survey_images WHERE survey_id IN (SELECT id FROM doomed)`},
 		{name: "question_identities_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
 DELETE FROM question_identities WHERE survey_id IN (SELECT id FROM doomed)`},
 		{name: "draft_revisions_of_doomed_surveys", args: []any{cutoff}, sql: doomed + `
@@ -265,6 +275,34 @@ WHERE dr.saved_at < $1
       WHERE newest.draft_id = dr.draft_id
       ORDER BY saved_at DESC
       LIMIT 1
+  )`},
+		// A picture nothing shows: no published version of its survey
+		// and not the survey's draft. A style refers to a picture by its
+		// hash, wherever in the style it sits, so the reference is looked
+		// for at any depth. The draft's revisions are not asked: nothing
+		// restores one, so a picture only they mention can never be
+		// shown again. A survey whose style is being saved or published
+		// at this moment is held (LockSurveyForStyle) and is skipped
+		// until the next run: the draft or version about to refer to a
+		// picture is not yet visible to this statement. The hold taken
+		// here is the same NO KEY UPDATE, so it never keeps a response
+		// from being recorded while the purge runs.
+		{name: "unused_style_images", args: []any{now.Add(-UnusedImageWindow)}, sql: `
+DELETE FROM survey_images i
+WHERE i.created_at < $1
+  AND EXISTS (SELECT 1 FROM surveys s WHERE s.id = i.survey_id FOR NO KEY UPDATE SKIP LOCKED)
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_versions v
+      WHERE v.survey_id = i.survey_id
+        AND v.style IS NOT NULL
+        AND jsonb_path_exists(v.style, '$.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_drafts d
+      WHERE d.survey_id = i.survey_id
+        AND jsonb_path_exists(d.structure, '$.style.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
   )`},
 		// An expired export loses its archive immediately; the row stays
 		// briefly so the account page can say what happened.

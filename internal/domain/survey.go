@@ -172,6 +172,10 @@ type SurveyState struct {
 	HasPublishedVersion bool
 	CloseAt             *time.Time
 	ClosedAt            *time.Time
+	// Suspended is true while an operator has suspended the survey's
+	// workspace. It leaves the status alone, since lifting the
+	// suspension puts the survey back as it was, and refuses answers.
+	Suspended bool
 }
 
 // StatusAt derives the status as of now: never published is a Draft;
@@ -191,8 +195,9 @@ func (s SurveyState) StatusAt(now time.Time) Status {
 }
 
 // AcceptsResponses is the question the respondent path actually asks.
+// A survey of a suspended workspace accepts none, whatever its status.
 func (s SurveyState) AcceptsResponses(now time.Time) bool {
-	return s.StatusAt(now) == StatusOpen
+	return !s.Suspended && s.StatusAt(now) == StatusOpen
 }
 
 // maxTitleLen bounds the survey title.

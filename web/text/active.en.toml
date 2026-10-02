@@ -212,6 +212,9 @@ label = "Erasure requests"
 [account.admin.tiers]
 label = "AI tiers"
 
+[account.admin.suspensions]
+label = "Suspensions"
+
 [account.email]
 heading = "Change email"
 hint = "The change applies right away. From now on you sign in with the new address."
@@ -333,9 +336,11 @@ stale = "The thank you page changed after this was translated. Read it again."
 [languages.style]
 heading = "Header and footer"
 tagline = "Tagline in {{.Language}}"
+logo_alt = "Logo description in {{.Language}}"
 footer_text = "Footer text in {{.Language}}"
 header_link = "Header link {{.Position}} in {{.Language}}"
 footer_link = "Footer link {{.Position}} in {{.Language}}"
+thanks_alt = "Thank you picture description in {{.Language}}"
 stale = "The header or footer changed after this was translated. Read it again."
 
 
@@ -645,6 +650,8 @@ intro = "What people read after they send their answers. Leave the message empty
 message_html = 'Message <small class="muted">(optional)</small>'
 link_label_html = 'Link label <small class="muted">(optional, like Book a table)</small>'
 link_url_html = 'Link address <small class="muted">(starts with https://)</small>'
+picture = "The picture above the message is chosen with the survey's style."
+picture_link = "Choose the picture"
 
 [editor.thanks.save]
 label = "Save thank you page"
@@ -683,20 +690,48 @@ label = "Save style"
 [style.notice]
 saved = "Style saved. Respondents see it once you publish."
 
+[style.busy]
+title = "Your style wasn't saved"
+body = "Several styles are being saved right now. Go back and save yours again in a moment, choosing any images again."
+back = "Back to the style"
+
 [style.header]
 heading = "Header"
-hint = "Shown above the survey, so people know who is asking. Leave it all empty for no header."
+hint = "Shown above the survey, so people know who is asking. Leave it all empty for no header. Translate its words on the Languages tab."
 name_html = 'Name <small class="muted">(optional, like your organisation)</small>'
 tagline_html = 'Tagline <small class="muted">(optional, a line or two)</small>'
+banner_html = 'Banner <small class="muted">(optional)</small>'
+banner_hint = "A wide picture across the top of the page, cropped to three wide by one high. Use one without words in it. PNG, JPEG or WebP, up to {{.Size}} MB."
+logo_html = 'Logo <small class="muted">(optional)</small>'
+logo_hint = "Only use a logo you have the right to use. It stands at the top of the header, and in the footer in place of the Earful owl. PNG, JPEG or WebP, up to {{.Size}} MB."
+logo_alt_html = 'Logo description <small class="muted">(needed with a logo, for people who cannot see it)</small>'
+
+[style.image]
+remove_banner = "Remove the banner"
+remove_logo = "Remove the logo"
+remove_thanks = "Remove the thank you picture"
 
 [style.footer]
 heading = "Footer"
-hint = "Shown below the survey. Good for a legal name, an address or a privacy notice."
+hint = "Shown below the survey. Good for a legal name, a postal address or a privacy notice."
 text_html = 'Text <small class="muted">(optional)</small>'
+
+[style.thanks]
+heading = "Thank you page picture"
+hint = "Shown above the thank you message once someone sends their answers."
+owl = "Earful's owl"
+check = "Tick"
+envelope = "Envelope"
+confetti = "Confetti"
+image = "Your own picture"
+none = "No picture"
+image_html = 'Picture to upload <small class="muted">(for your own picture)</small>'
+image_hint = "Choosing a file makes it the page's picture, shown whole on a white ground. Saving with another picture chosen removes it. PNG, JPEG or WebP, up to {{.Size}} MB."
+alt_html = 'Picture description <small class="muted">(needed with your own picture, for people who cannot see it)</small>'
 
 [style.links]
 legend = "Links"
-hint = "Up to three. Each needs a label and an address that starts with https://. They open in a new tab."
+hint = "Up to three. Each needs a label and an address that starts with http:// or https://. They open in a new tab."
 label = "Label {{.Position}}"
 address = "Address {{.Position}}"
 
@@ -706,6 +741,20 @@ name_long = "keep the name under {{.Limit}} characters"
 tagline_long = "keep the tagline under {{.Limit}} characters"
 footer_long = "keep the footer text under {{.Limit}} characters"
 links = "add at most {{.Limit}} links"
+logo_alt = "say what the logo shows, for people who cannot see it"
+logo_alt_long = "keep the logo description under {{.Limit}} characters"
+image = "that image cannot be used"
+image_type = "use a PNG, JPEG or WebP image"
+image_large = "keep the file under {{.Size}} MB"
+image_pixels = "that image has too many pixels, so use a smaller one"
+image_missing = "a picture of the survey's style is missing, so choose it again on the Style tab"
+image_unreadable = "that file could not be read as an image"
+images = "this survey already keeps {{.Limit}} images, which is the most it can"
+files_again = "Choose your images again, since a file is not kept when a save is refused."
+thanks_picture = "choose one of the pictures offered"
+thanks_image = "choose an image to upload, or another picture"
+thanks_alt = "say what the picture shows, for people who cannot see it"
+thanks_alt_long = "keep the picture description under {{.Limit}} characters"
 
 [style.error.place]
 # Where on the Style tab a problem is, around the problem itself.
@@ -713,9 +762,14 @@ name = "Name: {{.Problem}}"
 tagline = "Tagline: {{.Problem}}"
 header_link = "Header link {{.Position}}: {{.Problem}}"
 header_links = "Header links: {{.Problem}}"
+banner = "Banner: {{.Problem}}"
+logo = "Logo: {{.Problem}}"
+logo_alt = "Logo description: {{.Problem}}"
 footer_text = "Footer text: {{.Problem}}"
 footer_link = "Footer link {{.Position}}: {{.Problem}}"
 footer_links = "Footer links: {{.Problem}}"
+thanks_image = "Thank you page picture: {{.Problem}}"
+thanks_alt = "Picture description: {{.Problem}}"
 
 [editor.settings.delete]
 label = "Delete survey"
@@ -832,6 +886,67 @@ label = "Save tier"
 [admin.tiers.error]
 invalid = "Choose one of the tiers listed."
 workspace = "That workspace no longer exists."
+
+[admin.suspensions]
+title = "Suspensions · Earful"
+heading = "Suspensions"
+intro = "A suspended workspace's surveys take no answers and show none of their style. Its members can't publish, reopen, send invitations or use AI. They can still sign in, read their results, edit drafts and export their data. Lifting a suspension puts everything back as it was."
+results = "Workspaces"
+none_html = "No workspace found for <strong>{{.Email}}</strong>."
+member = "Member"
+since = "Suspended"
+since_by = "{{.Day}}, by {{.By}}"
+reason_term = "Reason"
+
+[admin.suspensions.list]
+heading = "Suspended now"
+empty = "No workspace is suspended."
+
+[admin.suspensions.find]
+heading = "Find an account"
+
+[admin.suspensions.find.submit]
+label = "Look up"
+
+[admin.suspensions.found]
+suspended = "Suspended. Lift it from the list above."
+
+[admin.suspensions.reason]
+label = "Reason"
+hint = "What you saw, for whoever reads this page next. Only operators see it."
+
+[admin.suspensions.suspend]
+label = "Suspend workspace"
+
+[admin.suspensions.lift]
+label = "Lift suspension"
+
+[admin.suspensions.notice]
+suspended = "Workspace suspended."
+lifted = "Suspension lifted. Everything is back as it was."
+
+[admin.suspensions.error]
+workspace = "That workspace no longer exists."
+reason = "Give a reason for the suspension."
+reason_long = "Keep the reason under {{.Max}} characters."
+already = "That workspace is already suspended."
+not_suspended = "That workspace isn't suspended."
+
+# Under the header on every page of a workspace an operator has suspended.
+[suspension]
+notice = "This workspace is suspended. Its surveys take no answers. You can't publish, reopen, send invitations or use AI. You can still read your results, edit drafts and export your data."
+contact = "To ask about it, write to {{.Contact}}."
+
+# The page that answers publishing, reopening or sending while suspended.
+[suspension.held]
+title = "Workspace suspended · Earful"
+heading = "This workspace is suspended"
+body = "Surveys can't be published, reopened or sent until the suspension is lifted. Your drafts and results are still here, and you can export them."
+back = "Back"
+# What was refused, said first.
+publish = "Your survey wasn't published."
+reopen = "Your survey wasn't reopened."
+send = "Your invitations weren't sent."
 
 
 # ── Support: metrics ───────────────────────────────────────────────────
@@ -973,6 +1088,12 @@ body = "This survey has received a lot of submissions from your network just now
 title = "This survey is closed"
 body = "It's no longer accepting responses. If you think it should still be open, contact whoever sent you the link."
 
+# A survey whose workspace an operator has suspended. It says no more
+# than that the survey cannot be answered now.
+[respond.refused.suspended]
+title = "This survey isn't available"
+body = "It can't take answers at the moment. If you were expecting to answer it, contact whoever sent you the link."
+
 [respond.refused.invited]
 title = "This survey is by invitation only"
 body = "Answers are collected through personal invitation links. If you were invited, use the link from your email; otherwise ask whoever runs the survey for an invitation."
@@ -1038,6 +1159,7 @@ paused = "AI features are paused for today while we keep costs in check. They'll
 absent = "AI isn't configured on this instance, so questions have to be written by hand."
 silent = "The AI service didn't respond. Try again in a moment."
 attachment = "This instance's AI reads text only. Leave out images and PDFs, or attach their text instead."
+suspended = "This workspace is suspended, so AI features are off until the suspension is lifted."
 
 [attach.field]
 label = "Attach files"
@@ -1268,6 +1390,8 @@ import = "store: import at most {{.Limit}} addresses at a time"
 draft = "Draft"
 open = "Open"
 closed = "Closed"
+# An open survey of a suspended workspace, which takes no answers.
+held = "On hold"
 
 
 # ── The kinds of question ──────────────────────────────────────────────
@@ -1659,6 +1783,13 @@ skipped = "No answer"
 powered = "Powered by Earful"
 # Under a page of Earful's own, such as Help, the footer names it and no more.
 name = "Earful"
+
+# The link in Earful's footer on a survey's pages that writes to the
+# instance's contact about the survey. Subject and body begin the message.
+[respond.report]
+label = "Report this survey"
+subject = "Report about a survey"
+body = "Survey: {{.Address}}\n\nWhat is wrong with it:\n"
 
 [respond.link]
 # Read by a screen reader after the label of a link in a survey's header or footer.

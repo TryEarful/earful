@@ -86,11 +86,12 @@ type HeaderKind int
 const (
 	// HeaderNone is for a page that is not about one survey.
 	HeaderNone HeaderKind = iota
-	// HeaderFull is the whole header: the name, the tagline and the
-	// links. It heads the page the questions are on.
+	// HeaderFull is the whole header: the banner, the logo, the name,
+	// the tagline and the links. It heads the page the questions are on.
 	HeaderFull
-	// HeaderCompact is the name alone, on every other page of the
-	// survey, where the page's own message is what the reader came for.
+	// HeaderCompact is the logo and the name alone, on every other page
+	// of the survey, where the page's own message is what the reader
+	// came for.
 	HeaderCompact
 )
 
@@ -107,6 +108,9 @@ const (
 // above the page, as much of it as header asks for, and its footer above
 // Earful's. A page about no survey passes the zero value and is drawn
 // as Earful.
+//
+// A page has one mark: a survey with a logo of its own is named as
+// Earful's in words alone, without the owl.
 templ RespondLayout(title string, lang string, style domain.Style, header HeaderKind) {
 	@respondShell(title, lang, style, header, true) {
 		{ children... }
@@ -144,16 +148,22 @@ templ respondShell(title string, lang string, style domain.Style, header HeaderK
 			@styleHeader(style.Header, header)
 			{ children... }
 			<footer class="site-footer respond-footer">
-				@styleFooter(style.Footer)
+				@styleFooter(style)
 				<span class="made-with js-made-with">
-					@owl(OwlNeutral, 20)
+					if !style.Branded() {
+						@owl(OwlNeutral, 20)
+					}
 					if survey {
 						{ t(ctx, "respond.footer.powered") }
 					} else {
 						{ t(ctx, "respond.footer.name") }
 					}
 				</span>
-				@footerLinks(linkLang(ctx, lang))
+				if survey {
+					@footerLinks(linkLang(ctx, lang), reportHref(ctx))
+				} else {
+					@footerLinks(linkLang(ctx, lang), "")
+				}
 				<div class="switchers">
 					@modeSwitcher()
 				</div>
@@ -163,18 +173,31 @@ templ respondShell(title string, lang string, style domain.Style, header HeaderK
 }
 
 // styleHeader is the survey's own header: whose survey this is, above
-// everything else on the page. The name is a paragraph and not a
-// heading, so the page's one <h1> stays the survey's title and the
-// heading order holds with a header and without one. Everything in it
-// is the creator's plain text; nothing they wrote is read as markup.
+// everything else on the page. It is laid out as a profile is: a banner
+// across the top with nothing written on it, the logo on a plate over
+// the banner's lower edge, and under them the name, the tagline and the
+// links, on the theme's ground and in its colours. Nothing a creator
+// uploads is ever behind text, so every pair of colours that carries
+// words is one the contrast table measures.
 //
-// The compact kind is the name alone. On the questions page the script
-// that shows one question at a time sets is-compact past the first
-// question, which draws the full header the same way.
+// The name is a paragraph and not a heading, so the page's one <h1>
+// stays the survey's title and the heading order holds with a header and
+// without one. Everything in it is the creator's plain text; nothing
+// they wrote is read as markup.
+//
+// The compact kind is the logo and the name. On the questions page the
+// script that shows one question at a time sets is-compact past the
+// first question, which draws the full header the same way.
 templ styleHeader(header domain.StyleHeader, kind HeaderKind) {
 	if kind == HeaderFull && !header.IsZero() {
-		<header class="style-header js-style-header">
+		<header class={ "style-header", "js-style-header", templ.KV("has-banner", !header.Banner.IsZero()) }>
+			if !header.Banner.IsZero() {
+				@styleBanner(header.Banner)
+			}
 			<div class="style-header-body">
+				if !header.Logo.IsZero() {
+					@styleLogo(header.Logo, header.LogoAlt)
+				}
 				if header.Name != "" {
 					<p class="style-name js-style-name">{ header.Name }</p>
 				}
@@ -191,32 +214,86 @@ templ styleHeader(header domain.StyleHeader, kind HeaderKind) {
 				@styleLinks(header.Links)
 			</div>
 		</header>
-	} else if kind == HeaderCompact && header.Name != "" {
+	} else if kind == HeaderCompact && (header.Name != "" || !header.Logo.IsZero()) {
 		<header class="style-header style-header-compact js-style-header">
 			<div class="style-header-body">
-				<p class="style-name js-style-name">{ header.Name }</p>
+				if !header.Logo.IsZero() {
+					@styleLogo(header.Logo, header.LogoAlt)
+				}
+				if header.Name != "" {
+					<p class="style-name js-style-name">{ header.Name }</p>
+				}
 			</div>
 		</header>
 	}
 }
 
+// styleBanner is the strip across the head of the page. It is
+// decoration, so its alternative text is empty and a screen reader
+// passes over it. The size is written out so the page keeps the
+// picture's room while it loads.
+templ styleBanner(banner domain.StyleImage) {
+	<img
+		class="style-banner js-style-banner"
+		src={ styleImageURL(ctx, banner) }
+		alt=""
+		width={ strconv.Itoa(banner.Width) }
+		height={ strconv.Itoa(banner.Height) }
+		decoding="async"
+	/>
+}
+
+// styleLogo is the survey's own mark on its plate. The plate is light in
+// both display modes: a logo is drawn for a light ground far more often
+// than for a dark one, and on a plate the theme coloured, a dark logo
+// with a transparent ground would vanish in the dark mode.
+templ styleLogo(logo domain.StyleImage, alt string) {
+	<span class="style-logo">
+		<img
+			class="js-style-logo"
+			src={ styleImageURL(ctx, logo) }
+			alt={ alt }
+			width={ strconv.Itoa(logo.Width) }
+			height={ strconv.Itoa(logo.Height) }
+			decoding="async"
+		/>
+	</span>
+}
+
 // styleFooter is the creator's own footer, at the head of the page's
-// footer and above Earful's line. It is inside the one <footer>, so the
-// page has one footer landmark.
-templ styleFooter(footer domain.StyleFooter) {
-	if !footer.IsZero() {
+// footer and above Earful's line: the logo again, small, with the text
+// and the links. It is inside the one <footer>, so the page has one
+// footer landmark. The logo here repeats the header's, which has already
+// said what it is, so it is not said twice.
+templ styleFooter(style domain.Style) {
+	if !style.Footer.IsZero() {
 		<div class="style-footer js-style-footer">
-			if footer.Text != "" {
-				<p class="style-footer-text">
-					for i, line := range footer.TextLines() {
-						if i > 0 {
-							<br/>
-						}
-						{ line }
-					}
-				</p>
+			if !style.Header.Logo.IsZero() {
+				<span class="style-logo">
+					<img
+						class="js-style-footer-logo"
+						src={ styleImageURL(ctx, style.Header.Logo) }
+						alt=""
+						width={ strconv.Itoa(style.Header.Logo.Width) }
+						height={ strconv.Itoa(style.Header.Logo.Height) }
+						decoding="async"
+						loading="lazy"
+					/>
+				</span>
 			}
-			@styleLinks(footer.Links)
+			<div class="style-footer-body">
+				if style.Footer.Text != "" {
+					<p class="style-footer-text">
+						for i, line := range style.Footer.TextLines() {
+							if i > 0 {
+								<br/>
+							}
+							{ line }
+						}
+					</p>
+				}
+				@styleLinks(style.Footer.Links)
+			</div>
 		</div>
 	}
 }
@@ -840,11 +917,13 @@ type AnsweredQuestion struct {
 	Answer   string
 }
 
-// RespondThanks closes the loop for the respondent.
+// RespondThanks closes the loop for the respondent, under the picture
+// the style of the version they answered chooses: the happy owl unless
+// the creator chose another.
 templ RespondThanks(data ThanksData) {
 	@RespondLayout(t(ctx, "respond.thanks.title", uitext.Args{"Survey": data.Title}), data.Lang, data.Style, HeaderCompact) {
 		<main class="standalone">
-			@owl(OwlHappy, 96)
+			@thanksPicture(data.Style.Thanks)
 			<h1>{ t(ctx, "respond.thanks.heading") }</h1>
 			if data.Thanks.Message != "" {
 				@thanksMessage(data.Thanks)
@@ -905,7 +984,7 @@ templ answerSummary(answers []AnsweredQuestion) {
 templ RespondPreviewSubmitted(surveyID string, title string, answers []AnsweredQuestion, style domain.Style) {
 	@RespondLayout(t(ctx, "respond.preview.submitted.title", uitext.Args{"Survey": title}), "", style, HeaderCompact) {
 		<main class="standalone">
-			@owl(OwlHappy, 96)
+			@thanksPicture(style.Thanks)
 			<h1>{ t(ctx, "respond.preview.submitted.heading") }</h1>
 			<p>{ t(ctx, "respond.preview.submitted.body") }</p>
 			@answerSummary(answers)

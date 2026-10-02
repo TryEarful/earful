@@ -28,6 +28,45 @@ templ AuthedHeader(email string, csrf string) {
 			</form>
 		</nav>
 	</header>
+	@suspensionNotice()
+}
+
+// suspensionNotice stands under the header on every page of a workspace
+// an operator has suspended (ADR-0018): what is held, what is not, and
+// whom to ask.
+templ suspensionNotice() {
+	if suspended, contact := suspension(ctx); suspended {
+		<p class="notice suspension-notice js-suspension-notice" role="status">
+			{ t(ctx, "suspension.notice") }
+			if contact != "" {
+				{ sentenceGap }
+				{ t(ctx, "suspension.contact", uitext.Args{"Contact": contact}) }
+			}
+		</p>
+	}
+}
+
+// WorkspaceSuspended answers an action a suspended workspace may not
+// take: publishing, reopening, or sending invitations. refused says which
+// was not done, back is the page the creator came from, and contact is
+// whom to ask, or "" when the instance publishes nobody.
+templ WorkspaceSuspended(email string, csrf string, back string, refused string, contact string) {
+	@Layout(t(ctx, "suspension.held.title")) {
+		@AuthedHeader(email, csrf)
+		<main class="standalone js-suspension-held">
+			<h1>{ t(ctx, "suspension.held.heading") }</h1>
+			<p>
+				// templ puts a space after text that a line break follows,
+				// which is what separates the two sentences.
+				{ refused }
+				{ t(ctx, "suspension.held.body") }
+			</p>
+			if contact != "" {
+				<p>{ t(ctx, "suspension.contact", uitext.Args{"Contact": contact}) }</p>
+			}
+			<p class="button-row"><a class="button-link" href={ templ.SafeURL(back) }>{ t(ctx, "suspension.held.back") }</a></p>
+		</main>
+	}
 }
 
 templ Dashboard(email string, workspaceName string, csrf string, data SurveyListData) {
@@ -137,6 +176,7 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 						<a class="button-link" href="/admin/metrics">{ t(ctx, "account.admin.metrics.label") }</a>
 						<a class="button-link" href="/admin/erasure">{ t(ctx, "account.admin.erasure.label") }</a>
 						<a class="button-link" href="/admin/ai-tiers">{ t(ctx, "account.admin.tiers.label") }</a>
+						<a class="button-link" href="/admin/suspensions">{ t(ctx, "account.admin.suspensions.label") }</a>
 					</p>
 				}
 			</div>

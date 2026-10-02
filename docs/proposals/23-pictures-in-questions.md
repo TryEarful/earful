@@ -198,10 +198,10 @@ Infrastructure only; nothing a creator can see yet.
 7. **Caching.** `private, max-age=86400` on pictures. A picture removed
    from a survey may stay in a respondent's browser cache for a day.
    Acceptable?
-8. **Shared store with ADR-0018.** Whichever of this and the logo work
-   lands first creates `internal/media` and the `media` table. Does the
-   logo need SVG? This pipeline refuses SVG, and accepting it would need
-   a decision of its own.
+8. **Shared store with ADR-0018.** The style work is built: a survey's
+   pictures are in `survey_images`, re-encoded by `internal/styleimage`,
+   which refuses SVG. Should question pictures reuse that table and
+   package, or should both move to one store?
 9. **Respondent uploads (#21).** Confirm that receiving pictures or
    video from respondents is a separate, later decision and not part of
    this issue.

@@ -15,7 +15,8 @@ import (
 const authenticateSession = `-- name: AuthenticateSession :one
 SELECT s.id AS session_id, s.csrf_token, s.expires_at,
        u.id AS user_id, u.email, u.is_super_admin,
-       w.id AS workspace_id, w.name AS workspace_name
+       w.id AS workspace_id, w.name AS workspace_name,
+       (w.suspended_at IS NOT NULL)::bool AS workspace_suspended
 FROM sessions s
 JOIN users u ON u.id = s.user_id AND u.deleted_at IS NULL
 JOIN workspace_members m ON m.user_id = u.id
@@ -26,14 +27,15 @@ LIMIT 1
 `
 
 type AuthenticateSessionRow struct {
-	SessionID     uuid.UUID `json:"session_id"`
-	CsrfToken     string    `json:"csrf_token"`
-	ExpiresAt     time.Time `json:"expires_at"`
-	UserID        uuid.UUID `json:"user_id"`
-	Email         string    `json:"email"`
-	IsSuperAdmin  bool      `json:"is_super_admin"`
-	WorkspaceID   uuid.UUID `json:"workspace_id"`
-	WorkspaceName string    `json:"workspace_name"`
+	SessionID          uuid.UUID `json:"session_id"`
+	CsrfToken          string    `json:"csrf_token"`
+	ExpiresAt          time.Time `json:"expires_at"`
+	UserID             uuid.UUID `json:"user_id"`
+	Email              string    `json:"email"`
+	IsSuperAdmin       bool      `json:"is_super_admin"`
+	WorkspaceID        uuid.UUID `json:"workspace_id"`
+	WorkspaceName      string    `json:"workspace_name"`
+	WorkspaceSuspended bool      `json:"workspace_suspended"`
 }
 
 func (q *Queries) AuthenticateSession(ctx context.Context, tokenHash []byte) (AuthenticateSessionRow, error) {
@@ -48,6 +50,7 @@ func (q *Queries) AuthenticateSession(ctx context.Context, tokenHash []byte) (Au
 		&i.IsSuperAdmin,
 		&i.WorkspaceID,
 		&i.WorkspaceName,
+		&i.WorkspaceSuspended,
 	)
 	return i, err
 }
@@ -240,7 +243,7 @@ func (q *Queries) CreateUserWithPassword(ctx context.Context, arg CreateUserWith
 const createWorkspace = `-- name: CreateWorkspace :one
 INSERT INTO workspaces (name)
 VALUES ($1)
-RETURNING id, name, created_at, deleted_at, ai_tier
+RETURNING id, name, created_at, deleted_at, ai_tier, suspended_at, suspended_reason, suspended_by
 `
 
 func (q *Queries) CreateWorkspace(ctx context.Context, name string) (Workspace, error) {
@@ -252,6 +255,9 @@ func (q *Queries) CreateWorkspace(ctx context.Context, name string) (Workspace, 
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.AiTier,
+		&i.SuspendedAt,
+		&i.SuspendedReason,
+		&i.SuspendedBy,
 	)
 	return i, err
 }
@@ -385,7 +391,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const getWorkspaceForUser = `-- name: GetWorkspaceForUser :one
-SELECT w.id, w.name, w.created_at, w.deleted_at, w.ai_tier FROM workspaces w
+SELECT w.id, w.name, w.created_at, w.deleted_at, w.ai_tier, w.suspended_at, w.suspended_reason, w.suspended_by FROM workspaces w
 JOIN workspace_members m ON m.workspace_id = w.id
 WHERE m.user_id = $1 AND w.deleted_at IS NULL
 ORDER BY w.created_at
@@ -401,6 +407,9 @@ func (q *Queries) GetWorkspaceForUser(ctx context.Context, userID uuid.UUID) (Wo
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.AiTier,
+		&i.SuspendedAt,
+		&i.SuspendedReason,
+		&i.SuspendedBy,
 	)
 	return i, err
 }

@@ -2246,6 +2246,10 @@ other = "Abierta"
 hash = "sha1-88d86b7721d587644e9c4cf33a084202cb3b0ff0"
 other = "Cerrada"
 
+[survey.status.held]
+hash = "sha1-7725fc0eb4b40583bc7d9054a174105d8b97e0df"
+other = "En espera"
+
 
 # ── Los tipos de pregunta ──────────────────────────────────────────────
 
@@ -3384,6 +3388,18 @@ other = "Guardar estilo"
 hash = "sha1-99b065faaf8062e2f2a2a41eb6866dbd43dafa2a"
 other = "Estilo guardado. Las personas encuestadas lo verán cuando publique."
 
+[style.busy.title]
+hash = "sha1-4541ee17b5bc6cb69a9d5d176a6c732de7c0737c"
+other = "Su estilo no se ha guardado"
+
+[style.busy.body]
+hash = "sha1-a004a47c1ee3c771fd6e80beade43a8cbb91ad79"
+other = "Ahora mismo se están guardando varios estilos. Vuelva atrás y guarde el suyo de nuevo dentro de un momento y vuelva a elegir sus imágenes."
+
+[style.busy.back]
+hash = "sha1-b7a010410fcfc722d78c45247c092d25a0f8b8b0"
+other = "Volver al estilo"
+
 [style.error.theme]
 hash = "sha1-de81d05c196f5111d5b0964889471d1f34a2af2c"
 other = "elija uno de los temas ofrecidos"
@@ -3393,8 +3409,8 @@ hash = "sha1-31341c6f0c7af677ffb8fadcb92038e8ac2b6193"
 other = "Encabezado"
 
 [style.header.hint]
-hash = "sha1-51922d340fe3ee9419f0bb001bb711e56e1f2a6c"
-other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Déjelo todo vacío para no mostrar ninguno."
+hash = "sha1-352d6c9ac6cdc3e88f0d51a4792a7d8571c2f500"
+other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Déjelo todo vacío para no mostrar ninguno. Sus textos se traducen en la pestaña Idiomas."
 
 [style.header.name_html]
 hash = "sha1-fbba7896d8d915160e276ac96374c9a3626265f3"
@@ -3409,8 +3425,8 @@ hash = "sha1-26c01e70a337f208f56dae1c3bc18f60c4bff453"
 other = "Pie de página"
 
 [style.footer.hint]
-hash = "sha1-8e4c7cc039a10f2c762ca5902a7809f6eff962d2"
-other = "Se muestra debajo de la encuesta. Sirve para una razón social, una dirección o un aviso de privacidad."
+hash = "sha1-af70299db893ac87046e7013886a41283983fe7b"
+other = "Se muestra debajo de la encuesta. Sirve para una razón social, una dirección postal o un aviso de privacidad."
 
 [style.footer.text_html]
 hash = "sha1-303bcdddfa4824221929c16fcee03d849f069ba1"
@@ -3421,16 +3437,16 @@ hash = "sha1-014bcd654c60d5250fad2123b073b9c0ac3340f6"
 other = "Enlaces"
 
 [style.links.hint]
-hash = "sha1-e7a0af9fab099c80f87b4cd1433b4dd9276846e3"
-other = "Hasta tres. Cada uno necesita un texto y una dirección que empiece por https://. Se abren en una pestaña nueva."
+hash = "sha1-b44fb4442951b82f793230aaa245f92d7db63538"
+other = "Hasta tres. Cada uno necesita un texto y una dirección que empiece por http:// o https://. Se abren en una pestaña nueva."
 
 [style.links.label]
 hash = "sha1-628f2bd96b4e8f61fd46cac33262e414028fe126"
-other = "Texto {{.Position}}"
+other = "Texto del enlace {{.Position}}"
 
 [style.links.address]
 hash = "sha1-a48380ea6a095a6941479169b9a905ddb5c833a9"
-other = "Dirección {{.Position}}"
+other = "Dirección del enlace {{.Position}}"
 
 [style.error.name_long]
 hash = "sha1-88326673cc18f4e266e63bc905f3e05840f0eff7"
@@ -3475,3 +3491,335 @@ other = "Enlace {{.Position}} del pie: {{.Problem}}"
 [style.error.place.footer_links]
 hash = "sha1-97b7ce86cf4fccf8acf725b7eac17b60f8ba63f7"
 other = "Enlaces del pie: {{.Problem}}"
+
+[style.header.banner_html]
+hash = "sha1-28db80627881f50bc5abf192964d36e2398cd121"
+other = 'Imagen del encabezado <small class="muted">(opcional)</small>'
+
+[style.header.banner_hint]
+hash = "sha1-042a3283d9ae6401f03ea5452cc91bfc497740b6"
+other = "Una imagen ancha en lo alto de la página, recortada a tres de ancho por uno de alto. Use una sin texto. PNG, JPEG o WebP, hasta {{.Size}} MB."
+
+[style.header.logo_html]
+hash = "sha1-ee67d62a589a0cfffefac02a4d8278d1c14345d2"
+other = 'Logotipo <small class="muted">(opcional)</small>'
+
+[style.header.logo_hint]
+hash = "sha1-24210689ca05f8b3392ab27f7a57cc48c0b3e8a7"
+other = "Use solo un logotipo que tenga derecho a usar. Aparece en lo alto del encabezado y, en el pie, en lugar del búho de Earful. PNG, JPEG o WebP, hasta {{.Size}} MB."
+
+[style.header.logo_alt_html]
+hash = "sha1-8408d535970af06b504c2987b9af2d3058c1e445"
+other = 'Descripción del logotipo <small class="muted">(necesaria con un logotipo, para quien no pueda verlo)</small>'
+
+[style.error.logo_alt]
+hash = "sha1-3eeac88bebc7009b05a63884708193fe468f5f6a"
+other = "diga qué muestra el logotipo, para quien no pueda verlo"
+
+[style.error.logo_alt_long]
+hash = "sha1-9e8f7ab5bb34b019674c99bd28db2d13c3687e5b"
+other = "que la descripción del logotipo no pase de {{.Limit}} caracteres"
+
+[style.error.image]
+hash = "sha1-20e332bcbe9b13cf3d0ebfc3ca79a8d584f06a13"
+other = "esa imagen no se puede usar"
+
+[style.error.image_type]
+hash = "sha1-53f987887b36eea58af23b04d17f72e06cc44aad"
+other = "use una imagen PNG, JPEG o WebP"
+
+[style.error.image_large]
+hash = "sha1-13a5d36af4e874594569b43427291e754e2da069"
+other = "que el archivo no pase de {{.Size}} MB"
+
+[style.error.image_pixels]
+hash = "sha1-cc5381dbce0d5cf60e1512cb659e014c02c986fa"
+other = "esa imagen tiene demasiados píxeles, así que use una más pequeña"
+
+[style.error.image_missing]
+hash = "sha1-6337f1d59379eeae6a5cae642b4e41bdc06da642"
+other = "falta una imagen del estilo de la encuesta, así que vuelva a elegirla en la pestaña Estilo"
+
+[style.error.image_unreadable]
+hash = "sha1-47286d4a47c979752199989132bed2717c06ef7e"
+other = "ese archivo no se pudo leer como imagen"
+
+[style.error.images]
+hash = "sha1-90361f6a1b7348dc9d2b5cd11dabf60bf3d46e7e"
+other = "esta encuesta ya guarda {{.Limit}} imágenes, que es el máximo"
+
+[style.error.files_again]
+hash = "sha1-23a1b8f87afee961bb2dc4da2e3b4c0786fb52de"
+other = "Elija de nuevo sus imágenes, porque los archivos se pierden cuando no se puede guardar."
+
+[style.error.place.banner]
+hash = "sha1-d6ddfb328165831d2d29db732c7b8029d0305ecf"
+other = "Imagen del encabezado: {{.Problem}}"
+
+[style.error.place.logo]
+hash = "sha1-b765601739ea9dfa8ffc9f40f4abc7000f918ff4"
+other = "Logotipo: {{.Problem}}"
+
+[style.error.place.logo_alt]
+hash = "sha1-7a20159b3968a97e1dbaeebe7b5eb63de28c021a"
+other = "Descripción del logotipo: {{.Problem}}"
+
+[languages.style.logo_alt]
+hash = "sha1-0a4d1410fea3b8e125bd9079bfe0c869536009ed"
+other = "Descripción del logotipo en {{.Language}}"
+
+[style.image.remove_banner]
+hash = "sha1-6c68b6cf3926b6fbc582a31487298ab064092503"
+other = "Quitar la imagen del encabezado"
+
+[style.image.remove_logo]
+hash = "sha1-717c7d8c0e0f24ff17b27cfb4364b2a77602a889"
+other = "Quitar el logotipo"
+
+[style.image.remove_thanks]
+hash = "sha1-bb60f2fe30be00a68a9d8d0407f3547514f8ecd6"
+other = "Quitar la imagen de agradecimiento"
+
+[style.thanks.heading]
+hash = "sha1-b479863c79c169c105455354bd0936c3cdb6da81"
+other = "Imagen de agradecimiento"
+
+[style.thanks.hint]
+hash = "sha1-e6c0ecd226358cb3ee86e3af6d58b92e103f8f94"
+other = "Aparece encima del mensaje de agradecimiento cuando alguien envía sus respuestas."
+
+[style.thanks.owl]
+hash = "sha1-d162c85ba3725d4de11a10c9f85334579db5f9ec"
+other = "El búho de Earful"
+
+[style.thanks.check]
+hash = "sha1-aeddfe22a01fc0ff5fb0fe691b08db0b2e2a26c7"
+other = "Marca de verificación"
+
+[style.thanks.envelope]
+hash = "sha1-7f4a2c89d81b1eddb2e5160fabf3758acbd3a82d"
+other = "Sobre"
+
+[style.thanks.confetti]
+hash = "sha1-79141e063e10bb80a7b799878f12312eb89fbafd"
+other = "Confeti"
+
+[style.thanks.image]
+hash = "sha1-5400d50a7eb5870589ffc52f89a43d277f8468cc"
+other = "Su propia imagen"
+
+[style.thanks.none]
+hash = "sha1-b90d672832706cd4c3bfb39b7de3a3d38cc71ab1"
+other = "Sin imagen"
+
+[style.thanks.image_html]
+hash = "sha1-325a9a3cc7da6767658e0520275874abe56d3fd6"
+other = 'Imagen para subir <small class="muted">(para usar su propia imagen)</small>'
+
+[style.thanks.image_hint]
+hash = "sha1-0e23da971ce95aab7ed481521cca417bcd8bbbc0"
+other = "Al elegir un archivo, este pasa a ser la imagen de la página, entera y sobre un fondo blanco. Si guarda con otra opción elegida, su imagen se quita. PNG, JPEG o WebP, hasta {{.Size}} MB."
+
+[style.thanks.alt_html]
+hash = "sha1-974239748b29221892cb41c39b0256f5d9155558"
+other = 'Descripción de la imagen <small class="muted">(necesaria con su propia imagen, para quien no pueda verla)</small>'
+
+[style.error.thanks_picture]
+hash = "sha1-d00aacc2b4116214101daa5ba90a66f407734616"
+other = "elija una de las imágenes ofrecidas"
+
+[style.error.thanks_image]
+hash = "sha1-1321423b93292947da3381df029867092dabb2d0"
+other = "elija un archivo para subir, o bien otra imagen"
+
+[style.error.thanks_alt]
+hash = "sha1-74ac4af33fe530065a900a2f9debaf43accba132"
+other = "diga qué muestra la imagen, para quien no pueda verla"
+
+[style.error.thanks_alt_long]
+hash = "sha1-ce80cfec135f1f73b50606dcdcd0e60d515acf0b"
+other = "que la descripción de la imagen no pase de {{.Limit}} caracteres"
+
+[style.error.place.thanks_image]
+hash = "sha1-984155bba02d7f2946ad9fff7b2b613deaafa387"
+other = "Imagen de agradecimiento: {{.Problem}}"
+
+[style.error.place.thanks_alt]
+hash = "sha1-defa6d6c41e8d0a3d7305efe5102b1daebed8234"
+other = "Descripción de la imagen: {{.Problem}}"
+
+[editor.thanks.picture]
+hash = "sha1-d571557d78ec593920c888e4976bfee378697ba9"
+other = "La imagen sobre el mensaje se elige con el estilo de la encuesta."
+
+[editor.thanks.picture_link]
+hash = "sha1-e08e0fbcd6c6920f6b67a0aa32caa1b5a261ecc6"
+other = "Elegir la imagen"
+
+[languages.style.thanks_alt]
+hash = "sha1-83bbde327f18476c30e287f707bfed317154f104"
+other = "Descripción de la imagen de agradecimiento en {{.Language}}"
+
+[account.admin.suspensions.label]
+hash = "sha1-8d1d54a8f8e05c10b546340499f62b420b513149"
+other = "Suspensiones"
+
+[ai.refused.suspended]
+hash = "sha1-083345e228f23a9b900d99c86a3c2c65274bc2e7"
+other = "Este espacio de trabajo está suspendido, así que las funciones de IA no están disponibles hasta que se levante la suspensión."
+
+[respond.refused.suspended.title]
+hash = "sha1-b7e73c5096277b01795d1e36b038c35b62f07282"
+other = "Esta encuesta no está disponible"
+
+[respond.refused.suspended.body]
+hash = "sha1-ad74d061e523f20b8413807b7d76ae19102e518e"
+other = "Ahora mismo no puede recibir respuestas. Si esperaba responderla, escriba a quien le envió el enlace."
+
+[respond.report.label]
+hash = "sha1-edc14f349fb561a8c4bcc4a7df7dc470783e78dc"
+other = "Informar sobre esta encuesta"
+
+[respond.report.subject]
+hash = "sha1-ab8ece4329c558bea0da02131d4cfbed435b06f7"
+other = "Aviso sobre una encuesta"
+
+[respond.report.body]
+hash = "sha1-e181ecbf4190354968ac2d1ad4158d8412968b80"
+other = "Encuesta: {{.Address}}\n\nQué tiene de malo:\n"
+
+[admin.suspensions.title]
+hash = "sha1-a63f1c18f3bd76baf39813f61af96f3f6c512ba5"
+other = "Suspensiones · Earful"
+
+[admin.suspensions.heading]
+hash = "sha1-8d1d54a8f8e05c10b546340499f62b420b513149"
+other = "Suspensiones"
+
+[admin.suspensions.intro]
+hash = "sha1-76212ff284cbe1b1fb0ad233a86aef677c05a2e9"
+other = "Las encuestas de un espacio de trabajo suspendido no reciben respuestas ni muestran su estilo. Sus miembros no pueden publicar, reabrir, enviar invitaciones ni usar la IA. Siguen pudiendo iniciar sesión, leer sus resultados, editar borradores y exportar sus datos. Al levantar la suspensión, todo vuelve a estar como antes."
+
+[admin.suspensions.results]
+hash = "sha1-205b4561ed36923d5a51de1b34c70044bf82e111"
+other = "Espacios de trabajo"
+
+[admin.suspensions.none_html]
+hash = "sha1-9653476d302e5346667ce42fded253e90bcbba90"
+other = "No se ha encontrado ningún espacio de trabajo para <strong>{{.Email}}</strong>."
+
+[admin.suspensions.member]
+hash = "sha1-6853c98a6f4358bbfed1b3b9c81d308649299b0f"
+other = "Miembro"
+
+[admin.suspensions.since]
+hash = "sha1-794696a720669c524ad273a139db0fd375e6608b"
+other = "Suspendido"
+
+[admin.suspensions.since_by]
+hash = "sha1-93c31bcb7fb74f9771102d5f93985383f75439b9"
+other = "{{.Day}}, por {{.By}}"
+
+[admin.suspensions.reason_term]
+hash = "sha1-f219cc0614ae6860f43a3cd84b5cf31fc312cd9d"
+other = "Motivo"
+
+[admin.suspensions.list.heading]
+hash = "sha1-aaf5cdcf565f25d900ae9a9d1ce94cb109653fb3"
+other = "Suspendidos ahora"
+
+[admin.suspensions.list.empty]
+hash = "sha1-f0bbf606e14b07e5adc1df67b935c38f8f8baf84"
+other = "No hay ningún espacio de trabajo suspendido."
+
+[admin.suspensions.find.heading]
+hash = "sha1-e73497922a6e7849d9b94e695aaa1a3caff856ba"
+other = "Buscar una cuenta"
+
+[admin.suspensions.find.submit.label]
+hash = "sha1-6d7049b88568d8f67d8482c3e0db4726e9bd8036"
+other = "Buscar"
+
+[admin.suspensions.found.suspended]
+hash = "sha1-341264dd61338f9e5b0b906bea352e990ad1ffe4"
+other = "Suspendido. Levante la suspensión desde la lista de arriba."
+
+[admin.suspensions.reason.label]
+hash = "sha1-f219cc0614ae6860f43a3cd84b5cf31fc312cd9d"
+other = "Motivo"
+
+[admin.suspensions.reason.hint]
+hash = "sha1-97e50e6a333543efaccf05a2995f03b4cb34b2e4"
+other = "Lo que ha visto, para quien lea esta página después. Solo lo ven los operadores."
+
+[admin.suspensions.suspend.label]
+hash = "sha1-975206b9beb6a6d5ec1a43a0ec71e1b1ed0d9522"
+other = "Suspender el espacio de trabajo"
+
+[admin.suspensions.lift.label]
+hash = "sha1-4edcaa027e7eb5ac33eadd2a45b743777f8e6bc8"
+other = "Levantar la suspensión"
+
+[admin.suspensions.notice.suspended]
+hash = "sha1-fe008c70eea407cd97db7edd6e7970c1d36bbf9d"
+other = "Espacio de trabajo suspendido."
+
+[admin.suspensions.notice.lifted]
+hash = "sha1-6759f648259a3b8e977e696b5ac38690db32cc80"
+other = "Suspensión levantada. Todo vuelve a estar como antes."
+
+[admin.suspensions.error.workspace]
+hash = "sha1-f1da6e63cd7db959cc3a6dc394c2ad05ec98f777"
+other = "Ese espacio de trabajo ya no existe."
+
+[admin.suspensions.error.reason]
+hash = "sha1-74d28f66e22daa15c97e5fce3dd60dcdb35f445e"
+other = "Indique el motivo de la suspensión."
+
+[admin.suspensions.error.reason_long]
+hash = "sha1-0c7219ee77e53b15e0c5345c78dd3de8d9ac87a5"
+other = "El motivo no puede pasar de {{.Max}} caracteres."
+
+[admin.suspensions.error.already]
+hash = "sha1-a509a0ee76be6a4b4adbdc9b68ac341372916349"
+other = "Ese espacio de trabajo ya está suspendido."
+
+[admin.suspensions.error.not_suspended]
+hash = "sha1-555a2168883986e0bbe4b1547c975d503ddb2851"
+other = "Ese espacio de trabajo no está suspendido."
+
+[suspension.notice]
+hash = "sha1-3ca93b9fa596fecbcf4742045b6cf4ee12a64538"
+other = "Este espacio de trabajo está suspendido. Sus encuestas no reciben respuestas. Tampoco puede publicar, reabrir, enviar invitaciones ni usar la IA. Sí puede leer sus resultados, editar borradores y exportar sus datos."
+
+[suspension.contact]
+hash = "sha1-eb5e8777cf3a3522d5cb8607c63154986c0e95ef"
+other = "Si tiene alguna pregunta, escriba a {{.Contact}}."
+
+[suspension.held.title]
+hash = "sha1-f8a1d9b4924e9402fb6c9a685ad887e0434caec1"
+other = "Espacio de trabajo suspendido · Earful"
+
+[suspension.held.heading]
+hash = "sha1-86ed280cb63d4a4ec9afebaabd7990ac6c40866d"
+other = "Este espacio de trabajo está suspendido"
+
+[suspension.held.body]
+hash = "sha1-c90664aa0952f930fac5e1fda92c175df4a6763d"
+other = "No se pueden publicar, reabrir ni enviar encuestas hasta que se levante la suspensión. Sus borradores y resultados siguen aquí, y puede exportarlos."
+
+[suspension.held.back]
+hash = "sha1-b52b36b7269fbfc58ec24bb724691951a3decbe8"
+other = "Volver"
+
+[suspension.held.publish]
+hash = "sha1-a65d50001d55ddcf7388b34d43b987820908f6f9"
+other = "Su encuesta no se ha publicado."
+
+[suspension.held.reopen]
+hash = "sha1-12e585376695a5140aaba01a0039faaa51f1fb84"
+other = "Su encuesta no se ha reabierto."
+
+[suspension.held.send]
+hash = "sha1-a46655c5c285720b3002c1b85ed0f9058426532d"
+other = "Sus invitaciones no se han enviado."

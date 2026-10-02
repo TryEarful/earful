@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/TryEarful/earful/internal/config"
+	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/static"
 )
 
@@ -33,6 +34,7 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// Development only; anywhere else the address does not exist.
 	if s.cfg.Env == config.EnvDevelopment {
 		mux.HandleFunc("GET /dev/theme-sheet", s.themeSheet)
+		mux.HandleFunc("GET /dev/theme-sheet/image/{name}", s.themeSheetImage)
 	}
 
 	// Respondent path (M4). No session, no workspace: the share link is
@@ -47,6 +49,9 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /p/{token}", s.participantRespondPage)
 	mux.HandleFunc("POST /p/{token}", s.participantRespondSubmit)
 	mux.HandleFunc("GET /p/{token}/voice", s.participantVoiceSocket)
+	// The pictures of a published style (ADR-0018), by the hash of
+	// their bytes. Public, as the pages that show them are.
+	mux.HandleFunc("GET /style-image/{sha256}", s.styleImage)
 	// The copy emailed when an account closes: no session survives the
 	// closure, so the token is the credential, and it expires.
 	mux.HandleFunc("GET /exports/closure/{token}", s.closureDownload)
@@ -75,10 +80,22 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post := func(pattern string, h http.HandlerFunc) {
 		mux.Handle("POST "+pattern, s.requireAuth(s.requireCSRF(h)))
 	}
-	// The two forms that take files for the AI (issue #5) parse their
-	// body in memory first; see readUploads.
+	// The actions that put a survey in front of somebody, which a
+	// suspended workspace may not take (ADR-0018). See suspension.go.
+	// refused is the message that says what was not done.
+	held := func(pattern string, refused uitext.ID, h http.HandlerFunc) {
+		mux.Handle("POST "+pattern, s.requireAuth(s.requireCSRF(s.refuseWhileSuspended(refused, h))))
+	}
+	// The forms that take files, for the AI (issue #5) and for a style's
+	// pictures (ADR-0018), parse their body in memory first; see
+	// readUploads.
 	upload := func(pattern string, h http.HandlerFunc) {
 		mux.Handle("POST "+pattern, s.requireAuth(s.readUploads(s.requireCSRF(h))))
+	}
+	// The Style form is turned away while a few are being handled, before
+	// its body is read; see fewStyleSavesAtOnce.
+	styleUpload := func(pattern string, h http.HandlerFunc) {
+		mux.Handle("POST "+pattern, s.requireAuth(s.fewStyleSavesAtOnce(s.readUploads(s.requireCSRF(h)))))
 	}
 
 	get("/dashboard", s.surveyList)
@@ -107,6 +124,11 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	// AI tiers (issue #3): which daily AI allowance a workspace has.
 	mux.Handle("GET /admin/ai-tiers", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminAITiersPage))))
 	mux.Handle("POST /admin/ai-tiers", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminAITiersSet)))))
+	// Suspension (ADR-0018): stop a workspace that misuses the service,
+	// and put it back.
+	mux.Handle("GET /admin/suspensions", s.requireAuth(s.requireSuperAdmin(http.HandlerFunc(s.adminSuspensionsPage))))
+	mux.Handle("POST /admin/suspensions", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminSuspend)))))
+	mux.Handle("POST /admin/suspensions/lift", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminLiftSuspension)))))
 	mux.Handle("POST /admin/reset-password", s.requireAuth(s.requireCSRF(s.requireSuperAdmin(http.HandlerFunc(s.adminResetPassword)))))
 
 	// Survey building (M3). Every handler resolves the survey through the
@@ -139,14 +161,18 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	post("/surveys/{surveyID}/thanks", s.surveyThanks)
 	// The Style tab (ADR-0018): how the survey looks to the people
 	// answering it. Saved to the draft, frozen at publish.
+	// Its form carries the logo and the banner, so it is read as the
+	// forms with files for the AI are. The second address serves the
+	// draft's pictures to the creator, before any version shows them.
 	get("/surveys/{surveyID}/style", s.surveyStylePage)
-	post("/surveys/{surveyID}/style", s.surveyStyleSave)
-	post("/surveys/{surveyID}/publish", s.surveyPublish)
+	styleUpload("/surveys/{surveyID}/style", s.surveyStyleSave)
+	get("/surveys/{surveyID}/style-image/{sha256}", s.surveyStyleImage)
+	held("/surveys/{surveyID}/publish", uitext.ID("suspension.held.publish"), s.surveyPublish)
 	post("/surveys/{surveyID}/close", s.surveyClose)
-	post("/surveys/{surveyID}/reopen", s.surveyReopen)
+	held("/surveys/{surveyID}/reopen", uitext.ID("suspension.held.reopen"), s.surveyReopen)
 	post("/surveys/{surveyID}/delete", s.surveyDelete)
 	post("/surveys/{surveyID}/participants", s.participantsImport)
-	post("/surveys/{surveyID}/participants/send", s.participantsSend)
+	held("/surveys/{surveyID}/participants/send", uitext.ID("suspension.held.send"), s.participantsSend)
 	// AI-drafted questions (M6-T3). The POST is the whole feature; the
 	// socket is the same operation with the output visible as it arrives.
 	upload("/surveys/{surveyID}/generate", s.surveyGenerate)

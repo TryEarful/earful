@@ -19,7 +19,7 @@ templ Layout(title string) {
 		<body>
 			{ children... }
 			<footer class="site-footer">
-				@footerLinks("")
+				@footerLinks("", "")
 				<div class="switchers">
 					@languageSwitcher()
 					@modeSwitcher()
@@ -92,10 +92,16 @@ templ headAssets(theme string) {
 // footerLinks are the pages anyone may need from anywhere: help, and
 // what happens to their data. lang carries a respondent's chosen
 // language to the page, as the survey's own links do.
-templ footerLinks(lang string) {
+// footerLinks are Earful's own links at the foot of a page. report is
+// where to report the survey a respondent's page shows (report.go), and
+// "" everywhere else.
+templ footerLinks(lang string, report string) {
 	<ul class="footer-links" aria-label={ t(ctx, "footer.aria") }>
 		<li><a href={ templ.SafeURL(withLang("/help", lang)) }>{ t(ctx, "footer.help") }</a></li>
 		<li><a href={ templ.SafeURL(withLang("/trust", lang)) }>{ t(ctx, "footer.privacy") }</a></li>
+		if report != "" {
+			<li><a class="js-report-survey" href={ templ.SafeURL(report) }>{ t(ctx, "respond.report.label") }</a></li>
+		}
 	</ul>
 }
 

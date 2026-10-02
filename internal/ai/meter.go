@@ -23,6 +23,9 @@ type UsageStore interface {
 	// WorkspaceAITier is the workspace's tier as stored; the meter maps
 	// it onto a cap.
 	WorkspaceAITier(ctx context.Context, workspaceID uuid.UUID) (string, error)
+	// WorkspaceSuspended is whether an operator has suspended the
+	// workspace, which spends nothing while it lasts.
+	WorkspaceSuspended(ctx context.Context, workspaceID uuid.UUID) (bool, error)
 }
 
 // Tier names a workspace's daily AI allowance. The stored values match
@@ -78,6 +81,11 @@ var (
 	// (story 67 — abuse cannot bankrupt the product). Every AI endpoint
 	// refuses until the day rolls over.
 	ErrBreakerTripped = errors.New("ai: daily budget breaker tripped")
+	// ErrWorkspaceSuspended: an operator has suspended this workspace
+	// (ADR-0018), and every AI feature refuses it until the suspension
+	// is lifted. The meter is the one place every AI call passes, so it
+	// is the one place this is decided.
+	ErrWorkspaceSuspended = errors.New("ai: workspace suspended")
 )
 
 // Meter enforces M6-T2: per-workspace daily token caps, chosen by the
@@ -125,6 +133,14 @@ func (m *Meter) Check(ctx context.Context, workspaceID uuid.UUID) error {
 // so one upload cannot overrun an allowance by more than its own size.
 // With an estimate of zero it is exactly Check.
 func (m *Meter) CheckFor(ctx context.Context, workspaceID uuid.UUID, estimatedTokens int64) error {
+	suspended, err := m.Store.WorkspaceSuspended(ctx, workspaceID)
+	if err != nil {
+		return err
+	}
+	if suspended {
+		return ErrWorkspaceSuspended
+	}
+
 	cost, err := m.Store.GlobalCostOnDay(ctx, m.day())
 	if err != nil {
 		return err

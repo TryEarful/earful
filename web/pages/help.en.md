@@ -2,11 +2,11 @@
 title: Help
 short_title: Help
 sections: cards
-hash: sha256-e4071b66b994c058041e3cbb5309f47f65aa8da2a7e20161396ec273736c297a
-last_update: 2026-09-30
+hash: sha256-3cbc6a3730411521fb954c067a1099e255c75169fad9fc242f03d804a0c92fb9
+last_update: 2026-10-02
 ---
 
-Short answers to what people ask most. **Answering a survey?** See [answer a survey](#answer-a-survey). **Running one?** [Create it](#create-a-survey), [publish and share it](#publish-and-share), then [read the answers](#read-the-answers).
+Short answers to what people ask most. **Answering a survey?** See [answer a survey](#answer-a-survey). **Running one?** [Create it](#create-a-survey), [give it your own look](#give-it-your-own-look), [publish and share it](#publish-and-share), then [read the answers](#read-the-answers).
 
 ## Create a survey
 
@@ -14,6 +14,10 @@ Short answers to what people ask most. **Answering a survey?** See [answer a sur
 2. Give it a title and choose who can answer. An **anonymous survey** is open to anyone with the link and stores nothing that identifies them. An **invited survey** is answered only by the people you invite by email, each through their own link. This choice is permanent.
 3. Add questions one at a time, or describe what you want to learn and choose **Draft questions** to have AI suggest some. They are ordinary questions: edit, reorder or delete them.
 4. Choose **Preview as respondent** to answer the survey exactly as others will. Nothing you enter there is kept.
+
+## Give it your own look
+
+On the survey's **Style** tab, choose a theme for the pages people answer on: Earful, Slate, Ocean or Forest, each read in light or dark as the reader prefers. Add a header with your organisation's name, a line about it and up to three links, with a banner across the top and your logo. Add a footer with your own text and links, and choose the picture on the thank you page. People see the style once you publish; until then, **Preview as respondent** shows it. Only use a logo you have the right to use.
 
 ## Publish and share
 

@@ -3,7 +3,7 @@ title: Terms of use
 short_title: Terms
 sections: cards
 draft: true
-hash: sha256-c3f423ef9b387bdd65ad8ca5df1af85cdfbea938d11821d5c25109e34b759d28
+hash: sha256-890053bfb46ad88ae360e7bff6595c4a0e82102c1057fa7a7399c424acb1eef0
 last_update: 2026-10-02
 ---
 
@@ -69,9 +69,9 @@ You can export everything your workspace holds at any time, in a documented form
 
 ## Reports, and what we may do
 
-Anyone can report a survey to us. When a survey or an account breaks these terms, or we have good reason to think it does, we may close the survey, remove content, or suspend the workspace. Where we can, we tell you first and give you the chance to put it right. Where people are being harmed or deceived, we act first and tell you after.
+Anyone can report a survey to us, from the link at the foot of its pages. When a survey or an account breaks these terms, or we have good reason to think it does, we may close the survey, remove content, or suspend the workspace. Where we can, we tell you first and give you the chance to put it right. Where people are being harmed or deceived, we act first and tell you after.
 
-If we suspend your workspace by mistake, tell us and we will look again. If your account is closed, we give you a reasonable time to export your data, unless the law or the safety of other people prevents it.
+While your workspace is suspended, its surveys take no answers and show none of their style, and you cannot publish, reopen a survey, send invitations or use AI. You can still sign in, read your results and export your data, and nothing is deleted because of the suspension. When it is lifted, everything is as it was. If we suspend your workspace by mistake, tell us and we will look again. If your account is closed, we give you a reasonable time to export your data, unless the law or the safety of other people prevents it.
 
 ## The service
 

@@ -182,14 +182,17 @@ func thanksToTranslate(draft domain.Draft) []domain.Question {
 }
 
 // The words of the style (ADR-0018) are drafted alongside too, each
-// under a key that says which word it is: the tagline, the footer's
-// text, or a link's label by its position.
+// under a key that says which word it is: the tagline, the logo's
+// alternative text, the footer's text, a link's label by its position,
+// or the alternative text of the thanks page's own picture.
 const (
 	styleKeyPrefix     = "style:"
 	styleTaglineKey    = styleKeyPrefix + "tagline"
+	styleLogoAltKey    = styleKeyPrefix + "logo_alt"
 	styleFooterTextKey = styleKeyPrefix + "footer_text"
 	styleHeaderLinkKey = styleKeyPrefix + "header_link:"
 	styleFooterLinkKey = styleKeyPrefix + "footer_link:"
+	styleThanksAltKey  = styleKeyPrefix + "thanks_alt"
 )
 
 // styleToTranslate is the style's wording, shaped as the questions
@@ -203,6 +206,7 @@ func styleToTranslate(draft domain.Draft) []domain.Question {
 		}
 	}
 	add(styleTaglineKey, words.Tagline)
+	add(styleLogoAltKey, words.LogoAlt)
 	for i, label := range words.HeaderLinks {
 		add(styleHeaderLinkKey+strconv.Itoa(i), label)
 	}
@@ -210,6 +214,7 @@ func styleToTranslate(draft domain.Draft) []domain.Question {
 	for i, label := range words.FooterLinks {
 		add(styleFooterLinkKey+strconv.Itoa(i), label)
 	}
+	add(styleThanksAltKey, words.ThanksAlt)
 	return out
 }
 
@@ -219,7 +224,9 @@ func draftedStyleWords(draft domain.Draft, translated map[string]string) (domain
 	source := draft.Style.Words()
 	words := domain.StyleWords{
 		Tagline:     translated[styleTaglineKey],
+		LogoAlt:     translated[styleLogoAltKey],
 		FooterText:  translated[styleFooterTextKey],
+		ThanksAlt:   translated[styleThanksAltKey],
 		HeaderLinks: make([]string, len(source.HeaderLinks)),
 		FooterLinks: make([]string, len(source.FooterLinks)),
 	}
@@ -312,9 +319,11 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 	if draft.HasStyleToTranslate() {
 		words := domain.StyleWords{
 			Tagline:     r.PostFormValue("style_tagline"),
+			LogoAlt:     r.PostFormValue("style_logo_alt"),
 			FooterText:  r.PostFormValue("style_footer_text"),
 			HeaderLinks: r.PostForm["style_header_link"],
 			FooterLinks: r.PostForm["style_footer_link"],
+			ThanksAlt:   r.PostFormValue("style_thanks_alt"),
 		}
 		if !blankWords(words) {
 			if err := draft.SetStyleTranslation(lang, words, true); err != nil {
@@ -339,7 +348,7 @@ func (s *server) localizationSave(w http.ResponseWriter, r *http.Request) {
 // blankWords reports whether a form carried no translation of the
 // style's words at all, which leaves whatever was there as it was.
 func blankWords(words domain.StyleWords) bool {
-	for _, word := range slices.Concat([]string{words.Tagline, words.FooterText}, words.HeaderLinks, words.FooterLinks) {
+	for _, word := range slices.Concat([]string{words.Tagline, words.LogoAlt, words.FooterText, words.ThanksAlt}, words.HeaderLinks, words.FooterLinks) {
 		if strings.TrimSpace(word) != "" {
 			return false
 		}

@@ -81,6 +81,88 @@ func mode(ctx context.Context) string {
 	return m
 }
 
+type styleImagesKey struct{}
+
+// WithStyleImages returns a context whose pages fetch a style's pictures
+// from under prefix. A respondent's page takes them from the public
+// address, which serves what a published version shows; a page drawn
+// from a draft, the preview and the Style tab, takes them from the
+// creator's own address for the survey, since nothing published shows
+// them yet.
+func WithStyleImages(ctx context.Context, prefix string) context.Context {
+	return context.WithValue(ctx, styleImagesKey{}, prefix)
+}
+
+type suspensionKey struct{}
+
+// WithSuspension returns a context whose pages tell a creator that an
+// operator has suspended their workspace (ADR-0018), and whom to ask:
+// contact is the instance's published address, or "" when it has none.
+func WithSuspension(ctx context.Context, contact string) context.Context {
+	return context.WithValue(ctx, suspensionKey{}, &contact)
+}
+
+// WithoutSuspensionNotice returns a context whose page does not carry
+// the notice, for the page that is itself about the suspension.
+func WithoutSuspensionNotice(ctx context.Context) context.Context {
+	return context.WithValue(ctx, suspensionKey{}, (*string)(nil))
+}
+
+// suspension is whether the page is drawn for a suspended workspace, and
+// the address to ask about it.
+func suspension(ctx context.Context) (suspended bool, contact string) {
+	c, _ := ctx.Value(suspensionKey{}).(*string)
+	if c == nil {
+		return false, ""
+	}
+	return true, *c
+}
+
+// Report is where a respondent's page sends somebody reporting the
+// survey: a mailto: address naming the survey, or nothing when the
+// instance publishes no address. The handler that finds the survey
+// fills it in, after the page's context was made, since a survey is
+// found in several places on the way to a page.
+type Report struct {
+	Href string
+}
+
+type reportKey struct{}
+
+// WithReport returns a context carrying an empty Report to be filled in.
+func WithReport(ctx context.Context) context.Context {
+	return context.WithValue(ctx, reportKey{}, &Report{})
+}
+
+// ReportFrom is the Report the context carries, or nil.
+func ReportFrom(ctx context.Context) *Report {
+	report, _ := ctx.Value(reportKey{}).(*Report)
+	return report
+}
+
+func reportHref(ctx context.Context) string {
+	if report := ReportFrom(ctx); report != nil {
+		return report.Href
+	}
+	return ""
+}
+
+// publicStyleImages is where anybody fetches a published style's
+// pictures.
+const publicStyleImages = "/style-image/"
+
+// styleImageURL is the address of one of a style's pictures. It is the
+// picture's hash under a prefix of Earful's own, so the page stays first
+// party (ADR-0006) and the address can be kept by a browser for good:
+// other bytes would have another address.
+func styleImageURL(ctx context.Context, image domain.StyleImage) string {
+	prefix, _ := ctx.Value(styleImagesKey{}).(string)
+	if prefix == "" {
+		prefix = publicStyleImages
+	}
+	return prefix + image.SHA256
+}
+
 // ground is the colour of the page in each display mode, for the
 // browser's own chrome.
 type ground struct{ light, dark string }

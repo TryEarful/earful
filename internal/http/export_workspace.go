@@ -15,6 +15,7 @@ import (
 	"github.com/TryEarful/earful/internal/domain"
 	"github.com/TryEarful/earful/internal/export"
 	"github.com/TryEarful/earful/internal/store"
+	"github.com/TryEarful/earful/internal/styleimage"
 	"github.com/TryEarful/earful/web/templates"
 )
 
@@ -95,7 +96,7 @@ func (s *server) startExport(job store.ExportJob, workspaceID uuid.UUID, workspa
 	}()
 }
 
-var errExportTooLarge = errors.New("export: archive exceeds the size limit")
+var errExportTooLarge = export.ErrTooLarge
 
 // buildWorkspaceArchive reads the whole workspace and zips it. None of
 // the queries it uses filters on the workspace's own deleted_at, which
@@ -113,6 +114,9 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 		Workspace:     export.Workspace{ID: workspaceID.String(), Name: workspaceName},
 	}
 	var csvs []export.CSVFile
+	// The pictures are written as each survey's are read, and the
+	// archive stops as soon as it passes the limit.
+	zipped := export.NewWriter(s.exportMaxBytes)
 
 	for _, survey := range surveys {
 		exported := export.Survey{
@@ -128,6 +132,20 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 		versions, err := s.surveys.Versions(ctx, survey.ID)
 		if err != nil {
 			return nil, err
+		}
+		// The pictures this survey's versions show, once each however
+		// many versions show them. types says which file a style's
+		// reference is.
+		pictures, err := s.surveys.PublishedImages(ctx, survey.ID)
+		if err != nil {
+			return nil, err
+		}
+		types := map[string]string{}
+		for _, picture := range pictures {
+			types[picture.SHA256] = picture.ContentType
+			if err := zipped.Image(export.ImagePath(picture.SHA256, styleimage.Ext(picture.ContentType)), picture.Bytes); err != nil {
+				return nil, err
+			}
 		}
 		for _, version := range versions {
 			questions, err := s.surveys.QuestionsForVersion(ctx, version.ID)
@@ -146,7 +164,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 				}
 			}
 			if !version.Style.IsZero() {
-				exportedVersion.Style = exportStyle(version.Style)
+				exportedVersion.Style = exportStyle(version.Style, types)
 			}
 			for i, question := range questions {
 				min, max := question.Scale()
@@ -257,14 +275,7 @@ func (s *server) buildWorkspaceArchive(ctx context.Context, workspaceID uuid.UUI
 		archive.Surveys = append(archive.Surveys, exported)
 	}
 
-	built, err := export.Build(archive, csvs)
-	if err != nil {
-		return nil, err
-	}
-	if len(built) > s.exportMaxBytes {
-		return nil, errExportTooLarge
-	}
-	return built, nil
+	return zipped.Finish(archive, csvs)
 }
 
 // exportCSVName keeps files recognisable without letting a survey title
@@ -347,8 +358,20 @@ func viewExportJob(l uitext.Localizer, job store.ExportJob, now time.Time) templ
 }
 
 // exportStyle is a version's style as the archive carries it: the theme,
-// the header and the footer, each left out where the version had none.
-func exportStyle(style domain.Style) *export.Style {
+// the header, the footer and the thanks page's picture, each left out
+// where the version had none.
+// types gives the stored type of each picture by its hash, which decides
+// the name of its file.
+func exportStyle(style domain.Style, types map[string]string) *export.Style {
+	picture := func(image domain.StyleImage, alt string) *export.StyleImage {
+		if image.IsZero() {
+			return nil
+		}
+		return &export.StyleImage{
+			File:  export.ImagePath(image.SHA256, styleimage.Ext(types[image.SHA256])),
+			Width: image.Width, Height: image.Height, Alt: alt,
+		}
+	}
 	links := func(links []domain.StyleLink) []export.StyleLink {
 		out := make([]export.StyleLink, 0, len(links))
 		for _, link := range links {
@@ -360,10 +383,18 @@ func exportStyle(style domain.Style) *export.Style {
 	if !style.Header.IsZero() {
 		exported.Header = &export.StyleHeader{
 			Name: style.Header.Name, Tagline: style.Header.Tagline, Links: links(style.Header.Links),
+			Banner: picture(style.Header.Banner, ""),
+			Logo:   picture(style.Header.Logo, style.Header.LogoAlt),
 		}
 	}
 	if !style.Footer.IsZero() {
 		exported.Footer = &export.StyleFooter{Text: style.Footer.Text, Links: links(style.Footer.Links)}
+	}
+	if !style.Thanks.IsZero() {
+		exported.Thanks = &export.StyleThanks{
+			Picture: style.Thanks.PictureName(),
+			Image:   picture(style.Thanks.Image, style.Thanks.Alt),
+		}
 	}
 	return exported
 }

@@ -121,9 +121,10 @@ e2e-smoke:
 # The design gallery: every page at phone and desktop widths, light and
 # dark, English and Spanish, with an axe report, in GALLERY_DIR (default
 # e2e/test-results/gallery). For looking at the design as a whole; see
-# docs/style-guide.md.
+# docs/style-guide.md. The instance publishes a contact, so the pages
+# that only show with one, such as a survey's report link, are pictured.
 gallery:
-	docker compose --profile app up -d --build --wait app mailpit
+	CONTACT_EMAIL=$${CONTACT_EMAIL:-support@example.test} docker compose --profile app up -d --build --wait app mailpit
 	docker compose --profile app restart app
 	cd e2e && npm install && npx playwright install chromium && npx playwright test -c gallery.config.ts
 

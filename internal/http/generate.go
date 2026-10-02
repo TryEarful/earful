@@ -444,6 +444,8 @@ func generationNotice(l uitext.Localizer, added, skipped int) string {
 // not failures, and must not read like a crash (stories 21, 67).
 func aiRefusalMessage(l uitext.Localizer, err error) string {
 	switch {
+	case errors.Is(err, ai.ErrWorkspaceSuspended):
+		return l.T("ai.refused.suspended")
 	case errors.Is(err, ai.ErrQuotaExceeded):
 		return l.T("ai.refused.quota")
 	case errors.Is(err, ai.ErrBreakerTripped):

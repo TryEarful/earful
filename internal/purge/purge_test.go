@@ -1,7 +1,10 @@
 package purge_test
 
 import (
+	"bytes"
 	"context"
+	"image"
+	"image/png"
 	"net/http"
 	"net/url"
 	"os"
@@ -543,4 +546,251 @@ func answerField(t *testing.T, page string) string {
 		t.Fatalf("no answer field on the respondent page:\n%s", page)
 	}
 	return m[1]
+}
+
+// styleWithLogo saves a style with a logo of the test's own on a survey,
+// and returns the logo's hash as the database holds it.
+func styleWithLogo(t *testing.T, app *apptest.App, pool *pgxpool.Pool, creator *http.Client, id string, shade uint8) string {
+	t.Helper()
+	img := image.NewGray(image.Rect(0, 0, 24, 24))
+	for i := range img.Pix {
+		img.Pix[i] = shade
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	resp := app.PostMultipart(t, creator, "/surveys/"+id+"/style",
+		url.Values{"theme": {"ocean"}, "logo_alt": {"A logo"}},
+		apptest.Upload{Field: "logo", Name: "logo.png", Data: buf.Bytes()})
+	page := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("saving a logo: status %d\n%s", resp.StatusCode, page)
+	}
+	var sha string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT structure->'style'->'header'->'logo'->>'sha256' FROM survey_drafts WHERE survey_id = $1`, id).Scan(&sha); err != nil {
+		t.Fatalf("read the stored logo: %v", err)
+	}
+	return sha
+}
+
+// TestPurge_ErasesASurveysPictures: the pictures of a style go with the
+// survey, the published ones too, which nothing else may delete.
+func TestPurge_ErasesASurveysPictures(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	creator := app.Login(t, apptest.UniqueEmail("purge-pictures"))
+
+	id := app.CreateSurvey(t, creator, "Doomed, with a logo", true)
+	app.AddQuestion(t, creator, id, "long_text", "What happened?", nil)
+	styleWithLogo(t, app, pool, creator, id, 40)
+	app.Publish(t, creator, id)
+	keep := app.CreateSurvey(t, creator, "Surviving, with a logo", true)
+	app.AddQuestion(t, creator, keep, "long_text", "What happened?", nil)
+	styleWithLogo(t, app, pool, creator, keep, 80)
+	app.Publish(t, creator, keep)
+
+	app.PostForm(t, creator, "/surveys/"+id+"/delete", nil).Body.Close()
+	app.Clock.Advance(purge.SoftDeleteWindow + 24*time.Hour)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+	if n := countRows(t, pool, `SELECT count(*) FROM survey_images WHERE survey_id = $1`, id); n != 0 {
+		t.Errorf("%d pictures outlived their survey", n)
+	}
+	if n := countRows(t, pool, `SELECT count(*) FROM surveys WHERE id = $1`, id); n != 0 {
+		t.Error("the survey outlived its retention window")
+	}
+	if n := countRows(t, pool, `SELECT count(*) FROM survey_images WHERE survey_id = $1`, keep); n != 1 {
+		t.Errorf("a live survey has %d pictures after the purge, want its logo", n)
+	}
+}
+
+// TestPurge_RemovesPicturesNothingShows: a picture that was replaced, so
+// that no published version and not the draft shows it, is removed once
+// it is a week old, and not before. One a version shows, or the draft
+// has, stays whatever its age.
+func TestPurge_RemovesPicturesNothingShows(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	creator := app.Login(t, apptest.UniqueEmail("purge-unused-pictures"))
+
+	id := app.CreateSurvey(t, creator, "Three logos", true)
+	app.AddQuestion(t, creator, id, "long_text", "What happened?", nil)
+	published := styleWithLogo(t, app, pool, creator, id, 40)
+	app.Publish(t, creator, id)
+	replaced := styleWithLogo(t, app, pool, creator, id, 80)
+	drafted := styleWithLogo(t, app, pool, creator, id, 120)
+
+	has := func(sha string) bool {
+		return countRows(t, pool,
+			`SELECT count(*) FROM survey_images WHERE survey_id = $1 AND encode(sha256, 'hex') = $2`, id, sha) == 1
+	}
+	app.Clock.Advance(purge.UnusedImageWindow - time.Hour)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge before the week is out: %v", err)
+	}
+	if !has(replaced) {
+		t.Fatal("a replaced picture was removed before it was a week old")
+	}
+
+	app.Clock.Advance(2 * time.Hour)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge after a week: %v", err)
+	}
+	if has(replaced) {
+		t.Error("a picture nothing shows outlived its week")
+	}
+	if !has(published) {
+		t.Error("the purge removed a picture a published version shows")
+	}
+	if !has(drafted) {
+		t.Error("the purge removed a picture the draft has")
+	}
+}
+
+// styleWithThanksPicture uploads a thanks page picture of one shade and
+// returns its address.
+func styleWithThanksPicture(t *testing.T, app *apptest.App, pool *pgxpool.Pool, creator *http.Client, id string, shade uint8) string {
+	t.Helper()
+	img := image.NewGray(image.Rect(0, 0, 32, 20))
+	for i := range img.Pix {
+		img.Pix[i] = shade
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	resp := app.PostMultipart(t, creator, "/surveys/"+id+"/style",
+		url.Values{"thanks_picture": {"image"}, "thanks_alt": {"A picture"}},
+		apptest.Upload{Field: "thanks_image", Name: "thanks.png", Data: buf.Bytes()})
+	page := apptest.ReadBody(t, resp)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("saving a thanks picture: status %d\n%s", resp.StatusCode, page)
+	}
+	var sha string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT structure->'style'->'thanks'->'image'->>'sha256' FROM survey_drafts WHERE survey_id = $1`, id).Scan(&sha); err != nil {
+		t.Fatalf("read the stored thanks picture: %v", err)
+	}
+	return sha
+}
+
+// TestPurge_TheThanksPictureIsAPicture: the thanks page's picture is kept
+// and let go by the rule every picture of a style follows: kept while a
+// version or the draft shows it, removed a week after nothing does.
+func TestPurge_TheThanksPictureIsAPicture(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	creator := app.Login(t, apptest.UniqueEmail("purge-thanks-pictures"))
+
+	id := app.CreateSurvey(t, creator, "Three thanks pictures", true)
+	app.AddQuestion(t, creator, id, "long_text", "What happened?", nil)
+	published := styleWithThanksPicture(t, app, pool, creator, id, 40)
+	app.Publish(t, creator, id)
+	replaced := styleWithThanksPicture(t, app, pool, creator, id, 80)
+	drafted := styleWithThanksPicture(t, app, pool, creator, id, 120)
+
+	has := func(sha string) bool {
+		return countRows(t, pool,
+			`SELECT count(*) FROM survey_images WHERE survey_id = $1 AND encode(sha256, 'hex') = $2`, id, sha) == 1
+	}
+	app.Clock.Advance(purge.UnusedImageWindow + time.Hour)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+	if has(replaced) {
+		t.Error("a thanks picture nothing shows outlived its week")
+	}
+	if !has(published) {
+		t.Error("the purge removed the thanks picture a published version shows")
+	}
+	if !has(drafted) {
+		t.Error("the purge removed the thanks picture the draft has")
+	}
+}
+
+// TestPurge_ASurveyBeingSavedKeepsItsPictures: a survey whose style is
+// being saved or published at that moment is held, and the purge leaves
+// its pictures for the next run, since the draft or version about to
+// refer to one is not yet visible to it.
+func TestPurge_ASurveyBeingSavedKeepsItsPictures(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	creator := app.Login(t, apptest.UniqueEmail("purge-held-survey"))
+
+	id := app.CreateSurvey(t, creator, "Held while saving", true)
+	app.AddQuestion(t, creator, id, "long_text", "What happened?", nil)
+	replaced := styleWithThanksPicture(t, app, pool, creator, id, 40)
+	styleWithThanksPicture(t, app, pool, creator, id, 80)
+	has := func() bool {
+		return countRows(t, pool,
+			`SELECT count(*) FROM survey_images WHERE survey_id = $1 AND encode(sha256, 'hex') = $2`, id, replaced) == 1
+	}
+	app.Clock.Advance(purge.UnusedImageWindow + time.Hour)
+
+	ctx := context.Background()
+	saving, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := saving.Exec(ctx, `SELECT id FROM surveys WHERE id = $1 FOR NO KEY UPDATE`, id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge while the survey is held: %v", err)
+	}
+	if !has() {
+		t.Error("the purge removed a picture of a survey being saved")
+	}
+	if err := saving.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := purge.Run(ctx, pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+	if has() {
+		t.Error("once the survey was let go, the unused picture outlived its week")
+	}
+}
+
+// TestPurge_ASuspensionIsNotADeletion: a workspace an operator has
+// suspended keeps everything, however long the suspension lasts. The
+// purge erases what was deleted, and a suspension deletes nothing, so
+// lifting it can put everything back as it was (ADR-0018).
+func TestPurge_ASuspensionIsNotADeletion(t *testing.T) {
+	app := purgeApp(t)
+	pool := poolFor(t, app.DSN)
+	creator := app.Login(t, apptest.UniqueEmail("purge-suspended"))
+
+	id := seedAnsweredSurvey(t, app, creator, "Suspended, not deleted")
+	styleWithLogo(t, app, pool, creator, id, 120)
+	app.Publish(t, creator, id)
+	if _, err := pool.Exec(context.Background(), `
+		UPDATE workspaces SET suspended_at = $2, suspended_reason = 'A test suspension.'
+		WHERE id = (SELECT workspace_id FROM surveys WHERE id = $1)`, id, app.Clock.Now()); err != nil {
+		t.Fatalf("suspend: %v", err)
+	}
+
+	app.Clock.Advance(4 * purge.SoftDeleteWindow)
+	if _, err := purge.Run(context.Background(), pool, app.Clock.Now(), false); err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+	for _, check := range []struct {
+		what  string
+		query string
+		want  int
+	}{
+		{"the survey", `SELECT count(*) FROM surveys WHERE id = $1`, 1},
+		{"its response", `SELECT count(*) FROM responses WHERE survey_id = $1`, 1},
+		{"its versions", `SELECT count(*) FROM survey_versions WHERE survey_id = $1`, 2},
+		{"its logo", `SELECT count(*) FROM survey_images WHERE survey_id = $1`, 1},
+	} {
+		if n := countRows(t, pool, check.query, id); n != check.want {
+			t.Errorf("%s: %d rows after a long suspension, want %d", check.what, n, check.want)
+		}
+	}
 }

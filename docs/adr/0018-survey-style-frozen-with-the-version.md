@@ -94,9 +94,13 @@ are not part of a theme.
 **The header keeps what is readable off the image.** The banner is a
 strip across the head of the page, cropped to three to one, decorative,
 with empty alternative text, and nothing is drawn on it. The logo sits
-on a plate in the theme's surface colour, overlapping the banner's lower
-edge, so it has a known ground in both display modes and needs no second
-upload for dark. Below, on the theme's surface, are a name (one line, 80
+on a plate overlapping the banner's lower edge. The plate is white in
+both display modes and in every theme: a logo is drawn for a light
+ground far more often than for a dark one, and on a plate the dark mode
+coloured, a dark logo with a transparent ground would vanish. So the
+logo has a known ground everywhere and needs no second upload for dark.
+The plate is a square at least and widens for a wordmark; the logo is
+fitted inside it and never cut. Below, on the theme's surface, are a name (one line, 80
 characters), a tagline (280 characters, line breaks kept) and up to
 three links, each a label and an absolute `http` or `https` address,
 checked as the thank you link is (`internal/domain/thanks.go`). All of
@@ -148,25 +152,81 @@ offers whenever the draft differs from what is live.
 **Images are uploaded, re-encoded, scaled and served first party.** A
 creator uploads a PNG, a JPEG or a WebP through a multipart form. The
 server reads the dimensions before decoding, decodes, scales the image
-down to its slot's size with `golang.org/x/image`, and encodes it again.
+down to its slot's size, and encodes it again; `golang.org/x/image`
+decodes a WebP.
 What is stored carries no metadata: a phone photograph's location does
 not reach a respondent. SVG is refused, since an SVG is a document that
 can carry script and reference other origins.
 
 | Slot | Upload cap | Stored as |
 |---|---|---|
-| Banner | 2 MB | JPEG, at most 1600 pixels wide |
+| Banner | 2 MB | JPEG, cut to three to one about its centre, at most 1600 pixels wide |
 | Logo | 1 MB | PNG or JPEG, at most 512 pixels a side |
 | Thanks picture | 1 MB | PNG or JPEG, at most 800 pixels a side |
+
+The banner is cut on the way in and not only by the stylesheet: what is
+stored is then what is shown, the export holds the picture a respondent
+saw, and a tall photograph does not cost its unseen height in every
+page view. A JPEG is turned the way up its EXIF orientation says before
+that record is dropped with the rest of its metadata.
+
+A decoded picture is far larger than its file, and how much larger
+depends on more than its pixels: a progressive JPEG keeps every
+coefficient of every component until its last scan, and a sixteen bit
+PNG takes eight bytes a pixel, so a file of a few hundred kilobytes can
+decode to more memory than the instance has. What a decode will take is
+therefore worked out from the file's header, the way each decoder
+allocates, and a picture is refused before it is decoded if that is
+over 96 MB, the memory 25 megapixels take at four bytes a pixel, or if
+it declares more than 25 megapixels. A JPEG's cost is read from its
+frame header, so the header found must be the one decoded: wherever the
+decoder reads a file's segments differently from the walk that finds it,
+at a marker that carries no length before the frame header, the file is
+refused, as it is when the header's size is not the size the decoder
+reports. The decodes under way share a budget of 160 MB, and each waits
+until what it will take fits, with 16 MB beside its decoding for the
+scaled picture and the encoder. No more than four Style forms are
+handled at once, and no more than one for each person: a form is read
+whole into memory before its pictures wait, so another is turned away
+before its body is read, with a page that asks to save again in a
+moment and leads back to the Style tab, rather than queue. A form's body
+must arrive within two minutes, time enough for the largest on a slow
+phone connection, so a body sent a byte at a time cannot keep its place.
+At the worst, two decodes at the largest, four forms read into memory
+and a workspace export being built come to about 380 to 390 MB beside
+the runtime, under the 400 MB the service's memory limit asks the
+collector to keep to and the instance's 512 MB. The scaling
+reads the decoded picture a row at a time and averages what each stored
+pixel covers, so it adds next to nothing; a kernel scaler would keep a
+buffer of the stored width by the source height at 32 bytes a pixel,
+larger than the decoded picture itself.
 
 Each image is a row in `survey_images`, owned by the survey, holding the
 bytes, the type, the dimensions and a SHA-256 of the bytes, with at most
 ten rows per survey. It is served at `/style-image/{sha256}` only while
 a published version of a survey that has not been deleted refers to it,
 and at `/surveys/{id}/style-image/{sha256}`, in the creator's session,
-while the draft does. The address is the content, so the response is
+for any picture stored for a survey of the creator's workspace, which
+is how the Style tab and the preview show a picture before a version
+does. A row is never updated, and a trigger refuses to delete one that a
+published version shows (ADR-0001). A survey at its limit of ten first
+loses the pictures nothing shows, never one the style being saved
+brings; one whose ten are all shown by versions or the draft is refused
+another. The pictures a save brings and the draft that refers to them
+are stored in one transaction, with the survey held, so that two saves
+take turns and a draft never refers to a picture that is not stored;
+publishing holds the survey too, and refuses a style that refers to a
+picture the survey does not store, since the version could not be
+changed afterwards. The hold is one that recording a response does not
+wait for, so respondents are never held up by a creator saving. The
+purge passes over a survey held this way until its next run. The public address is the content, so the response is
 cached as immutable, which overrides the `no-store` that
-`SecurityHeaders` sets on dynamic pages. The handler counts nothing,
+`SecurityHeaders` sets on dynamic pages; a browser asking whether its
+copy is current, and a HEAD, are answered from the row without its
+bytes, and whether the picture may be fetched is still asked each time.
+The creator's address may serve a picture no version shows, so it is
+`private, no-cache`: the browser asks again each time, is answered from
+the tag, and a computer others use does not keep a draft's pictures. The handler counts nothing,
 logs no more than any static file, and is never rate limited into the
 abuse log.
 
@@ -197,6 +257,21 @@ not editable. The upload form says that only a logo the creator has the
 right to use may be uploaded. The runbook has a procedure for a
 complaint that a survey impersonates someone. The terms say that a
 creator may only use names and marks they are entitled to.
+
+**An operator can suspend a workspace.** When a report holds up, a super
+admin suspends the workspace at `/admin/suspensions`, with a reason, and
+lifts the suspension to put everything back. While it lasts, its surveys
+take no answers and show Earful's plain page with none of their style,
+its pictures are not served, the AI meter refuses it, and its creators
+cannot publish, reopen or send invitations; they can still sign in,
+read, edit drafts and export, under a notice that names the instance's
+contact. Nothing is erased and the purge does not count it as a
+deletion. Each kind of thing a suspension stops is decided in the one
+place that kind passes: `SurveyState.AcceptsResponses` for answers, the
+query behind the public picture address, the AI meter, and a guard on
+the three routes that put a survey in front of somebody. Deleting the
+survey by hand, which the purge would erase in thirty days, is not a
+takedown an operator should reach for first.
 
 **No switch for an operator.** The style needs no service and no
 configuration, and its storage is bounded, so an instance has nothing to
@@ -273,7 +348,7 @@ apart.
 - **Checking logos or links automatically** against known marks or a
   reputation service. Heavy, wrong often enough to need a person anyway,
   and a request to a third party about a creator's content. A report
-  link and a prompt takedown cover the same risk.
+  link and a prompt suspension cover the same risk.
 
 ## Consequences
 
@@ -295,8 +370,10 @@ apart.
   named by hash. Images count toward the archive's size cap. Existing
   fields are unchanged.
 - The purge job deletes `survey_images` with the survey. An image
-  referenced by no version and not by the current draft is removed after
-  seven days, so replaced uploads do not accumulate.
+  referenced by no version and not by the current draft is removed once
+  it is seven days old, so replaced uploads do not accumulate. Draft
+  revisions are not asked: nothing restores one, so a picture only a
+  revision mentions can never be shown again.
 - Images are in the database, so they are in the daily dumps for as long
   as ADR-0008 keeps them. Erasure of an image is complete when the last
   dump holding it expires, as it is for every other row.
@@ -309,3 +386,6 @@ apart.
   the report link uses.
 - The anonymity of a respondent is unchanged: the image route keeps no
   record of who fetched what, and an image request is not an open.
+- Workspaces gain a suspension (migration 00026): when, why and by whom,
+  set and cleared together. Who suspended and lifted is also written to
+  the application log, by id, so the history outlives the columns.

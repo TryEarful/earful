@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/TryEarful/earful/internal/domain"
+	"github.com/TryEarful/earful/internal/store"
 	"github.com/TryEarful/earful/internal/uitext"
 	"github.com/TryEarful/earful/web/templates"
 )
@@ -18,13 +19,15 @@ func (s *server) surveyStylePage(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("notice") == "saved" {
 		notice = say(r, "style.notice.saved")
 	}
-	s.renderSurveyStyle(w, r, nil, nil, notice)
+	s.renderSurveyStyle(w, r, nil, nil, notice, false)
 }
 
 // renderSurveyStyle draws the Style tab. typed is what the creator
 // entered when the save was refused, shown again in place of the draft's
-// style so that nothing has to be typed twice, and problem is why.
-func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed *domain.Style, problem error, notice string) {
+// style so that nothing has to be typed twice, and problem is why. A
+// file is the one thing a refused form cannot hand back: filesLost says
+// one was chosen, so the page can say to choose it again.
+func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed *domain.Style, problem error, notice string, filesLost bool) {
 	info, _ := authFrom(r.Context())
 	survey, draft, ok := s.loadSurveyAndDraft(w, r)
 	if !ok {
@@ -39,8 +42,15 @@ func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed
 	if problem != nil {
 		status = http.StatusUnprocessableEntity
 		if typed != nil {
+			// The pictures shown are the draft's: one uploaded with a
+			// refused form was not stored, so there is nothing at its
+			// address to show.
+			saved := data.Style
 			data.Style = *typed
+			data.Style.Header.Banner, data.Style.Header.Logo = saved.Header.Banner, saved.Header.Logo
+			data.Style.Thanks.Image = saved.Thanks.Image
 		}
+		data.FilesLost = filesLost
 		data.Error = sayErrorAlone(r, problem)
 		var where domain.StyleError
 		if errors.As(problem, &where) && where.Part != domain.StyleTheme {
@@ -49,6 +59,8 @@ func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed
 			data.FieldError = sayErrorAlone(r, where.Err)
 		}
 	}
+	// The tab shows the draft's pictures, which no version may show yet.
+	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
 	render(w, r, status, templates.SurveyStyle(info.Email, info.WorkspaceName, info.CSRFToken, data))
 }
 
@@ -66,12 +78,22 @@ func styleErrorPlace(e domain.StyleError) uitext.ID {
 			return "style.error.place.header_link"
 		}
 		return "style.error.place.header_links"
+	case domain.StyleBanner:
+		return "style.error.place.banner"
+	case domain.StyleLogo:
+		return "style.error.place.logo"
+	case domain.StyleLogoAlt:
+		return "style.error.place.logo_alt"
 	case domain.StyleFooterText:
 		return "style.error.place.footer_text"
 	case domain.StyleFooterLinks:
 		if e.Link > 0 {
 			return "style.error.place.footer_link"
 		}
+	case domain.StyleThanksPicture, domain.StyleThanksImage:
+		return "style.error.place.thanks_image"
+	case domain.StyleThanksAlt:
+		return "style.error.place.thanks_alt"
 	}
 	return "style.error.place.footer_links"
 }
@@ -91,19 +113,41 @@ func (s *server) surveyStyleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	style, err := styleFromForm(r, draft.Style)
+	style, pictures, pictureErr := s.stylePicturesFromForm(r, style)
+	if err == nil {
+		err = pictureErr
+	}
 	if err == nil {
 		err = draft.SetStyle(style)
+	}
+	// The pictures are stored only once the whole style is accepted, and
+	// with the draft that refers to them, in one transaction.
+	if err == nil {
+		stored := make([]store.NewImage, len(pictures))
+		for i, p := range pictures {
+			stored[i] = p.stored
+		}
+		err = s.surveys.SaveStyle(r.Context(), survey.ID, info.UserID, draft, stored, s.clock.Now())
+		var full store.ImageLimitError
+		if errors.As(err, &full) {
+			for _, p := range pictures {
+				if p.stored.SHA256 == full.SHA256 {
+					err = domain.StyleError{Part: p.part, Err: err}
+					break
+				}
+			}
+		}
+		if err != nil && !isUserError(err) {
+			s.internalError(w, r, "save style", err)
+			return
+		}
 	}
 	if err != nil {
 		if !isUserError(err) {
 			s.internalError(w, r, "set style", err)
 			return
 		}
-		s.renderSurveyStyle(w, r, &style, err, "")
-		return
-	}
-	if err := s.surveys.SaveDraft(r.Context(), survey.ID, info.UserID, draft, s.clock.Now()); err != nil {
-		s.internalError(w, r, "save draft", err)
+		s.renderSurveyStyle(w, r, &style, err, "", styleFilesChosen(r))
 		return
 	}
 	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"/style?notice=saved", http.StatusSeeOther)
@@ -117,6 +161,8 @@ func (s *server) surveyStyleSave(w http.ResponseWriter, r *http.Request) {
 // with the first problem found.
 func styleFromForm(r *http.Request, current domain.Style) (domain.Style, error) {
 	style := current
+	// A form with files is multipart and was parsed on the way in
+	// (readUploads); a form without is parsed here.
 	if err := r.ParseForm(); err != nil {
 		return style, nil
 	}
@@ -132,15 +178,23 @@ func styleFromForm(r *http.Request, current domain.Style) (domain.Style, error) 
 		keep(err)
 	}
 	if r.PostForm.Has("header_name") {
-		style.Header, err = domain.NewStyleHeader(
+		var words domain.StyleHeader
+		words, err = domain.NewStyleHeader(
 			r.PostFormValue("header_name"), r.PostFormValue("header_tagline"),
 			formLinks(r, "header_link_label", "header_link_url"))
+		// The header's pictures are other fields of the form, and are
+		// kept whatever the words become.
+		style.Header = style.Header.WithWords(words)
 		keep(err)
 	}
 	if r.PostForm.Has("footer_text") {
 		style.Footer, err = domain.NewStyleFooter(
 			r.PostFormValue("footer_text"),
 			formLinks(r, "footer_link_label", "footer_link_url"))
+		keep(err)
+	}
+	if r.PostForm.Has(thanksPictureField) {
+		style.Thanks, err = style.Thanks.WithPicture(r.PostFormValue(thanksPictureField))
 		keep(err)
 	}
 	return style, problem
@@ -187,6 +241,7 @@ func (s *server) themeSheet(w http.ResponseWriter, r *http.Request) {
 		Text:  "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
 		Links: []domain.StyleLink{{Label: "Privacy notice", URL: "https://example.com/privacy"}},
 	}
+	r, style = withSheetStyleImages(r, style)
 	three, yes := 3, true
 	questions := []domain.Question{
 		{IdentityID: "sheet-long", Type: domain.LongText, Text: "What should we keep doing?", Required: true},
@@ -201,6 +256,11 @@ func (s *server) themeSheet(w http.ResponseWriter, r *http.Request) {
 	}
 	problem := domain.AnswerError{
 		IdentityID: "sheet-short", Position: 2, Message: say(r, "answer.error.required"),
+	}
+	// The sheet's footer is a survey's, so it carries the report link
+	// too, in every theme. It has no survey, so the link names the sheet.
+	if report := templates.ReportFrom(r.Context()); report != nil {
+		report.Href = reportMailto(text(r), operatorContact(s.cfg), s.cfg.BaseURL+"/dev/theme-sheet")
 	}
 	render(w, r, http.StatusOK, templates.ThemeSheet(templates.ThemeSheetData{
 		Respond: templates.RespondData{
