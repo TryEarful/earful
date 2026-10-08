@@ -40,7 +40,9 @@ func SeedStarterSurvey(ctx context.Context, q *db.Queries, workspaceID, userID u
 	if err := draft.ValidateForPublish(); err != nil {
 		return db.Survey{}, err
 	}
-	if err := draft.ReadyToPublish(); err != nil {
+	// A workspace being made has no account style yet (ADR-0023), so the
+	// survey follows the zero one.
+	if err := draft.ReadyToPublish(domain.WorkspaceStyle{}); err != nil {
 		return db.Survey{}, err
 	}
 

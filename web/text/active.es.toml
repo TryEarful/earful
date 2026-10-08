@@ -372,20 +372,224 @@ hash = "sha1-99a0efc6cfd85d8ff2732a6718140f822cb90472"
 other = "Estilo"
 
 [account.style.intro]
-hash = "sha1-1c4b9976617307115e71af149aa0cf538b33d311"
-other = "Cómo ven sus encuestas quienes las responden, salvo que una encuesta lo cambie en su propia pestaña Estilo. Una encuesta adopta un cambio la próxima vez que se publica."
+hash = "sha1-208401b0e58b246ec0bd43cbe9fedc3facdcde8a"
+other = "El estilo que siguen sus encuestas, salvo que una encuesta lo cambie en su propia pestaña Estilo. Una encuesta adopta un cambio la próxima vez que se publica."
 
 [account.style.header_hint]
 hash = "sha1-4a637992da2959c371a191d33ba597c322710dec"
-other = "Aparece encima de cada encuesta que sigue el estilo de su cuenta, para que se sepa quién pregunta. Déjelo todo vacío si no quiere encabezado."
+other = "Se muestra encima de cada encuesta que sigue el estilo de su cuenta, para que se sepa quién pregunta. Déjelo todo vacío si no quiere encabezado."
 
 [account.style.save.label]
 hash = "sha1-287c9e29750977b1dfab1f5a689c6dcebc185739"
 other = "Guardar estilo de la cuenta"
 
 [account.style.notice.saved]
-hash = "sha1-57029858fa4b5b13bca1ac5ceb0758c8cd344d8e"
-other = "Estilo de la cuenta guardado. Cada encuesta lo adopta la próxima vez que se publica."
+hash = "sha1-4c2bc990f77e14508e42ac0c84c49420d7f01129"
+other = "Estilo de la cuenta guardado."
+
+[account.style.footer_hint]
+hash = "sha1-f8fb9c1cdc952ed97442e5bdc4af551dbe933a1e"
+other = "Se muestra debajo de cada encuesta que sigue el estilo de su cuenta. Sirve para indicar una razón social, una dirección postal o un aviso de privacidad."
+
+[account.style.languages.link]
+hash = "sha1-8ad8302d110b05d7e02330dac58628134fdcff02"
+other = "Traducciones"
+
+[account.style.languages.title]
+hash = "sha1-b7b6e6251e64309a8e57d629ae6ad86dfbde679b"
+other = "Traducciones del estilo de la cuenta · Earful"
+
+[account.style.languages.heading]
+hash = "sha1-3b8318813ab52e1e3c2cb4598b859c2c9ad458cf"
+other = "Traducciones del estilo de la cuenta"
+
+[account.style.languages.crumb]
+hash = "sha1-8ad8302d110b05d7e02330dac58628134fdcff02"
+other = "Traducciones"
+
+[account.style.languages.intro]
+hash = "sha1-4d33ae22acfd10556c98b427cc3b6137c306d1ef"
+other = "Los textos del estilo de su cuenta en cada idioma al que se traducen sus encuestas. Cada encuesta que sigue el estilo de su cuenta los usa una vez revisados."
+
+[account.style.languages.stale]
+hash = "sha1-b9263a264529f35fbadd80f8704d494237c230a6"
+other = "El estilo de su cuenta cambió después de esta traducción. Léala de nuevo."
+
+[account.style.languages.empty.words]
+hash = "sha1-cac32e86448a866070724688f1b36e8749df1c9c"
+other = "El estilo de su cuenta aún no tiene textos que traducir. El lema, el texto del pie, los enlaces y las descripciones de las imágenes aparecen aquí cuando los añada."
+
+[account.style.languages.empty.back]
+hash = "sha1-97e7cd09be8b4e1c1e70a2cb017a7864000706de"
+other = "Volver al estilo de la cuenta"
+
+[account.style.languages.empty.languages]
+hash = "sha1-032f761df0c23c8a03d977d51eb98b9545639490"
+other = "Ninguna de sus encuestas está traducida todavía. Un idioma que añada en la pestaña Idiomas de una encuesta aparece aquí."
+
+[account.style.languages.status.pending]
+hash = "sha1-066f77ce37a88f8f3b96ffb4ff122a8a5c410c6b"
+other = "Por revisar"
+
+[account.style.languages.status.ready]
+hash = "sha1-e7d05c6f8945ff6d1334d3b4e63c24b2f8570102"
+other = "Las encuestas que siguen el estilo de su cuenta ya pueden usarlo en {{.Language}}."
+
+[account.style.languages.status.blocked]
+hash = "sha1-4c081d6db908593729694ed2ef51b2a931560123"
+other = "Las encuestas que siguen el estilo de su cuenta no pueden publicarse en {{.Language}} hasta que esto se revise."
+
+[account.style.languages.intro_link]
+hash = "sha1-484d51ceecbb11e0e18250d388119fa5ed8a8b2b"
+other = "Traducir el estilo de la cuenta"
+
+[account.style.languages.empty.surveys]
+hash = "sha1-71fc8285047dcc1400f2a549c4eb295c97d8a94e"
+other = "Ir a sus encuestas"
+
+[account.style.languages.status.unused]
+hash = "sha1-4b5882ff132ba59530ac92ab21bed4fe2862ff4b"
+other = "Ahora ninguna de sus encuestas está traducida al {{.Language}}, así que puede quitarlo."
+
+[account.style.apply.title]
+hash = "sha1-ca7153597aee8554fca5586964528c4e39481b4a"
+other = "Actualizar sus encuestas · Earful"
+
+[account.style.apply.heading]
+hash = "sha1-12bbb0a69faded28852944960ec367b7226eb277"
+other = "¿Actualizar sus encuestas abiertas?"
+
+[account.style.apply.crumb]
+hash = "sha1-57e9637307f489b5083d89e683563a5ab996a404"
+other = "Actualizar encuestas"
+
+[account.style.apply.intro]
+hash = "sha1-628b12c1d08e843a0a078d4203fa6a25b065687a"
+one = "1 encuesta abierta muestra una versión anterior del estilo de su cuenta:"
+many = "{{.Count}} encuestas abiertas muestran una versión anterior del estilo de su cuenta:"
+other = "{{.Count}} encuestas abiertas muestran una versión anterior del estilo de su cuenta:"
+
+[account.style.apply.blocked]
+hash = "sha1-4f9572f1b8cce9da673999e5bebf6e036ac13392"
+other = "Antes necesita el estilo de su cuenta en {{.Language}}."
+
+[account.style.apply.blocked_link]
+hash = "sha1-bbf7e2fd8e7428ea10267303ca1842462a4f9c5c"
+other = "Traducirlo"
+
+[account.style.apply.note]
+hash = "sha1-a6ec9ca2aabed568f22c96b1ecb978107c7a4495"
+other = "Cada encuesta que actualice recibe una versión nueva con el estilo de su cuenta tal como está ahora. Los cambios que no haya publicado en ella siguen sin publicar. Con Más tarde, cada encuesta lo adopta la próxima vez que se publique."
+
+[account.style.apply.submit]
+hash = "sha1-118c39b61909cc8c129edbc8d6afc3152d3a004a"
+one = "Actualizar esta encuesta"
+many = "Actualizar estas {{.Count}} encuestas"
+other = "Actualizar estas {{.Count}} encuestas"
+
+[account.style.apply.later]
+hash = "sha1-56e2f5d3634ea4aac5b56f1548e92680dd4cdd05"
+other = "Más tarde"
+
+[account.style.apply.none_ready]
+hash = "sha1-d621430ffd9d964cd842bd7895007a5f5f729c39"
+one = "Todavía no se puede actualizar esta encuesta. Arriba se indica lo que necesita."
+many = "Todavía no se puede actualizar ninguna encuesta. Arriba se indica lo que necesita cada una."
+other = "Todavía no se puede actualizar ninguna encuesta. Arriba se indica lo que necesita cada una."
+
+[account.style.apply.back]
+hash = "sha1-97e7cd09be8b4e1c1e70a2cb017a7864000706de"
+other = "Volver al estilo de la cuenta"
+
+[account.style.apply.pictures]
+hash = "sha1-1111e949dbe7af2b2ce4a13e4a1121b979fa1fbd"
+other = "Ya guarda {{.Limit}} imágenes, el máximo, así que conserva su aspecto actual."
+
+[account.style.apply.picture_missing]
+hash = "sha1-8ae4914bfce1f2c0126599a7a3e20c2092d1353d"
+other = "Falta una imagen del estilo de su cuenta."
+
+[account.style.apply.picture_missing_link]
+hash = "sha1-e331303ee6656a156e70310774efbc02763e491b"
+other = "Elegirla de nuevo"
+
+[account.style.apply.chip.language]
+hash = "sha1-fa5e2467569373e8008743a8df2fa848b2c92f19"
+other = "Pendiente de {{.Language}}"
+
+[account.style.apply.chip.pictures]
+hash = "sha1-cb3abdfcfbdf8d7c195846fb7d46a7063d13f560"
+other = "Sin sitio para imágenes"
+
+[account.style.apply.chip.picture_missing]
+hash = "sha1-9778342207a91a1284f14c14478617419176f2e8"
+other = "Falta una imagen"
+
+[account.style.apply.stale_waiting_link]
+hash = "sha1-c324946743defa81c9622978252f4efd7ea006fc"
+one = "Ver qué le falta"
+many = "Ver qué les falta"
+other = "Ver qué les falta"
+
+[account.style.apply.notice.changed_after]
+hash = "sha1-5e14930e0e509a40ac22f728ce0329f4de8c24d3"
+one = "1 encuesta se actualizó antes de que cambiara el estilo de su cuenta. Revise las demás de nuevo."
+many = "{{.Count}} encuestas se actualizaron antes de que cambiara el estilo de su cuenta. Revise las demás de nuevo."
+other = "{{.Count}} encuestas se actualizaron antes de que cambiara el estilo de su cuenta. Revise las demás de nuevo."
+
+[account.style.apply.stale]
+hash = "sha1-f02a1a0943511f870a80b05ae014681fdb8252cf"
+one = "1 encuesta abierta muestra una versión anterior del estilo de su cuenta."
+many = "{{.Count}} encuestas abiertas muestran una versión anterior del estilo de su cuenta."
+other = "{{.Count}} encuestas abiertas muestran una versión anterior del estilo de su cuenta."
+
+[account.style.apply.stale_link]
+hash = "sha1-b8f35d6c7c8a65dfe9493bb2db7365b9e2c4fb5d"
+one = "Actualizarla"
+many = "Actualizarlas"
+other = "Actualizarlas"
+
+[account.style.apply.notice.changed]
+hash = "sha1-c84588c89e4fad7812e871bae48e72a7f69013a9"
+other = "El estilo de su cuenta cambió después de la pregunta. Revise la lista de nuevo."
+
+[account.style.apply.notice.applied]
+hash = "sha1-51fe97796be570ee3384db32b5e48f45f00665d2"
+one = "1 encuesta actualizada."
+many = "{{.Count}} encuestas actualizadas."
+other = "{{.Count}} encuestas actualizadas."
+
+[suspension.held.apply]
+hash = "sha1-1055cdf10f7ae4f4ea79b39b6e6689f540dcd253"
+other = "Sus encuestas no se han actualizado."
+
+[account.style.languages.draft.label]
+hash = "sha1-7e25eba729b72f1c816aca991750e8f241950ee6"
+other = "Redactar la traducción con IA"
+
+[account.style.languages.notice.saved]
+hash = "sha1-f64880c825abf554e2475be5b90ece87a03baa70"
+other = "Guardado y marcado como revisado en {{.Language}}."
+
+[account.style.languages.notice.drafted]
+hash = "sha1-e0cb20fccfab893033e7c9bf8e128083ecc3265c"
+other = "Se redactó la traducción en {{.Language}}. Léala y guárdela para marcarla como revisada."
+
+[account.style.languages.error.unknown]
+hash = "sha1-41aa9f5e9cc9c4cbf07710f1338d15112ce99082"
+other = "Ninguna de sus encuestas está traducida a ese idioma."
+
+[account.style.languages.error.nothing]
+hash = "sha1-17e8451a188e37cff5f75780a8c287f08262f738"
+other = "El estilo de su cuenta aún no tiene textos que traducir."
+
+[account.style.languages.error.blank]
+hash = "sha1-4cc89ef8b094b6b4508e00062aa72f324e2dc681"
+other = "Escriba los textos en {{.Language}} antes de guardar."
+
+[account.style.languages.error.carried]
+hash = "sha1-183443df42f10299eb1c83a2077801a945e4a2f6"
+other = "Una de sus encuestas está en {{.Language}}, así que su traducción se mantiene."
 
 
 # ── Documentos: la página de confianza, los términos, la ayuda ──────────
@@ -3437,8 +3641,8 @@ hash = "sha1-31341c6f0c7af677ffb8fadcb92038e8ac2b6193"
 other = "Encabezado"
 
 [style.header.hint]
-hash = "sha1-352d6c9ac6cdc3e88f0d51a4792a7d8571c2f500"
-other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Déjelo todo vacío si no quiere encabezado. Sus textos se traducen en la pestaña Idiomas."
+hash = "sha1-37904a4bc1f73e12d4d8d231ee53fd70d8af925d"
+other = "Se muestra encima de la encuesta, para que se sepa quién pregunta. Desactívelo para no mostrar encabezado."
 
 [style.header.name_html]
 hash = "sha1-fbba7896d8d915160e276ac96374c9a3626265f3"
@@ -3453,8 +3657,8 @@ hash = "sha1-26c01e70a337f208f56dae1c3bc18f60c4bff453"
 other = "Pie de página"
 
 [style.footer.hint]
-hash = "sha1-af70299db893ac87046e7013886a41283983fe7b"
-other = "Se muestra debajo de la encuesta. Sirve para indicar una razón social, una dirección postal o un aviso de privacidad."
+hash = "sha1-29f82745c0509633a7c568e378e608463dd3a56a"
+other = "Se muestra debajo de la encuesta, para una razón social, una dirección postal o un aviso de privacidad. Desactívelo para no mostrar pie de página."
 
 [style.footer.text_html]
 hash = "sha1-303bcdddfa4824221929c16fcee03d849f069ba1"
@@ -3855,3 +4059,79 @@ other = "Su encuesta no se ha reabierto."
 [suspension.held.send]
 hash = "sha1-a46655c5c285720b3002c1b85ed0f9058426532d"
 other = "Sus invitaciones no se han enviado."
+
+[style.notice.reset]
+hash = "sha1-1daa28b03cc97e65db2db261f5c26f45c56d3f70"
+other = "Estilo restablecido. Cada parte vuelve a seguir el estilo de su cuenta. Quienes responden lo verán cuando publique."
+
+[style.account.intro]
+hash = "sha1-aec33a5f475aada38506acdab69898097df18246"
+other = "Cada parte empieza con el estilo de su cuenta. Cambiar cualquier cosa de una parte la convierte entera en propia de esta encuesta."
+
+[style.account.link]
+hash = "sha1-d3c29075d85d22b6ab35d9bf9451626f4301088d"
+other = "Editar el estilo de su cuenta"
+
+[style.source.own]
+hash = "sha1-2966f81df13d8fef1a8364173ad4ce8d56472905"
+other = "De esta encuesta"
+
+[style.source.account]
+hash = "sha1-efca4dfd674737abdd7ad5c15fe98df73fea8b08"
+other = "Del estilo de su cuenta"
+
+[style.reset.label]
+hash = "sha1-de0249578299b520b55dc12853fabb7334bab5de"
+other = "Volver al estilo de la cuenta"
+
+[style.reset.hint]
+hash = "sha1-c14255419c9bf7860c8a9ab9960609ed17854aa9"
+other = "Cada parte vuelve al estilo de su cuenta y se muestran de nuevo el encabezado y el pie de página. Las partes propias de esta encuesta se eliminan y no se pueden recuperar."
+
+[style.error.account_words_changed]
+hash = "sha1-f81580b42d3dddf572b68fdbeb4e16b372d22edc"
+other = "los textos del estilo de su cuenta cambiaron mientras esta página estaba abierta, así que lea la nueva redacción y guarde de nuevo"
+
+[style.error.account_translation]
+hash = "sha1-db074f680a637fe5776ef7a0c48ba52efd0c69f8"
+other = "el estilo de su cuenta aún no está revisado en {{.Language}}, así que revíselo en su cuenta o dé a esta encuesta su propio encabezado, pie de página e imagen de agradecimiento en su pestaña Estilo"
+
+[editor.publish.account_style]
+hash = "sha1-5b1a0035135aed9efd21e9bc3bd8e305cc4c3ca3"
+other = "El estilo de su cuenta ha cambiado. Publique para aplicarlo a esta encuesta."
+
+[editor.publish.account_translate]
+hash = "sha1-3a150436ca6d7b1cb84ad07deb47d832fbd7545d"
+other = "Revisar el estilo de su cuenta en {{.Language}}"
+
+[languages.account_style.heading]
+hash = "sha1-efca4dfd674737abdd7ad5c15fe98df73fea8b08"
+other = "Del estilo de su cuenta"
+
+[languages.account_style.pending]
+hash = "sha1-d1b31f2632d9f1be12ab5d986a4c999b9465ccba"
+other = "Los textos que esta encuesta toma del estilo de su cuenta aún no están revisados en {{.Language}}. Se traducen una sola vez, en su cuenta."
+
+[languages.account_style.ready]
+hash = "sha1-8d06040955420eb1760a30e15d9fd1507367c107"
+other = "Los textos que esta encuesta toma del estilo de su cuenta ya están revisados en {{.Language}}."
+
+[languages.account_style.link]
+hash = "sha1-a82eee8ff92c9a42e2548367356ced9283f67957"
+other = "Traducir en su cuenta"
+
+[account.style.card.heading]
+hash = "sha1-99a0efc6cfd85d8ff2732a6718140f822cb90472"
+other = "Estilo"
+
+[account.style.card.none]
+hash = "sha1-571d74af15245e054921510b50d8eee1f25e6071"
+other = "Sus encuestas usan el aspecto propio de Earful hasta que defina un estilo de la cuenta."
+
+[account.style.card.summary]
+hash = "sha1-472f9d08a5f79ad10bcf44651a8bc6207962e379"
+other = "Tema {{.Theme}}{{if .Header}}, con encabezado{{if .Footer}} y pie de página{{end}}{{else if .Footer}}, con pie de página{{end}}. Cada encuesta lo sigue salvo que cambie una parte en su propia pestaña Estilo."
+
+[account.style.card.edit]
+hash = "sha1-eafe56e364b57f6b28813f432c7edf3054237ec7"
+other = "Editar el estilo de la cuenta"

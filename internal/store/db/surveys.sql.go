@@ -561,6 +561,25 @@ func (q *Queries) SoftDeleteSurvey(ctx context.Context, arg SoftDeleteSurveyPara
 	return err
 }
 
+const surveyBelongsToWorkspace = `-- name: SurveyBelongsToWorkspace :one
+SELECT EXISTS (SELECT 1 FROM surveys WHERE id = $1 AND workspace_id = $2)
+`
+
+type SurveyBelongsToWorkspaceParams struct {
+	ID          uuid.UUID `json:"id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+}
+
+// Whether a survey is the workspace's, deleted or not: a survey deleted
+// since a page listed it is the workspace's to leave alone, where one of
+// another workspace is not found.
+func (q *Queries) SurveyBelongsToWorkspace(ctx context.Context, arg SurveyBelongsToWorkspaceParams) (bool, error) {
+	row := q.db.QueryRow(ctx, surveyBelongsToWorkspace, arg.ID, arg.WorkspaceID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const updateDraftStructure = `-- name: UpdateDraftStructure :one
 UPDATE survey_drafts SET structure = $2, updated_by = $3, updated_at = $4
 WHERE survey_id = $1

@@ -697,11 +697,11 @@ dd,
 
 .site-header nav a:hover,
 .site-header nav .button-link:hover,
-.site-header nav a[aria-current="page"] {
+.site-header nav a[aria-current] {
   color: var(--text);
 }
 
-.site-header nav a[aria-current="page"] {
+.site-header nav a[aria-current] {
   box-shadow: inset 0 -2px 0 var(--text);
 }
 
@@ -757,6 +757,12 @@ dd,
 .card > h3:first-child,
 .card > .title-row:first-child h2 {
   margin-top: 0;
+}
+
+/* A card's heading row keeps the space a heading alone would keep
+   before what follows it. */
+.card > .title-row:first-child {
+  margin-bottom: var(--space-3);
 }
 
 .card > :last-child {
@@ -1283,6 +1289,96 @@ button:disabled,
   gap: var(--space-2);
   min-height: 2.75rem;
   margin: var(--space-2) 0;
+}
+
+/* A switch turns a section of a form on or off: on, its fields show; off,
+   they are hidden here, with no script, and the server reads none of
+   them. It is a checkbox with role="switch", never an action that saves
+   by itself. The real input lies over the track it draws, transparent,
+   so it takes the click and the keyboard's focus across a 44px square.
+   The track is the muted colour off and the accent on, both 3:1 on a
+   card in either display mode, with the card's colour for the knob. */
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.switch-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.switch-track {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: var(--radius-round);
+  background: var(--muted);
+  transition: background-color var(--time-quick) var(--ease);
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-round);
+  background: var(--surface);
+  transition: transform var(--time-quick) var(--ease);
+}
+
+.switch-input:checked + .switch-track {
+  background: var(--accent);
+}
+
+.switch-input:checked + .switch-track::after {
+  background: var(--accent-contrast);
+  transform: translateX(1.25rem);
+}
+
+.switch-input:focus-visible + .switch-track {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.switch-title label {
+  cursor: pointer;
+}
+
+.switch-section:has(.switch-title .switch-input:not(:checked)) > .switch-fields {
+  display: none;
+}
+
+/* The card ends where its last field does, or, with the section off,
+   where its hint does. */
+.switch-fields > :last-child,
+.switch-section:has(.switch-title .switch-input:not(:checked)) > p:has(+ .switch-fields) {
+  margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch-track,
+  .switch-track::after {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .switch-track {
+    border: 1px solid CanvasText;
+  }
 }
 
 .warn {
@@ -2369,6 +2465,53 @@ input.is-live {
   flex-wrap: wrap;
 }
 
+/* A form after a row of buttons stands apart from them, as the
+   translations on a survey's Languages tab stand apart from the buttons
+   above their list. */
+.button-row + form {
+  margin-top: var(--space-4);
+}
+
+/* A note under a row of buttons, such as what a reset does, stands a
+   little apart from them rather than against their edge. */
+.button-row + .muted {
+  margin-top: var(--space-3);
+}
+
+/* The open surveys a change to an account's style reaches, one to a
+   line, each with what holds it back when something does. */
+.stale-surveys {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-3) 0;
+}
+
+.stale-surveys li {
+  padding: var(--space-1) 0;
+  border-top: 1px solid var(--border);
+}
+
+.stale-surveys li > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
+.stale-surveys li:first-child {
+  border-top: 0;
+}
+
+.stale-blocked {
+  display: block;
+  font-size: 0.875rem;
+}
+
+/* What holds a survey back stands beside its title, so a long list can be
+   scanned for the ones that wait. */
+.stale-surveys li > .chip {
+  margin-left: var(--space-2);
+}
+
 .results-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2577,6 +2720,8 @@ input.is-live {
 .source-text {
   font-weight: 600;
   margin-bottom: 0.25rem;
+  /* An original written on several lines keeps them. */
+  white-space: pre-line;
 }
 
 .responses {

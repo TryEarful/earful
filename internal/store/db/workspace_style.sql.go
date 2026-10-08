@@ -269,6 +269,41 @@ func (q *Queries) UpdateWorkspaceStyleLocalizations(ctx context.Context, arg Upd
 	return err
 }
 
+const workspaceDraftLanguages = `-- name: WorkspaceDraftLanguages :many
+SELECT DISTINCT lang::text
+FROM survey_drafts d
+JOIN surveys s ON s.id = d.survey_id
+CROSS JOIN LATERAL jsonb_object_keys(
+    CASE WHEN jsonb_typeof(d.structure -> 'localizations') = 'object'
+         THEN d.structure -> 'localizations' ELSE '{}'::jsonb END
+) AS lang
+WHERE s.workspace_id = $1 AND s.deleted_at IS NULL
+ORDER BY lang
+`
+
+// The languages the workspace's surveys are being translated into, as
+// their drafts hold them: the languages the account's style is offered
+// in for translating.
+func (q *Queries) WorkspaceDraftLanguages(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, workspaceDraftLanguages, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var lang string
+		if err := rows.Scan(&lang); err != nil {
+			return nil, err
+		}
+		items = append(items, lang)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const workspaceImageExists = `-- name: WorkspaceImageExists :one
 SELECT EXISTS (SELECT 1 FROM workspace_images WHERE workspace_id = $1 AND sha256 = $2)
 `

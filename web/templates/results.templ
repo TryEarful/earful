@@ -45,7 +45,6 @@ templ SurveyResults(email string, workspaceName string, csrf string, data Survey
 					@translateForm(csrf, data)
 				}
 			</div>
-
 			if data.ResponseCount == 0 {
 				<section class="card js-panel">
 					<h2>{ t(ctx, "results.empty.heading") }</h2>

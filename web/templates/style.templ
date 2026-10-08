@@ -35,12 +35,107 @@ type StyleForm struct {
 	// Account says the form sets the account's style, which every survey
 	// follows, rather than one survey's: a few hints say so.
 	Account bool
+	// Choice is a survey's relation to its account's style: which parts
+	// are its own and whether it shows a header and a footer. It is nil
+	// on the account's own form.
+	Choice *StyleChoiceView
+}
+
+// StyleChoiceView says, for a survey's Style tab, which parts of the
+// style the survey has made its own and which it follows from its
+// account's (ADR-0023).
+type StyleChoiceView struct {
+	Own      domain.StyleParts
+	NoHeader bool
+	NoFooter bool
+	// HasAccount is whether the account has a style. Without one a
+	// survey follows nothing in particular, so the tab says nothing of
+	// where a part comes from.
+	HasAccount bool
+}
+
+// sourceShown reports whether the tab says where each part comes from.
+func (d StyleForm) sourceShown() bool { return d.Choice != nil && d.Choice.HasAccount }
+
+// partSource is the message that says where a part of a survey's style
+// comes from: its own, or its account's.
+func partSource(own bool) uitext.ID {
+	if own {
+		return "style.source.own"
+	}
+	return "style.source.account"
 }
 
 // AccountStyleData is the account's style page (ADR-0023).
 type AccountStyleData struct {
 	StyleForm
 	Notice string
+	// StaleCount is how many open surveys show an earlier version of the
+	// account's style, and StaleReady how many of them can be brought up
+	// to date now; the rest wait on something the creator has to do.
+	StaleCount int
+	StaleReady int
+}
+
+// AccountStyleApplyData is the question asked after the account's style
+// changes: whether to apply it now to the open surveys it reaches.
+type AccountStyleApplyData struct {
+	Notice string
+	// Surveys are the open surveys that show an earlier version of the
+	// account's style; Ready is how many of them can take it now.
+	Surveys []StaleSurveyView
+	Ready   int
+	// UpdatedAt names the account's style the question is about, so a
+	// style changed since is not applied unseen.
+	UpdatedAt string
+}
+
+// StaleSurveyView is one survey the question is about.
+type StaleSurveyView struct {
+	ID    string
+	Title string
+	// Hold is what keeps the survey from taking the account's style now:
+	// "language", "pictures" or "picture_missing", and empty when nothing
+	// does.
+	Hold string
+	// BlockedIn is the language the account's style has to be reviewed
+	// in, when Hold is "language", and BlockedName that language as a
+	// sentence names it.
+	BlockedIn   string
+	BlockedName string
+	// Limit is how many pictures a survey keeps, when Hold is "pictures".
+	Limit int
+}
+
+// AccountStyleLanguagesData is the page the account style's words are
+// translated on (ADR-0023).
+type AccountStyleLanguagesData struct {
+	// Source names the account style's words the page shows, so a
+	// translation saved from it is checked against the wording its
+	// creator read.
+	Source string
+	Languages []AccountStyleLanguageView
+	// HasWords is false while the account's style has nothing written in
+	// a language: no tagline, footer text, link or picture description.
+	HasWords bool
+	// CanTranslate is false when no text AI is configured; translations
+	// are then written by hand, as on a survey's Languages tab.
+	CanTranslate bool
+	Error        string
+	Notice       string
+}
+
+// AccountStyleLanguageView is the account style's words in one language.
+type AccountStyleLanguageView struct {
+	Code string
+	// Name is the language as a sentence names it, and Label as it stands
+	// on its own.
+	Name  string
+	Label string
+	// Carried means a survey is being translated into the language, so it
+	// cannot be removed here.
+	Carried bool
+	Style   LocalizedStyleView
 }
 
 // errorTarget is the id of the field the refused save's problem is in,
@@ -143,6 +238,12 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 			</div>
 			@surveyTabs(data.Survey, "style")
 			<p class="muted">{ t(ctx, "style.intro") }</p>
+			if data.sourceShown() {
+				<p class="muted js-style-account-intro">
+					{ t(ctx, "style.account.intro") }
+					<a href="/account/style">{ t(ctx, "style.account.link") }</a>
+				</p>
+			}
 			@styleFormSummary(data.StyleForm)
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
@@ -150,7 +251,15 @@ templ SurveyStyle(email string, workspaceName string, csrf string, data StyleDat
 			<form method="post" enctype="multipart/form-data" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/style") } class="js-style-form">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				@styleFormSections(data.StyleForm)
-				<button type="submit">{ t(ctx, "style.save.label") }</button>
+				<div class="button-row">
+					<button type="submit">{ t(ctx, "style.save.label") }</button>
+					if data.sourceShown() {
+						<button type="submit" name="style_action" value="reset" class="secondary js-style-reset">{ t(ctx, "style.reset.label") }</button>
+					}
+				</div>
+				if data.sourceShown() {
+					<p class="muted">{ t(ctx, "style.reset.hint") }</p>
+				}
 			</form>
 		</main>
 	}
@@ -170,10 +279,23 @@ templ AccountStyle(email string, workspaceName string, csrf string, data Account
 				{ t(ctx, "account.style.crumb") }
 			</nav>
 			<h1>{ t(ctx, "account.style.heading") }</h1>
-			<p class="muted">{ t(ctx, "account.style.intro") }</p>
+			<p class="muted">
+				{ t(ctx, "account.style.intro") }
+				<a class="js-account-style-languages" href="/account/style/languages">{ t(ctx, "account.style.languages.intro_link") }</a>
+			</p>
 			@styleFormSummary(data.StyleForm)
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			if data.StaleCount > 0 {
+				<p class="js-account-style-stale">
+					{ tn(ctx, "account.style.apply.stale", data.StaleCount) }
+					if data.StaleReady > 0 {
+						<a href="/account/style/apply">{ tn(ctx, "account.style.apply.stale_link", data.StaleCount) }</a>
+					} else {
+						<a href="/account/style/apply">{ tn(ctx, "account.style.apply.stale_waiting_link", data.StaleCount) }</a>
+					}
+				</p>
 			}
 			<form method="post" enctype="multipart/form-data" action="/account/style" class="js-style-form js-account-style-form">
 				<input type="hidden" name="_csrf" value={ csrf }/>
@@ -182,6 +304,167 @@ templ AccountStyle(email string, workspaceName string, csrf string, data Account
 			</form>
 		</main>
 	}
+}
+
+// AccountStyleApply asks whether to apply the account's style now to the
+// open surveys that show an earlier version of it (ADR-0023). Each would
+// go out again from its live version, its draft untouched; one whose
+// languages the account's style is not read in yet is named, with where
+// to read it. "Later" leaves each to take it when it is next published.
+templ AccountStyleApply(email string, workspaceName string, csrf string, data AccountStyleApplyData) {
+	@Layout(t(ctx, "account.style.apply.title")) {
+		@AuthedHeader(email, csrf)
+		<main>
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }>
+				<a href="/account">{ t(ctx, "account.heading") }</a> /
+				<a href="/account/style">{ t(ctx, "account.style.crumb") }</a> /
+				{ t(ctx, "account.style.apply.crumb") }
+			</nav>
+			<h1>{ t(ctx, "account.style.apply.heading") }</h1>
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			<section class="card js-panel js-account-style-apply">
+				<p>{ tn(ctx, "account.style.apply.intro", len(data.Surveys)) }</p>
+				<ul class="stale-surveys">
+					for _, survey := range data.Surveys {
+						<li class="js-stale-survey">
+							<a href={ templ.SafeURL("/surveys/" + survey.ID) }>{ survey.Title }</a>
+							switch survey.Hold {
+								case "language":
+									<span class="chip js-stale-hold">{ t(ctx, "account.style.apply.chip.language", uitext.Args{"Language": survey.BlockedName}) }</span>
+									<span class="muted stale-blocked js-stale-blocked">
+										{ t(ctx, "account.style.apply.blocked", uitext.Args{"Language": survey.BlockedName}) }
+										<a href={ templ.SafeURL("/account/style/languages#lang-" + survey.BlockedIn) }>{ t(ctx, "account.style.apply.blocked_link") }</a>
+									</span>
+								case "pictures":
+									<span class="chip js-stale-hold">{ t(ctx, "account.style.apply.chip.pictures") }</span>
+									<span class="muted stale-blocked js-stale-blocked">
+										{ t(ctx, "account.style.apply.pictures", uitext.Args{"Limit": survey.Limit}) }
+									</span>
+								case "picture_missing":
+									<span class="chip js-stale-hold">{ t(ctx, "account.style.apply.chip.picture_missing") }</span>
+									<span class="muted stale-blocked js-stale-blocked">
+										{ t(ctx, "account.style.apply.picture_missing") }
+										<a href="/account/style">{ t(ctx, "account.style.apply.picture_missing_link") }</a>
+									</span>
+							}
+						</li>
+					}
+				</ul>
+				if data.Ready > 0 {
+					<p class="muted">{ t(ctx, "account.style.apply.note") }</p>
+					<form method="post" action="/account/style/apply" class="js-account-style-apply-form">
+						<input type="hidden" name="_csrf" value={ csrf }/>
+						<input type="hidden" name="updated_at" value={ data.UpdatedAt }/>
+						for _, survey := range data.Surveys {
+							if survey.Hold == "" {
+								<input type="hidden" name="survey" value={ survey.ID }/>
+							}
+						}
+						<div class="button-row">
+							<button type="submit" class="js-account-style-apply-submit">{ tn(ctx, "account.style.apply.submit", data.Ready) }</button>
+							<a class="button secondary js-account-style-later" href="/account/style">{ t(ctx, "account.style.apply.later") }</a>
+						</div>
+					</form>
+				} else {
+					<p>{ tn(ctx, "account.style.apply.none_ready", len(data.Surveys)) }</p>
+					<div class="button-row">
+						<a class="button secondary js-account-style-later" href="/account/style">{ t(ctx, "account.style.apply.back") }</a>
+					</div>
+				}
+			</section>
+		</main>
+	}
+}
+
+// AccountStyleLanguages is where the account style's words are put in
+// other languages (ADR-0023): once, for every survey that follows the
+// account's style. Each language is a card worded as a survey's
+// Languages tab words it, with its own save, since each is reviewed on
+// its own.
+templ AccountStyleLanguages(email string, workspaceName string, csrf string, data AccountStyleLanguagesData) {
+	@Layout(t(ctx, "account.style.languages.title")) {
+		@AuthedHeader(email, csrf)
+		<main>
+			<nav class="breadcrumb" aria-label={ t(ctx, "breadcrumb.aria") }>
+				<a href="/account">{ t(ctx, "account.heading") }</a> /
+				<a href="/account/style">{ t(ctx, "account.style.crumb") }</a> /
+				{ t(ctx, "account.style.languages.crumb") }
+			</nav>
+			<h1>{ t(ctx, "account.style.languages.heading") }</h1>
+			<p class="muted">{ t(ctx, "account.style.languages.intro") }</p>
+			if data.Error != "" {
+				<p class="notice error-text" role="alert">{ data.Error }</p>
+			}
+			if data.Notice != "" {
+				<p class="notice" role="status">{ data.Notice }</p>
+			}
+			if !data.HasWords {
+				<section class="card js-panel js-account-style-languages-empty">
+					<p>{ t(ctx, "account.style.languages.empty.words") }</p>
+					<p><a class="button secondary" href="/account/style">{ t(ctx, "account.style.languages.empty.back") }</a></p>
+				</section>
+			} else if len(data.Languages) == 0 {
+				<section class="card js-panel js-account-style-languages-empty">
+					<p>{ t(ctx, "account.style.languages.empty.languages") }</p>
+					<p><a class="button secondary" href="/dashboard">{ t(ctx, "account.style.languages.empty.surveys") }</a></p>
+				</section>
+			} else {
+				for _, lang := range data.Languages {
+					@accountStyleLanguagePanel(csrf, data, lang)
+				}
+			}
+		</main>
+	}
+}
+
+templ accountStyleLanguagePanel(csrf string, data AccountStyleLanguagesData, lang AccountStyleLanguageView) {
+	<section class="card js-panel js-account-style-language" id={ "lang-" + lang.Code }>
+		<div class="title-row">
+			<h2>{ lang.Label } <span class="muted">({ lang.Code })</span></h2>
+			if lang.Style.Reviewed {
+				<span class="chip chip-open">{ t(ctx, "languages.status.reviewed") }</span>
+			} else {
+				<span class="chip chip-draft">{ t(ctx, "account.style.languages.status.pending") }</span>
+			}
+		</div>
+		if !lang.Carried {
+			<p class="muted">{ t(ctx, "account.style.languages.status.unused", uitext.Args{"Language": lang.Name}) }</p>
+		} else if lang.Style.Reviewed {
+			<p class="muted">{ t(ctx, "account.style.languages.status.ready", uitext.Args{"Language": lang.Name}) }</p>
+		} else {
+			<p class="muted">{ t(ctx, "account.style.languages.status.blocked", uitext.Args{"Language": lang.Name}) }</p>
+		}
+		if lang.Style.Stale {
+			<p class="notice">{ t(ctx, "account.style.languages.stale") }</p>
+		} else if !lang.Style.Reviewed && !lang.Style.Words.IsZero() {
+			<p class="muted">{ t(ctx, "languages.question.unreviewed") }</p>
+		}
+		if (data.CanTranslate && !lang.Style.Reviewed) || !lang.Carried {
+			<div class="button-row">
+				if data.CanTranslate && !lang.Style.Reviewed {
+					<form method="post" action={ templ.SafeURL("/account/style/languages/" + lang.Code + "/draft") }>
+						<input type="hidden" name="_csrf" value={ csrf }/>
+						<input type="hidden" name="source" value={ data.Source }/>
+						<button type="submit" class="secondary js-account-style-draft">{ t(ctx, "account.style.languages.draft.label") }</button>
+					</form>
+				}
+				if !lang.Carried {
+					<form method="post" action={ templ.SafeURL("/account/style/languages/" + lang.Code + "/remove") }>
+						<input type="hidden" name="_csrf" value={ csrf }/>
+						<button type="submit" class="button-link danger js-account-style-remove">{ t(ctx, "languages.remove.label", uitext.Args{"Language": lang.Name}) }</button>
+					</form>
+				}
+			</div>
+		}
+		<form method="post" action={ templ.SafeURL("/account/style/languages/" + lang.Code) } class="js-account-style-translation">
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input type="hidden" name="source" value={ data.Source }/>
+			@styleWordsFields(lang.Name, lang.Style)
+			<button type="submit">{ t(ctx, "languages.save.label") }</button>
+		</form>
+	</section>
 }
 
 // styleFormSummary is the head of a style form after a refused save: the
@@ -217,7 +500,7 @@ templ styleFormSections(form StyleForm) {
 // with a small page drawn in it.
 templ styleThemeSection(form StyleForm) {
 	<section class="card js-panel" aria-labelledby="style-theme-heading">
-		<h2 id="style-theme-heading">{ t(ctx, "style.theme.heading") }</h2>
+		@styleSectionHeading(form, "style-theme-heading", t(ctx, "style.theme.heading"), form.Choice != nil && form.Choice.Own.Theme)
 		<p class="muted" id="style-theme-hint">{ t(ctx, "style.theme.hint") }</p>
 		<div class="theme-choices" role="radiogroup" aria-labelledby="style-theme-heading" aria-describedby="style-theme-hint">
 			for _, theme := range domain.Themes() {
@@ -237,127 +520,145 @@ templ styleThemeSection(form StyleForm) {
 // styleHeaderSection is the header: the banner and the logo, the logo's
 // alternative text, the name, the tagline and the links.
 templ styleHeaderSection(form StyleForm) {
-	<section class="card js-panel js-style-header-panel" aria-labelledby="style-header-heading">
-		<h2 id="style-header-heading">{ t(ctx, "style.header.heading") }</h2>
-		if form.Account {
-		<p class="muted">{ t(ctx, "account.style.header_hint") }</p>
-	} else {
-		<p class="muted">{ t(ctx, "style.header.hint") }</p>
-	}
-		@styleImageField(form, styleImageFieldData{
-			Field:   "banner",
-			Part:    domain.StyleBanner,
-			Hint:    t(ctx, "style.header.banner_hint", uitext.Args{"Size": styleimage.Banner.MaxUpload >> 20}),
-			Current: form.Style.Header.Banner,
-		})
-		@styleImageField(form, styleImageFieldData{
-			Field:   "logo",
-			Part:    domain.StyleLogo,
-			Hint:    t(ctx, "style.header.logo_hint", uitext.Args{"Size": styleimage.Logo.MaxUpload >> 20}),
-			Current: form.Style.Header.Logo,
-			Plate:   true,
-		})
-		<label class="field">
-			<span>
-				@thtml(ctx, "style.header.logo_alt_html")
-			</span>
-			<input
-				type="text"
-				name="logo_alt"
-				class="js-style-logo-alt"
-				value={ form.Style.Header.LogoAlt }
-				maxlength="120"
-				autocomplete="off"
-				data-1p-ignore
-				data-lpignore="true"
-				data-bwignore
-				if form.problemIn(domain.StyleLogoAlt) {
-					id="style-invalid"
-					aria-invalid="true"
-					aria-describedby="style-error-field"
-				}
-			/>
-		</label>
-		if form.problemIn(domain.StyleLogoAlt) {
-			@styleFieldError(form)
+	<section class="card js-panel js-style-header-panel switch-section" aria-labelledby="style-header-heading">
+		if form.Choice != nil {
+			@styleSwitchHeading(form, styleSwitch("header"), t(ctx, "style.header.heading"), form.Choice.Own.Header, !form.Choice.NoHeader)
+			<p class="muted" id="style-header-hint">{ t(ctx, "style.header.hint") }</p>
+		} else {
+			@styleSectionHeading(form, "style-header-heading", t(ctx, "style.header.heading"), false)
+			if form.Account {
+				<p class="muted">{ t(ctx, "account.style.header_hint") }</p>
+			} else {
+				<p class="muted">{ t(ctx, "style.header.hint") }</p>
+			}
 		}
-		<label class="field">
-			<span>
-				@thtml(ctx, "style.header.name_html")
-			</span>
-			<input
-				type="text"
-				name="header_name"
-				value={ form.Style.Header.Name }
-				maxlength="80"
-				autocomplete="off"
-				data-1p-ignore
-				data-lpignore="true"
-				data-bwignore
-				if form.problemIn(domain.StyleHeaderName) {
-					id="style-invalid"
-					aria-invalid="true"
-					aria-describedby="style-error-field"
-				}
-			/>
-		</label>
-		if form.problemIn(domain.StyleHeaderName) {
-			@styleFieldError(form)
-		}
-		<label class="field">
-			<span>
-				@thtml(ctx, "style.header.tagline_html")
-			</span>
-			<textarea
-				name="header_tagline"
-				rows="3"
-				maxlength="280"
-				autocomplete="off"
-				data-1p-ignore
-				data-lpignore="true"
-				data-bwignore
-				if form.problemIn(domain.StyleHeaderText) {
-					id="style-invalid"
-					aria-invalid="true"
-					aria-describedby="style-error-field"
-				}
-			>{ form.Style.Header.Tagline }</textarea>
-		</label>
-		if form.problemIn(domain.StyleHeaderText) {
-			@styleFieldError(form)
-		}
-		@styleLinkFields(form, "header", domain.StyleHeaderLinks, form.Style.Header.Links)
+		<div class="switch-fields">
+			@styleImageField(form, styleImageFieldData{
+				Field:   "banner",
+				Part:    domain.StyleBanner,
+				Hint:    t(ctx, "style.header.banner_hint", uitext.Args{"Size": styleimage.Banner.MaxUpload >> 20}),
+				Current: form.Style.Header.Banner,
+			})
+			@styleImageField(form, styleImageFieldData{
+				Field:   "logo",
+				Part:    domain.StyleLogo,
+				Hint:    t(ctx, "style.header.logo_hint", uitext.Args{"Size": styleimage.Logo.MaxUpload >> 20}),
+				Current: form.Style.Header.Logo,
+				Plate:   true,
+			})
+			<label class="field">
+				<span>
+					@thtml(ctx, "style.header.logo_alt_html")
+				</span>
+				<input
+					type="text"
+					name="logo_alt"
+					class="js-style-logo-alt"
+					value={ form.Style.Header.LogoAlt }
+					maxlength="120"
+					autocomplete="off"
+					data-1p-ignore
+					data-lpignore="true"
+					data-bwignore
+					if form.problemIn(domain.StyleLogoAlt) {
+						id="style-invalid"
+						aria-invalid="true"
+						aria-describedby="style-error-field"
+					}
+				/>
+			</label>
+			if form.problemIn(domain.StyleLogoAlt) {
+				@styleFieldError(form)
+			}
+			<label class="field">
+				<span>
+					@thtml(ctx, "style.header.name_html")
+				</span>
+				<input
+					type="text"
+					name="header_name"
+					value={ form.Style.Header.Name }
+					maxlength="80"
+					autocomplete="off"
+					data-1p-ignore
+					data-lpignore="true"
+					data-bwignore
+					if form.problemIn(domain.StyleHeaderName) {
+						id="style-invalid"
+						aria-invalid="true"
+						aria-describedby="style-error-field"
+					}
+				/>
+			</label>
+			if form.problemIn(domain.StyleHeaderName) {
+				@styleFieldError(form)
+			}
+			<label class="field">
+				<span>
+					@thtml(ctx, "style.header.tagline_html")
+				</span>
+				<textarea
+					name="header_tagline"
+					rows="3"
+					maxlength="280"
+					autocomplete="off"
+					data-1p-ignore
+					data-lpignore="true"
+					data-bwignore
+					if form.problemIn(domain.StyleHeaderText) {
+						id="style-invalid"
+						aria-invalid="true"
+						aria-describedby="style-error-field"
+					}
+				>{ form.Style.Header.Tagline }</textarea>
+			</label>
+			if form.problemIn(domain.StyleHeaderText) {
+				@styleFieldError(form)
+			}
+			@styleLinkFields(form, "header", domain.StyleHeaderLinks, form.Style.Header.Links)
+		</div>
 	</section>
 }
 
 // styleFooterSection is the creator's footer: its text and its links.
 templ styleFooterSection(form StyleForm) {
-	<section class="card js-panel js-style-footer-panel" aria-labelledby="style-footer-heading">
-		<h2 id="style-footer-heading">{ t(ctx, "style.footer.heading") }</h2>
-		<p class="muted">{ t(ctx, "style.footer.hint") }</p>
-		<label class="field">
-			<span>
-				@thtml(ctx, "style.footer.text_html")
-			</span>
-			<textarea
-				name="footer_text"
-				rows="3"
-				maxlength="280"
-				autocomplete="off"
-				data-1p-ignore
-				data-lpignore="true"
-				data-bwignore
-				if form.problemIn(domain.StyleFooterText) {
-					id="style-invalid"
-					aria-invalid="true"
-					aria-describedby="style-error-field"
-				}
-			>{ form.Style.Footer.Text }</textarea>
-		</label>
-		if form.problemIn(domain.StyleFooterText) {
-			@styleFieldError(form)
+	<section class="card js-panel js-style-footer-panel switch-section" aria-labelledby="style-footer-heading">
+		if form.Choice != nil {
+			@styleSwitchHeading(form, styleSwitch("footer"), t(ctx, "style.footer.heading"), form.Choice.Own.Footer, !form.Choice.NoFooter)
+			<p class="muted" id="style-footer-hint">{ t(ctx, "style.footer.hint") }</p>
+		} else {
+			@styleSectionHeading(form, "style-footer-heading", t(ctx, "style.footer.heading"), false)
+			if form.Account {
+				<p class="muted">{ t(ctx, "account.style.footer_hint") }</p>
+			} else {
+				<p class="muted">{ t(ctx, "style.footer.hint") }</p>
+			}
 		}
-		@styleLinkFields(form, "footer", domain.StyleFooterLinks, form.Style.Footer.Links)
+		<div class="switch-fields">
+			<label class="field">
+				<span>
+					@thtml(ctx, "style.footer.text_html")
+				</span>
+				<textarea
+					name="footer_text"
+					rows="3"
+					maxlength="280"
+					autocomplete="off"
+					data-1p-ignore
+					data-lpignore="true"
+					data-bwignore
+					if form.problemIn(domain.StyleFooterText) {
+						id="style-invalid"
+						aria-invalid="true"
+						aria-describedby="style-error-field"
+					}
+				>{ form.Style.Footer.Text }</textarea>
+			</label>
+			if form.problemIn(domain.StyleFooterText) {
+				@styleFieldError(form)
+			}
+			@styleLinkFields(form, "footer", domain.StyleFooterLinks, form.Style.Footer.Links)
+		</div>
 	</section>
 }
 
@@ -367,7 +668,7 @@ templ styleFooterSection(form StyleForm) {
 // choices is for "your own picture"; choosing a file there picks it.
 templ styleThanksPanel(form StyleForm) {
 	<section class="card js-panel js-style-thanks-panel" aria-labelledby="style-thanks-heading">
-		<h2 id="style-thanks-heading">{ t(ctx, "style.thanks.heading") }</h2>
+		@styleSectionHeading(form, "style-thanks-heading", t(ctx, "style.thanks.heading"), form.Choice != nil && form.Choice.Own.Thanks)
 		<p class="muted" id="style-thanks-hint">{ t(ctx, "style.thanks.hint") }</p>
 		if form.problemIn(domain.StyleThanksPicture) {
 			@styleFieldError(form)
@@ -413,6 +714,50 @@ templ styleThanksPanel(form StyleForm) {
 			@styleFieldError(form)
 		}
 	</section>
+}
+
+// styleSectionHeading is a section's heading. On a survey's Style tab,
+// under an account that has a style, a chip beside it says whether the
+// part is the survey's own or comes from the account's style (ADR-0023).
+templ styleSectionHeading(form StyleForm, id string, heading string, own bool) {
+	if form.sourceShown() {
+		<div class="title-row">
+			<h2 id={ id }>{ heading }</h2>
+			<span class="chip js-style-source">{ t(ctx, partSource(own)) }</span>
+		</div>
+	} else {
+		<h2 id={ id }>{ heading }</h2>
+	}
+}
+
+// styleSwitchHeading is the title line of a survey's header or footer
+// section: a switch, the heading that names it, and where the part comes
+// from. On, the survey shows the part and the section's fields are shown;
+// off, it shows none and the stylesheet hides the fields, with no script.
+// An unticked switch posts nothing, so a marker beside it says it was
+// offered, and the server reads no field of a section switched off.
+templ styleSwitchHeading(form StyleForm, part styleSwitch, heading string, own bool, shown bool) {
+	<div class="title-row switch-title">
+		<input type="hidden" name={ part.offered() } value="1"/>
+		<span class="switch">
+			<input
+				type="checkbox"
+				role="switch"
+				class={ "switch-input", part.hook() }
+				id={ part.id() }
+				name={ part.field() }
+				value="1"
+				checked?={ shown }
+				autocomplete="off"
+				aria-describedby={ part.hintID() }
+			/>
+			<span class="switch-track" aria-hidden="true"></span>
+		</span>
+		<h2 id={ part.headingID() }><label for={ part.id() }>{ heading }</label></h2>
+		if form.sourceShown() {
+			<span class="chip js-style-source">{ t(ctx, partSource(own)) }</span>
+		}
+	</div>
 }
 
 // styleFieldError words the refused save's problem beside the field it

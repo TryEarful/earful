@@ -31,9 +31,7 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				@StatusChip(data.Survey.Status)
 			</div>
 			@surveyTabs(data.Survey, "stats")
-
 			@rangeControl(data)
-
 			<section class="card js-panel">
 				<h2>{ t(ctx, "stats.picture.heading") }</h2>
 				<dl class="stat-grid">
@@ -71,7 +69,6 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 					<p class="muted">{ data.LumpNote }</p>
 				}
 			</section>
-
 			<section class="card trend js-panel" id="trend">
 				<div class="title-row">
 					<h2>{ t(ctx, "stats.trend.heading") }</h2>
@@ -107,7 +104,6 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 				</div>
 				@templ.JSONScript("trend-data", data.Trend)
 			</section>
-
 			<section class="card js-panel" id="questions">
 				<h2>{ t(ctx, "stats.questions.heading") }</h2>
 				<p class="muted">
@@ -147,7 +143,6 @@ templ SurveyStats(email string, csrf string, data SurveyStatsData) {
 					<p class="muted">{ data.StopsNote }</p>
 				}
 			</section>
-
 			<section class="card stats js-panel js-audience">
 				<h2>{ t(ctx, "stats.audience.heading") }</h2>
 				<p class="muted">

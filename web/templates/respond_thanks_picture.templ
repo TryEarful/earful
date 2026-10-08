@@ -13,7 +13,7 @@ import (
 // beside them says what happened. The creator's picture says what it
 // shows in its own alternative text.
 templ thanksPicture(thanks domain.StyleThanks) {
-	switch {
+	switch  {
 		case thanks.Picture == domain.ThanksNone:
 		case thanks.Picture == domain.ThanksImage && !thanks.Image.IsZero():
 			<span class="thanks-image">
@@ -120,10 +120,10 @@ templ thanksChoicePreview(picture string, style domain.Style) {
 					</span>
 				} else {
 					<svg class="thanks-choice-frame" viewBox="0 0 48 48" width="48" height="48" focusable="false">
-					<rect class="frame-edge" x="4" y="8" width="40" height="32" rx="5"></rect>
-					<circle class="frame-mark" cx="16" cy="19" r="4"></circle>
-					<path class="frame-mark" d="M8 36L19 25L27 32L33 27L40 33V36Z"></path>
-				</svg>
+						<rect class="frame-edge" x="4" y="8" width="40" height="32" rx="5"></rect>
+						<circle class="frame-mark" cx="16" cy="19" r="4"></circle>
+						<path class="frame-mark" d="M8 36L19 25L27 32L33 27L40 33V36Z"></path>
+					</svg>
 				}
 			default:
 				<svg class="thanks-choice-frame" viewBox="0 0 48 48" width="48" height="48" focusable="false">

@@ -129,14 +129,14 @@ func TestDraft_ThanksTranslationGatesPublishing(t *testing.T) {
 	if err := d.SetTranslation("nl", "a", "Waarom?", nil, true); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.ReadyToPublish(); err != nil {
+	if err := d.ReadyToPublish(domain.WorkspaceStyle{}); err != nil {
 		t.Fatalf("no thank you message, nothing more to translate: %v", err)
 	}
 
 	if err := d.SetThanks(domain.ThankYou{Message: "Thanks", LinkLabel: "Book", LinkURL: "https://example.com"}); err != nil {
 		t.Fatal(err)
 	}
-	if !d.ThanksPending("nl") || !errors.Is(d.ReadyToPublish(), domain.ErrUnreviewedTrans) {
+	if !d.ThanksPending("nl") || !errors.Is(d.ReadyToPublish(domain.WorkspaceStyle{}), domain.ErrUnreviewedTrans) {
 		t.Fatal("an untranslated thank you message must block publishing")
 	}
 
@@ -157,7 +157,7 @@ func TestDraft_ThanksTranslationGatesPublishing(t *testing.T) {
 	if err := d.SetThanksTranslation("nl", "Bedankt", "Reserveer", true); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.ReadyToPublish(); err != nil {
+	if err := d.ReadyToPublish(domain.WorkspaceStyle{}); err != nil {
 		t.Fatalf("a reviewed translation should publish: %v", err)
 	}
 	got, ok := d.LocalizedThanks("nl")

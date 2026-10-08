@@ -42,6 +42,11 @@ async function capture(page: Page, name: string, lang: string) {
     for (const v of viewports) {
       await page.setViewportSize({ width: v.width, height: v.height });
       await page.waitForTimeout(150);
+      // A picture still loading would show as a blank space in the review.
+      // A lazy one (the footer logo) loads only once scrolled to, so it is
+      // asked for now, as a full page screenshot shows it.
+      await page.evaluate(() => document.querySelectorAll("img[loading=lazy]").forEach((i) => ((i as HTMLImageElement).loading = "eager")));
+      await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.${mode}.png`), fullPage: true });
     }
@@ -76,6 +81,11 @@ async function captureForced(page: Page, name: string, lang: string) {
     for (const v of viewports) {
       await page.setViewportSize({ width: v.width, height: v.height });
       await page.waitForTimeout(150);
+      // A picture still loading would show as a blank space in the review.
+      // A lazy one (the footer logo) loads only once scrolled to, so it is
+      // asked for now, as a full page screenshot shows it.
+      await page.evaluate(() => document.querySelectorAll("img[loading=lazy]").forEach((i) => ((i as HTMLImageElement).loading = "eager")));
+      await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: path.join(out, `${name}.${lang}.${v.name}.chosen-${chosen}.png`), fullPage: true });
     }
@@ -131,6 +141,240 @@ async function setStylePictures(page: Page, pictures: { banner?: string; logo?: 
     }
   }
   await page.locator(".js-style-logo-alt").fill(pictures.logo && pictures.logo !== "remove" ? "Corner Workshop" : "");
+}
+
+// The account's style (ADR-0023), and the surveys that follow it, for a
+// creator of their own: the account's page empty, refused and saved;
+// its translations with no words, with no language, in every state a
+// language can be in, removable, and refused; a survey following it, one
+// with a header of its own and no footer, an editor told the account
+// changed, and one refused for a language the account is not read in.
+async function accountStyleGallery(browser: Browser) {
+  const { context, page } = await visitor(browser, "en");
+  await signIn(page, uniqueEmail("gallery-style"));
+
+  await page.goto("/account/style");
+  await capture(page, "account-style", "en");
+  await page.goto("/account/style/languages");
+  await expect(page.locator(".js-account-style-languages-empty")).toBeVisible();
+  await capture(page, "account-style-languages-empty", "en");
+  await page.goto("/account/style");
+  await fillStyle(page, { name: "Corner Workshop", links: [["Our classes", ""]] });
+  await page.getByRole("button", { name: "Save account style" }).click();
+  await expect(page.locator(".js-style-field-error")).toBeVisible();
+  await capture(page, "account-style-error", "en");
+  await page.goto("/account/style");
+  await page.locator(".js-theme-choice").getByRole("radio", { name: /Ocean/ }).check();
+  await fillStyle(page, {
+    name: "Corner Workshop",
+    tagline: "Evening classes in wood, clay and print.",
+    links: [["Our classes", "https://example.com/classes"]],
+    footer: "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
+    footerLinks: [["Privacy notice", "https://example.com/privacy"]],
+  });
+  await setStylePictures(page, { banner: "banner.jpg", logo: "logo-square.png" });
+  await page.locator(".js-style-thanks-panel").getByRole("radio", { name: "Confetti" }).check();
+  await page.getByRole("button", { name: "Save account style" }).click();
+  // The Starter Survey follows the account's style, so the save asks
+  // about it first; the style itself is pictured on its own page.
+  await expect(page).toHaveURL(/\/account\/style\/apply/);
+  await page.goto("/account/style?notice=saved");
+  await expect(page.getByText("Account style saved")).toBeVisible();
+  await capture(page, "account-style-saved", "en");
+  await page.goto("/account");
+  await capture(page, "account-styled", "en");
+
+  // The starter survey is put aside, so the account's style has words to
+  // translate and no survey translated into anything.
+  await page.goto("/dashboard");
+  const starter = await page.locator(".js-survey-card a.survey-title").first().getAttribute("href");
+  if (!starter) throw new Error("no starter survey on the dashboard");
+  await page.goto(starter);
+  await page.locator("form.danger-zone button").click();
+  await expect(page).toHaveURL(/\/surveys$/);
+  await page.goto("/account/style/languages");
+  await expect(page.locator(".js-account-style-languages-empty")).toBeVisible();
+  await capture(page, "account-style-languages-none", "en");
+
+  // A survey published under the account's style, which it follows.
+  const following = "/surveys/" + (await createPublishedSurvey(page, "Open day feedback")).split("/").pop();
+  await page.goto(following + "/style");
+  await capture(page, "style-following", "en");
+  // The account's tagline changes; the survey's editor says so.
+  const reword = async (tagline: string) => {
+    await page.goto("/account/style");
+    await page.locator('textarea[name="header_tagline"]').fill(tagline);
+    await page.getByRole("button", { name: "Save account style" }).click();
+    await expect(page.getByText("Account style saved")).toBeVisible();
+  };
+  await reword("Evening and weekend classes in wood, clay and print.");
+  await page.goto(following);
+  await expect(page.locator(".js-account-style-changed")).toBeVisible();
+  await capture(page, "editor-account-style-changed", "en");
+
+  // A survey with a header of its own and no footer.
+  const own = "/surveys/" + (await createPublishedSurvey(page, "Course feedback")).split("/").pop();
+  await page.goto(own + "/style");
+  await page.locator('textarea[name="header_tagline"]').fill("Tell us how the pottery course went.");
+  await page.locator(".js-custom-footer").uncheck();
+  await page.getByRole("button", { name: "Save style" }).click();
+  await expect(page.getByText("Style saved")).toBeVisible();
+  await expect(page.locator(".js-style-footer-panel textarea[name='footer_text']")).toBeHidden();
+  await capture(page, "style-own-header-no-footer", "en");
+  // The header switch with the keyboard's focus on it.
+  await page.locator(".js-theme-choice input:checked").focus();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(".js-custom-header")).toBeFocused();
+  await capture(page, "style-switch-focus", "en");
+
+  // The following survey in Spanish: its Languages tab shows the words it
+  // takes from the account waiting, and publishing is refused with the
+  // way to where they are translated.
+  await page.goto(following + "/localizations");
+  await page.locator('input[name="lang"]').fill("es");
+  await page.getByRole("button", { name: "Add language" }).click();
+  const spanish = page.locator("#lang-es");
+  for (const field of await spanish.locator('textarea[name^="t_"]').all()) await field.fill("¿Qué haría las encuestas menos pesadas?");
+  for (const field of await spanish.locator('textarea[name^="o_"]').all()) await field.fill("Cada semana\nCada mes\nCasi nunca");
+  await spanish.getByRole("button", { name: "Save and mark reviewed" }).click();
+  await expect(page.locator("#lang-es .js-account-style-row")).toBeVisible();
+  await capture(page, "languages-account-row", "en");
+  await page.goto(following);
+  await page.getByRole("button", { name: "Publish version 2" }).click();
+  await expect(page.locator(".js-account-style-blocked")).toBeVisible();
+  await capture(page, "editor-publish-blocked-account-translation", "en");
+
+  // The account's translations once surveys are translated: Spanish and
+  // Dutch to review, German translated and then made out of date by a
+  // change to the tagline, French and Italian translated after it.
+  await page.goto(following + "/localizations");
+  for (const lang of ["nl", "fr", "de", "it"]) {
+    await page.locator('input[name="lang"]').fill(lang);
+    await page.getByRole("button", { name: "Add language" }).click();
+  }
+  const translateAccountStyle = async (lang: string, words: { tagline: string; logo: string; link: string; footer: string; footerLink: string }) => {
+    const panel = page.locator("#lang-" + lang);
+    await panel.locator('textarea[name="style_tagline"]').fill(words.tagline);
+    await panel.locator('input[name="style_logo_alt"]').fill(words.logo);
+    await panel.locator('input[name="style_header_link"]').fill(words.link);
+    await panel.locator('textarea[name="style_footer_text"]').fill(words.footer);
+    await panel.locator('input[name="style_footer_link"]').fill(words.footerLink);
+    await panel.getByRole("button", { name: "Save and mark reviewed" }).click();
+    await expect(page.locator("#lang-" + lang + " .chip-open")).toBeVisible();
+  };
+  await page.goto("/account/style/languages");
+  await translateAccountStyle("de", {
+    tagline: "Abendkurse in Holz, Ton und Druck.",
+    logo: "Corner Workshop",
+    link: "Unsere Kurse",
+    footer: "Corner Workshop Genossenschaft\nMill Lane 12, Riverton",
+    footerLink: "Datenschutzhinweis",
+  });
+  await reword("Evening, weekend and holiday classes in wood, clay and print.");
+  await page.goto("/account/style/languages");
+  await translateAccountStyle("fr", {
+    tagline: "Cours du soir, du week-end et des vacances : bois, argile et gravure.",
+    logo: "Corner Workshop",
+    link: "Nos cours",
+    footer: "Coopérative Corner Workshop\n12 Mill Lane, Riverton",
+    footerLink: "Avis de confidentialité",
+  });
+  await translateAccountStyle("it", {
+    tagline: "Corsi serali, nel fine settimana e nelle vacanze: legno, argilla e stampa.",
+    logo: "Corner Workshop",
+    link: "I nostri corsi",
+    footer: "Cooperativa Corner Workshop\n12 Mill Lane, Riverton",
+    footerLink: "Informativa sulla privacy",
+  });
+  await expect(page.locator("#lang-de .notice")).toBeVisible();
+  await capture(page, "account-style-languages", "en");
+  // Italian is taken off the survey: the account's translation into it
+  // can then be removed.
+  await page.goto(following + "/localizations");
+  await page.locator('#lang-it form[action$="/delete"] button').click();
+  await page.goto("/account/style/languages");
+  await expect(page.locator("#lang-it .js-account-style-remove")).toBeVisible();
+  await capture(page, "account-style-languages-removable", "en");
+  // Saving an empty card is refused.
+  await page.locator("#lang-nl").getByRole("button", { name: "Save and mark reviewed" }).click();
+  await expect(page.locator(".notice.error-text")).toBeVisible();
+  await capture(page, "account-style-languages-error", "en");
+
+  // The same creator in Spanish.
+  const { context: spanishContext, page: es } = await visitor(browser, "es");
+  await spanishContext.addCookies(await context.cookies());
+  await es.goto("/account");
+  await capture(es, "account-styled", "es");
+  await es.goto("/account/style?notice=saved");
+  await expect(es.getByText("Estilo de la cuenta guardado.")).toBeVisible();
+  await capture(es, "account-style-saved", "es");
+  await es.goto("/account/style/languages");
+  await capture(es, "account-style-languages", "es");
+  await es.goto(following + "/style");
+  await capture(es, "style-following", "es");
+  await es.goto(own + "/style");
+  await capture(es, "style-own-header-no-footer", "es");
+  await es.locator(".js-theme-choice input:checked").focus();
+  await es.keyboard.press("Tab");
+  await expect(es.locator(".js-custom-header")).toBeFocused();
+  await capture(es, "style-switch-focus", "es");
+  await es.goto(following);
+  await capture(es, "editor-account-style-changed", "es");
+
+  // Applying a change to the open surveys now: a survey published in
+  // Spanish with the account's Spanish read, then a change to the
+  // account's tagline. Two surveys can take it; the Spanish one waits for
+  // the account's new Spanish.
+  await page.goto("/account/style/languages");
+  await translateAccountStyle("es", {
+    tagline: "Clases de tarde, de fin de semana y de vacaciones en madera, barro y grabado.",
+    logo: "Corner Workshop",
+    link: "Nuestras clases",
+    footer: "Cooperativa Corner Workshop\n12 Mill Lane, Riverton",
+    footerLink: "Aviso de privacidad",
+  });
+  // Built with its Spanish before it is first published, since a new
+  // language alone is not a change to publish.
+  await page.goto("/surveys/new");
+  await page.getByLabel("Title").fill("Spring open day");
+  await page.getByRole("button", { name: "Create survey" }).click();
+  await expect(page.getByRole("heading", { name: "Spring open day" })).toBeVisible();
+  const spring = new URL(page.url()).pathname;
+  const springQuestions = page.locator('form[action$="/questions"]');
+  await springQuestions.locator('select[name="type"]').selectOption("long_text");
+  await springQuestions.locator('input[name="text"]').fill("What did you enjoy most at the open day?");
+  await springQuestions.getByRole("button", { name: "Add question" }).click();
+  await page.goto(spring + "/localizations");
+  await page.locator('input[name="lang"]').fill("es");
+  await page.getByRole("button", { name: "Add language" }).click();
+  const springSpanish = page.locator("#lang-es");
+  for (const field of await springSpanish.locator('textarea[name^="t_"]').all()) await field.fill("¿Qué es lo que más le gustó de la jornada?");
+  await springSpanish.getByRole("button", { name: "Save and mark reviewed" }).click();
+  await page.goto(spring);
+  await page.getByRole("button", { name: "Publish version 1" }).click();
+  await expect(page.getByText("Published version 1")).toBeVisible();
+  await reword("Classes for every evening, weekend and holiday, in wood, clay and print.");
+  await expect(page).toHaveURL(/\/account\/style\/apply/);
+  await expect(page.locator(".js-stale-blocked")).toBeVisible();
+  await capture(page, "account-style-apply", "en");
+  const { context: applyContext, page: esApply } = await visitor(browser, "es");
+  await applyContext.addCookies(await context.cookies());
+  await esApply.goto("/account/style/apply");
+  await expect(esApply.locator(".js-stale-blocked")).toBeVisible();
+  await capture(esApply, "account-style-apply", "es");
+  await applyContext.close();
+  await page.locator(".js-account-style-apply-submit").click();
+  await expect(page).toHaveURL(/\/account\/style\?applied=/);
+  await capture(page, "account-style-applied", "en");
+  // The one survey left waits on Spanish: the question has no update to
+  // offer, only the way back.
+  await page.goto("/account/style/apply");
+  await expect(page.locator(".js-account-style-apply-form")).toHaveCount(0);
+  await expect(page.locator(".js-stale-hold")).toBeVisible();
+  await capture(page, "account-style-apply-waiting", "en");
+
+  await spanishContext.close();
+  await context.close();
 }
 
 test.setTimeout(30 * 60_000);
@@ -196,28 +440,6 @@ test("gallery", async ({ browser }) => {
   // The account page ends with the delete form and its copy checkbox.
   await page.goto("/account");
   await capture(page, "account", "en");
-  // The account's style (ADR-0023): with nothing set, refused over a link
-  // with no address, and saved with every part.
-  await page.goto("/account/style");
-  await capture(page, "account-style", "en");
-  await fillStyle(page, { name: "Corner Workshop", links: [["Our classes", ""]] });
-  await page.getByRole("button", { name: "Save account style" }).click();
-  await expect(page.locator(".js-style-field-error")).toBeVisible();
-  await capture(page, "account-style-error", "en");
-  await page.goto("/account/style");
-  await page.locator(".js-theme-choice").getByRole("radio", { name: /Ocean/ }).check();
-  await fillStyle(page, {
-    name: "Corner Workshop",
-    tagline: "Evening classes in wood, clay and print.",
-    links: [["Our classes", "https://example.com/classes"]],
-    footer: "Corner Workshop Cooperative\n12 Mill Lane, Riverton",
-    footerLinks: [["Privacy notice", "https://example.com/privacy"]],
-  });
-  await setStylePictures(page, { banner: "banner.jpg", logo: "logo-square.png" });
-  await page.locator(".js-style-thanks-panel").getByRole("radio", { name: "Confetti" }).check();
-  await page.getByRole("button", { name: "Save account style" }).click();
-  await expect(page.getByText("Account style saved")).toBeVisible();
-  await capture(page, "account-style-saved", "en");
   await page.goto("/help");
   await capture(page, "help-signed-in", "en");
 
@@ -890,8 +1112,11 @@ test("gallery", async ({ browser }) => {
   await capture(es, "style-images", "es");
   await es.goto("/account");
   await capture(es, "account", "es");
-  await es.goto("/account/style");
-  await capture(es, "account-style-saved", "es");
+
+  // A second creator, whose account has a style (ADR-0023). Their own
+  // workspace, so that every page above stays drawn as it was, with no
+  // account style for its surveys to follow.
+  await accountStyleGallery(browser);
 
   // The AI tier control, a super admin's page. Only the CLI grants super
   // admin, so the creator is granted it inside the compose stack's app

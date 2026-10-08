@@ -25,26 +25,35 @@ import (
 type frozenStyle struct {
 	domain.Style
 	Localizations map[string]domain.StyleWords `json:"localizations,omitempty"`
+	// Follows names the parts of the style the version took from its
+	// account's style (ADR-0023), so that a later change to the account
+	// can tell which live versions show what changed. A version published
+	// before a survey could follow an account names none.
+	Follows domain.StyleParts `json:"follows,omitzero"`
 }
 
-// styleColumn turns a draft's style into the version's style column. No
-// style is NULL, which is what a version published before a survey
-// could have one holds. A language is frozen only once its translation
-// has been reviewed against the current wording, as the thank you page's
-// is.
-func styleColumn(draft domain.Draft) ([]byte, error) {
-	if draft.Style.IsZero() {
+// styleColumn turns a draft's style, resolved against its account's, into
+// the version's style column: the style the version's pages are drawn in,
+// complete, so that nothing a respondent sees changes with the account
+// afterwards. A version with no style and no part taken from an account
+// is NULL, which is what a version published before a survey could have
+// one holds. A language is frozen only once both its translations, the
+// survey's own and the account's, have been reviewed against the current
+// wording, as the thank you page's is.
+func styleColumn(draft domain.Draft, account domain.WorkspaceStyle) ([]byte, error) {
+	frozen := frozenStyle{Style: draft.ResolvedStyle(account.Style), Follows: draft.FollowedParts()}
+	if frozen.Style.IsZero() && frozen.Follows.IsZero() {
 		return nil, nil
 	}
-	frozen := frozenStyle{Style: draft.Style}
 	for _, lang := range draft.Languages() {
-		if _, ok := draft.LocalizedStyle(lang); !ok {
+		words, ok := draft.ResolvedStyleWords(account, lang)
+		if !ok || words.IsZero() {
 			continue
 		}
 		if frozen.Localizations == nil {
 			frozen.Localizations = map[string]domain.StyleWords{}
 		}
-		frozen.Localizations[lang] = draft.Localizations[lang].Style.StyleWords
+		frozen.Localizations[lang] = words
 	}
 	encoded, err := json.Marshal(frozen)
 	if err != nil {
@@ -128,6 +137,10 @@ func (e ImageLimitError) Unwrap() error {
 // being saved refers to, and is refused only if that makes no room. The
 // survey is held while this happens, so two saves of its style take turns
 // rather than counting, or removing, each other's pictures.
+//
+// A part the survey made its own while keeping one of its account's
+// pictures gets its own copy of the picture here (ADR-0023), so the
+// draft refers only to pictures the survey stores.
 func (s *Surveys) SaveStyle(ctx context.Context, surveyID, userID uuid.UUID, draft domain.Draft, images []NewImage, now time.Time) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -136,10 +149,9 @@ func (s *Surveys) SaveStyle(ctx context.Context, surveyID, userID uuid.UUID, dra
 	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
 	q := s.q.WithTx(tx)
 
-	if _, err := q.LockSurveyForStyle(ctx, surveyID); errors.Is(err, pgx.ErrNoRows) {
-		return ErrNotFound
-	} else if err != nil {
-		return fmt.Errorf("store: hold survey: %w", err)
+	workspaceID, _, err := holdForStyle(ctx, q, surveyID)
+	if err != nil {
+		return err
 	}
 	keep := styleHashes(draft.Style)
 	for _, img := range images {
@@ -147,10 +159,137 @@ func (s *Surveys) SaveStyle(ctx context.Context, surveyID, userID uuid.UUID, dra
 			return err
 		}
 	}
+	if err := ensureSurveyImages(ctx, q, workspaceID, surveyID, keep, now); err != nil {
+		return err
+	}
 	if err := saveDraft(ctx, q, surveyID, userID, draft, now); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// holdForStyle holds a survey and reads its account's style, through q,
+// inside the caller's transaction: the survey first, then the account's
+// style, which is held against change until the transaction ends. Every
+// path that holds both holds them in this order. A workspace with no
+// account style has the zero one.
+func holdForStyle(ctx context.Context, q *db.Queries, surveyID uuid.UUID) (uuid.UUID, domain.WorkspaceStyle, error) {
+	workspaceID, err := q.LockSurveyForStyle(ctx, surveyID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, domain.WorkspaceStyle{}, ErrNotFound
+	}
+	if err != nil {
+		return uuid.Nil, domain.WorkspaceStyle{}, fmt.Errorf("store: hold survey: %w", err)
+	}
+	row, err := q.ShareWorkspaceStyle(ctx, workspaceID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return workspaceID, domain.WorkspaceStyle{}, nil
+	}
+	if err != nil {
+		return uuid.Nil, domain.WorkspaceStyle{}, fmt.Errorf("store: read workspace style: %w", err)
+	}
+	account, err := workspaceStyleFrom(row.Style, row.Localizations, row.UpdatedAt)
+	if err != nil {
+		return uuid.Nil, domain.WorkspaceStyle{}, err
+	}
+	return workspaceID, account, nil
+}
+
+// ensureSurveyImages copies into the survey, through q, inside the
+// caller's transaction, each picture of hashes it does not store yet
+// from its account's pictures (ADR-0023). A survey at its limit first
+// loses the pictures nothing shows, never one in hashes, and is refused
+// only if that makes no room. A picture neither the survey nor its
+// account stores is left for checkStyleImages to refuse.
+func ensureSurveyImages(ctx context.Context, q *db.Queries, workspaceID, surveyID uuid.UUID, hashes []string, now time.Time) error {
+	if len(hashes) == 0 {
+		return nil
+	}
+	copies, count, err := countCopies(ctx, q, workspaceID, surveyID, hashes)
+	if err != nil {
+		return err
+	}
+	if copies == 0 {
+		return nil
+	}
+	if count+copies > MaxSurveyImages {
+		removed, err := q.DeleteUnusedSurveyImages(ctx, db.DeleteUnusedSurveyImagesParams{SurveyID: surveyID, Keep: hashes})
+		if err != nil {
+			return fmt.Errorf("store: remove unused images: %w", err)
+		}
+		if count-removed+copies > MaxSurveyImages {
+			return ImageLimitError{}
+		}
+	}
+	if _, err := q.CopyWorkspaceImagesToSurvey(ctx, db.CopyWorkspaceImagesToSurveyParams{
+		SurveyID: surveyID, CreatedAt: now, WorkspaceID: workspaceID, Hashes: hashes,
+	}); err != nil {
+		return fmt.Errorf("store: copy account images: %w", err)
+	}
+	return nil
+}
+
+// countCopies is, through q, how many of the account's pictures among
+// hashes the survey would be given a copy of, and how many pictures the
+// survey stores now. A picture the account does not store either is not
+// counted: there is nothing to copy, and checkStyleImages refuses it.
+func countCopies(ctx context.Context, q *db.Queries, workspaceID, surveyID uuid.UUID, hashes []string) (copies, count int64, err error) {
+	copies, err = q.CountCopyableWorkspaceImages(ctx, db.CountCopyableWorkspaceImagesParams{
+		WorkspaceID: workspaceID, Hashes: hashes, SurveyID: surveyID,
+	})
+	if err != nil {
+		return 0, 0, fmt.Errorf("store: count account images to copy: %w", err)
+	}
+	if copies == 0 {
+		return 0, 0, nil
+	}
+	count, err = q.CountSurveyImages(ctx, surveyID)
+	if err != nil {
+		return 0, 0, fmt.Errorf("store: count images: %w", err)
+	}
+	return copies, count, nil
+}
+
+// roomForCopies reports, through q, whether the survey has room for its
+// copies of the account's pictures among hashes, counting out the
+// pictures nothing shows as ensureSurveyImages would remove them. It
+// removes nothing.
+func roomForCopies(ctx context.Context, q *db.Queries, workspaceID, surveyID uuid.UUID, hashes []string) (bool, error) {
+	if len(hashes) == 0 {
+		return true, nil
+	}
+	copies, count, err := countCopies(ctx, q, workspaceID, surveyID, hashes)
+	if err != nil {
+		return false, err
+	}
+	if count+copies <= MaxSurveyImages {
+		return true, nil
+	}
+	unused, err := q.CountUnusedSurveyImages(ctx, db.CountUnusedSurveyImagesParams{SurveyID: surveyID, Keep: hashes})
+	if err != nil {
+		return false, fmt.Errorf("store: count unused images: %w", err)
+	}
+	return count-unused+copies <= MaxSurveyImages, nil
+}
+
+// picturesMissing reports, through q, whether any picture among hashes is
+// stored neither for the survey nor by its account: one ensureSurveyImages
+// could not copy, which publishing would refuse as missing.
+func picturesMissing(ctx context.Context, q *db.Queries, workspaceID, surveyID uuid.UUID, hashes []string) (bool, error) {
+	if len(hashes) == 0 {
+		return false, nil
+	}
+	stored, err := q.CountSurveyImagesOf(ctx, db.CountSurveyImagesOfParams{SurveyID: surveyID, Hashes: hashes})
+	if err != nil {
+		return false, fmt.Errorf("store: count style images: %w", err)
+	}
+	copies, err := q.CountCopyableWorkspaceImages(ctx, db.CountCopyableWorkspaceImagesParams{
+		WorkspaceID: workspaceID, Hashes: hashes, SurveyID: surveyID,
+	})
+	if err != nil {
+		return false, fmt.Errorf("store: count account images to copy: %w", err)
+	}
+	return int(stored+copies) < len(hashes), nil
 }
 
 // saveImage stores one picture through q, inside the caller's
@@ -231,10 +370,10 @@ func styleHashes(style domain.Style) []string {
 	return hashes
 }
 
-// DraftImage is a picture stored for a survey, as its creator may see
-// it: on the Style tab and in the preview, before any version shows it.
-// A survey in another workspace has no pictures as far as the caller can
-// tell.
+// DraftImage is a picture stored for a survey, or for its account's
+// style, as its creator may see it: on the Style tab and in the preview,
+// before any version shows it. A survey in another workspace has no
+// pictures as far as the caller can tell.
 func (s *Surveys) DraftImage(ctx context.Context, workspaceID, surveyID uuid.UUID, sha string) (Image, error) {
 	hash, ok := imageHash(sha)
 	if !ok {
@@ -244,7 +383,10 @@ func (s *Surveys) DraftImage(ctx context.Context, workspaceID, surveyID uuid.UUI
 		SurveyID: surveyID, Sha256: hash, WorkspaceID: workspaceID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
-		return Image{}, ErrNotFound
+		// A part the survey follows shows its account's picture, which the
+		// survey copies only when it is published (ADR-0023). It is the
+		// caller's own workspace's picture, so it is theirs to see.
+		return s.WorkspaceImage(ctx, workspaceID, sha)
 	}
 	if err != nil {
 		return Image{}, fmt.Errorf("store: get draft image: %w", err)

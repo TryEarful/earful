@@ -111,11 +111,20 @@ type SurveyEditorData struct {
 	Origin string
 	// DraftChanged is whether publishing would make a new version; the
 	// editor offers Publish only then.
-	DraftChanged  bool
-	Survey        SurveyView
-	Questions     []domain.Question
-	Versions      []VersionView
-	ResponseCount int
+	DraftChanged bool
+	// AccountStyleChanged says the only change is the account's style,
+	// which the survey follows and takes when it is next published
+	// (ADR-0023).
+	AccountStyleChanged bool
+	// BlockedLanguage, after a refused publish, names the language the
+	// account's style is not yet reviewed in, and BlockedLanguageCode is
+	// its code, for the link to where it is translated.
+	BlockedLanguage     string
+	BlockedLanguageCode string
+	Survey              SurveyView
+	Questions           []domain.Question
+	Versions            []VersionView
+	ResponseCount       int
 	// AIEnabled shows the "draft with AI" panel. False when no text
 	// provider is configured: an absent capability is an absent feature,
 	// not a button that fails (Appendix D).
@@ -247,6 +256,10 @@ type AccountData struct {
 	// AIUsage is today's AI spend against the workspace's allowance,
 	// in words; empty on an instance with no AI.
 	AIUsage string
+	// Style is the account's style (ADR-0023), said in a line on its
+	// card, and StyleHasWords whether it has words to translate.
+	Style         domain.Style
+	StyleHasWords bool
 }
 
 // AITiersData is the super-admin AI tier control (issue #3).
@@ -392,6 +405,19 @@ type LanguageView struct {
 	// Style is the words of the survey's style in this language, nil
 	// when the style has none to translate.
 	Style *LocalizedStyleView
+	// AccountStyle is the words the survey shows from its account's
+	// style, which are translated on the account (ADR-0023); nil when it
+	// shows none.
+	AccountStyle *AccountStyleRowView
+}
+
+// AccountStyleRowView is the state, in one language, of the words a
+// survey shows from its account's style.
+type AccountStyleRowView struct {
+	// Pending is whether the account's translation still needs writing or
+	// reading in this language, which holds the survey back from
+	// publishing.
+	Pending bool
 }
 
 // LocalizedStyleView is the words of a survey's style in one language,

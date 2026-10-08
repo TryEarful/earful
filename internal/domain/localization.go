@@ -159,11 +159,19 @@ func (d Draft) Pending(lang string) []Question {
 
 // ReadyToPublish reports whether every language is fully reviewed
 // against the current wording. This is the gate story 23 asks for: no
-// unreviewed machine translation is ever published.
-func (d Draft) ReadyToPublish() error {
+// unreviewed machine translation is ever published. The words a survey
+// shows from its account's style are translated on the account
+// (ADR-0023), so a language the account has not been reviewed in holds
+// the survey back too, with an error that names the language.
+func (d Draft) ReadyToPublish(account WorkspaceStyle) error {
 	for _, lang := range d.Languages() {
 		if len(d.Pending(lang)) > 0 || d.ThanksPending(lang) || d.StylePending(lang) {
 			return ErrUnreviewedTrans
+		}
+	}
+	for _, lang := range d.Languages() {
+		if d.AccountStylePending(account, lang) {
+			return AccountStyleTranslationError{Lang: lang}
 		}
 	}
 	return nil

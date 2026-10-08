@@ -1,15 +1,15 @@
 # An account's style is followed by its surveys until a survey makes a part its own
 
-Status: proposed. Amends ADR-0018 and narrows ADR-0019.
+Status: accepted. Amends ADR-0018 and narrows ADR-0019.
 
 A creator can set a style once, on the account, and every survey of the
 workspace uses it: the theme, the header (banner, logo, name, tagline
 and links), the footer and the thanks page's picture, the same choices a
 survey's Style tab offers (ADR-0018). A survey follows the account's
 style part by part until its creator changes a part on its own Style
-tab, which makes that part the survey's own. Two boxes on the Style tab,
-"Custom header" and "Custom footer", take the header or the footer off a
-single survey. A published version keeps the look it was published
+tab, which makes that part the survey's own. A switch at the head of the
+Style tab's header section, and another at the head of its footer
+section, take the header or the footer off a single survey. A published version keeps the look it was published
 with: a change to the account's style reaches a survey's respondents
 when that survey is next published, and saving the account's style
 offers to publish the change to the active surveys that show it.
@@ -73,12 +73,15 @@ with an account's logo would say two things about who is asking. The
 help text says this, and a "Reset to account style" button, outlined,
 at the end of the form, returns every part to the account's.
 
-**"Custom header" and "Custom footer" take a part off one survey.** Both
-are ticked by default. Unticked, the survey shows no header, or no
-footer, whatever the account's style holds. The header's logo goes with
-it, so Earful's owl returns to the footer. A hidden marker beside each
-box tells an unticked box from a form drawn before the boxes existed,
-and an unticked section's fields are not read.
+**A header switch and a footer switch take a part off one survey.** Each
+stands at the head of its section, beside the section's heading, which
+names it, and both are on by default. Off, the survey shows no header,
+or no footer, whatever the account's style holds, and the stylesheet
+hides the section's fields, with no script. The header's logo goes with
+it, so Earful's owl returns to the footer. A switch is a checkbox with
+the role of a switch; a hidden marker beside each tells one switched off
+from a form drawn before the switches existed, and a section switched
+off has none of its fields read.
 
 **Publishing resolves the style and freezes it.** Inside the publish
 transaction, with the survey and then the account's style held, the
@@ -108,7 +111,11 @@ words cannot be published in a language whose account translation is not
 reviewed and current; the editor says so and links to the account. A
 survey's own parts are translated on its Languages tab as before. When a
 part becomes a survey's own with words equal to the account's, the
-account's translations come with it, reviewed if both were.
+account's translations come with it, reviewed if both were. The
+translations page posts which wording it shows; a translation saved, or
+drafted, from a page drawn before the wording changed is refused and the
+page is shown again, so nothing is marked as read beside words its
+creator never saw.
 
 **The editor says when only the account's style has changed.** A survey
 whose draft resolves to a style other than its live version's is
@@ -116,17 +123,30 @@ offered Publish, as for any change; where the account's style is the
 only difference, the editor says "Your account style changed. Publish to
 apply it."
 
-**Saving the account's style offers to apply it now.** When an active
-survey (published, open, not deleted) shows a part that has just
-changed, the save lands on a page that names those surveys and offers to
-update them. Updating publishes, for each, a new version made from its
-live version with only the followed parts resolved again, through the
-normal publish path: questions and translations are the live version's,
-so unpublished edits in a survey's draft stay unpublished. A survey that
-lacks a reviewed account translation for the changed part is named and
-left for later. Versions published before this change record no
-followed parts and are not offered; they take the account's style on
-their next publish. Choosing "Later" changes nothing.
+**Saving the account's style offers to apply it now.** When a save, of
+the style or of a reviewed translation of its words, reaches an open
+survey (published, not closed, not deleted, its workspace not suspended)
+whose live version follows a part that changed, in the original or in a
+language the version went out in, the save lands on
+`/account/style/apply`. That page names every open survey whose live
+version would be drawn differently with the account's style as it now
+stands, including any a change chosen "Later" has not reached yet, and
+offers to update them. The account's style page offers the same while
+any are left. Updating publishes, for each, a new version made from its
+live version: its questions, thank you page and translations, its own
+parts of the style as they were, and the parts it follows resolved
+again, through the normal publish path, so picture copies, numbering and
+the version list behave as for any publish. Unpublished edits in a
+survey's draft stay unpublished, and the page says so. A survey that
+cannot take the change yet is named with why and left for later, while
+the rest go out: its languages lack a reviewed account translation for
+what changed (with a link to the translations page), or it keeps its
+limit of pictures, every one shown by a version, so the account's new
+picture has no room. The page posts which account style it asked about;
+a style changed since is not applied, and the page asks again, naming
+any survey that went out before the change. Versions published before this change
+record no followed parts and are not offered; they take the account's
+style on their next publish. Choosing "Later" changes nothing.
 
 ## Considered Options
 
@@ -182,3 +202,6 @@ their next publish. Choosing "Later" changes nothing.
 - A Style tab left open while the account's style changes makes the
   changed parts that survey's own when it is saved. With one member per
   workspace this is rare.
+- An update made from the account is a version like any other: the
+  version list and the audit log show it as published by the creator who
+  chose it, with no separate reason recorded.

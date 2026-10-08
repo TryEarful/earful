@@ -387,9 +387,14 @@ func (s *server) previewPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	info, _ := authFrom(r.Context())
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
 	all, other := previewLayout(r)
-	// The draft's pictures, which the public address does not serve
-	// until a version shows them.
+	// The draft's pictures, and its account's, which the public address
+	// does not serve until a version shows them.
 	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
 	render(w, r, http.StatusOK, templates.Respond(templates.RespondData{
 		SurveyID:      survey.ID.String(),
@@ -405,9 +410,10 @@ func (s *server) previewPage(w http.ResponseWriter, r *http.Request) {
 		PreviewAll:        all,
 		PreviewLayoutLink: other,
 		CSRF:              info.CSRFToken,
-		// The draft's style, so a creator sees a theme before any
-		// respondent does.
-		Style: draft.Style,
+		// The draft's style resolved against its account's, as the next
+		// version would freeze it, so a creator sees a look before any
+		// respondent does (ADR-0023).
+		Style: draft.ResolvedStyle(account.Style),
 	}))
 }
 
@@ -441,9 +447,15 @@ func (s *server) previewSubmit(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	info, _ := authFrom(r.Context())
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
 	answers := answerSummary(r, draft.Questions, parseSubmission(r, draft.Questions))
 	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
-	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title, answers, draft.Style))
+	render(w, r, http.StatusOK, templates.RespondPreviewSubmitted(survey.ID.String(), survey.Title, answers, draft.ResolvedStyle(account.Style)))
 }
 
 // loadPublicSurvey resolves a share link to a survey and the version to

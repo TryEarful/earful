@@ -39,6 +39,20 @@ UPDATE workspace_styles
 SET localizations = $2, updated_by = $3, updated_at = $4
 WHERE workspace_id = $1;
 
+-- name: WorkspaceDraftLanguages :many
+-- The languages the workspace's surveys are being translated into, as
+-- their drafts hold them: the languages the account's style is offered
+-- in for translating.
+SELECT DISTINCT lang::text
+FROM survey_drafts d
+JOIN surveys s ON s.id = d.survey_id
+CROSS JOIN LATERAL jsonb_object_keys(
+    CASE WHEN jsonb_typeof(d.structure -> 'localizations') = 'object'
+         THEN d.structure -> 'localizations' ELSE '{}'::jsonb END
+) AS lang
+WHERE s.workspace_id = $1 AND s.deleted_at IS NULL
+ORDER BY lang;
+
 -- name: CreateWorkspaceImage :exec
 -- The same upload twice is one row.
 INSERT INTO workspace_images (workspace_id, sha256, content_type, width, height, size_bytes, bytes, created_at)

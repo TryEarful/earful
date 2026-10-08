@@ -55,6 +55,14 @@ func (s *server) accountPage(w http.ResponseWriter, r *http.Request) {
 			"Tier":   say(r, tierMessage(usage.Tier)),
 		})
 	}
+	// The account's style in a line, with the way to it (ADR-0023).
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
+	data.Style = account.Style
+	data.StyleHasWords = account.HasWords()
 	render(w, r, http.StatusOK, templates.Account(info.Email, info.WorkspaceName, info.CSRFToken, data))
 }
 

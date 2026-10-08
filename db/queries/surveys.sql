@@ -19,6 +19,12 @@ WHERE workspace_id = $1 AND origin = 'starter' AND deleted_at IS NULL;
 SELECT * FROM surveys
 WHERE id = $1 AND workspace_id = $2 AND deleted_at IS NULL;
 
+-- name: SurveyBelongsToWorkspace :one
+-- Whether a survey is the workspace's, deleted or not: a survey deleted
+-- since a page listed it is the workspace's to leave alone, where one of
+-- another workspace is not found.
+SELECT EXISTS (SELECT 1 FROM surveys WHERE id = $1 AND workspace_id = $2);
+
 -- name: ListSurveysForWorkspace :many
 SELECT s.*,
        -- coalesce+cast so sqlc infers a concrete type (a bare max() over

@@ -175,7 +175,7 @@ templ SurveyEditor(email string, workspaceName string, csrf string, data SurveyE
 			}
 			@thanksPanel(csrf, data.Survey.ID, data.Thanks)
 			if !data.Survey.Published() || data.DraftChanged {
-				@publishPanel(csrf, data.Survey, len(data.Questions), data.DraftChanged)
+				@publishPanel(csrf, data)
 			}
 			@versionsPanel(data.Survey, data.Versions, data.DraftChanged)
 			@settingsPanel(csrf, data.Survey)
@@ -479,24 +479,30 @@ templ thanksPanel(csrf string, surveyID string, thanks ThanksFormView) {
 	</section>
 }
 
-templ publishPanel(csrf string, survey SurveyView, questionCount int, changed bool) {
+templ publishPanel(csrf string, data SurveyEditorData) {
 	<section class="card js-panel">
 		<h2>{ t(ctx, "editor.publish.heading") }</h2>
-		switch {
-			case questionCount == 0:
+		switch  {
+			case len(data.Questions) == 0:
 				<p class="muted">{ t(ctx, "editor.publish.empty") }</p>
-			case !changed:
-				<p class="muted">{ t(ctx, "editor.publish.current", uitext.Args{"Version": survey.LatestVersion}) }</p>
+			case !data.DraftChanged:
+				<p class="muted">{ t(ctx, "editor.publish.current", uitext.Args{"Version": data.Survey.LatestVersion}) }</p>
 			default:
-				if survey.Published() {
-					<p>{ t(ctx, "editor.publish.live", uitext.Args{"Version": survey.LatestVersion}) }</p>
+				if data.Survey.Published() {
+					<p>{ t(ctx, "editor.publish.live", uitext.Args{"Version": data.Survey.LatestVersion}) }</p>
+					if data.AccountStyleChanged {
+						<p class="js-account-style-changed">{ t(ctx, "editor.publish.account_style") }</p>
+					}
 				} else {
 					<p>{ t(ctx, "editor.publish.never") }</p>
 				}
-				<form method="post" action={ templ.SafeURL("/surveys/" + survey.ID + "/publish") }>
+				if data.BlockedLanguageCode != "" {
+					<p><a class="button secondary js-account-style-blocked" href={ templ.SafeURL("/account/style/languages#lang-" + data.BlockedLanguageCode) }>{ t(ctx, "editor.publish.account_translate", uitext.Args{"Language": data.BlockedLanguage}) }</a></p>
+				}
+				<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/publish") }>
 					<input type="hidden" name="_csrf" value={ csrf }/>
 					<button type="submit">
-						{ t(ctx, "editor.publish.submit.label", uitext.Args{"Version": survey.LatestVersion + 1}) }
+						{ t(ctx, "editor.publish.submit.label", uitext.Args{"Version": data.Survey.LatestVersion + 1}) }
 					</button>
 				</form>
 		}
@@ -635,22 +641,37 @@ templ SurveyAudit(email string, workspaceName string, csrf string, data SurveyAu
 // it is published.
 templ surveyTabs(survey SurveyView, current string) {
 	<nav class="tabs" aria-label={ t(ctx, "tabs.aria") }>
-		<a href={ templ.SafeURL("/surveys/" + survey.ID) } if current == "questions" {
-	aria-current="page"
-}>{ t(ctx, "tabs.questions") }</a>
+		<a
+			href={ templ.SafeURL("/surveys/" + survey.ID) }
+			if current == "questions" {
+				aria-current="page"
+			}
+		>{ t(ctx, "tabs.questions") }</a>
 		if survey.LatestVersion > 0 {
-			<a href={ templ.SafeURL("/surveys/" + survey.ID + "/results") } if current == "results" {
-	aria-current="page"
-}>{ t(ctx, "tabs.answers") }</a>
-			<a href={ templ.SafeURL("/surveys/" + survey.ID + "/stats") } if current == "stats" {
-	aria-current="page"
-}>{ t(ctx, "tabs.stats") }</a>
+			<a
+				href={ templ.SafeURL("/surveys/" + survey.ID + "/results") }
+				if current == "results" {
+					aria-current="page"
+				}
+			>{ t(ctx, "tabs.answers") }</a>
+			<a
+				href={ templ.SafeURL("/surveys/" + survey.ID + "/stats") }
+				if current == "stats" {
+					aria-current="page"
+				}
+			>{ t(ctx, "tabs.stats") }</a>
 		}
-		<a href={ templ.SafeURL("/surveys/" + survey.ID + "/localizations") } if current == "languages" {
-	aria-current="page"
-}>{ t(ctx, "tabs.languages") }</a>
-		<a href={ templ.SafeURL("/surveys/" + survey.ID + "/style") } if current == "style" {
-	aria-current="page"
-}>{ t(ctx, "tabs.style") }</a>
+		<a
+			href={ templ.SafeURL("/surveys/" + survey.ID + "/localizations") }
+			if current == "languages" {
+				aria-current="page"
+			}
+		>{ t(ctx, "tabs.languages") }</a>
+		<a
+			href={ templ.SafeURL("/surveys/" + survey.ID + "/style") }
+			if current == "style" {
+				aria-current="page"
+			}
+		>{ t(ctx, "tabs.style") }</a>
 	</nav>
 }

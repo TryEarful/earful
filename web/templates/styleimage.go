@@ -69,3 +69,15 @@ func (f styleImageFieldData) describedBy(problem bool) string {
 	}
 	return f.hintID()
 }
+
+// styleSwitch names the parts of a survey's header or footer switch:
+// the field it posts, the marker beside it, and the ids that tie the
+// switch to the heading that labels it and the hint that describes it.
+type styleSwitch string
+
+func (s styleSwitch) field() string     { return "custom_" + string(s) }
+func (s styleSwitch) offered() string   { return string(s) + "_offered" }
+func (s styleSwitch) hook() string      { return "js-custom-" + string(s) }
+func (s styleSwitch) id() string        { return "style-" + string(s) + "-switch" }
+func (s styleSwitch) headingID() string { return "style-" + string(s) + "-heading" }
+func (s styleSwitch) hintID() string    { return "style-" + string(s) + "-hint" }

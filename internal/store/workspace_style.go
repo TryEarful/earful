@@ -96,6 +96,61 @@ func (s *Surveys) SaveWorkspaceStyle(ctx context.Context, workspaceID, userID uu
 	return tx.Commit(ctx)
 }
 
+// SaveWorkspaceStyleTranslation changes the account style's words in one
+// language, reading the style afresh under its row's hold so that the
+// translation is checked against the wording it is saved beside: change
+// is called with the account's style as it stands and changes it in
+// place. A workspace with no account style has nothing to translate and
+// is refused with ErrNotFound.
+func (s *Surveys) SaveWorkspaceStyleTranslation(ctx context.Context, workspaceID, userID uuid.UUID, now time.Time, change func(*domain.WorkspaceStyle) error) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("store: begin save workspace style languages: %w", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
+	q := s.q.WithTx(tx)
+
+	if _, err := q.LockWorkspaceStyle(ctx, workspaceID); errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	} else if err != nil {
+		return fmt.Errorf("store: hold workspace style: %w", err)
+	}
+	row, err := q.GetWorkspaceStyle(ctx, workspaceID)
+	if err != nil {
+		return fmt.Errorf("store: get workspace style: %w", err)
+	}
+	current, err := workspaceStyleFrom(row.Style, row.Localizations, row.UpdatedAt)
+	if err != nil {
+		return err
+	}
+	if err := change(&current); err != nil {
+		return err
+	}
+	encoded := []byte("{}")
+	if len(current.Localizations) > 0 {
+		if encoded, err = json.Marshal(current.Localizations); err != nil {
+			return fmt.Errorf("store: encode workspace style languages: %w", err)
+		}
+	}
+	user := uuid.NullUUID{UUID: userID, Valid: userID != uuid.Nil}
+	if err := q.UpdateWorkspaceStyleLocalizations(ctx, db.UpdateWorkspaceStyleLocalizationsParams{
+		WorkspaceID: workspaceID, Localizations: encoded, UpdatedBy: user, UpdatedAt: now,
+	}); err != nil {
+		return fmt.Errorf("store: update workspace style languages: %w", err)
+	}
+	return tx.Commit(ctx)
+}
+
+// WorkspaceDraftLanguages are the languages the workspace's surveys are
+// being translated into, as their drafts hold them, in order.
+func (s *Surveys) WorkspaceDraftLanguages(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {
+	langs, err := s.q.WorkspaceDraftLanguages(ctx, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("store: list workspace draft languages: %w", err)
+	}
+	return langs, nil
+}
+
 // saveWorkspaceImage stores one of an account's pictures through q,
 // inside the caller's transaction, keeping the pictures in keep whatever
 // the limit.

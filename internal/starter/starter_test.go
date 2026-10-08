@@ -38,7 +38,7 @@ func TestSurvey_CanBePublishedAsItIs(t *testing.T) {
 	if err := draft.ValidateForPublish(); err != nil {
 		t.Errorf("the questions cannot be published: %v", err)
 	}
-	if err := draft.ReadyToPublish(); err != nil {
+	if err := draft.ReadyToPublish(domain.WorkspaceStyle{}); err != nil {
 		t.Errorf("the translation cannot be published: %v", err)
 	}
 	if got := len(draft.Questions); got != 5 {

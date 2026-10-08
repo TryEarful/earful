@@ -54,6 +54,9 @@ func TestAccountStyle_SavedAndShownToItsOwner(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || !bodyContains(page, "Account style saved") {
 		t.Fatalf("saving: status %d\n%s", resp.StatusCode, page)
 	}
+	// The open surveys that follow the account's style are asked about
+	// first; the style itself is on its page.
+	page = mustGet(t, creator, app.Server.URL+"/account/style")
 	for _, want := range []string{"Corner Workshop", "Evening classes in wood and clay.", "https://example.com/privacy", "Privacy notice"} {
 		if !bodyContains(page, want) {
 			t.Errorf("the saved style does not show %q", want)
@@ -110,6 +113,7 @@ func TestAccountStyle_APartLeftOutIsKept(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("saving the theme: status %d\n%s", resp.StatusCode, page)
 	}
+	page = mustGet(t, creator, app.Server.URL+"/account/style")
 	if !regexp.MustCompile(`value="forest" checked`).MatchString(page) {
 		t.Errorf("the theme did not change")
 	}

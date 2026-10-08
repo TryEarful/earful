@@ -2,9 +2,9 @@
 title: Ayuda
 short_title: Ayuda
 sections: cards
-hash: sha256-8a71a0dbe5432e458731d91cb42d5fc301827bd84246cd2b82de6b1f9f1a33d2
-last_update: 2026-10-02
-source_hash: sha256-3cbc6a3730411521fb954c067a1099e255c75169fad9fc242f03d804a0c92fb9
+hash: sha256-9c9b4890ee05a94ea6c82c147d7bd39891ae1c382bee01a928577f79c32de1c5
+last_update: 2026-10-03
+source_hash: sha256-8c8ae833c3251d98681b0e6077091c67bb8aaa3623612fc8f1aaf879967cf7f4
 ---
 
 Respuestas breves a lo que más se pregunta. **¿Va a responder una encuesta?** Consulte [responder una encuesta](#responder-una-encuesta). **¿Va a crear una?** [Créela](#crear-una-encuesta), [dele su propio aspecto](#darle-su-propio-aspecto), [publíquela y compártala](#publicar-y-compartir) y después [lea las respuestas](#leer-las-respuestas).
@@ -19,6 +19,8 @@ Respuestas breves a lo que más se pregunta. **¿Va a responder una encuesta?** 
 ## Darle su propio aspecto
 
 En la pestaña **Estilo** de la encuesta, elija un tema para las páginas en las que se responde: Earful, Pizarra, Océano o Bosque. Cada persona lo ve en modo claro u oscuro, según prefiera. Añada un encabezado con el nombre de su organización, una línea sobre ella y hasta tres enlaces, con una imagen ancha en lo alto y su logotipo. Añada un pie con su propio texto y enlaces, y elija la imagen de la página de agradecimiento. Quienes responden ven el estilo cuando usted publica; hasta entonces, la **Vista previa** lo muestra. Use solo un logotipo que tenga derecho a usar.
+
+Para definir el aspecto una sola vez para todas sus encuestas, abra **Cuenta** y elija **Editar el estilo de la cuenta**. Cada encuesta sigue el estilo de su cuenta hasta que usted cambie una parte en su propia pestaña **Estilo**. Los interruptores junto a **Encabezado** y **Pie de página** quitan el encabezado o el pie de una encuesta, y **Volver al estilo de la cuenta** recupera el de la cuenta. Un cambio en el estilo de su cuenta llega a una encuesta la próxima vez que la publique, o en ese momento, si elige **Actualizar** cuando Earful le pregunte por las encuestas abiertas que lo muestran: cada una recibe una versión nueva, y lo que no haya publicado en ellas sigue sin publicar. Traduzca sus textos una sola vez, desde **Traducir el estilo de la cuenta** en esa página.
 
 ## Publicar y compartir
 

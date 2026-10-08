@@ -14,34 +14,54 @@ import (
 // not save again.
 func (s *server) surveyStylePage(w http.ResponseWriter, r *http.Request) {
 	notice := ""
-	if r.URL.Query().Get("notice") == "saved" {
+	switch r.URL.Query().Get("notice") {
+	case "saved":
 		notice = say(r, "style.notice.saved")
+	case "reset":
+		notice = say(r, "style.notice.reset")
 	}
 	s.renderSurveyStyle(w, r, nil, nil, notice, false)
 }
 
-// renderSurveyStyle draws the Style tab. typed is what the creator
-// entered when the save was refused, shown again in place of the draft's
-// style so that nothing has to be typed twice, and problem is why. A
-// file is the one thing a refused form cannot hand back: filesLost says
-// one was chosen, so the page can say to choose it again.
+// renderSurveyStyle draws the Style tab. Its fields hold the style the
+// survey's pages would be drawn in, its own parts laid over its
+// account's (ADR-0023), so a creator changes what they see. typed is
+// what the creator entered when the save was refused, shown again in
+// place of the draft's style so that nothing has to be typed twice, and
+// problem is why. A file is the one thing a refused form cannot hand
+// back: filesLost says one was chosen, so the page can say to choose it
+// again.
 func (s *server) renderSurveyStyle(w http.ResponseWriter, r *http.Request, typed *domain.Style, problem error, notice string, filesLost bool) {
 	info, _ := authFrom(r.Context())
 	survey, draft, ok := s.loadSurveyAndDraft(w, r)
 	if !ok {
 		return
 	}
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
 	data := templates.StyleData{
-		Survey:    viewSurvey(text(r), survey, s.clock.Now()),
-		StyleForm: templates.StyleForm{Style: draft.Style},
-		Notice:    notice,
+		Survey: viewSurvey(text(r), survey, s.clock.Now()),
+		StyleForm: templates.StyleForm{
+			Style: draft.FormStyle(account.Style),
+			Choice: &templates.StyleChoiceView{
+				Own:        draft.OwnParts(),
+				NoHeader:   draft.StyleChoice.NoHeader,
+				NoFooter:   draft.StyleChoice.NoFooter,
+				HasAccount: !account.Style.IsZero(),
+			},
+		},
+		Notice: notice,
 	}
 	status := http.StatusOK
 	if problem != nil {
 		status = http.StatusUnprocessableEntity
 		data.StyleForm = refusedStyleForm(r, data.StyleForm, typed, problem, filesLost)
 	}
-	// The tab shows the draft's pictures, which no version may show yet.
+	// The tab shows the draft's pictures, which no version may show yet,
+	// and its account's where it follows them.
 	r = r.WithContext(templates.WithStyleImages(r.Context(), draftStyleImages(survey.ID)))
 	render(w, r, status, templates.SurveyStyle(info.Email, info.WorkspaceName, info.CSRFToken, data))
 }
@@ -86,21 +106,46 @@ func styleErrorPlace(e domain.StyleError) uitext.ID {
 // under somebody who is answering it. A refused style leaves the draft
 // as it was.
 //
-// The form's fields are laid over the draft's style, part by part, so
-// that a part of the style this form does not carry is kept.
+// The form's fields are laid over the style it showed, part by part, so
+// that a part of the style this form does not carry is kept. Each part
+// it carries is then the survey's own where it differs from the
+// account's, and the account's to follow where it does not (ADR-0023).
+// "Reset to account style" is the form's second button: it reads no
+// field, so a form with a problem in it can still be reset.
 func (s *server) surveyStyleSave(w http.ResponseWriter, r *http.Request) {
 	info, _ := authFrom(r.Context())
 	survey, draft, ok := s.loadSurveyAndDraft(w, r)
 	if !ok {
 		return
 	}
-	style, err := styleFromForm(r, draft.Style)
-	style, pictures, pictureErr := s.stylePicturesFromForm(r, style)
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
+	_ = r.ParseForm()
+	if r.PostFormValue("style_action") == "reset" {
+		draft.ResetStyle()
+		if err := s.surveys.SaveStyle(r.Context(), survey.ID, info.UserID, draft, nil, s.clock.Now()); err != nil {
+			s.internalError(w, r, "reset style", err)
+			return
+		}
+		http.Redirect(w, r, "/surveys/"+survey.ID.String()+"/style?notice=reset", http.StatusSeeOther)
+		return
+	}
+
+	header, footer := shownPart(r, "header"), shownPart(r, "footer")
+	// A header or a footer turned off is not read: what it held stays as
+	// it was, for when it is turned on again, and a problem in it cannot
+	// refuse the save.
+	skip := domain.StyleParts{Header: header != nil && !*header, Footer: footer != nil && !*footer}
+	style, err := styleFromForm(r, draft.FormStyle(account.Style), skip)
+	style, pictures, pictureErr := s.stylePicturesFromForm(r, style, skip)
 	if err == nil {
 		err = pictureErr
 	}
 	if err == nil {
-		err = draft.SetStyle(style)
+		err = draft.SetStyleFromForm(account, style, styleCarried(r, skip), header, footer)
 	}
 	// The pictures are stored only once the whole style is accepted, and
 	// with the draft that refers to them, in one transaction.
@@ -123,13 +168,38 @@ func (s *server) surveyStyleSave(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/surveys/"+survey.ID.String()+"/style?notice=saved", http.StatusSeeOther)
 }
 
+// shownPart reads the Style tab's "Custom header" or "Custom footer" box.
+// An unticked box posts nothing, so each section posts a marker beside
+// it: where the marker is there and the box is not, the box was
+// unticked. A form without the marker, such as one drawn before the box
+// existed, says nothing, and nil leaves the survey as it was.
+func shownPart(r *http.Request, part string) *bool {
+	if !r.PostForm.Has(part + "_offered") {
+		return nil
+	}
+	shown := r.PostForm.Has("custom_" + part)
+	return &shown
+}
+
+// styleCarried names the parts of the style the form carried, as
+// styleFromForm and stylePicturesFromForm read them, less the parts not
+// read.
+func styleCarried(r *http.Request, skip domain.StyleParts) domain.StyleParts {
+	return domain.StyleParts{
+		Theme:  r.PostForm.Has("theme"),
+		Header: !skip.Header && (r.PostForm.Has("header_name") || r.PostForm.Has(logoAltField)),
+		Footer: !skip.Footer && r.PostForm.Has("footer_text"),
+		Thanks: r.PostForm.Has(thanksPictureField) || r.PostForm.Has(thanksAltField),
+	}
+}
+
 // styleFromForm lays the Style tab's form over the style it edits. A
-// part is read only where the form carries it: the tab posts every part
-// it draws, and a form that carries fewer, such as one drawn before a
-// part existed, leaves the others as they are rather than emptying
-// them. The style is returned as typed whether or not it is refused,
-// with the first problem found.
-func styleFromForm(r *http.Request, current domain.Style) (domain.Style, error) {
+// part is read only where the form carries it, and not where skip names
+// it: the tab posts every part it draws, and a form that carries fewer,
+// such as one drawn before a part existed, leaves the others as they are
+// rather than emptying them. The style is returned as typed whether or
+// not it is refused, with the first problem found.
+func styleFromForm(r *http.Request, current domain.Style, skip domain.StyleParts) (domain.Style, error) {
 	style := current
 	// A form with files is multipart and was parsed on the way in
 	// (readUploads); a form without is parsed here.
@@ -147,7 +217,7 @@ func styleFromForm(r *http.Request, current domain.Style) (domain.Style, error) 
 		style, err = style.WithTheme(r.PostFormValue("theme"))
 		keep(err)
 	}
-	if r.PostForm.Has("header_name") {
+	if r.PostForm.Has("header_name") && !skip.Header {
 		var words domain.StyleHeader
 		words, err = domain.NewStyleHeader(
 			r.PostFormValue("header_name"), r.PostFormValue("header_tagline"),
@@ -157,7 +227,7 @@ func styleFromForm(r *http.Request, current domain.Style) (domain.Style, error) 
 		style.Header = style.Header.WithWords(words)
 		keep(err)
 	}
-	if r.PostForm.Has("footer_text") {
+	if r.PostForm.Has("footer_text") && !skip.Footer {
 		style.Footer, err = domain.NewStyleFooter(
 			r.PostFormValue("footer_text"),
 			formLinks(r, "footer_link_label", "footer_link_url"))

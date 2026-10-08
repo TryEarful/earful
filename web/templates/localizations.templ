@@ -20,14 +20,12 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 			<p class="muted">
 				{ t(ctx, "languages.intro") }
 			</p>
-
 			if data.Error != "" {
 				<p class="notice error-text" role="alert">{ data.Error }</p>
 			}
 			if data.Notice != "" {
 				<p class="notice" role="status">{ data.Notice }</p>
 			}
-
 			<section class="card js-panel">
 				<h2>{ t(ctx, "languages.add.heading") }</h2>
 				<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations") }>
@@ -44,7 +42,6 @@ templ Localizations(email string, workspaceName string, csrf string, data Locali
 					<p class="muted">{ t(ctx, "languages.add.empty") }</p>
 				}
 			</section>
-
 			for _, lang := range data.Languages {
 				@languagePanel(csrf, data, lang)
 			}
@@ -65,9 +62,8 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 			}
 		</div>
 		<p class="muted">{ t(ctx, "languages.status.progress", uitext.Args{"Reviewed": lang.Reviewed, "Total": lang.Total, "Blocked": !lang.Ready}) }</p>
-
 		<div class="button-row">
-			if data.CanTranslate {
+			if data.CanTranslate && !lang.Ready {
 				<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations/" + lang.Code + "/draft") }>
 					<input type="hidden" name="_csrf" value={ csrf }/>
 					<button type="submit" class="secondary">{ t(ctx, "languages.draft.label") }</button>
@@ -78,7 +74,6 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 				<button type="submit" class="button-link danger">{ t(ctx, "languages.remove.label", uitext.Args{"Language": lang.Name}) }</button>
 			</form>
 		</div>
-
 		<form method="post" action={ templ.SafeURL("/surveys/" + data.Survey.ID + "/localizations/" + lang.Code) }>
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<ol class="translations">
@@ -110,6 +105,9 @@ templ languagePanel(csrf string, data LocalizationsData, lang LanguageView) {
 			}
 			if lang.Style != nil {
 				@styleTranslation(lang)
+			}
+			if lang.AccountStyle != nil {
+				@accountStyleRow(lang)
 			}
 			<button type="submit">{ t(ctx, "languages.save.label") }</button>
 		</form>
@@ -156,6 +154,21 @@ templ styleTranslation(lang LanguageView) {
 			<p class="muted">{ t(ctx, "languages.question.unreviewed") }</p>
 		}
 		@styleWordsFields(lang.Name, *lang.Style)
+	</div>
+}
+
+// accountStyleRow is the words the survey shows from its account's style
+// (ADR-0023). They are translated once, on the account, so here they are
+// a state and a way there rather than fields.
+templ accountStyleRow(lang LanguageView) {
+	<div class="js-account-style-row">
+		<h3>{ t(ctx, "languages.account_style.heading") }</h3>
+		if lang.AccountStyle.Pending {
+			<p class="muted">{ t(ctx, "languages.account_style.pending", uitext.Args{"Language": lang.Name}) }</p>
+			<p><a class="button secondary js-account-style-translate" href={ templ.SafeURL("/account/style/languages#lang-" + lang.Code) }>{ t(ctx, "languages.account_style.link") }</a></p>
+		} else {
+			<p class="muted">{ t(ctx, "languages.account_style.ready", uitext.Args{"Language": lang.Name}) }</p>
+		}
 	</div>
 }
 

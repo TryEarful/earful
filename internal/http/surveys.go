@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"errors"
 	"github.com/TryEarful/earful/internal/uitext"
 	"net/http"
@@ -117,6 +118,10 @@ func (s *server) renderSurveyPage(w http.ResponseWriter, r *http.Request, errMsg
 	s.renderSurveyEditor(w, r, errMsg, notice, nil, "")
 }
 
+// editorBlockedLanguage is the context key under which a refused publish
+// names the language its account's style is not reviewed in.
+type editorBlockedLanguage struct{}
+
 // renderEditor is renderSurveyPage with the drafting panel's prompt
 // filled in, for a refused run that hands back what was typed.
 func (s *server) renderEditor(w http.ResponseWriter, r *http.Request, errMsg, notice, generatePrompt string) {
@@ -144,20 +149,26 @@ func (s *server) renderSurveyEditor(w http.ResponseWriter, r *http.Request, errM
 		return
 	}
 
-	changed, err := s.surveys.HasUnpublishedChanges(r.Context(), survey.ID, draft)
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
+	changed, err := s.surveys.HasUnpublishedChanges(r.Context(), survey.ID, draft, account)
 	if err != nil {
 		s.internalError(w, r, "compare draft", err)
 		return
 	}
 
 	data := templates.SurveyEditorData{
-		Origin:        s.cfg.BaseURL,
-		DraftChanged:  changed,
-		Survey:        viewSurvey(text(r), survey, s.clock.Now()),
-		Questions:     draft.Questions,
-		Versions:      viewVersions(text(r), versions),
-		ResponseCount: responses,
-		AIEnabled:     s.canGenerate(),
+		Origin:              s.cfg.BaseURL,
+		DraftChanged:        changed.Changed,
+		AccountStyleChanged: changed.AccountStyleOnly,
+		Survey:              viewSurvey(text(r), survey, s.clock.Now()),
+		Questions:           draft.Questions,
+		Versions:            viewVersions(text(r), versions),
+		ResponseCount:       responses,
+		AIEnabled:           s.canGenerate(),
 		Thanks: templates.ThanksFormView{
 			Message:   draft.Thanks.Message,
 			LinkLabel: draft.Thanks.LinkLabel,
@@ -169,6 +180,9 @@ func (s *server) renderSurveyEditor(w http.ResponseWriter, r *http.Request, errM
 	}
 	if thanks != nil {
 		data.Thanks = *thanks
+	}
+	if lang, ok := r.Context().Value(editorBlockedLanguage{}).(string); ok {
+		data.BlockedLanguage, data.BlockedLanguageCode = languageName(text(r), lang), lang
 	}
 	if !survey.IsAnonymous {
 		participants, err := s.surveys.Participants(r.Context(), survey.ID)
@@ -320,6 +334,11 @@ func (s *server) surveyPublish(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/surveys/"+survey.ID.String()+"?notice=unchanged", http.StatusSeeOther)
 		return
 	case isUserError(err):
+		// A language the account's style is not read in is translated on
+		// the account, so the editor links there.
+		if lang, ok := domain.IsAccountStyleTranslationError(err); ok {
+			r = r.WithContext(context.WithValue(r.Context(), editorBlockedLanguage{}, lang))
+		}
 		s.renderSurveyPage(w, r, sayErrorAlone(r, err), "")
 		return
 	case err != nil:

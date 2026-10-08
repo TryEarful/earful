@@ -47,6 +47,8 @@ func (s *server) refuseWhileSuspended(refused uitext.ID, next http.Handler) http
 			back := "/dashboard"
 			if id, err := uuid.Parse(r.PathValue("surveyID")); err == nil {
 				back = "/surveys/" + id.String()
+			} else if strings.HasPrefix(r.URL.Path, "/account/style") {
+				back = "/account/style"
 			}
 			// The page says what the notice would, and whom to ask, so it
 			// goes without.

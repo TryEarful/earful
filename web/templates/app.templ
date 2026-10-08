@@ -13,15 +13,25 @@ templ AuthedHeader(email string, csrf string) {
 	<header class="site-header js-site-header">
 		@lockup("/dashboard")
 		<nav aria-label={ t(ctx, "header.nav.aria") }>
-			<a href="/dashboard" if currentPath(ctx) == "/dashboard" {
-	aria-current="page"
-}>{ t(ctx, "header.dashboard.label") }</a>
-			<a href="/help" if currentPath(ctx) == "/help" {
-	aria-current="page"
-}>{ t(ctx, "header.help.label") }</a>
-			<a href="/account" title={ email } if currentPath(ctx) == "/account" {
-	aria-current="page"
-}>{ t(ctx, "header.account.label") }</a>
+			<a
+				href="/dashboard"
+				if currentPath(ctx) == "/dashboard" {
+					aria-current="page"
+				}
+			>{ t(ctx, "header.dashboard.label") }</a>
+			<a
+				href="/help"
+				if currentPath(ctx) == "/help" {
+					aria-current="page"
+				}
+			>{ t(ctx, "header.help.label") }</a>
+			<a
+				href="/account"
+				title={ email }
+				if accountCurrent(ctx) != "" {
+					aria-current={ accountCurrent(ctx) }
+				}
+			>{ t(ctx, "header.account.label") }</a>
 			<form method="post" action="/logout">
 				<input type="hidden" name="_csrf" value={ csrf }/>
 				<button type="submit" class="button-link">{ t(ctx, "header.sign_out.label") }</button>
@@ -221,6 +231,20 @@ templ Account(email string, workspaceName string, csrf string, data AccountData)
 					}
 					<button type="submit" class="secondary">{ t(ctx, "account.workspace.submit") }</button>
 				</form>
+			</div>
+			<div class="card js-panel js-account-style-card">
+				<h2>{ t(ctx, "account.style.card.heading") }</h2>
+				if data.Style.IsZero() {
+					<p>{ t(ctx, "account.style.card.none") }</p>
+				} else {
+					<p>{ t(ctx, "account.style.card.summary", uitext.Args{"Theme": t(ctx, themeName(data.Style.ThemeName())), "Header": !data.Style.Header.IsZero(), "Footer": !data.Style.Footer.IsZero()}) }</p>
+				}
+				<p class="button-row">
+					<a class="button secondary js-account-style-edit" href="/account/style">{ t(ctx, "account.style.card.edit") }</a>
+					if data.StyleHasWords {
+						<a class="button secondary" href="/account/style/languages">{ t(ctx, "account.style.languages.link") }</a>
+					}
+				</p>
 			</div>
 			@workspaceExport(csrf, data.Export)
 			<div class="card js-panel">

@@ -122,7 +122,6 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 			<p class="muted">
 				{ t(ctx, "admin.erasure.intro") }
 			</p>
-
 			if data.Done {
 				<div class="card js-panel">
 					<p class="notice">{ t(ctx, "admin.erasure.done", uitext.Args{"Rows": data.ErasedRow}) }</p>
@@ -131,7 +130,6 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 					</p>
 				</div>
 			}
-
 			<div class="card js-panel">
 				<h2>{ t(ctx, "admin.erasure.find.heading") }</h2>
 				<form method="get" action="/admin/erasure">
@@ -142,7 +140,6 @@ templ AdminErasure(email string, csrf string, data ErasureData) {
 					<button type="submit" class="secondary">{ t(ctx, "admin.erasure.find.submit.label") }</button>
 				</form>
 			</div>
-
 			if data.Searched {
 				<div class="card js-panel">
 					<h2>{ t(ctx, "admin.erasure.found.heading") }</h2>
@@ -260,7 +257,6 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 			<p class="muted">
 				@thtml(ctx, "admin.metrics.intro_html")
 			</p>
-
 			<section class="card js-panel">
 				<h2>{ t(ctx, "admin.metrics.totals") }</h2>
 				<dl class="stat-grid">
@@ -272,10 +268,8 @@ templ AdminMetrics(email string, csrf string, data MetricsData) {
 					}
 				</dl>
 			</section>
-
 			@metricSeries(t(ctx, "admin.metrics.signups"), data.Signups, data.WindowDays)
 			@metricSeries(t(ctx, "admin.metrics.responses"), data.Responses, data.WindowDays)
-
 			<section class="card js-panel">
 				<h2>{ t(ctx, "admin.metrics.spend.heading") }</h2>
 				<p class="muted">{ data.BudgetNote }</p>

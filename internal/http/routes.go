@@ -109,6 +109,17 @@ func (s *server) registerRoutes(mux *http.ServeMux) {
 	get("/account/style", s.accountStylePage)
 	styleUpload("/account/style", s.accountStyleSave)
 	get("/account/style-image/{sha256}", s.accountStyleImage)
+	// A change to it can be applied now to the surveys open now, each
+	// published again from its live version, which a suspended workspace
+	// may not do.
+	get("/account/style/apply", s.accountStyleApplyPage)
+	held("/account/style/apply", uitext.ID("suspension.held.apply"), s.accountStyleApply)
+	// Its words are translated once, here, for every survey that follows
+	// it, and reviewed as a survey's Languages tab reviews them.
+	get("/account/style/languages", s.accountStyleLanguagesPage)
+	post("/account/style/languages/{lang}", s.accountStyleTranslationSave)
+	post("/account/style/languages/{lang}/draft", s.accountStyleTranslationDraft)
+	post("/account/style/languages/{lang}/remove", s.accountStyleTranslationRemove)
 	// Workspace export (M7-T3): the "leave anytime" promise. The download
 	// needs a session in the owning workspace, so the link is not a
 	// bearer capability — and it expires anyway.

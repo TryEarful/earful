@@ -2,6 +2,7 @@ package templates
 
 import (
 	"context"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -66,6 +67,19 @@ func currentPath(ctx context.Context) string {
 		return "/"
 	}
 	return path
+}
+
+// accountCurrent is how the header's Account item marks where the reader
+// is: "page" on the account page itself, "true" on a page inside the
+// account (its style, its translations), and "" elsewhere.
+func accountCurrent(ctx context.Context) string {
+	switch path := currentPath(ctx); {
+	case path == "/account":
+		return "page"
+	case strings.HasPrefix(path, "/account/"):
+		return "true"
+	}
+	return ""
 }
 
 type modeKey struct{}

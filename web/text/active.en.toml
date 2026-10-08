@@ -261,14 +261,108 @@ label = "Delete my account"
 title = "Account style · Earful"
 heading = "Account style"
 crumb = "Style"
-intro = "How your surveys look to the people answering them, unless a survey changes it on its own Style tab. A survey takes a change the next time it is published."
+intro = "The style your surveys follow, unless a survey changes it on its own Style tab. A survey takes a change the next time it is published."
 header_hint = "Shown above every survey that follows your account style, so people know who is asking. Leave it all empty for no header."
+footer_hint = "Shown below every survey that follows your account style. Good for a legal name, a postal address or a privacy notice."
 
 [account.style.save]
 label = "Save account style"
 
 [account.style.notice]
-saved = "Account style saved. Each survey takes it the next time it is published."
+saved = "Account style saved."
+
+[account.style.card]
+heading = "Style"
+none = "Your surveys use Earful's own look until you set an account style."
+summary = "{{.Theme}} theme{{if .Header}}, with a header{{if .Footer}} and a footer{{end}}{{else if .Footer}}, with a footer{{end}}. Every survey follows it, except for any part changed on that survey's own Style tab."
+edit = "Edit account style"
+
+[account.style.languages]
+link = "Translations"
+intro_link = "Translate your account style"
+title = "Account style translations · Earful"
+heading = "Account style translations"
+crumb = "Translations"
+intro = "The words of your account style in each language your surveys are translated into. Every survey that follows your account style uses them once they are reviewed."
+stale = "Your account style changed after this was translated. Read it again."
+
+[account.style.languages.empty]
+words = "Your account style has no words to translate yet. A tagline, footer text, links and picture descriptions appear here once you add them."
+back = "Back to account style"
+languages = "None of your surveys is translated yet. A language you add on a survey's Languages tab appears here."
+surveys = "Go to your surveys"
+
+[account.style.languages.status]
+pending = "To review"
+ready = "Surveys that follow your account style can use it in {{.Language}}."
+blocked = "Surveys that follow your account style can't be published in {{.Language}} until this is reviewed."
+unused = "None of your surveys is translated into {{.Language}} now, so you can remove it."
+
+[account.style.languages.draft]
+label = "Draft the translation with AI"
+
+[account.style.languages.notice]
+saved = "Saved and marked reviewed in {{.Language}}."
+drafted = "Drafted the translation in {{.Language}}. Read it and save it to mark it reviewed."
+
+[account.style.languages.error]
+unknown = "None of your surveys is translated into that language."
+nothing = "Your account style has no words to translate yet."
+blank = "Write the words in {{.Language}} before saving."
+carried = "A survey is translated into {{.Language}}, so its translation stays."
+
+[account.style.apply]
+title = "Update your surveys · Earful"
+heading = "Update your open surveys?"
+crumb = "Update surveys"
+blocked = "Needs your account style in {{.Language}} first."
+blocked_link = "Translate it"
+note = "Each survey you update gets a new version with your account style as it is now. Changes you haven't published in it stay unpublished. Later leaves each survey to take it when it is next published."
+later = "Later"
+back = "Back to account style"
+pictures = "It already holds {{.Limit}} pictures, the most it can, so it keeps its current look."
+picture_missing = "A picture of your account style is missing."
+picture_missing_link = "Choose it again"
+
+[account.style.apply.none_ready]
+one = "This survey can't be updated yet. What it needs is shown above."
+other = "No survey can be updated yet. What each one needs is shown above."
+
+[account.style.apply.intro]
+one = "1 open survey shows an earlier version of your account style:"
+other = "{{.Count}} open surveys show an earlier version of your account style:"
+
+[account.style.apply.submit]
+one = "Update this survey"
+other = "Update these {{.Count}} surveys"
+
+[account.style.apply.stale]
+one = "1 open survey shows an earlier version of your account style."
+other = "{{.Count}} open surveys show an earlier version of your account style."
+
+[account.style.apply.stale_link]
+one = "Update it"
+other = "Update them"
+
+[account.style.apply.stale_waiting_link]
+one = "See what it needs"
+other = "See what they need"
+
+[account.style.apply.chip]
+language = "Waiting for {{.Language}}"
+pictures = "No room for pictures"
+picture_missing = "Picture missing"
+
+[account.style.apply.notice]
+changed = "Your account style changed since you were asked. Check the list again."
+
+[account.style.apply.notice.applied]
+one = "1 survey updated."
+other = "{{.Count}} surveys updated."
+
+[account.style.apply.notice.changed_after]
+one = "1 survey was updated before your account style changed. Check the rest again."
+other = "{{.Count}} surveys were updated before your account style changed. Check the rest again."
 
 
 # ── Documents: the trust page, the terms, help ──────────────────────────
@@ -355,6 +449,12 @@ header_link = "Header link {{.Position}} in {{.Language}}"
 footer_link = "Footer link {{.Position}} in {{.Language}}"
 thanks_alt = "Thank you picture description in {{.Language}}"
 stale = "The header or footer changed after this was translated. Read it again."
+
+[languages.account_style]
+heading = "From your account style"
+pending = "The words this survey shows from your account style are not yet reviewed in {{.Language}}. They are translated once, on your account."
+ready = "The words this survey shows from your account style are reviewed in {{.Language}}."
+link = "Translate on your account"
 
 
 # ── The two views of a survey's answers ─────────────────────────────────
@@ -618,6 +718,8 @@ heading = "Publish"
 live = "Version {{.Version}} is live. Edits stay in the draft until you publish again."
 never = "Not published yet. Publishing opens the survey with these questions as version 1."
 empty = "Add a question to publish."
+account_style = "Your account style changed. Publish to apply it to this survey."
+account_translate = "Review your account style in {{.Language}}"
 
 [editor.publish.submit]
 label = "Publish version {{.Version}}"
@@ -677,6 +779,18 @@ title = "Style · {{.Survey}} · Earful"
 heading = "Style"
 intro = "How the survey looks to the people answering it. Changes go live with the next version you publish."
 
+[style.account]
+intro = "Every part starts from your account style. Changing anything in a part makes that whole part this survey's own."
+link = "Edit your account style"
+
+[style.source]
+own = "This survey's own"
+account = "From your account style"
+
+[style.reset]
+label = "Reset to account style"
+hint = "Every part goes back to your account style, and the header and footer are shown again. This survey's own parts are deleted and can't be brought back."
+
 [style.theme]
 heading = "Theme"
 hint = "The colours of the page, its button and its links. Each person still reads it in light or dark, whichever they use."
@@ -702,6 +816,7 @@ label = "Save style"
 
 [style.notice]
 saved = "Style saved. Respondents see it once you publish."
+reset = "Style reset. Every part follows your account style again. Respondents see it once you publish."
 
 [style.busy]
 title = "Your style wasn't saved"
@@ -710,7 +825,7 @@ back = "Back to the style"
 
 [style.header]
 heading = "Header"
-hint = "Shown above the survey, so people know who is asking. Leave it all empty for no header. Translate its words on the Languages tab."
+hint = "Shown above the survey, so people know who is asking. Turn it off for no header."
 name_html = 'Name <small class="muted">(optional, like your organisation)</small>'
 tagline_html = 'Tagline <small class="muted">(optional, a line or two)</small>'
 banner_html = 'Banner <small class="muted">(optional)</small>'
@@ -726,7 +841,7 @@ remove_thanks = "Remove the thank you picture"
 
 [style.footer]
 heading = "Footer"
-hint = "Shown below the survey. Good for a legal name, a postal address or a privacy notice."
+hint = "Shown below the survey, for a legal name, a postal address or a privacy notice. Turn it off for no footer."
 text_html = 'Text <small class="muted">(optional)</small>'
 
 [style.thanks]
@@ -769,6 +884,8 @@ thanks_picture = "choose one of the pictures offered"
 thanks_image = "choose an image to upload, or another picture"
 thanks_alt = "say what the picture shows, for people who cannot see it"
 thanks_alt_long = "keep the picture description under {{.Limit}} characters"
+account_words_changed = "your account style's words changed while this page was open, so read the new wording and save again"
+account_translation = "your account style is not yet reviewed in {{.Language}}, so review it on your account, or give this survey its own header, footer and thank you picture on its Style tab"
 
 [style.error.place]
 # Where on the Style tab a problem is, around the problem itself.
@@ -961,6 +1078,7 @@ back = "Back"
 publish = "Your survey wasn't published."
 reopen = "Your survey wasn't reopened."
 send = "Your invitations weren't sent."
+apply = "Your surveys weren't updated."
 
 
 # ── Support: metrics ───────────────────────────────────────────────────

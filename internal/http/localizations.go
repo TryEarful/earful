@@ -37,10 +37,15 @@ func (s *server) renderLocalizations(w http.ResponseWriter, r *http.Request, err
 	if !ok {
 		return
 	}
+	account, err := s.surveys.WorkspaceStyle(r.Context(), info.WorkspaceID)
+	if err != nil {
+		s.internalError(w, r, "load workspace style", err)
+		return
+	}
 	render(w, r, http.StatusOK, templates.Localizations(info.Email, info.WorkspaceName, info.CSRFToken,
 		templates.LocalizationsData{
 			Survey:       viewSurvey(text(r), survey, s.clock.Now()),
-			Languages:    viewLanguages(text(r), draft),
+			Languages:    viewLanguages(text(r), draft, account),
 			Questions:    draft.Questions,
 			CanTranslate: s.canTranslate(),
 			Error:        errMsg,
@@ -99,7 +104,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 		pending = append(pending, thanksToTranslate(draft)...)
 	}
 	if draft.StylePending(lang) {
-		pending = append(pending, styleToTranslate(draft.Style.Words())...)
+		pending = append(pending, styleToTranslate(draft.OwnStyleWords())...)
 	}
 	if len(pending) == 0 {
 		s.renderLocalizations(w, r, "", say(r, "languages.notice.nothing", uitext.Args{"Language": languageName(text(r), lang)}))
@@ -121,7 +126,7 @@ func (s *server) localizationDraft(w http.ResponseWriter, r *http.Request) {
 
 	var thanksMessage, thanksLabel string
 	draftedThanks := false
-	styleWords, draftedStyle := draftedStyleWords(draft.Style.Words(), translated)
+	styleWords, draftedStyle := draftedStyleWords(draft.OwnStyleWords(), translated)
 	for identity, text := range translated {
 		if strings.HasPrefix(identity, styleKeyPrefix) {
 			continue
@@ -374,14 +379,18 @@ func localizationsPath(surveyID uuid.UUID, lang string) string {
 }
 
 // viewLanguages describes each language's state: how much is translated,
-// how much is still waiting for a person to read it.
-func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageView {
+// how much is still waiting for a person to read it. The words the survey
+// shows from its account's style are translated on the account
+// (ADR-0023); they are counted here, so that a language is not called
+// ready while publishing would refuse it.
+func viewLanguages(l uitext.Localizer, draft domain.Draft, account domain.WorkspaceStyle) []templates.LanguageView {
 	out := make([]templates.LanguageView, 0, len(draft.Localizations))
 	for _, lang := range draft.Languages() {
 		localization := draft.Localizations[lang]
 		pending := draft.Pending(lang)
 		thanksPending := draft.ThanksPending(lang)
 		stylePending := draft.StylePending(lang)
+		accountPending := draft.AccountStylePending(account, lang)
 		view := templates.LanguageView{
 			Code:         lang,
 			Name:         languageName(l, lang),
@@ -389,7 +398,16 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 			Total:        len(draft.Questions),
 			Reviewed:     len(draft.Questions) - len(pending),
 			PendingCount: len(pending),
-			Ready:        len(pending) == 0 && !thanksPending && !stylePending && len(draft.Questions) > 0,
+			Ready:        len(pending) == 0 && !thanksPending && !stylePending && !accountPending && len(draft.Questions) > 0,
+		}
+		if draft.FollowsAccountWords(account) {
+			view.Total++
+			if accountPending {
+				view.PendingCount++
+			} else {
+				view.Reviewed++
+			}
+			view.AccountStyle = &templates.AccountStyleRowView{Pending: accountPending}
 		}
 		if thanksPending {
 			view.PendingCount++
@@ -421,7 +439,7 @@ func viewLanguages(l uitext.Localizer, draft domain.Draft) []templates.LanguageV
 				view.Reviewed++
 			}
 			style := templates.LocalizedStyleView{
-				Source:   draft.Style.Words(),
+				Source:   draft.OwnStyleWords(),
 				Reviewed: !stylePending,
 				Stale:    draft.StyleStale(lang),
 			}

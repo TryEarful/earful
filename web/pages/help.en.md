@@ -2,8 +2,8 @@
 title: Help
 short_title: Help
 sections: cards
-hash: sha256-3cbc6a3730411521fb954c067a1099e255c75169fad9fc242f03d804a0c92fb9
-last_update: 2026-10-02
+hash: sha256-8c8ae833c3251d98681b0e6077091c67bb8aaa3623612fc8f1aaf879967cf7f4
+last_update: 2026-10-03
 ---
 
 Short answers to what people ask most. **Answering a survey?** See [answer a survey](#answer-a-survey). **Running one?** [Create it](#create-a-survey), [give it your own look](#give-it-your-own-look), [publish and share it](#publish-and-share), then [read the answers](#read-the-answers).
@@ -18,6 +18,8 @@ Short answers to what people ask most. **Answering a survey?** See [answer a sur
 ## Give it your own look
 
 On the survey's **Style** tab, choose a theme for the pages people answer on: Earful, Slate, Ocean or Forest, each read in light or dark as the reader prefers. Add a header with your organisation's name, a line about it and up to three links, with a banner across the top and your logo. Add a footer with your own text and links, and choose the picture on the thank you page. People see the style once you publish; until then, **Preview as respondent** shows it. Only use a logo you have the right to use.
+
+To set the look once for every survey, open **Account** and choose **Edit account style**. Each survey follows your account style until you change a part of it on its own **Style** tab. The switches beside **Header** and **Footer** turn the header or the footer off for one survey, and **Reset to account style** brings back the account's. A change to your account style reaches a survey the next time you publish it, or now, if you choose **Update** when Earful asks about the open surveys that show it: each gets a new version, and anything you haven't published in them stays unpublished. Translate its words once, from **Translate your account style** on that page.
 
 ## Publish and share
 

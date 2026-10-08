@@ -22,6 +22,15 @@ type Querier interface {
 	ClearParticipantInvited(ctx context.Context, id uuid.UUID) error
 	ConsumeBetaCode(ctx context.Context, arg ConsumeBetaCodeParams) (uuid.UUID, error)
 	ConsumeMagicLinkToken(ctx context.Context, arg ConsumeMagicLinkTokenParams) (MagicLinkToken, error)
+	// Gives a survey its own copy of the account's pictures it shows
+	// (ADR-0023), so that a survey's draft and versions only ever refer to
+	// its own pictures and the rules above hold for them unchanged. A picture
+	// the survey already stores is left as it is.
+	CopyWorkspaceImagesToSurvey(ctx context.Context, arg CopyWorkspaceImagesToSurveyParams) (int64, error)
+	// How many of the given pictures the survey's account stores and the
+	// survey does not: the copies CopyWorkspaceImagesToSurvey would make. A
+	// picture neither stores is not counted.
+	CountCopyableWorkspaceImages(ctx context.Context, arg CountCopyableWorkspaceImagesParams) (int64, error)
 	// The index surveys_one_live_starter_idx refuses a second one; this lets
 	// a caller say so in words before the database says it in an error.
 	CountLiveStarterSurveys(ctx context.Context, workspaceID uuid.UUID) (int64, error)
@@ -30,6 +39,9 @@ type Querier interface {
 	CountSurveyImages(ctx context.Context, surveyID uuid.UUID) (int64, error)
 	// How many of the given pictures a survey stores.
 	CountSurveyImagesOf(ctx context.Context, arg CountSurveyImagesOfParams) (int64, error)
+	// How many pictures DeleteUnusedSurveyImages would remove from a survey,
+	// with the same keep: the room a survey at its limit can make.
+	CountUnusedSurveyImages(ctx context.Context, arg CountUnusedSurveyImagesParams) (int64, error)
 	CountWorkspaceImages(ctx context.Context, workspaceID uuid.UUID) (int64, error)
 	CreateAnswer(ctx context.Context, arg CreateAnswerParams) error
 	CreateBetaCode(ctx context.Context, arg CreateBetaCodeParams) (uuid.UUID, error)
@@ -223,6 +235,9 @@ type Querier interface {
 	// NO KEY UPDATE, not UPDATE: a response, and the counts beside it, refer
 	// to the survey row, and checking that reference takes a lock that
 	// FOR UPDATE would make wait. Respondents are never held up by a save.
+	// It returns the survey's workspace, whose account style (ADR-0023) the
+	// caller reads next: the survey is always held before the account's
+	// style, never the other way round.
 	LockSurveyForStyle(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	// Holds the account's style while its pictures and its style change
 	// together. NO KEY UPDATE, as a survey is held, so nothing that only
@@ -275,6 +290,10 @@ type Querier interface {
 	SoftDeleteSurvey(ctx context.Context, arg SoftDeleteSurveyParams) error
 	SoftDeleteUser(ctx context.Context, arg SoftDeleteUserParams) error
 	SoftDeleteWorkspacesForUser(ctx context.Context, arg SoftDeleteWorkspacesForUserParams) error
+	// Whether a survey is the workspace's, deleted or not: a survey deleted
+	// since a page listed it is the workspace's to leave alone, where one of
+	// another workspace is not found.
+	SurveyBelongsToWorkspace(ctx context.Context, arg SurveyBelongsToWorkspaceParams) (bool, error)
 	SurveyImageExists(ctx context.Context, arg SurveyImageExistsParams) (bool, error)
 	// The per-survey daily voice cap (M5-T4): how many seconds of speech this
 	// survey has had transcribed today, across every respondent.
@@ -293,6 +312,10 @@ type Querier interface {
 	UpdateWorkspaceStyleLocalizations(ctx context.Context, arg UpdateWorkspaceStyleLocalizationsParams) error
 	UpsertAnswerTranslation(ctx context.Context, arg UpsertAnswerTranslationParams) error
 	WorkspaceAITier(ctx context.Context, id uuid.UUID) (string, error)
+	// The languages the workspace's surveys are being translated into, as
+	// their drafts hold them: the languages the account's style is offered
+	// in for translating.
+	WorkspaceDraftLanguages(ctx context.Context, workspaceID uuid.UUID) ([]string, error)
 	WorkspaceImageExists(ctx context.Context, arg WorkspaceImageExistsParams) (bool, error)
 	// Tells a workspace that is not there from one already in the state a
 	// suspension or a lift asked for, after an update that changed no row.

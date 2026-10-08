@@ -222,10 +222,11 @@ func draftStyleImages(surveyID uuid.UUID) string {
 // chosen for the thanks page makes it the page's picture, whatever choice
 // was left ticked: choosing a file says which picture is wanted.
 //
-// The pictures are returned prepared and not stored: the caller stores
-// them once the whole style is accepted. The style is returned as typed
+// The header's pictures are not read where skip names the header, which
+// a survey has turned off. The pictures are returned prepared and not
+// stored: the caller stores them once the whole style is accepted. The style is returned as typed
 // whether or not it is refused, with the first problem found.
-func (s *server) stylePicturesFromForm(r *http.Request, style domain.Style) (domain.Style, []newPicture, error) {
+func (s *server) stylePicturesFromForm(r *http.Request, style domain.Style, skip domain.StyleParts) (domain.Style, []newPicture, error) {
 	var pictures []newPicture
 	var problem error
 	read := func(field, removeField string, part domain.StylePart, slot styleimage.Slot, current domain.StyleImage) domain.StyleImage {
@@ -255,7 +256,7 @@ func (s *server) stylePicturesFromForm(r *http.Request, style domain.Style) (dom
 		}})
 		return domain.StyleImage{SHA256: prepared.SHA256, Width: prepared.Width, Height: prepared.Height}
 	}
-	if r.PostForm.Has(logoAltField) {
+	if r.PostForm.Has(logoAltField) && !skip.Header {
 		style.Header.Banner = read(bannerField, bannerRemoveField, domain.StyleBanner, styleimage.Banner, style.Header.Banner)
 		style.Header.Logo = read(logoField, logoRemoveField, domain.StyleLogo, styleimage.Logo, style.Header.Logo)
 		style.Header = style.Header.WithLogoAlt(r.PostFormValue(logoAltField))

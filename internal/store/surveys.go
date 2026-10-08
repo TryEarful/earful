@@ -175,7 +175,13 @@ func (s *Surveys) List(ctx context.Context, workspaceID uuid.UUID) ([]Survey, er
 
 // Draft loads the working copy for a survey.
 func (s *Surveys) Draft(ctx context.Context, surveyID uuid.UUID) (domain.Draft, uuid.UUID, error) {
-	row, err := s.q.GetDraftForSurvey(ctx, surveyID)
+	return draftWith(ctx, s.q, surveyID)
+}
+
+// draftWith loads the working copy through q, which may be inside a
+// transaction.
+func draftWith(ctx context.Context, q *db.Queries, surveyID uuid.UUID) (domain.Draft, uuid.UUID, error) {
+	row, err := q.GetDraftForSurvey(ctx, surveyID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Draft{}, uuid.Nil, ErrNotFound
 	}
@@ -275,8 +281,24 @@ type Revision struct {
 // Everything happens in one transaction: identities, the version row and
 // every question land together or not at all, so no half-published
 // version can ever be served.
+//
+// The survey is held first and its account's style read under a hold of
+// its own (ADR-0023), and only then is the draft checked and compared:
+// the account's style cannot change between the checks that pass it and
+// the version that freezes it.
 func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uuid.UUID, now time.Time) (Version, error) {
-	draft, _, err := s.Draft(ctx, surveyID)
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return Version{}, fmt.Errorf("store: begin publish: %w", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
+	qtx := s.q.WithTx(tx)
+
+	_, account, err := holdForStyle(ctx, qtx, surveyID)
+	if err != nil {
+		return Version{}, err
+	}
+	draft, _, err := draftWith(ctx, qtx, surveyID)
 	if err != nil {
 		return Version{}, err
 	}
@@ -285,27 +307,25 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 	}
 	// Story 23: nothing goes out in a creator's name that they have not
 	// read. A language with an unreviewed or stale translation blocks
-	// the publish rather than shipping a machine's guess.
-	if err := draft.ReadyToPublish(); err != nil {
+	// the publish rather than shipping a machine's guess, and so does one
+	// the account's style, where the survey shows it, is not read in.
+	if err := draft.ReadyToPublish(account); err != nil {
+		return Version{}, err
+	}
+	if err := draft.ResolvedStyle(account.Style).Validate(); err != nil {
 		return Version{}, err
 	}
 
 	// Refuse a republish that would change nothing.
-	changed, err := s.HasUnpublishedChanges(ctx, surveyID, draft)
+	unpublished, err := unpublishedChanges(ctx, qtx, surveyID, draft, account)
 	if err != nil {
 		return Version{}, err
 	}
-	if !changed {
+	if !unpublished.Changed {
 		return Version{}, ErrNothingToPublish
 	}
 
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return Version{}, fmt.Errorf("store: begin publish: %w", err)
-	}
-	defer tx.Rollback(ctx) //nolint:errcheck // rollback after commit is a no-op
-
-	version, err := publishDraft(ctx, s.q.WithTx(tx), surveyID, userID, draft, now)
+	version, err := publishResolved(ctx, qtx, surveyID, userID, draft, account, now)
 	if err != nil {
 		return Version{}, err
 	}
@@ -316,17 +336,35 @@ func (s *Surveys) Publish(ctx context.Context, workspaceID, surveyID, userID uui
 }
 
 // publishDraft freezes draft as the survey's next version through q,
-// inside the caller's transaction. It checks nothing about the draft:
-// whether it may be published is the caller's to decide before calling.
+// inside the caller's transaction, resolved against its account's style
+// as it stands. It checks nothing about the draft: whether it may be
+// published is the caller's to decide before calling.
 func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UUID, draft domain.Draft, now time.Time) (db.SurveyVersion, error) {
+	_, account, err := holdForStyle(ctx, qtx, surveyID)
+	if err != nil {
+		return db.SurveyVersion{}, err
+	}
+	return publishResolved(ctx, qtx, surveyID, userID, draft, account, now)
+}
+
+// publishResolved freezes draft as the survey's next version, its style
+// resolved against account, through q, inside a transaction that holds
+// the survey and the account's style (holdForStyle).
+func publishResolved(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UUID, draft domain.Draft, account domain.WorkspaceStyle, now time.Time) (db.SurveyVersion, error) {
 	// The survey is held until the version is in, so that no picture its
-	// style shows is removed in between, and a style that refers to a
-	// picture no longer stored is refused: once published, a version
+	// style shows is removed in between. The account's pictures it shows
+	// are copied into the survey first (ADR-0023), and a style that refers
+	// to a picture no longer stored is refused: once published, a version
 	// would show the broken picture for good (ADR-0001, ADR-0018).
-	if _, err := qtx.LockSurveyForStyle(ctx, surveyID); err != nil {
+	resolved := draft.ResolvedStyle(account.Style)
+	workspaceID, err := qtx.LockSurveyForStyle(ctx, surveyID)
+	if err != nil {
 		return db.SurveyVersion{}, fmt.Errorf("store: hold survey: %w", err)
 	}
-	if err := checkStyleImages(ctx, qtx, surveyID, draft.Style); err != nil {
+	if err := ensureSurveyImages(ctx, qtx, workspaceID, surveyID, styleHashes(resolved), now); err != nil {
+		return db.SurveyVersion{}, err
+	}
+	if err := checkStyleImages(ctx, qtx, surveyID, resolved); err != nil {
 		return db.SurveyVersion{}, err
 	}
 	next, err := qtx.NextVersionNumber(ctx, surveyID)
@@ -341,7 +379,7 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 	}
 	// So does the style: the look of the page is part of what a
 	// respondent was shown (ADR-0018).
-	style, err := styleColumn(draft)
+	style, err := styleColumn(draft, account)
 	if err != nil {
 		return db.SurveyVersion{}, err
 	}
@@ -425,38 +463,64 @@ func publishDraft(ctx context.Context, qtx *db.Queries, surveyID, userID uuid.UU
 	return version, nil
 }
 
+// Unpublished says whether publishing a draft would make a new version,
+// and why.
+type Unpublished struct {
+	// Changed is whether publishing would make a new version.
+	Changed bool
+	// AccountStyleOnly is whether the only change is to parts of the
+	// style the survey follows from its account (ADR-0023): the creator
+	// changed nothing of the survey's, and publishing applies the
+	// account's style as it now stands.
+	AccountStyleOnly bool
+}
+
 // HasUnpublishedChanges reports whether publishing the given draft would
 // make a new version: always before the first publish, and afterwards
-// only when its questions, its thank you page or its style differ from
-// the live version's. It is the comparison Publish refuses by, so the editor
-// offers the button only where pressing it would do something.
-func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID, draft domain.Draft) (bool, error) {
-	latest, err := s.q.GetLatestVersion(ctx, surveyID)
+// only when its questions, its thank you page or its style, resolved
+// against its account's, differ from the live version's. It is the
+// comparison Publish refuses by, so the editor offers the button only
+// where pressing it would do something.
+func (s *Surveys) HasUnpublishedChanges(ctx context.Context, surveyID uuid.UUID, draft domain.Draft, account domain.WorkspaceStyle) (Unpublished, error) {
+	return unpublishedChanges(ctx, s.q, surveyID, draft, account)
+}
+
+func unpublishedChanges(ctx context.Context, q *db.Queries, surveyID uuid.UUID, draft domain.Draft, account domain.WorkspaceStyle) (Unpublished, error) {
+	latest, err := q.GetLatestVersion(ctx, surveyID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return true, nil
+		return Unpublished{Changed: true}, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("store: get latest version: %w", err)
+		return Unpublished{}, fmt.Errorf("store: get latest version: %w", err)
 	}
-	questions, err := s.QuestionsForVersion(ctx, latest.ID)
+	questions, err := questionsForVersion(ctx, q, latest.ID)
 	if err != nil {
-		return false, err
+		return Unpublished{}, err
 	}
 	if !questionsEqual(questions, draft.Questions) {
-		return true, nil
+		return Unpublished{Changed: true}, nil
 	}
 	thanks, _, err := thanksFromVersion(latest)
 	if err != nil {
-		return false, err
+		return Unpublished{}, err
 	}
 	if thanks != draft.Thanks {
-		return true, nil
+		return Unpublished{Changed: true}, nil
 	}
 	style, _, err := styleFromColumn(latest.Style)
 	if err != nil {
-		return false, err
+		return Unpublished{}, err
 	}
-	return !style.Equal(draft.Style), nil
+	differs := domain.StyleDiffers(style, draft.ResolvedStyle(account.Style))
+	if differs.IsZero() {
+		return Unpublished{}, nil
+	}
+	// The account is the only reason when every part that differs is one
+	// the survey follows from it.
+	followed := draft.FollowedParts()
+	accountOnly := (!differs.Theme || followed.Theme) && (!differs.Header || followed.Header) &&
+		(!differs.Footer || followed.Footer) && (!differs.Thanks || followed.Thanks)
+	return Unpublished{Changed: true, AccountStyleOnly: accountOnly}, nil
 }
 
 // LatestStyle is the style of the most recent published version: what a
@@ -493,7 +557,13 @@ func (s *Surveys) LatestQuestions(ctx context.Context, surveyID uuid.UUID) ([]do
 // QuestionsForVersion reads a frozen version back into domain form — the
 // same shape the draft uses, so one renderer serves both.
 func (s *Surveys) QuestionsForVersion(ctx context.Context, versionID uuid.UUID) ([]domain.Question, error) {
-	rows, err := s.q.ListQuestionsForVersion(ctx, versionID)
+	return questionsForVersion(ctx, s.q, versionID)
+}
+
+// questionsForVersion is QuestionsForVersion through q, which may be
+// inside a transaction.
+func questionsForVersion(ctx context.Context, q *db.Queries, versionID uuid.UUID) ([]domain.Question, error) {
+	rows, err := q.ListQuestionsForVersion(ctx, versionID)
 	if err != nil {
 		return nil, fmt.Errorf("store: list questions: %w", err)
 	}

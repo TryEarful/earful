@@ -53,7 +53,10 @@ LIMIT 1;
 -- NO KEY UPDATE, not UPDATE: a response, and the counts beside it, refer
 -- to the survey row, and checking that reference takes a lock that
 -- FOR UPDATE would make wait. Respondents are never held up by a save.
-SELECT id FROM surveys WHERE id = $1 FOR NO KEY UPDATE;
+-- It returns the survey's workspace, whose account style (ADR-0023) the
+-- caller reads next: the survey is always held before the account's
+-- style, never the other way round.
+SELECT workspace_id FROM surveys WHERE id = $1 FOR NO KEY UPDATE;
 
 -- name: CountSurveyImagesOf :one
 -- How many of the given pictures a survey stores.
@@ -116,3 +119,47 @@ WHERE i.survey_id = $1
                               jsonb_build_object('hash', encode(i.sha256, 'hex')))
   )
 ORDER BY i.created_at, i.id;
+
+-- name: CountCopyableWorkspaceImages :one
+-- How many of the given pictures the survey's account stores and the
+-- survey does not: the copies CopyWorkspaceImagesToSurvey would make. A
+-- picture neither stores is not counted.
+SELECT count(*) FROM workspace_images w
+WHERE w.workspace_id = sqlc.arg(workspace_id)
+  AND encode(w.sha256, 'hex') = ANY(sqlc.arg(hashes)::text[])
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_images i
+      WHERE i.survey_id = sqlc.arg(survey_id) AND i.sha256 = w.sha256
+  );
+
+-- name: CountUnusedSurveyImages :one
+-- How many pictures DeleteUnusedSurveyImages would remove from a survey,
+-- with the same keep: the room a survey at its limit can make.
+SELECT count(*) FROM survey_images i
+WHERE i.survey_id = sqlc.arg(survey_id)
+  AND NOT (encode(i.sha256, 'hex') = ANY(sqlc.arg(keep)::text[]))
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_versions v
+      WHERE v.survey_id = i.survey_id
+        AND v.style IS NOT NULL
+        AND jsonb_path_exists(v.style, '$.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_drafts d
+      WHERE d.survey_id = i.survey_id
+        AND jsonb_path_exists(d.structure, '$.style.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
+  );
+
+-- name: CopyWorkspaceImagesToSurvey :execrows
+-- Gives a survey its own copy of the account's pictures it shows
+-- (ADR-0023), so that a survey's draft and versions only ever refer to
+-- its own pictures and the rules above hold for them unchanged. A picture
+-- the survey already stores is left as it is.
+INSERT INTO survey_images (survey_id, sha256, content_type, width, height, size_bytes, bytes, created_at)
+SELECT sqlc.arg(survey_id), w.sha256, w.content_type, w.width, w.height, w.size_bytes, w.bytes, sqlc.arg(created_at)
+FROM workspace_images w
+WHERE w.workspace_id = sqlc.arg(workspace_id)
+  AND encode(w.sha256, 'hex') = ANY(sqlc.arg(hashes)::text[])
+ON CONFLICT (survey_id, sha256) DO NOTHING;

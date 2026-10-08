@@ -55,6 +55,7 @@ var plainErrors = []struct {
 	{domain.ErrThanksImageMissing, "style.error.thanks_image"},
 	{domain.ErrThanksImageAlt, "style.error.thanks_alt"},
 	{store.ErrStyleImageMissing, "style.error.image_missing"},
+	{domain.ErrAccountWordsChanged, "style.error.account_words_changed"},
 	{styleimage.ErrType, "style.error.image_type"},
 	{styleimage.ErrDimensions, "style.error.image_pixels"},
 	{styleimage.ErrUnreadable, "style.error.image_unreadable"},
@@ -142,6 +143,9 @@ func errorText(l uitext.Localizer, err error) (string, bool) {
 	}
 	if errors.Is(err, store.ErrImportTooLarge) {
 		return l.T("editor.refused.import", uitext.Args{"Limit": store.MaxImportBatch}), true
+	}
+	if lang, ok := domain.IsAccountStyleTranslationError(err); ok {
+		return l.T("style.error.account_translation", uitext.Args{"Language": languageName(l, lang)}), true
 	}
 	for _, plain := range plainErrors {
 		if errors.Is(err, plain.err) {

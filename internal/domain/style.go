@@ -746,44 +746,52 @@ type LocalizedStyle struct {
 	Source   StyleWords `json:"source,omitzero"`
 }
 
-// HasStyleToTranslate reports whether the style carries any words of the
-// creator's that a language would word differently.
-func (d Draft) HasStyleToTranslate() bool { return !d.Style.Words().IsZero() }
+// HasStyleToTranslate reports whether the survey's own parts carry any
+// words of the creator's that a language would word differently. The
+// words it follows from its account are translated on the account
+// (ADR-0023).
+func (d Draft) HasStyleToTranslate() bool { return !d.OwnStyleWords().IsZero() }
 
-// StylePending reports whether a language still needs the style's words
-// translated or reviewed: never translated, not yet read, missing a part
-// the source has, or made from a wording since changed.
+// StylePending reports whether a language still needs the words of the
+// survey's own parts translated or reviewed: never translated, not yet
+// read, missing a part the source has, or made from a wording since
+// changed. Only the survey's own parts are compared, so a part handed
+// back to the account leaves the rest of a read translation read.
 func (d Draft) StylePending(lang string) bool {
 	localization, ok := d.Localizations[NormalizeLang(lang)]
 	if !ok || !d.HasStyleToTranslate() {
 		return false
 	}
 	translated := localization.Style
-	words := d.Style.Words()
+	parts := d.ownWordParts()
+	words := d.OwnStyleWords()
 	return translated == nil || !translated.Reviewed ||
-		!translated.Source.Equal(words) || !translated.covers(words)
+		!translated.Source.Only(parts).Equal(words) || !translated.StyleWords.Only(parts).covers(words)
 }
 
-// StyleStale reports whether a language's style was translated from a
-// wording the creator has since changed.
+// StyleStale reports whether a language's translation of the survey's
+// own words was made from a wording the creator has since changed.
 func (d Draft) StyleStale(lang string) bool {
 	localization, ok := d.Localizations[NormalizeLang(lang)]
 	if !ok || localization.Style == nil {
 		return false
 	}
-	return !localization.Style.IsZero() && !localization.Style.Source.Equal(d.Style.Words())
+	parts := d.ownWordParts()
+	return !localization.Style.StyleWords.Only(parts).IsZero() &&
+		!localization.Style.Source.Only(parts).Equal(d.OwnStyleWords())
 }
 
-// SetStyleTranslation records the style's words in one language, as read
-// by the creator when reviewed is true. A part the source does not have
-// is dropped, so a translation never shows more than the original.
+// SetStyleTranslation records the words of the survey's own parts in one
+// language, as read by the creator when reviewed is true. A part the
+// source does not have is dropped, so a translation never shows more
+// than the original.
 func (d *Draft) SetStyleTranslation(lang string, words StyleWords, reviewed bool) error {
 	lang = NormalizeLang(lang)
 	localization, ok := d.Localizations[lang]
 	if !ok {
 		return ErrUnknownLanguage
 	}
-	t, err := newLocalizedStyle(d.Style.Words(), words, reviewed)
+	t, err := newLocalizedStyle(d.OwnStyleWords(), words, reviewed)
 	if err != nil {
 		return err
 	}
@@ -856,18 +864,11 @@ func fitLabels(labels []string, n int) []string {
 	return out
 }
 
-// LocalizedStyle returns the style as a respondent reading lang sees it:
-// the translated words with the creator's theme, name and addresses. It
-// is what publishing freezes, so it reports false until the language is
-// reviewed against the current wording.
+// LocalizedStyle returns the survey's own style as a respondent reading
+// lang sees it: the translated words with the creator's theme, name and
+// addresses. It reports false until the language is reviewed against the
+// current wording. What publishing freezes is ResolvedLocalizedStyle,
+// which adds the parts the survey follows from its account.
 func (d Draft) LocalizedStyle(lang string) (Style, bool) {
-	lang = NormalizeLang(lang)
-	if !d.HasStyleToTranslate() || d.StylePending(lang) {
-		return Style{}, false
-	}
-	translated := d.Localizations[lang].Style
-	if translated == nil {
-		return Style{}, false
-	}
-	return d.Style.WithWords(translated.StyleWords), true
+	return d.ResolvedLocalizedStyle(WorkspaceStyle{}, lang)
 }

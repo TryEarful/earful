@@ -25,6 +25,11 @@ type Draft struct {
 	// into the published version with the questions (ADR-0018). Empty
 	// means Earful's own look.
 	Style Style `json:"style,omitzero"`
+	// StyleChoice says which parts of Style are the survey's own and
+	// which it follows from its account's style, and whether it shows a
+	// header and a footer (ADR-0023). Empty means it follows every part
+	// that Style leaves empty.
+	StyleChoice StyleChoice `json:"style_choice,omitzero"`
 }
 
 // maxQuestionsPerSurvey bounds a single survey. A survey this long is a

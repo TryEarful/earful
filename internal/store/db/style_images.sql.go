@@ -12,6 +12,65 @@ import (
 	"github.com/google/uuid"
 )
 
+const copyWorkspaceImagesToSurvey = `-- name: CopyWorkspaceImagesToSurvey :execrows
+INSERT INTO survey_images (survey_id, sha256, content_type, width, height, size_bytes, bytes, created_at)
+SELECT $1, w.sha256, w.content_type, w.width, w.height, w.size_bytes, w.bytes, $2
+FROM workspace_images w
+WHERE w.workspace_id = $3
+  AND encode(w.sha256, 'hex') = ANY($4::text[])
+ON CONFLICT (survey_id, sha256) DO NOTHING
+`
+
+type CopyWorkspaceImagesToSurveyParams struct {
+	SurveyID    uuid.UUID `json:"survey_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	Hashes      []string  `json:"hashes"`
+}
+
+// Gives a survey its own copy of the account's pictures it shows
+// (ADR-0023), so that a survey's draft and versions only ever refer to
+// its own pictures and the rules above hold for them unchanged. A picture
+// the survey already stores is left as it is.
+func (q *Queries) CopyWorkspaceImagesToSurvey(ctx context.Context, arg CopyWorkspaceImagesToSurveyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, copyWorkspaceImagesToSurvey,
+		arg.SurveyID,
+		arg.CreatedAt,
+		arg.WorkspaceID,
+		arg.Hashes,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const countCopyableWorkspaceImages = `-- name: CountCopyableWorkspaceImages :one
+SELECT count(*) FROM workspace_images w
+WHERE w.workspace_id = $1
+  AND encode(w.sha256, 'hex') = ANY($2::text[])
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_images i
+      WHERE i.survey_id = $3 AND i.sha256 = w.sha256
+  )
+`
+
+type CountCopyableWorkspaceImagesParams struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	Hashes      []string  `json:"hashes"`
+	SurveyID    uuid.UUID `json:"survey_id"`
+}
+
+// How many of the given pictures the survey's account stores and the
+// survey does not: the copies CopyWorkspaceImagesToSurvey would make. A
+// picture neither stores is not counted.
+func (q *Queries) CountCopyableWorkspaceImages(ctx context.Context, arg CountCopyableWorkspaceImagesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countCopyableWorkspaceImages, arg.WorkspaceID, arg.Hashes, arg.SurveyID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countSurveyImages = `-- name: CountSurveyImages :one
 SELECT count(*) FROM survey_images WHERE survey_id = $1
 `
@@ -36,6 +95,39 @@ type CountSurveyImagesOfParams struct {
 // How many of the given pictures a survey stores.
 func (q *Queries) CountSurveyImagesOf(ctx context.Context, arg CountSurveyImagesOfParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countSurveyImagesOf, arg.SurveyID, arg.Hashes)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUnusedSurveyImages = `-- name: CountUnusedSurveyImages :one
+SELECT count(*) FROM survey_images i
+WHERE i.survey_id = $1
+  AND NOT (encode(i.sha256, 'hex') = ANY($2::text[]))
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_versions v
+      WHERE v.survey_id = i.survey_id
+        AND v.style IS NOT NULL
+        AND jsonb_path_exists(v.style, '$.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM survey_drafts d
+      WHERE d.survey_id = i.survey_id
+        AND jsonb_path_exists(d.structure, '$.style.** ? (@.sha256 == $hash)',
+                              jsonb_build_object('hash', encode(i.sha256, 'hex')))
+  )
+`
+
+type CountUnusedSurveyImagesParams struct {
+	SurveyID uuid.UUID `json:"survey_id"`
+	Keep     []string  `json:"keep"`
+}
+
+// How many pictures DeleteUnusedSurveyImages would remove from a survey,
+// with the same keep: the room a survey at its limit can make.
+func (q *Queries) CountUnusedSurveyImages(ctx context.Context, arg CountUnusedSurveyImagesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnusedSurveyImages, arg.SurveyID, arg.Keep)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -253,7 +345,7 @@ func (q *Queries) ListPublishedImagesForSurvey(ctx context.Context, surveyID uui
 }
 
 const lockSurveyForStyle = `-- name: LockSurveyForStyle :one
-SELECT id FROM surveys WHERE id = $1 FOR NO KEY UPDATE
+SELECT workspace_id FROM surveys WHERE id = $1 FOR NO KEY UPDATE
 `
 
 // Holds a survey while its pictures and its draft change together, or
@@ -262,11 +354,14 @@ SELECT id FROM surveys WHERE id = $1 FOR NO KEY UPDATE
 // NO KEY UPDATE, not UPDATE: a response, and the counts beside it, refer
 // to the survey row, and checking that reference takes a lock that
 // FOR UPDATE would make wait. Respondents are never held up by a save.
+// It returns the survey's workspace, whose account style (ADR-0023) the
+// caller reads next: the survey is always held before the account's
+// style, never the other way round.
 func (q *Queries) LockSurveyForStyle(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, lockSurveyForStyle, id)
-	var id_2 uuid.UUID
-	err := row.Scan(&id_2)
-	return id_2, err
+	var workspace_id uuid.UUID
+	err := row.Scan(&workspace_id)
+	return workspace_id, err
 }
 
 const surveyImageExists = `-- name: SurveyImageExists :one

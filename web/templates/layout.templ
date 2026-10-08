@@ -40,16 +40,16 @@ templ Layout(title string) {
 templ languageSwitcher() {
 	if len(languages(ctx)) > 1 {
 		<form method="post" action="/language" class="switcher">
-				<input type="hidden" name="next" value={ currentPath(ctx) }/>
-				<label>
-					<span>{ t(ctx, "switcher.label") }</span>
-					<select name="lang">
-						for _, code := range languages(ctx) {
-							<option value={ code } lang={ code } selected?={ code == interfaceLang(ctx) }>{ ownName(ctx, code) }</option>
-						}
-					</select>
-				</label>
-				<button type="submit" class="secondary">{ t(ctx, "switcher.submit") }</button>
+			<input type="hidden" name="next" value={ currentPath(ctx) }/>
+			<label>
+				<span>{ t(ctx, "switcher.label") }</span>
+				<select name="lang">
+					for _, code := range languages(ctx) {
+						<option value={ code } lang={ code } selected?={ code == interfaceLang(ctx) }>{ ownName(ctx, code) }</option>
+					}
+				</select>
+			</label>
+			<button type="submit" class="secondary">{ t(ctx, "switcher.submit") }</button>
 		</form>
 	}
 }

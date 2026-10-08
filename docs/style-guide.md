@@ -11,7 +11,8 @@ committed.
 
 - **Calm and direct.** One idea per sentence, one filled button per
   screen, nothing on a page that does not help somebody do what they came
-  to do.
+  to do. A page of translations is the one exception: each language is a
+  card with its own filled save, since each is reviewed on its own.
 - **Warm, not cute.** Paper, not white; rounded, not bubbly; the owl in a
   few chosen moments, never beside data.
 - **Voice is the only loud thing.** Signal coral is reserved for the
@@ -261,6 +262,8 @@ times use tabular figures.
 | `.thanks-drawing` | One of the three drawings a thanks page can show in place of the owl, coloured by the theme |
 | `.thanks-image` | A creator's own thanks picture, on the same white plate as a logo |
 | `.style-links` | The links of a header or a footer, each with an arrow that says it opens in a new tab |
+| `.switch`, `.switch-input`, `.switch-track`, `.switch-title`, `.switch-section`, `.switch-fields` | A switch that turns a section of a form on or off: a checkbox with `role="switch"` before the section's heading, which is its label, with the section's hint as its description. On, the section's fields show; off, the stylesheet hides them, with no script. Never an action that saves by itself. The input lies transparent over the track it draws, a 44px square target; the track is `--muted` off and `--accent` on, the knob `--surface` off and `--accent-contrast` on, and focus is the usual ring around the track |
+| `.stale-surveys`, `.stale-blocked` | The open surveys a change to the account's style reaches, one to a line, each a link with a `.chip` beside it and a line under it saying what holds it back when something does |
 | `.focus-shown` | The focus ring, drawn on the theme sheet's samples where a picture cannot hold the keyboard's focus. Nowhere else |
 
 Every link and control is at least 44px tall. Focus is a 3px teal ring,
@@ -314,6 +317,51 @@ text, muted and link colours, so each pair is one the contrast table
 already measures. A header or a footer adds no button: the page keeps
 its one filled button. Links open in a new tab, say so to a screen
 reader, and are 44px tall like every other.
+
+### An account's style
+
+An account has a style of its own (ADR-0023): the same theme, header,
+footer and thanks picture a survey's Style tab sets, which every survey
+of the workspace follows until it makes a part its own. The account page
+says it in a card of its own: one line naming the theme and whether
+there is a header and a footer, and outlined pills to the style and to
+its translations. The account's style page is the Style tab's form
+under the account's breadcrumb, with a link to its translations at the
+end of the intro, as the Style tab links to the account in its own.
+
+On a survey's Style tab every field starts from the account's style.
+Where the account has one, each section's heading carries a plain
+`.chip` saying where the part comes from: "From your account style" or
+"This survey's own". A part becomes the survey's own when anything in it
+is changed, whole: changing the tagline takes the whole header. The
+header and footer sections open with a `.switch` beside the section's
+heading, on by default; off, the survey shows none, the section's fields
+are hidden, and with no header it carries no logo, so the owl returns to
+Earful's line.
+The form ends with its one filled Save and, after it, "Reset to account
+style" as an outlined pill, with a line saying what it lets go.
+
+The editor's publish card adds a line when the only change is the
+account's style, and a publish refused for a language the account is
+not reviewed in names the language with an outlined pill to the
+account's translations. A survey's Languages tab shows the words it
+takes from its account as a row of state and a way there, never as
+fields: they are translated once, on the account.
+
+A save that reaches open surveys leads to a page that asks whether to
+update them now. It is one card: a line saying how many, the surveys as
+a `.stale-surveys` list, one to a line with a hairline between, each a
+link to its survey. A survey something holds back has a plain `.chip`
+beside its title naming what ("Waiting for Spanish", "No room for
+pictures") and, under it, a muted line saying why, with a link to where
+it is put right when the creator can. Under the list a muted line says
+each survey updated gets a new version, what stays unpublished, and
+what "Later" means, then the card's one filled button, "Update these
+surveys", and "Later" as an outlined pill. With no survey ready, the
+card has no filled button, only the way back. While surveys are left to
+update, the account's style page says how many under its intro, in body
+text, with a link to the question that offers to update them, or to see
+what they need when none can be updated yet.
 
 ### Thanks page pictures
 
